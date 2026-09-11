@@ -25,7 +25,7 @@ and open to being overruled.
 |---|---|---|---|
 | R1 | App name is **College** | Active | [Roadmap](10-roadmap.md) Phase 0 |
 | R2 | Bundle and application id is `com.nirvok.collegeErp` | Active | [Roadmap](10-roadmap.md) Phase 0 |
-| R3 | Flutter application targeting Android and iOS. No web or desktop in release one | Active | [Product Overview](01-product-overview.md) 1.5 |
+| R3 | Flutter application targeting Android and iOS. No web or desktop in release one | Under review, see OD-3 | [Blueprint 0](blueprint/00-assumptions.md) |
 
 ## Engineering priorities
 
@@ -35,7 +35,7 @@ offline first, cubit, dio are my priorities."
 | ID | Requirement | Status | Reflected in |
 |---|---|---|---|
 | R4 | Clean architecture with a strict layer separation | Active | [Architecture](02-architecture.md) 2.1, 2.2 |
-| R5 | Offline first. The app must be fully usable without a network | Active | [Offline First](03-offline-first.md), all of it |
+| R5 | Offline first. The app must be fully usable without a network | Refined by R21 | [Offline First](03-offline-first.md) |
 | R6 | Cubit for state management, not another solution | Active | [State Management](06-state-management.md) |
 | R7 | Dio as the HTTP client | Active | [Architecture](02-architecture.md) 2.5, [API Contract](05-api-contract.md) |
 | R8 | Premium UI and UX, not merely functional | Active | [Design System](07-design-system.md) |
@@ -47,7 +47,7 @@ teachers and students honge."
 
 | ID | Requirement | Status | Reflected in |
 |---|---|---|---|
-| R9 | Four roles in a hierarchy: Super Admin, College Admin, Teacher, Student | Active | [Product Overview](01-product-overview.md) 1.2 |
+| R9 | Four roles in a hierarchy: Super Admin, College Admin, Teacher, Student | Superseded by R17 | — |
 | R10 | Super Admin is the platform operator, run by the project owner, and works across all colleges | Active | [Product Overview](01-product-overview.md) 1.2 |
 | R11 | Multi-tenant. Each college is a tenant and no data may cross tenants | Active | [Data Model](04-data-model.md) 4.1, [Security](08-security.md) 8.4 |
 
@@ -65,6 +65,22 @@ teachers and students honge."
 |---|---|---|---|
 | R15 | Routing uses a routing package with declarative guards | Superseded by R16 | — |
 | R16 | No routing package. Use Flutter's `Navigator` with a central `onGenerateRoute` | Active | [Architecture](02-architecture.md) 2.4, [Decisions](11-decisions.md) D13 |
+
+## Enterprise architecture brief
+
+Instructed 2026-09-11. Design the complete blueprint of a production ERP as an architecture
+team would, reasoning from domains, actors, workflows, rules, data, permissions and UX rather
+than from a feature list.
+
+| ID | Requirement | Status | Reflected in |
+|---|---|---|---|
+| R17 | Authority is role by scope by validity. "Admin" is not one role, and roughly thirty distinct actors exist | Active | [Blueprint 1](blueprint/01-actors.md), [ADR](blueprint/adr.md) AD-1 |
+| R18 | The system must be modular, scalable, secure, maintainable, auditable and extensible, suitable for a real college supported for years | Active | [Blueprint 3](blueprint/03-modules.md) |
+| R19 | UX is a first-class part of the architecture. The product must feel like a modern premium SaaS tool, not a traditional college ERP | Active | [Design System](07-design-system.md), Blueprint Phase 8 pending |
+| R20 | Everything touching money, marks or attendance must be auditable to an external auditor's standard, and correction must be a workflow rather than a database edit | Active | [ADR](blueprint/adr.md) AD-13, P6 in [Blueprint 2](blueprint/02-domains.md) |
+| R21 | Offline capability applies to field roles on mobile. Back-office work is online-first | Active | [ADR](blueprint/adr.md) AD-9 |
+| R22 | Work progressively. Maintain an Architecture Decision Log and an Open Decisions list. Never silently assume an important requirement | Active | [ADR](blueprint/adr.md), [Blueprint 0](blueprint/00-assumptions.md) |
+| R23 | Do not create modules because they sound useful. Justify every boundary, and merge what belongs together | Active | [Blueprint 3](blueprint/03-modules.md) 3.2 |
 
 ## Assumptions awaiting confirmation
 

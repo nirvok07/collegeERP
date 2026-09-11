@@ -24,6 +24,19 @@ colleges: a platform **Super Admin**, a per-college **Admin**, **Teachers**, and
 | 11 | [Decisions](11-decisions.md) | Chosen options, rejected options, and why |
 | — | [Requirements](requirements.md) | The living register of what was asked for, and where each requirement lives |
 
+## Enterprise blueprint
+
+The documents above describe the client application. The blueprint below designs the ERP as an
+enterprise system. It is in progress and awaiting approval before deep module specifications.
+
+| # | Document | What it settles |
+|---|---|---|
+| B0 | [Assumptions and Open Decisions](blueprint/00-assumptions.md) | What is assumed, and the eight questions that change the architecture |
+| B1 | [Actors and Organization](blueprint/01-actors.md) | The college as a real organization, every actor, the authority model |
+| B2 | [Business Domains](blueprint/02-domains.md) | Nine domains and eight platform capabilities, in full |
+| B3 | [Module Architecture](blueprint/03-modules.md) | Twenty-four modules, boundary reasoning, data ownership, events |
+| — | [Architecture Decision Log](blueprint/adr.md) | Every enterprise decision with alternatives and impact |
+
 ## Assumptions in force
 
 These were chosen so planning could proceed. Each is isolated in
