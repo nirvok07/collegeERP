@@ -3,6 +3,7 @@
  */
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import type { LightMyRequestResponse } from 'fastify';
 import {
   buildTestApp, provisionCollege, resetData, seedPlatformAccount,
   setupDatabase, signInPlatform, type TestApp,
@@ -31,8 +32,8 @@ async function collegeWithInvitedAdmin() {
   };
 }
 
-const post = (url: string, payload: unknown) =>
-  harness.app.inject({ method: 'POST', url, payload });
+const post = (url: string, payload: Record<string, unknown>): Promise<LightMyRequestResponse> =>
+  harness.app.inject({ method: 'POST', url, payload }) as Promise<LightMyRequestResponse>;
 
 describe('platform authentication', () => {
   it('signs in with correct credentials', async () => {

@@ -8,6 +8,7 @@ import { buildServer } from '../src/infrastructure/http/server.ts';
 import { migrate } from '../src/infrastructure/db/migrate.ts';
 import { createPool } from '../src/infrastructure/db/pool.ts';
 import { ScryptPasswordHasher } from '../src/infrastructure/crypto/adapters.ts';
+import type { LightMyRequestResponse } from 'fastify';
 
 process.env.NODE_ENV = 'test';
 
@@ -89,19 +90,23 @@ export async function seedPlatformAccount(
   return { id, email, password };
 }
 
-export async function signInPlatform(app: Awaited<ReturnType<typeof buildTestApp>>['app'], email: string, password: string) {
-  const res = await app.inject({
+export async function signInPlatform(
+  app: TestApp['app'],
+  email: string,
+  password: string,
+): Promise<{ status: number; body: any }> {
+  const res = (await app.inject({
     method: 'POST', url: '/v1/auth/platform/login', payload: { email, password },
-  });
+  })) as LightMyRequestResponse;
   return { status: res.statusCode, body: res.json() };
 }
 
 export async function provisionCollege(
-  app: Awaited<ReturnType<typeof buildTestApp>>['app'],
+  app: TestApp['app'],
   accessToken: string,
   overrides: Partial<{ code: string; name: string; adminEmail: string }> = {},
-) {
-  const res = await app.inject({
+): Promise<{ status: number; body: any }> {
+  const res = (await app.inject({
     method: 'POST',
     url: '/v1/institutions',
     headers: { authorization: `Bearer ${accessToken}` },
@@ -113,7 +118,7 @@ export async function provisionCollege(
         email: overrides.adminEmail ?? 'priya@testcollege.edu',
       },
     },
-  });
+  })) as LightMyRequestResponse;
   return { status: res.statusCode, body: res.json() };
 }
 
