@@ -82,6 +82,8 @@ than from a feature list.
 | R22 | Work progressively. Maintain an Architecture Decision Log and an Open Decisions list. Never silently assume an important requirement | Active | [ADR](blueprint/adr.md), [Blueprint 0](blueprint/00-assumptions.md) |
 | R23 | Do not create modules because they sound useful. Justify every boundary, and merge what belongs together | Active | [Blueprint 3](blueprint/03-modules.md) 3.2 |
 | R24 | Specify modules one at a time, to a depth another team could implement without guessing. Twenty-four sections from purpose through to decision-log updates | Active | [M1](blueprint/modules/m1-identity-and-access.md) |
+| R25 | A master checklist sits above the three methodology files, orchestrating and verifying them rather than replacing them. Status is never marked complete on a mention | Active | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) |
+| R26 | Architecture drift is reported as an issue with problem, existing decision, conflict, affected modules, impact and recommended resolution. Never silently normalized | Active | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) section 7 |
 
 ## Assumptions awaiting confirmation
 
@@ -95,6 +97,8 @@ stated in [Decisions](11-decisions.md).
 | A3 | Release one ships Core, Academics and Communication. Fees and payments follow in release two | Assumed | [Decisions](11-decisions.md) D12, [Roadmap](10-roadmap.md) |
 | A4 | English only in release one, with all strings externalized so languages can be added later | Assumed | [Product Overview](01-product-overview.md) 1.5 |
 | A5 | Light and dark themes both ship in release one | Assumed | [Decisions](11-decisions.md) D11 |
+| A6 | Scale target of 20,000 students per tenant, 50 tenants, 2,000 peak concurrent users | Assumed, OD-9 | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) section 3 |
+| A7 | Shared database with enforced row-level tenant isolation, India region | Assumed, OD-10 | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) section 3 |
 
 ## Deferred
 
