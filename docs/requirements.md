@@ -81,6 +81,7 @@ than from a feature list.
 | R21 | Offline capability applies to field roles on mobile. Back-office work is online-first | Active | [ADR](blueprint/adr.md) AD-9 |
 | R22 | Work progressively. Maintain an Architecture Decision Log and an Open Decisions list. Never silently assume an important requirement | Active | [ADR](blueprint/adr.md), [Blueprint 0](blueprint/00-assumptions.md) |
 | R23 | Do not create modules because they sound useful. Justify every boundary, and merge what belongs together | Active | [Blueprint 3](blueprint/03-modules.md) 3.2 |
+| R24 | Specify modules one at a time, to a depth another team could implement without guessing. Twenty-four sections from purpose through to decision-log updates | Active | [M1](blueprint/modules/m1-identity-and-access.md) |
 
 ## Assumptions awaiting confirmation
 

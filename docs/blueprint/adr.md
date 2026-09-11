@@ -178,3 +178,90 @@ rejected as unauditable.
 
 *Impact.* Every high-integrity record has a defined correction workflow with an approver, a
 mandatory reason and a preserved original.
+
+---
+
+**AD-14 — Person and UserAccount are separate entities**
+
+*Reason.* Guardians who never sign in, rejected applicants and long-departed staff are all people
+the institution must know about without an account. Conflating the two forces fake accounts for
+people who will never authenticate.
+
+*Alternatives.* One user table for everyone, rejected because it fills the directory with
+unusable records and makes "active user" meaningless. A separate contact table for non-users,
+rejected because a contact becomes a student and the identity would have to be recreated.
+
+*Impact.* Person is the identity, account is one optional way to reach the system. One active
+account per person, enforced by a partial unique index.
+
+---
+
+**AD-15 — Committee membership is a role assignment scoped to the committee**
+
+*Reason.* Committees hold authority that no job title carries. An ordinary faculty member on the
+exam committee can approve a mark correction. Modelling that as a second authority mechanism
+would mean two places to check before every sensitive action.
+
+*Alternatives.* A committee_member table with its own permission logic, rejected as a parallel
+authorization system. Special-casing committee permissions inside each consuming module,
+rejected as unreviewable.
+
+*Impact.* Supersedes the implied membership entity in Blueprint 2 D1. M2 owns a committee's
+existence and remit. M1 owns who sits on it and what that permits. One authorization path.
+
+---
+
+**AD-16 — Permissions resolve at request time, with bounded-staleness caching**
+
+*Reason.* Authority changes mid-session, and a stale permission set is a security failure rather
+than a performance question.
+
+*Alternatives.* Permissions embedded in the token, rejected because revocation would wait for
+token expiry. Uncached resolution on every request, rejected on cost at the hottest path in the
+system.
+
+*Impact.* Cached per person with a generation counter, invalidated on any assignment, delegation,
+role or scope change, and capped at fifteen minutes so a lost invalidation self-heals. Session
+validity is checked before permissions, so revocation is always immediate.
+
+---
+
+**AD-17 — Delegation cannot be chained, exceeded, or outlive its source**
+
+*Reason.* Sub-delegation launders authority until nobody can say who actually holds it. A
+delegation that outlives the delegator's own assignment grants authority its source no longer has.
+
+*Alternatives.* Unrestricted delegation, rejected. Approval-gated sub-delegation, rejected as
+complexity serving a case that does not arise in a college.
+
+*Impact.* One hop only. Delegated acts are recorded in both names. Deactivating the delegator
+ends the delegation immediately.
+
+---
+
+**AD-18 — Deny by default, and no-access is a designed state**
+
+*Reason.* A user with no assignment is normal on their first day, not an error. Showing an error
+or a blank screen generates a support call at the worst possible moment.
+
+*Alternatives.* Grant a default role on account creation, rejected because an implicit grant is
+an unreviewable one.
+
+*Impact.* Authentication and authorization are separate. Signing in always succeeds or fails on
+identity alone. What a user may then do is a separate answer, and "nothing yet" is a designed
+screen naming who to contact.
+
+---
+
+**AD-19 — Impersonation is read-only, institution-approved, time-boxed and fully audited**
+
+*Reason.* Support access to a live tenant is the largest standing privilege in a multi-tenant
+product, and the institution rather than the vendor must control it.
+
+*Alternatives.* Vendor-side impersonation without tenant approval, rejected outright. No
+impersonation at all, rejected because support then asks staff for their credentials, which is
+worse.
+
+*Impact.* Read-only at the policy layer rather than in the interface. Maximum sixty minutes with
+no extension. A persistent banner. Every record read is audited, not merely the session. The
+Principal sees requested, used and unused grants alike.

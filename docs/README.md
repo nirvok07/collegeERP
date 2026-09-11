@@ -37,6 +37,12 @@ enterprise system. It is in progress and awaiting approval before deep module sp
 | B3 | [Module Architecture](blueprint/03-modules.md) | Twenty-four modules, boundary reasoning, data ownership, events |
 | — | [Architecture Decision Log](blueprint/adr.md) | Every enterprise decision with alternatives and impact |
 
+### Module specifications
+
+| Module | Phase | Status |
+|---|---|---|
+| [M1 Identity and Access](blueprint/modules/m1-identity-and-access.md) | 0 | Specified, awaiting review |
+
 ## Assumptions in force
 
 These were chosen so planning could proceed. Each is isolated in
