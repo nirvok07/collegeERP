@@ -1,0 +1,152 @@
+/*
+ * Design tokens, from the approved design system (docs/07-design-system.md §7.2-7.4).
+ * Every value in the application comes from here. No screen invents a colour,
+ * a spacing step or a radius.
+ *
+ * Light is defined on bare :root. Dark redefines only the tokens whose role
+ * changes, under both the system preference and an explicit choice, so the
+ * toggle wins in either direction.
+ */
+:root {
+  /* Colour — roles, not hues. Components never name a hue. */
+  --primary: #4f46e5;          /* Indigo 600 */
+  --primary-hover: #4338ca;
+  --primary-pressed: #3730a3;
+  --on-primary: #ffffff;
+  --primary-subtle: #eef2ff;
+
+  --background: #fafafa;       /* Neutral 50 */
+  --surface: #ffffff;
+  --surface-variant: #f5f5f5;  /* Neutral 100 */
+  --surface-hover: #fafafa;
+  --outline: #e5e5e5;          /* Neutral 200 */
+  --outline-strong: #d4d4d4;
+
+  --text-primary: #171717;     /* Neutral 900 */
+  --text-secondary: #525252;   /* Neutral 600 */
+  --text-tertiary: #a3a3a3;
+
+  --success: #059669;
+  --success-subtle: #ecfdf5;
+  --warning: #d97706;
+  --warning-subtle: #fffbeb;
+  --error: #dc2626;
+  --error-subtle: #fef2f2;
+  --info: #0284c7;
+  --info-subtle: #f0f9ff;
+
+  --focus-ring: #4f46e5;
+
+  /* Spacing — 4pt scale (§7.4). */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-base: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 40px;
+  --space-4xl: 48px;
+
+  /* Radius (§7.4). */
+  --radius-input: 8px;
+  --radius-card: 12px;
+  --radius-sheet: 16px;
+  --radius-pill: 999px;
+
+  /* Elevation — soft, large radius, low opacity. */
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
+  --shadow-2: 0 4px 8px rgb(0 0 0 / 0.04), 0 2px 4px rgb(0 0 0 / 0.06);
+  --shadow-3: 0 16px 32px rgb(0 0 0 / 0.10), 0 4px 8px rgb(0 0 0 / 0.06);
+
+  /* Type (§7.3). Inter, with a real fallback stack. */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --text-display: 700 32px/1.2 var(--font);
+  --text-headline: 700 24px/1.2 var(--font);
+  --text-title-lg: 600 20px/1.3 var(--font);
+  --text-title: 600 16px/1.4 var(--font);
+  --text-body: 400 14px/1.5 var(--font);
+  --text-body-lg: 400 16px/1.5 var(--font);
+  --text-label: 600 14px/1.4 var(--font);
+  --text-caption: 500 12px/1.4 var(--font);
+
+  /* Motion (§7.7). Nothing exceeds 300ms except a sheet. */
+  --press: 100ms cubic-bezier(0.4, 0, 0.2, 1);
+  --state: 150ms cubic-bezier(0.33, 1, 0.68, 1);
+  --expand: 250ms cubic-bezier(0.65, 0, 0.35, 1);
+  --enter: 250ms cubic-bezier(0.33, 1, 0.68, 1);
+  --sheet: 300ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --primary: #818cf8;
+    --primary-hover: #a5b4fc;
+    --primary-pressed: #c7d2fe;
+    --on-primary: #1e1b4b;
+    --primary-subtle: #1e1b4b;
+
+    --background: #0a0a0a;
+    --surface: #171717;
+    --surface-variant: #262626;
+    --surface-hover: #1f1f1f;
+    --outline: #404040;
+    --outline-strong: #525252;
+
+    --text-primary: #fafafa;
+    --text-secondary: #a3a3a3;
+    --text-tertiary: #737373;
+
+    --success: #34d399;
+    --success-subtle: #022c22;
+    --warning: #fbbf24;
+    --warning-subtle: #292524;
+    --error: #f87171;
+    --error-subtle: #2c0b0b;
+    --info: #38bdf8;
+    --info-subtle: #082f49;
+
+    --focus-ring: #818cf8;
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
+    --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
+  --primary: #818cf8;
+  --primary-hover: #a5b4fc;
+  --primary-pressed: #c7d2fe;
+  --on-primary: #1e1b4b;
+  --primary-subtle: #1e1b4b;
+  --background: #0a0a0a;
+  --surface: #171717;
+  --surface-variant: #262626;
+  --surface-hover: #1f1f1f;
+  --outline: #404040;
+  --outline-strong: #525252;
+  --text-primary: #fafafa;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #737373;
+  --success: #34d399;
+  --success-subtle: #022c22;
+  --warning: #fbbf24;
+  --warning-subtle: #292524;
+  --error: #f87171;
+  --error-subtle: #2c0b0b;
+  --info: #38bdf8;
+  --info-subtle: #082f49;
+  --focus-ring: #818cf8;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
+  --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
+}
+
+/* Reduced motion collapses every transition to a cross-fade (§7.7). */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --press: 1ms linear; --state: 1ms linear; --expand: 1ms linear;
+    --enter: 1ms linear; --sheet: 1ms linear;
+  }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}

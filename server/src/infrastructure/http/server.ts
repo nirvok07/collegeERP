@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
+import cors from '@fastify/cors';
 import { createHash } from 'node:crypto';
 import type { Container } from '../../container.ts';
 import { httpStatusFor, type Failure } from '../../core/errors.ts';
@@ -47,6 +48,25 @@ export async function buildServer(container: Container): Promise<FastifyInstance
   });
 
   app.decorateRequest('actor', undefined);
+
+  /**
+   * An explicit allowlist, never a wildcard. Credentials are not used: the
+   * console sends a bearer token, so no cookie needs to cross the origin and
+   * the CSRF surface stays closed.
+   */
+  const allowed = new Set(
+    container.config.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean),
+  );
+  await app.register(cors, {
+    origin: (origin, done) => {
+      if (!origin || allowed.has(origin)) return done(null, true);
+      done(null, false);
+    },
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['content-type', 'authorization'],
+    credentials: false,
+    maxAge: 600,
+  });
 
   /**
    * Identity only. A valid token proves who the caller is and nothing about what

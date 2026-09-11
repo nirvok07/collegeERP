@@ -25,7 +25,7 @@ and open to being overruled.
 |---|---|---|---|
 | R1 | App name is **College** | Active | [Roadmap](10-roadmap.md) Phase 0 |
 | R2 | Bundle and application id is `com.nirvok.collegeErp` | Active | [Roadmap](10-roadmap.md) Phase 0 |
-| R3 | Flutter application targeting Android and iOS. No web or desktop in release one | Under review, see OD-3 | [Blueprint 0](blueprint/00-assumptions.md) |
+| R3 | Flutter application targeting Android and iOS. No web or desktop in release one | Superseded by R28 | — |
 
 ## Engineering priorities
 
@@ -84,6 +84,7 @@ than from a feature list.
 | R24 | Specify modules one at a time, to a depth another team could implement without guessing. Twenty-four sections from purpose through to decision-log updates | Active | [M1](blueprint/modules/m1-identity-and-access.md) |
 | R25 | A master checklist sits above the three methodology files, orchestrating and verifying them rather than replacing them. Status is never marked complete on a mention | Active | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) |
 | R26 | Architecture drift is reported as an issue with problem, existing decision, conflict, affected modules, impact and recommended resolution. Never silently normalized | Active | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) section 7 |
+| R28 | Two clients on one API: a web console for back-office roles, and Flutter for students, faculty and guardians | Active | [ADR](blueprint/adr.md) AD-24 |
 | R27 | Creating a college and its initial College Admin is one onboarding flow, not two mandatory steps. The entities stay separate: college is the tenant, user is the identity, admin is an access assignment. The architecture must still support replacement, suspension and multiple administrators | Active | [M1](blueprint/modules/m1-identity-and-access.md) W0, BR-25, BR-26, [ADR](blueprint/adr.md) AD-20, AD-21 |
 
 ## Assumptions awaiting confirmation

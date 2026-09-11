@@ -2,11 +2,13 @@
 
 ```
 UPDATED   2026-09-12
-Slice     S1 backend foundation — COMPLETE
-Stack     Node 24 / TypeScript / Fastify / PostgreSQL 16 (pg driver, no ORM)
-Tests     45 passing
-Next      S2 depends on OD-3 (web console or Flutter for back office)
-Blocked   OD-1 affiliating vs autonomous, OD-3 client surface, OD-4 money
+Slices    S1 backend foundation — COMPLETE
+          S2 Super Admin console — COMPLETE
+Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
+          React 19 / Vite / TypeScript, no component framework
+Tests     45 backend + 11 web = 56 passing
+Next      S3 M1 write surface: invite, assign role with scope, revoke
+Blocked   OD-1 affiliating vs autonomous, OD-4 money
 ```
 
 ## Completed slices
@@ -60,6 +62,44 @@ lockout. Six cover provisioning including atomicity and the audit trail.
 transactions, which would have allowed exactly the orphaned tenant AD-20 exists
 to prevent. Audit writes initially opened their own transaction, so an action
 could commit while its audit record rolled back.
+
+### S2 — Super Admin console (`web/`)
+
+Sign in, see every college, add one, receive the invitation once. Verified against
+the running backend: sign-in, empty state, provisioning, duplicate refusal,
+invitation acceptance, administrator sign-in with 11 resolved permissions, and
+the administrator correctly refused at the platform endpoint.
+
+**Resolves OD-3 as AD-24.** Web console for back-office roles, Flutter for
+students and faculty. Taken under an instruction not to wait, after the question
+stood open across three sessions. Supersedes R3.
+
+**Design system implemented, not improvised.** `web/src/design/tokens.css` is
+docs/07-design-system.md §7.2 to §7.7 expressed as custom properties: the same
+indigo primary, 4pt spacing, 8/12/16 radii, and motion durations. Light and dark
+both ship, dark under the system preference and an explicit override. Reduced
+motion collapses every transition.
+
+**Screen states are real.** Loading with nothing shows skeleton rows carrying the
+real column widths. Refreshing with data shows a 2px bar and keeps content
+interactive. Two distinct empty states, one for no colleges and one for a search
+that matched nothing, because conflating them is the common mistake. A refresh
+failure keeps the data on screen and offers retry; only a cold load surrenders
+the surface.
+
+**Accessibility.** Real labels rather than placeholders, one focus treatment
+meeting contrast in both themes, focus trapped and restored in the drawer,
+Escape closes, status never carried by colour alone, and a table with proper
+headers and scope attributes.
+
+**Keyboard.** `/` focuses search, `n` opens the create drawer, `Esc` closes it.
+
+**CORS.** An explicit origin allowlist, never a wildcard. Credentials off, since
+the console sends a bearer token and no cookie crosses the origin.
+
+**Not built.** Token refresh, so a session ends after 15 minutes. Pagination, not
+needed at 50 rows. Saved views, filter rail and command palette, which belong
+with the people list in S3.
 
 ## Deviations from specification, recorded
 

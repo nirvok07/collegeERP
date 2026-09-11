@@ -3,9 +3,9 @@
 ```
 STATUS  2026-09-12
 Phase:    P18 module execution (1/24)
-Blocked:  OD-1, OD-3, OD-4
-Gate:     NOT READY - 3 critical blockers (was 5)
-Next:     OD-3 web console, then M2 Institution Setup
+Blocked:  OD-1, OD-4
+Gate:     NOT READY - 2 critical blockers (was 5)
+Next:     S3 M1 write surface (invite, assign role, revoke)
 Drift:    3 open (see section 7)
 ```
 
@@ -142,7 +142,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 
 | # | Item | Why | Depends | Output | Validation | Status |
 |---|---|---|---|---|---|---|
-| 9.1 | Client surfaces settled: web console, mobile, or both | Admissions and accounts on a phone is not viable. This decides every screen spec downstream | P0 | OD-3 | Answered | 🔴 **blocking** |
+| 9.1 | Client surfaces settled: web console, mobile, or both | Admissions and accounts on a phone is not viable. This decides every screen spec downstream | P0 | AD-24 | Answered | ✅ |
 | 9.2 | Global navigation architecture | Twenty-four modules cannot each invent their own navigation | 9.1, P4 | Global IA | One navigation model, role-driven, no disabled items | ⬜ |
 | 9.3 | Role-based navigation rules | Disabled menu items advertise capabilities a user will never have and generate support calls | 9.2, P2 | Navigation map | Absent, not disabled | ✅ principle set in M1 |
 | 9.4 | Command palette and global search | At this scale navigation by menu is too slow for daily operators | 9.2 | P7 spec | Cross-module, permission-scoped | 🟡 principle set |
@@ -159,7 +159,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 | 10.1 | Tokens: colour, type, spacing, radius, elevation | Without tokens every screen invents values and the product looks assembled by strangers | — | `docs/07-design-system.md` | No raw values in any screen spec | ✅ |
 | 10.2 | Semantic status colours fixed system-wide | A status shown green in one module and amber in another is worse than no colour | 10.1, 0.5 | Design system §7.2 | One mapping, used by every module | ✅ |
 | 10.3 | Component inventory | Reuse is real only if the component exists before the fifth module needs it | 10.1 | Design system §7.5 | Built once, with golden tests | ✅ specified |
-| 10.4 | Data-dense components for desktop | The current system is phone-oriented. Tables, filter rails and approval queues need specification | 9.1, 10.3 | Extension to the design system | Table, filter rail, saved views, bulk bar, command palette | ⚠️ **gap created by the enterprise scope change** |
+| 10.4 | Data-dense components for desktop | The current system is phone-oriented. Tables, filter rails and approval queues need specification | 9.1, 10.3 | `web/src/components` | Table, states, drawer, chip, toast built; filter rail, saved views and command palette pending | 🟡 |
 | 10.5 | Motion policy | Decorative animation in an ERP slows down the people who use it all day | 10.1 | Design system §7.7 | Durations, curves, and reduced-motion collapse | ✅ |
 | 10.6 | Accessibility baseline | Retrofitting accessibility across twenty-four modules is not economically possible | 10.1 | Design system §7.8 | Contrast, keyboard, semantics, 200 percent text scaling | ✅ |
 
@@ -351,7 +351,7 @@ A blocker is critical when proceeding without it produces work that must be thro
 | ID | Decision | Blocks | Why it is critical | Recommended default if you will not decide now |
 |---|---|---|---|---|
 | **OD-1** | Affiliating or autonomous | P1.5, M10, P15.2, P20 | Decides whether the ERP owns examinations or mirrors them. Roughly triples one module and changes the degree-issuing responsibility | Support both. Mirror external results read-only, build the autonomous engine behind a capability flag |
-| **OD-3** | Web console, mobile, or both | P9 entirely, P10.4, P17.4, every back-office module spec | Admissions, accounts, exam cell and procurement on a phone is not viable. Every screen specification downstream depends on it | Responsive web console for back office, Flutter mobile for students, faculty and approvals |
+| ~~OD-3~~ | ~~Client surface~~ | — | **Resolved 2026-09-12.** AD-24: web console for back office, Flutter for students and faculty | — |
 | **OD-4** | Collect money or only record it | M11, P15.3, P14 compliance scope | Online collection brings settlement, refunds, chargebacks and a much heavier compliance surface | Record first, collect second, with the ledger designed so collection is an added channel |
 | ~~OD-9~~ | ~~Scale targets~~ | — | **Resolved 2026-09-12.** Derived in Blueprint 4 §4.1-4.3 rather than asserted | — |
 | ~~OD-10~~ | ~~Hosting and tenancy isolation~~ | — | **Resolved 2026-09-12.** AD-22, shared cluster with row-level security and partitioning | — |
@@ -478,7 +478,7 @@ The checklist is a control system. Tracking must cost minutes per week, not hour
 ```
 STATUS  2026-09-12
 Phase:    P18 module execution (1/24)
-Blocked:  OD-1, OD-3, OD-4, OD-9, OD-10
+Blocked:  OD-1, OD-4, OD-9, OD-10
 Gate:     NOT READY — 5 critical blockers
 Next:     M2 Institution Setup
 Drift:    3 open (see §7)

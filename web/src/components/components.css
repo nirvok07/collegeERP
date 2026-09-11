@@ -1,0 +1,136 @@
+/* Component library. Every value is a token; no raw colours or spacings here. */
+
+/* ---- Button ------------------------------------------------------------ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  min-height: 40px; padding: 0 var(--space-base);
+  border: 1px solid transparent; border-radius: var(--radius-input);
+  font: var(--text-label); cursor: pointer; white-space: nowrap;
+  transition: background var(--state), border-color var(--state), transform var(--press), color var(--state);
+}
+.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn--primary { background: var(--primary); color: var(--on-primary); }
+.btn--primary:hover:not(:disabled) { background: var(--primary-hover); }
+.btn--secondary { background: var(--surface); color: var(--text-primary); border-color: var(--outline-strong); }
+.btn--secondary:hover:not(:disabled) { background: var(--surface-variant); }
+.btn--text { background: transparent; color: var(--primary); min-height: 32px; padding: 0 var(--space-sm); }
+.btn--text:hover:not(:disabled) { background: var(--primary-subtle); }
+.btn--danger { background: var(--error); color: #fff; }
+.btn--block { width: 100%; }
+/* Width is locked while loading so the layout never jumps (§7.5). */
+.btn__spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid currentColor; border-top-color: transparent;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Field ------------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: var(--space-xs); }
+.field__label { font: var(--text-caption); color: var(--text-secondary); }
+.field__input {
+  min-height: 40px; padding: 0 var(--space-md);
+  background: var(--surface); color: var(--text-primary);
+  border: 1px solid var(--outline-strong); border-radius: var(--radius-input);
+  transition: border-color var(--state), box-shadow var(--state);
+}
+.field__input::placeholder { color: var(--text-tertiary); }
+.field__input:hover:not(:disabled) { border-color: var(--text-tertiary); }
+.field__input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
+.field--invalid .field__input { border-color: var(--error); }
+.field__message { font: var(--text-caption); color: var(--text-secondary); min-height: 16px; }
+.field--invalid .field__message { color: var(--error); }
+
+/* ---- Table ------------------------------------------------------------- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--outline); border-radius: var(--radius-card); background: var(--surface); }
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  position: sticky; top: 0; z-index: 1; text-align: left;
+  padding: var(--space-md) var(--space-base);
+  background: var(--surface-variant); color: var(--text-secondary);
+  font: var(--text-caption); text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--outline); white-space: nowrap;
+}
+.table td { padding: var(--space-md) var(--space-base); border-bottom: 1px solid var(--outline); vertical-align: middle; }
+.table tbody tr:last-child td { border-bottom: none; }
+.table tbody tr { transition: background var(--state); }
+.table tbody tr:hover { background: var(--surface-hover); }
+.table__primary { font: var(--text-title); color: var(--text-primary); }
+.table__secondary { font: var(--text-body); color: var(--text-secondary); }
+
+/* ---- Status chip ------------------------------------------------------- */
+/* Status is never colour alone: every chip carries a dot and a label (§7.8). */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  padding: 2px var(--space-sm); border-radius: var(--radius-pill);
+  font: var(--text-caption); white-space: nowrap;
+}
+.chip__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.chip--success { background: var(--success-subtle); color: var(--success); }
+.chip--warning { background: var(--warning-subtle); color: var(--warning); }
+.chip--error { background: var(--error-subtle); color: var(--error); }
+.chip--info { background: var(--info-subtle); color: var(--info); }
+.chip--neutral { background: var(--surface-variant); color: var(--text-secondary); }
+
+/* ---- States ------------------------------------------------------------ */
+.state { display: flex; flex-direction: column; align-items: center; gap: var(--space-md);
+  padding: var(--space-4xl) var(--space-xl); text-align: center; }
+.state__icon { width: 40px; height: 40px; color: var(--text-tertiary); }
+.state__title { font: var(--text-title-lg); }
+.state__body { font: var(--text-body); color: var(--text-secondary); max-width: 44ch; }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-variant) 25%, var(--surface-hover) 50%, var(--surface-variant) 75%);
+  background-size: 200% 100%; animation: shimmer 1200ms linear infinite; border-radius: var(--radius-input);
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* A refresh with data on screen gets a thin bar, never a blocking spinner (§7.6). */
+.refresh-bar { height: 2px; background: var(--outline); overflow: hidden; }
+.refresh-bar__fill { height: 100%; width: 40%; background: var(--primary); animation: slide 1200ms ease-in-out infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+
+/* ---- Drawer ------------------------------------------------------------ */
+.scrim { position: fixed; inset: 0; background: rgb(0 0 0 / 0.4); animation: fade var(--enter); z-index: 40; }
+@keyframes fade { from { opacity: 0; } }
+.drawer {
+  position: fixed; inset-block: 0; inset-inline-end: 0; z-index: 50;
+  width: min(520px, 100%); display: flex; flex-direction: column;
+  background: var(--surface); box-shadow: var(--shadow-3);
+  animation: slide-in var(--sheet);
+}
+@keyframes slide-in { from { transform: translateX(100%); } }
+.drawer__head { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-base); padding: var(--space-xl); border-bottom: 1px solid var(--outline); }
+.drawer__title { font: var(--text-title-lg); }
+.drawer__subtitle { font: var(--text-body); color: var(--text-secondary); margin-top: var(--space-xs); }
+.drawer__body { flex: 1; overflow-y: auto; padding: var(--space-xl); display: flex; flex-direction: column; gap: var(--space-base); }
+.drawer__foot { display: flex; gap: var(--space-md); justify-content: flex-end;
+  padding: var(--space-base) var(--space-xl); border-top: 1px solid var(--outline); background: var(--surface); }
+@media (max-width: 600px) {
+  .drawer { width: 100%; }
+  .drawer__foot { position: sticky; bottom: 0; }
+}
+
+/* ---- Toast ------------------------------------------------------------- */
+.toasts { position: fixed; inset-block-end: var(--space-xl); inset-inline-start: 50%;
+  transform: translateX(-50%); display: flex; flex-direction: column; gap: var(--space-sm); z-index: 60; }
+.toast {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md) var(--space-base); border-radius: var(--radius-input);
+  background: var(--text-primary); color: var(--background);
+  box-shadow: var(--shadow-2); font: var(--text-body); animation: toast-in var(--enter);
+}
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+.toast--error { background: var(--error); color: #fff; }
+
+/* ---- Banner ------------------------------------------------------------ */
+.banner {
+  display: flex; gap: var(--space-md); align-items: flex-start;
+  padding: var(--space-md) var(--space-base); border-radius: var(--radius-input);
+  font: var(--text-body); border: 1px solid;
+}
+.banner--error { background: var(--error-subtle); border-color: var(--error); color: var(--error); }
+.banner--info { background: var(--info-subtle); border-color: var(--info); color: var(--info); }
+.banner--warning { background: var(--warning-subtle); border-color: var(--warning); color: var(--warning); }

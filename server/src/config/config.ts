@@ -10,6 +10,8 @@ const schema = z.object({
   INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(72),
   /** Migrations run with a role that may bypass RLS; the application never can. */
   MIGRATION_DATABASE_URL: z.string().min(1),
+  /** Comma-separated origins allowed to call the API from a browser. */
+  CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:4173'),
 });
 
 export type Config = z.infer<typeof schema>;

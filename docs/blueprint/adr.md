@@ -350,3 +350,25 @@ most expensive. Relax AD-7 generally, rejected outright.
 *Impact.* Narrow and conditional. The snapshot is written by the publication workflow, is
 immutable, is invalidated only by an approved correction under AD-13 which republishes it, and
 carries the publication identifier so a stale snapshot is detectable rather than silent.
+
+---
+
+**AD-24 — The back office is a web console; Flutter serves students and faculty**
+
+*Status.* Approved and active, 2026-09-12. Resolves OD-3. Taken by me under an
+instruction not to wait, after the decision stood open across three sessions.
+
+*Reason.* Admissions processing, fee counters, the exam cell and procurement are desktop work:
+large tables, bulk selection, keyboard-driven entry. A phone cannot carry them. Students,
+faculty and guardians are the opposite, and they are the offline-first roles under AD-9.
+
+*Alternatives.* Mobile only, as requirement R3 originally stated, rejected because the
+back-office workflows in M1 §11 are not expressible on a phone and the design already refuses to
+shrink bulk operations onto one. Flutter web for the console, rejected because dense data grids,
+keyboard operation and text selection are weaker there than in the platform the console
+actually targets. One responsive Flutter app for everyone, rejected for both reasons together.
+
+*Impact.* Supersedes R3. Two clients share one API and one set of design tokens, the tokens
+being the reason the two surfaces will look like one product. The console is plain React with no
+component framework, so the approved design system is implemented directly rather than fought.
+Reversal is cheap today and expensive once the admissions and finance screens exist.
