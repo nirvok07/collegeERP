@@ -82,6 +82,31 @@ export function rolesFromUrls(appUrl: string, migratorUrl: string, fallback: Rol
   };
 }
 
+export const BOOTSTRAP_INSTRUCTION =
+  'Roles are provisioned before the migration chain, because a migration cannot create the role it runs as. ' +
+  'Run `npm run db:bootstrap` with BOOTSTRAP_DATABASE_URL set to an administrative connection, ' +
+  'or set that variable and run `npm run migrate`, which bootstraps first.';
+
+/**
+ * Pre-flight. Runs before the first migration, so a missing role cannot leave a
+ * database half-migrated with tables created and grants never applied.
+ *
+ * Deliberately not left to PostgreSQL's own error from a later GRANT: by then
+ * 001 and 002 have committed and the operator has to reason about partial state.
+ */
+export async function assertApplicationRole(
+  client: { query: (sql: string, values?: unknown[]) => Promise<{ rows: unknown[] }> },
+  appRole: string,
+): Promise<void> {
+  const { rows } = await client.query('SELECT 1 FROM pg_roles WHERE rolname = $1', [appRole]);
+  if (rows.length === 0) {
+    throw new Error(
+      `Pre-flight failed: application role "${appRole}" does not exist. ` +
+        `No migration has been applied. ${BOOTSTRAP_INSTRUCTION}`,
+    );
+  }
+}
+
 export async function migrate(
   databaseUrl: string,
   log: (m: string) => void = console.log,
@@ -90,6 +115,9 @@ export async function migrate(
   const pool = createPool(databaseUrl);
   const client = await pool.connect();
   try {
+    // Nothing is applied until the prerequisite holds.
+    await assertApplicationRole(client, appRole);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         filename   text PRIMARY KEY,

@@ -170,6 +170,17 @@ diagnosis, and what changed:
   so there is one place that decides privileges rather than two that drift.
 - **Grants resolve the role name at migration time** and fail with an
   instruction rather than `role does not exist`.
+- **A pre-flight check refuses to start** when the application role is absent,
+  so a database is never left half-migrated. Verified: zero tables created.
+- **`npm run db:bootstrap`** provisions roles without applying migrations. It
+  reuses the same bootstrap file, so there is one role-creation path, and error
+  messages now name a command that exists.
+- **No default privileges, deliberately.** A blanket grant would give a future
+  table an undeclared privilege set, and would hand an audit-shaped table INSERT
+  and UPDATE, dissolving append-only. Every table declares its runtime
+  privileges in the migration that creates it, and
+  `tests/migration-invariants.test.ts` fails when a table appears without a
+  declared decision or when an existing table's privileges widen.
 - **The chain no longer requires BYPASSRLS.** Migration 002 seeds platform role
   templates by having the table owner lift `FORCE ROW LEVEL SECURITY` for the
   length of its transaction. This matters because BYPASSRLS can only be granted

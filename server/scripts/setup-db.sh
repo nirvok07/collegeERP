@@ -19,7 +19,11 @@ done
 
 cat <<'NOTE'
 
-Next: npm run migrate
-  With BOOTSTRAP_DATABASE_URL set to an administrative connection, that command
-  provisions roles and then applies the migration chain.
+Next, with BOOTSTRAP_DATABASE_URL set to an administrative connection:
+
+  npm run db:bootstrap   provisions roles only
+  npm run migrate        bootstraps first, then applies the migration chain
+
+Migrations refuse to start if the application role is absent, so a database is
+never left half-migrated.
 NOTE

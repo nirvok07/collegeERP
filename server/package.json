@@ -10,6 +10,7 @@
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
     "migrate": "tsx src/infrastructure/db/migrate.ts",
+    "db:bootstrap": "tsx src/infrastructure/db/bootstrap-cli.ts",
     "db:setup": "./scripts/setup-db.sh",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"

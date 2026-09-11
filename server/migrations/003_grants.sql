@@ -18,7 +18,7 @@ DECLARE
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = app_role) THEN
     RAISE EXCEPTION
-      'Application role "%" does not exist. Roles are provisioned before the migration chain, because a migration cannot create the role it runs as. Run "npm run db:setup" for a local database, or set BOOTSTRAP_DATABASE_URL to an administrative connection so "npm run migrate" can provision them.',
+      'Application role "%" does not exist. Roles are provisioned before the migration chain, because a migration cannot create the role it runs as. Run "npm run db:bootstrap" with BOOTSTRAP_DATABASE_URL set to an administrative connection, or set that variable and run "npm run migrate", which bootstraps first. The runner also checks this before applying anything, so reaching this message means the chain was run by some other means.',
       app_role
       USING ERRCODE = 'undefined_object';
   END IF;
