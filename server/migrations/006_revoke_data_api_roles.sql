@@ -50,12 +50,19 @@ END $$;
 -- that a future grant or a misconfigured role still reads nothing. erp_app is
 -- unaffected: it is the table owner's delegate and these policies apply only to
 -- roles that are not granted an explicit policy below.
-ALTER TABLE platform_accounts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE platform_accounts FORCE ROW LEVEL SECURITY;
-CREATE POLICY app_role_only ON platform_accounts
-  USING (current_user = 'erp_app') WITH CHECK (current_user = 'erp_app');
-
-ALTER TABLE institutions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE institutions FORCE ROW LEVEL SECURITY;
-CREATE POLICY app_role_only ON institutions
-  USING (current_user = 'erp_app') WITH CHECK (current_user = 'erp_app');
+DO $$
+DECLARE
+  app_role text := coalesce(nullif(current_setting('erp.app_role', true), ''), 'erp_app');
+  tbl text;
+BEGIN
+  FOREACH tbl IN ARRAY ARRAY['platform_accounts', 'institutions'] LOOP
+    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
+    EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', tbl);
+    -- The role name is baked into the policy at migration time. It is fixed per
+    -- deployment, and a policy that read a session setting at runtime would be
+    -- one missing SET away from opening the table.
+    EXECUTE format(
+      'CREATE POLICY app_role_only ON %I USING (current_user = %L) WITH CHECK (current_user = %L)',
+      tbl, app_role, app_role);
+  END LOOP;
+END $$;

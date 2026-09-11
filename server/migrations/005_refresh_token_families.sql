@@ -49,7 +49,6 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION auth_resolve_refresh_token(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION auth_resolve_refresh_token(text) TO erp_app;
 
 -- Revoking a family must also work before tenant context is established, and
 -- must work for a family whose tenant is being denied access.
@@ -69,4 +68,11 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION auth_revoke_token_family(uuid, text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION auth_revoke_token_family(uuid, text) TO erp_app;
+
+DO $$
+DECLARE
+  app_role text := coalesce(nullif(current_setting('erp.app_role', true), ''), 'erp_app');
+BEGIN
+  EXECUTE format('GRANT EXECUTE ON FUNCTION auth_resolve_refresh_token(text) TO %I', app_role);
+  EXECUTE format('GRANT EXECUTE ON FUNCTION auth_revoke_token_family(uuid, text) TO %I', app_role);
+END $$;

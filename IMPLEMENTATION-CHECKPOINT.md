@@ -152,6 +152,37 @@ screen an administrator lives in.
 Every grant and revocation invalidates that person's authority cache, so a
 change reaches their next request instead of waiting out the 15-minute ceiling.
 
+### Database role provisioning (fixed)
+
+`003_grants.sql` failed with `role "erp_app" does not exist` when the migration
+chain was run against a database whose roles had not been provisioned. The
+diagnosis, and what changed:
+
+- **Roles are cluster-level; migrations are database-level.** A migration cannot
+  create the role it runs as, so role creation legitimately sits outside the
+  chain. The defect was that the dependency was undeclared and lived in a shell
+  script, so running migrations alone failed with an unhelpful error.
+- **`bootstrap/001_roles.sql`** now provisions roles idempotently through an
+  administrative connection, and `npm run migrate` runs it first whenever
+  `BOOTSTRAP_DATABASE_URL` is set. Names and passwords arrive as session
+  settings from the environment; nothing is hard-coded.
+- **`scripts/setup-db.sh` no longer creates roles.** It creates databases only,
+  so there is one place that decides privileges rather than two that drift.
+- **Grants resolve the role name at migration time** and fail with an
+  instruction rather than `role does not exist`.
+- **The chain no longer requires BYPASSRLS.** Migration 002 seeds platform role
+  templates by having the table owner lift `FORCE ROW LEVEL SECURITY` for the
+  length of its transaction. This matters because BYPASSRLS can only be granted
+  by a superuser, and managed PostgreSQL, Supabase included, does not grant
+  superuser. Verified by running the whole chain with a migrator role that has
+  no BYPASSRLS.
+
+**Verified on a clean database with no roles present:** bootstrap then six
+migrations apply; the application role holds no DELETE on any table; audit
+tables grant INSERT and SELECT only, and an UPDATE against them is refused;
+neither role has superuser or BYPASSRLS; PUBLIC holds nothing. The application
+then signs in, provisions a college, invites a person and lists people.
+
 ### Supabase readiness
 
 `migrations/006` closes a real exposure found while preparing for Supabase. Its

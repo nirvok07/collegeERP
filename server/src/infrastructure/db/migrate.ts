@@ -9,9 +9,84 @@ import { fileURLToPath } from 'node:url';
 import { createPool } from './pool.ts';
 import { loadConfig } from '../../config/config.ts';
 
-const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), '../../../migrations');
+const HERE = dirname(fileURLToPath(import.meta.url));
+const MIGRATIONS_DIR = join(HERE, '../../../migrations');
+const BOOTSTRAP_DIR = join(HERE, '../../../bootstrap');
 
-export async function migrate(databaseUrl: string, log: (m: string) => void = console.log) {
+export interface RoleNames {
+  appRole: string;
+  appPassword?: string;
+  migratorRole: string;
+  migratorPassword?: string;
+}
+
+/**
+ * Provisions roles with an administrative connection.
+ *
+ * Roles are cluster-level and migrations are database-level, so a migration
+ * cannot create the role it runs as. This step closes that gap without making
+ * role creation a manual instruction in a README.
+ */
+export async function bootstrapRoles(
+  adminUrl: string,
+  roles: RoleNames,
+  log: (m: string) => void = console.log,
+): Promise<void> {
+  const pool = createPool(adminUrl);
+  const client = await pool.connect();
+  try {
+    const files = (await readdir(BOOTSTRAP_DIR)).filter((f) => f.endsWith('.sql')).sort();
+    for (const file of files) {
+      const sql = await readFile(join(BOOTSTRAP_DIR, file), 'utf8');
+      await client.query('BEGIN');
+      try {
+        // Passed as settings, never interpolated into SQL by the runner.
+        await client.query('SELECT set_config($1,$2,true)', ['erp.app_role', roles.appRole]);
+        await client.query('SELECT set_config($1,$2,true)', ['erp.app_password', roles.appPassword ?? '']);
+        await client.query('SELECT set_config($1,$2,true)', ['erp.migrator_role', roles.migratorRole]);
+        await client.query('SELECT set_config($1,$2,true)', ['erp.migrator_password', roles.migratorPassword ?? '']);
+        await client.query(sql);
+        await client.query('COMMIT');
+        log(`bootstrap ${file}`);
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw new Error(`bootstrap ${file} failed: ${(e as Error).message}`);
+      }
+    }
+  } finally {
+    client.release();
+    await pool.end();
+  }
+}
+
+/** Reads the role and password out of a connection string, for bootstrapping. */
+export function rolesFromUrls(appUrl: string, migratorUrl: string, fallback: RoleNames): RoleNames {
+  const parse = (url: string) => {
+    try {
+      const u = new URL(url);
+      return {
+        role: decodeURIComponent(u.username) || undefined,
+        password: decodeURIComponent(u.password) || undefined,
+      };
+    } catch {
+      return {};
+    }
+  };
+  const app = parse(appUrl);
+  const migrator = parse(migratorUrl);
+  return {
+    appRole: app.role ?? fallback.appRole,
+    appPassword: app.password,
+    migratorRole: migrator.role ?? fallback.migratorRole,
+    migratorPassword: migrator.password,
+  };
+}
+
+export async function migrate(
+  databaseUrl: string,
+  log: (m: string) => void = console.log,
+  appRole = 'erp_app',
+) {
   const pool = createPool(databaseUrl);
   const client = await pool.connect();
   try {
@@ -30,6 +105,9 @@ export async function migrate(databaseUrl: string, log: (m: string) => void = co
       const sql = await readFile(join(MIGRATIONS_DIR, file), 'utf8');
       await client.query('BEGIN');
       try {
+        // Transaction-local, so a migration can grant to the configured role
+        // without the name being compiled into the SQL.
+        await client.query('SELECT set_config($1,$2,true)', ['erp.app_role', appRole]);
         await client.query(sql);
         await client.query('INSERT INTO schema_migrations (filename) VALUES ($1)', [file]);
         await client.query('COMMIT');
@@ -47,6 +125,17 @@ export async function migrate(databaseUrl: string, log: (m: string) => void = co
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const config = loadConfig();
-  await migrate(config.MIGRATION_DATABASE_URL);
+
+  if (config.BOOTSTRAP_DATABASE_URL) {
+    await bootstrapRoles(
+      config.BOOTSTRAP_DATABASE_URL,
+      rolesFromUrls(config.DATABASE_URL, config.MIGRATION_DATABASE_URL, {
+        appRole: config.APP_DB_ROLE,
+        migratorRole: config.MIGRATOR_DB_ROLE,
+      }),
+    );
+  }
+
+  await migrate(config.MIGRATION_DATABASE_URL, console.log, config.APP_DB_ROLE);
   console.log('migrations up to date');
 }

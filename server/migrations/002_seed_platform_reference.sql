@@ -2,6 +2,12 @@
 -- Permissions and system role templates are platform-owned reference data (M1 section 7).
 -- A tenant composes roles from these; it does not invent permissions, because an
 -- invented permission enforces nothing.
+--
+-- role_definitions is under FORCE row level security, and platform templates
+-- carry no tenant, so the policy would reject them. The table owner lifts FORCE
+-- for the length of this transaction rather than the migration role needing
+-- BYPASSRLS: that privilege requires superuser, which managed PostgreSQL does
+-- not grant, and depending on it would make this chain unrunnable on Supabase.
 
 INSERT INTO permissions (key, module, label, sensitivity, requires_mfa, delegable) VALUES
   ('institution.read',        'M2', 'View institution profile',      'normal',    false, true),
@@ -16,6 +22,8 @@ INSERT INTO permissions (key, module, label, sensitivity, requires_mfa, delegabl
   ('role.define',             'M1', 'Create and edit roles',         'critical',  true,  false),
   ('audit.read',              'M1', 'Read the audit trail',          'sensitive', false, true)
 ON CONFLICT (key) DO NOTHING;
+
+ALTER TABLE role_definitions NO FORCE ROW LEVEL SECURITY;
 
 -- College Administrator: full authority inside exactly one institution.
 -- This is the role granted by the bootstrap in W0.
@@ -39,3 +47,5 @@ VALUES (
   ARRAY['department','section'], false, true
 )
 ON CONFLICT DO NOTHING;
+
+ALTER TABLE role_definitions FORCE ROW LEVEL SECURITY;

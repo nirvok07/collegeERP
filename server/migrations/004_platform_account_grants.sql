@@ -5,4 +5,9 @@
 -- DELETE: a platform account is created by an operator, never by the running
 -- application, so no request path can mint one.
 
-GRANT SELECT, UPDATE ON platform_accounts TO erp_app;
+DO $$
+DECLARE
+  app_role text := coalesce(nullif(current_setting('erp.app_role', true), ''), 'erp_app');
+BEGIN
+  EXECUTE format('GRANT SELECT, UPDATE ON platform_accounts TO %I', app_role);
+END $$;
