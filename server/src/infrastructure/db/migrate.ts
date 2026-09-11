@@ -59,13 +59,31 @@ export async function bootstrapRoles(
   }
 }
 
-/** Reads the role and password out of a connection string, for bootstrapping. */
-export function rolesFromUrls(appUrl: string, migratorUrl: string, fallback: RoleNames): RoleNames {
+/**
+ * Derives role names and passwords for bootstrapping.
+ *
+ * Precedence is APP_DB_ROLE / MIGRATOR_DB_ROLE first, then the connection
+ * string's username, then the default.
+ *
+ * The order matters on managed PostgreSQL that fronts connections with a pooler.
+ * Supabase's pooler authenticates as `<role>.<project-ref>`, for example
+ * `postgres.abcdefgh`, which is a routing identifier and not a role that exists
+ * in pg_roles. Taking the username as the role name there would try to create a
+ * role called "erp_app.abcdefgh". The explicit variables are what make the
+ * pooler path work, so they win.
+ */
+export function rolesFromUrls(
+  appUrl: string,
+  migratorUrl: string,
+  explicit: { appRole?: string; migratorRole?: string },
+): RoleNames {
   const parse = (url: string) => {
     try {
       const u = new URL(url);
+      const username = decodeURIComponent(u.username) || undefined;
       return {
-        role: decodeURIComponent(u.username) || undefined,
+        // Strip a pooler's project-ref suffix if it is the only thing available.
+        role: username?.includes('.') ? username.split('.')[0] : username,
         password: decodeURIComponent(u.password) || undefined,
       };
     } catch {
@@ -75,9 +93,9 @@ export function rolesFromUrls(appUrl: string, migratorUrl: string, fallback: Rol
   const app = parse(appUrl);
   const migrator = parse(migratorUrl);
   return {
-    appRole: app.role ?? fallback.appRole,
+    appRole: explicit.appRole ?? app.role ?? 'erp_app',
     appPassword: app.password,
-    migratorRole: migrator.role ?? fallback.migratorRole,
+    migratorRole: explicit.migratorRole ?? migrator.role ?? 'erp_migrator',
     migratorPassword: migrator.password,
   };
 }
@@ -158,8 +176,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     await bootstrapRoles(
       config.BOOTSTRAP_DATABASE_URL,
       rolesFromUrls(config.DATABASE_URL, config.MIGRATION_DATABASE_URL, {
-        appRole: config.APP_DB_ROLE,
-        migratorRole: config.MIGRATOR_DB_ROLE,
+        appRole: process.env.APP_DB_ROLE,
+        migratorRole: process.env.MIGRATOR_DB_ROLE,
       }),
     );
   }

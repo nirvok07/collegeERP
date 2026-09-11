@@ -22,8 +22,8 @@ if (!config.BOOTSTRAP_DATABASE_URL) {
 await bootstrapRoles(
   config.BOOTSTRAP_DATABASE_URL,
   rolesFromUrls(config.DATABASE_URL, config.MIGRATION_DATABASE_URL, {
-    appRole: config.APP_DB_ROLE,
-    migratorRole: config.MIGRATOR_DB_ROLE,
+    appRole: process.env.APP_DB_ROLE,
+    migratorRole: process.env.MIGRATOR_DB_ROLE,
   }),
 );
 console.log('roles provisioned');
