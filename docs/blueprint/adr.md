@@ -268,10 +268,10 @@ Principal sees requested, used and unused grants alike.
 
 ---
 
-**AD-20 — PROPOSED, NOT YET APPROVED. Tenant provisioning runs as one transaction across M1 and M2**
+**AD-20 — Tenant provisioning runs as one transaction across M1 and M2**
 
-*Status.* Proposed on 2026-09-12. It narrows AD-10, which is approved architecture, so it is not
-in force until explicitly approved.
+*Status.* **Approved and active, 2026-09-12.** It narrows AD-10, which remains in force for every
+other cross-module interaction. Binding on M2 and all future modules.
 
 *Reason.* Creating a college and its first administrator is one business act. Splitting it across
 an event boundary permits a college to exist with no administrator, which is not a degraded state
@@ -295,9 +295,9 @@ constraint rather than rediscovering it.
 
 ---
 
-**AD-21 — PROPOSED, NOT YET APPROVED. No denormalized administrator pointer on the institution**
+**AD-21 — No denormalized administrator pointer on the institution**
 
-*Status.* Proposed on 2026-09-12, alongside AD-20.
+*Status.* **Approved and active, 2026-09-12.** Binding on M2 and all future modules.
 
 *Reason.* The obvious implementation of "a college has an admin" is a column on the institution,
 or an `is_primary_admin` flag on the assignment. Either creates a second source of truth for
@@ -312,3 +312,41 @@ rejected for the same reason, and because primacy has no meaning in the permissi
 College Administrator role at institution scope, exactly as every other authority question is
 answered. Replacement, suspension and multiple administrators work with no new mechanism. The
 onboarding screen shows the current administrators from that query, not from a stored pointer.
+
+---
+
+**AD-22 — Shared PostgreSQL with row-level tenant isolation, partitioned on the two high-volume tables**
+
+*Status.* Approved and active, 2026-09-12. Resolves OD-10.
+
+*Reason.* At the target of 50 tenants, per-tenant databases would mean 50 migration runs per
+release and 50 backup schedules, with no isolation benefit that row-level security does not
+already give. Attendance and audit carry 95 percent of the volume and approach 9 billion rows
+across the platform over five years, so partitioning is required regardless of the tenancy model.
+
+*Alternatives.* A database per tenant, rejected on operational cost at this scale, though it
+remains the escape hatch for one large or contractually isolated customer. A schema per tenant,
+rejected because it has the migration cost of separate databases with weaker isolation. No
+partitioning, rejected against the volume arithmetic in Blueprint 4 §4.2.
+
+*Impact.* Every table carries `tenant_id`. Isolation is enforced twice, in the data access layer
+and again at the database, so a single forgotten filter cannot leak across tenants. Tenant-to-
+connection routing exists from the first release even while every tenant resolves to one cluster,
+so moving a tenant out later is a data move rather than a redesign.
+
+---
+
+**AD-23 — A published result is the one permitted materialized academic value**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* AD-7 forbids storing derived academic values, because they go stale invisibly. Result
+publication is the exception that proves the rule: the value is frozen by the publication itself,
+and the read spike it creates is the largest in the product.
+
+*Alternatives.* Recompute per request, rejected because it makes the worst load moment also the
+most expensive. Relax AD-7 generally, rejected outright.
+
+*Impact.* Narrow and conditional. The snapshot is written by the publication workflow, is
+immutable, is invalidated only by an approved correction under AD-13 which republishes it, and
+carries the publication identifier so a stale snapshot is detectable rather than silent.

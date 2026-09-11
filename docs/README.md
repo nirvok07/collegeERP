@@ -35,6 +35,7 @@ enterprise system. It is in progress and awaiting approval before deep module sp
 | B1 | [Actors and Organization](blueprint/01-actors.md) | The college as a real organization, every actor, the authority model |
 | B2 | [Business Domains](blueprint/02-domains.md) | Nine domains and eight platform capabilities, in full |
 | B3 | [Module Architecture](blueprint/03-modules.md) | Twenty-four modules, boundary reasoning, data ownership, events |
+| B4 | [Scale, Performance and Deployment](blueprint/04-nfr-and-deployment.md) | Derived scale targets, load profile, performance budgets, tenancy and hosting |
 | — | [Architecture Decision Log](blueprint/adr.md) | Every enterprise decision with alternatives and impact |
 
 ### Module specifications

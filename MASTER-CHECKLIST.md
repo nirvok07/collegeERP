@@ -3,10 +3,10 @@
 ```
 STATUS  2026-09-12
 Phase:    P18 module execution (1/24)
-Blocked:  OD-1, OD-3, OD-4, OD-9, OD-10
-Gate:     NOT READY - 5 critical blockers
-Next:     M2 Institution Setup
-Drift:    3 open (see section 7) + AD-20/AD-21 awaiting approval
+Blocked:  OD-1, OD-3, OD-4
+Gate:     NOT READY - 3 critical blockers (was 5)
+Next:     OD-3 web console, then M2 Institution Setup
+Drift:    3 open (see section 7)
 ```
 
 The control system above `prompt1.md`, `prompt2.md` and `module-controller.md`. It does not
@@ -45,8 +45,8 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 | 0.4 | Canonical glossary | "Course" and "Subject" used interchangeably becomes two tables and two screens | — | Glossary document | Every domain noun has one agreed term, and the term is used in code, UI and docs | ⬜ |
 | 0.5 | Canonical status vocabulary | Five modules inventing five words for the same state makes the UI incoherent and reports impossible | 0.4 | Status vocabulary | Every state machine's names drawn from it | ⬜ |
 | 0.6 | Naming conventions for entities, events, permissions | Event and permission keys are a public API between modules. Renaming later breaks consumers | 0.4 | Convention document | New module contracts conform | ⬜ |
-| 0.7 | Scale and shape targets stated as numbers | Every technical decision from database to pagination depends on whether a tenant has 800 students or 40,000 | — | NFR baseline | Numbers agreed, not adjectives | 🔴 **OD-9, newly raised** |
-| 0.8 | Hosting, data residency and tenancy isolation model | Indian student data has residency expectations, and shared versus isolated databases is unreversible after launch | 0.7 | Deployment decision | Recorded as an ADR | 🔴 **OD-10, newly raised** |
+| 0.7 | Scale and shape targets stated as numbers | Every technical decision from database to pagination depends on whether a tenant has 800 students or 40,000 | — | Blueprint 4 §4.1-4.3 | Numbers agreed, not adjectives | ✅ OD-9 resolved |
+| 0.8 | Hosting, data residency and tenancy isolation model | Indian student data has residency expectations, and shared versus isolated databases is unreversible after launch | 0.7 | AD-22, Blueprint 4 §4.6 | Recorded as an ADR | ✅ OD-10 resolved |
 
 ## PHASE 1 — Business and Organization Discovery
 
@@ -181,7 +181,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 | 12.2 | Each metric has a stated calculation and source | Two dashboards showing different attendance percentages destroys trust in the whole system | 12.1, 6.4 | Metric definitions | Every KPI names its formula and source entity | 🟡 |
 | 12.3 | Statutory and accreditation reports identified early | These dictate what must be captured, and cannot be derived from data never collected | 1.6 | Compliance report list | Each maps to existing fields | ⬜ |
 | 12.4 | Export permissions and audit | Exports are how data leaves the building | 8.4 | Export policy | Separate permission, row count and reason audited | ✅ pattern set |
-| 12.5 | Real-time versus scheduled decided per report | Running heavy aggregates live at scale degrades the operational system | 12.1, 0.7 | Report classification | Each report classified | ⬜ |
+| 12.5 | Real-time versus scheduled decided per report | Running heavy aggregates live at scale degrades the operational system | 12.1, 0.7 | Blueprint 4 §4.4 | Rule set: anything over three seconds becomes scheduled | ✅ rule set, per-report classification pending |
 
 ## PHASE 13 — Automation and Background Processes
 
@@ -219,12 +219,12 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 
 | # | Item | Why | Depends | Output | Validation | Status |
 |---|---|---|---|---|---|---|
-| 16.1 | Scale targets as numbers | Every technical choice depends on them, and adjectives decide nothing | 0.7 | NFR document | Students per tenant, tenants, peak concurrent users, largest list, retention volume | 🔴 **OD-9** |
-| 16.2 | Performance budgets per surface | "Fast" is unfalsifiable. A budget can fail a build | 16.1 | Budgets | List render, search, sync, report generation, cold start | ⬜ |
-| 16.3 | Peak load profile | Colleges are extremely peaky. Result day and fee deadline are the load, not the average | 16.1 | Load profile | Result publication, admission open, fee deadline, morning attendance | ⬜ |
-| 16.4 | Availability target and degradation modes | A hard target nobody agreed cannot be engineered toward | 16.1 | Availability policy | What must survive a backend outage, per AD-9 | 🟡 offline strategy exists for mobile |
-| 16.5 | Backup, restore and recovery objectives | A botched rollover in June is recoverable only from a tested restore | 16.1 | RPO and RTO | Restore actually rehearsed, not merely configured | ⬜ |
-| 16.6 | Observability | An ERP you cannot see inside is an ERP you cannot support | 16.2 | Logging, metrics, tracing plan | Sync health, job failures, permission denials, slow queries | ⬜ |
+| 16.1 | Scale targets as numbers | Every technical choice depends on them, and adjectives decide nothing | 0.7 | Blueprint 4 §4.1, §4.2 | Students per tenant, tenants, peak concurrent users, retention volume | ✅ |
+| 16.2 | Performance budgets per surface | "Fast" is unfalsifiable. A budget can fail a build | 16.1 | Blueprint 4 §4.4 | Thirteen budgets, each measurable in CI | ✅ |
+| 16.3 | Peak load profile | Colleges are extremely peaky. Result day and fee deadline are the load, not the average | 16.1 | Blueprint 4 §4.3 | Five peaks profiled, two design requirements derived | ✅ |
+| 16.4 | Availability target and degradation modes | A hard target nobody agreed cannot be engineered toward | 16.1 | Blueprint 4 §4.5 | 99.5 percent, protected windows, degradation priority order | ✅ |
+| 16.5 | Backup, restore and recovery objectives | A botched rollover in June is recoverable only from a tested restore | 16.1 | Blueprint 4 §4.6 | RPO 5 min, RTO 1 hour, quarterly rehearsal, mandatory before June | ✅ |
+| 16.6 | Observability | An ERP you cannot see inside is an ERP you cannot support | 16.2 | Blueprint 4 §4.7 | Seven signals, three alerting unconditionally | ✅ |
 | 16.7 | Localisation readiness | Retrofitting language after twenty-four modules is not economic | — | Externalized strings | No hardcoded user-facing strings | 🟡 assumed, unverified |
 
 ## PHASE 17 — Technical Architecture Readiness
@@ -235,7 +235,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 | 17.2 | API contract conventions | The contract is the seam between every client and every module | 17.1 | `docs/05-api-contract.md` | Envelope, errors, pagination, versioning, idempotency | ✅ drafted, backend-agnostic |
 | 17.3 | Sync protocol for offline clients | The highest-risk code in the product | 17.2, AD-9 | `docs/03-offline-first.md` | Push, pull, cursors, conflicts, tombstones | ✅ specified |
 | 17.4 | Client architecture | Already decided for mobile. Web console architecture is undecided | OD-3 | `docs/02-architecture.md` | Layers, DI, routing, error model | ✅ mobile · 🔴 web |
-| 17.5 | Database strategy and tenancy isolation | Shared versus isolated is effectively irreversible after launch | 0.8, 17.1 | Database ADR | Decided with a migration path | 🔴 **OD-10** |
+| 17.5 | Database strategy and tenancy isolation | Shared versus isolated is effectively irreversible after launch | 0.8, 17.1 | AD-22 | Shared with row-level security, partitioned, documented escape hatch | ✅ |
 | 17.6 | Event infrastructure | AD-10 requires events. Nothing yet says how they are delivered | 5.5, 17.1 | Event transport ADR | Guarantees, ordering, retries, dead letters | ⬜ |
 | 17.7 | Environments and release pipeline | Shipping to a live college needs staging that mirrors production | 17.1 | CI and environments | Dev, staging, production, with migration gates | 🟡 CI planned in Phase 0 of the roadmap |
 | 17.8 | Migration and rollback strategy | A failed migration on a live tenant during admissions is the worst day of the year | 17.5 | Migration policy | Forward-only with tested rollback, rehearsed on a copy | ⬜ |
@@ -331,8 +331,9 @@ P1 Discovery ──▶ P2 Actors ──▶ P3 Domains ──▶ P4 Modules ─�
   was first.
 - P17 cannot complete while OD-1, OD-3, OD-4 or the two new open decisions stand.
 - P19 can only run after P18 completes. It is a sweep over finished work, not a running check.
-- **P16 is currently the weakest phase and blocks P17 entirely.** Nothing in the system states
-  how large it must be.
+- ~~P16 is the weakest phase and blocks P17.~~ **Resolved 2026-09-12.** P16 is complete and P17
+  is now blocked only by OD-3, which decides the web client, and by OD-1 and OD-4 through the
+  modules they shape.
 
 **Safe to defer.** P13 automation beyond the per-module level. P15 integrations other than the
 import pipeline. P12 statutory reports until P1.6 completes. Deferring these does not invalidate
@@ -352,8 +353,8 @@ A blocker is critical when proceeding without it produces work that must be thro
 | **OD-1** | Affiliating or autonomous | P1.5, M10, P15.2, P20 | Decides whether the ERP owns examinations or mirrors them. Roughly triples one module and changes the degree-issuing responsibility | Support both. Mirror external results read-only, build the autonomous engine behind a capability flag |
 | **OD-3** | Web console, mobile, or both | P9 entirely, P10.4, P17.4, every back-office module spec | Admissions, accounts, exam cell and procurement on a phone is not viable. Every screen specification downstream depends on it | Responsive web console for back office, Flutter mobile for students, faculty and approvals |
 | **OD-4** | Collect money or only record it | M11, P15.3, P14 compliance scope | Online collection brings settlement, refunds, chargebacks and a much heavier compliance surface | Record first, collect second, with the ledger designed so collection is an added channel |
-| **OD-9** | Scale targets as numbers | P16 entirely, P17.5, P12.5 | *Newly raised by this checklist.* Every technical decision depends on them and nothing in the documentation states them | 20,000 students per tenant, 50 tenants, 2,000 peak concurrent, five-year retention |
-| **OD-10** | Hosting, residency, tenancy isolation | P17.1, P17.5, P0.8 | *Newly raised by this checklist.* Shared versus isolated databases is effectively irreversible after the first customer | Shared database with enforced row-level tenant isolation, India region, isolation available per tenant as an upgrade |
+| ~~OD-9~~ | ~~Scale targets~~ | — | **Resolved 2026-09-12.** Derived in Blueprint 4 §4.1-4.3 rather than asserted | — |
+| ~~OD-10~~ | ~~Hosting and tenancy isolation~~ | — | **Resolved 2026-09-12.** AD-22, shared cluster with row-level security and partitioning | — |
 
 **Non-blocking but should be answered soon.** OD-2 campus scope, safe default already carried.
 OD-5 legacy systems. OD-6 buyer versus operator. OD-7 attendance granularity. OD-8 configurable
@@ -429,13 +430,13 @@ else is finished. An architecture that is ninety percent complete in the wrong d
 worth less than one that is sixty percent complete and correct.
 
 ### Critical blockers — any one prevents approval
-1. Any open decision in §3 marked critical still unanswered
+1. Any open decision in §3 marked critical still unanswered — currently OD-1, OD-3, OD-4
 2. An entity with two claimed owners, or a fact with two sources of truth
 3. A cycle in the module dependency graph
 4. A module without a Module Contract that passed Boundary Audit
 5. An approved architecture decision contradicted by a later one, unreconciled
 6. Authorization not resolvable in one place, or tenant isolation unverified
-7. No stated scale target, so no technical decision can be justified
+7. ~~No stated scale target~~ — cleared 2026-09-12
 8. Academic year rollover unspecified
 9. No tested restore path
 

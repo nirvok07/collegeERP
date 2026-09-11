@@ -98,8 +98,9 @@ stated in [Decisions](11-decisions.md).
 | A3 | Release one ships Core, Academics and Communication. Fees and payments follow in release two | Assumed | [Decisions](11-decisions.md) D12, [Roadmap](10-roadmap.md) |
 | A4 | English only in release one, with all strings externalized so languages can be added later | Assumed | [Product Overview](01-product-overview.md) 1.5 |
 | A5 | Light and dark themes both ship in release one | Assumed | [Decisions](11-decisions.md) D11 |
-| A6 | Scale target of 20,000 students per tenant, 50 tenants, 2,000 peak concurrent users | Assumed, OD-9 | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) section 3 |
-| A7 | Shared database with enforced row-level tenant isolation, India region | Assumed, OD-10 | [MASTER-CHECKLIST.md](../MASTER-CHECKLIST.md) section 3 |
+| A6 | Scale target of 20,000 students per tenant, 500 tenants, 20,000 peak concurrent at maturity | Resolved, derived not asserted | [Blueprint 4](blueprint/04-nfr-and-deployment.md) §4.1-4.3 |
+| A7 | Shared PostgreSQL with row-level tenant isolation, partitioned, India region | Resolved | [ADR](blueprint/adr.md) AD-22 |
+| A8 | Identity is per tenant. A person administering three colleges holds three logins | Open, OD-M1-5, recommendation carried | [M1](blueprint/modules/m1-identity-and-access.md) §22 |
 
 ## Deferred
 
