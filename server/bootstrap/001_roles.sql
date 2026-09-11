@@ -22,6 +22,8 @@ DECLARE
   mig_role  text := nullif(current_setting('erp.migrator_role', true), '');
   mig_pw    text := nullif(current_setting('erp.migrator_password', true), '');
   am_super  boolean;
+  has_super boolean;
+  has_bypass boolean;
 BEGIN
   IF app_role IS NULL THEN
     RAISE EXCEPTION 'erp.app_role must be set by the bootstrap runner';
@@ -30,21 +32,49 @@ BEGIN
   SELECT rolsuper INTO am_super FROM pg_roles WHERE rolname = current_user;
 
   -- Application role.
+  --
+  -- The password is optional. Without one the role is created NOLOGIN, which is
+  -- the right shape when the schema is being prepared before the application
+  -- exists, and it avoids typing a credential into a dashboard SQL editor where
+  -- it would be kept in query history. Grant LOGIN and a password later, over a
+  -- connection you control.
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = app_role) THEN
     IF app_pw IS NULL THEN
-      RAISE EXCEPTION 'Cannot create role % without a password. Set the application password in the environment.', app_role;
+      EXECUTE format(
+        'CREATE ROLE %I NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS', app_role);
+      RAISE NOTICE
+        'created application role % with NOLOGIN. Before the application can connect, run: ALTER ROLE %I LOGIN PASSWORD ''<password>'';',
+        app_role, app_role;
+    ELSE
+      EXECUTE format(
+        'CREATE ROLE %I LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS',
+        app_role, app_pw);
+      RAISE NOTICE 'created application role %', app_role;
     END IF;
-    EXECUTE format(
-      'CREATE ROLE %I LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS',
-      app_role, app_pw);
-    RAISE NOTICE 'created application role %', app_role;
   ELSIF app_pw IS NOT NULL THEN
-    EXECUTE format('ALTER ROLE %I WITH PASSWORD %L', app_role, app_pw);
+    EXECUTE format('ALTER ROLE %I WITH LOGIN PASSWORD %L', app_role, app_pw);
   END IF;
 
-  -- The application must never bypass row level security, whatever it was
-  -- created as previously.
-  EXECUTE format('ALTER ROLE %I NOBYPASSRLS NOSUPERUSER', app_role);
+  -- The application must never be a superuser or bypass row level security.
+  --
+  -- Only a superuser may specify those attributes in ALTER ROLE, even to turn
+  -- them off, so on managed PostgreSQL this asserts rather than enforces. That
+  -- is sufficient: CREATE ROLE above set them correctly, and if some other path
+  -- granted them, failing loudly is better than appearing to fix it.
+  SELECT rolsuper, rolbypassrls INTO has_super, has_bypass
+    FROM pg_roles WHERE rolname = app_role;
+
+  IF has_super OR has_bypass THEN
+    IF am_super THEN
+      EXECUTE format('ALTER ROLE %I NOBYPASSRLS NOSUPERUSER', app_role);
+      RAISE NOTICE 'removed excess privileges from %', app_role;
+    ELSE
+      RAISE EXCEPTION
+        'Role % holds SUPERUSER or BYPASSRLS, which would defeat tenant isolation, and this connection is not a superuser so it cannot be corrected here. Remove those attributes with an administrative connection before continuing.',
+        app_role
+        USING ERRCODE = 'insufficient_privilege';
+    END IF;
+  END IF;
 
   -- Migration role, when one distinct from the bootstrap connection is wanted.
   IF mig_role IS NOT NULL AND mig_role <> current_user THEN
