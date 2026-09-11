@@ -42,6 +42,9 @@ export interface PlatformAccountRecord {
 export interface PersonRepository {
   create(tx: Tx, input: Omit<PersonRecord, 'version'>): Promise<PersonRecord>;
   findById(tx: Tx, id: string): Promise<PersonRecord | null>;
+  findByEmail(tx: Tx, email: string): Promise<PersonRecord | null>;
+  /** The People list: person, account and role chips in one query. */
+  list(tx: Tx, filter: PersonListFilter): Promise<PersonListItem[]>;
 }
 
 export interface AccountRepository {
@@ -90,6 +93,8 @@ export interface RoleDefinitionRecord {
 
 export interface RoleDefinitionRepository {
   findByKey(tx: Tx, key: string): Promise<RoleDefinitionRecord | null>;
+  findById(tx: Tx, id: string): Promise<RoleDefinitionRecord | null>;
+  listAvailable(tx: Tx): Promise<RoleDefinitionRecord[]>;
 }
 
 export interface CreateAssignmentInput {
@@ -107,12 +112,51 @@ export interface CreateAssignmentInput {
   reason: string | null;
 }
 
+export interface PersonListItem {
+  personId: string;
+  fullName: string;
+  primaryEmail: string | null;
+  personType: string;
+  accountId: string | null;
+  accountStatus: string | null;
+  lastLoginAt: Date | null;
+  roleKeys: string[];
+}
+
+export interface PersonListFilter {
+  search?: string;
+  personType?: string;
+  accountStatus?: string;
+  limit: number;
+}
+
+export interface AssignmentListItem {
+  id: string;
+  personId: string;
+  personName: string;
+  roleKey: string;
+  roleName: string;
+  scopeType: string;
+  scopeRefId: string | null;
+  validFrom: Date;
+  validTo: Date | null;
+  status: string;
+  source: string;
+  grantedAt: Date;
+}
+
 export interface RoleAssignmentRepository {
   create(tx: Tx, input: CreateAssignmentInput): Promise<{ id: string }>;
   /** Live assignments for a person, joined to their role's permission keys. */
   listActiveForPerson(tx: Tx, personId: string): Promise<ActiveAssignment[]>;
   /** BR-26 and BR-8: how many people currently administer this institution. */
   countActiveByRoleKey(tx: Tx, roleKey: string): Promise<number>;
+  findActiveById(tx: Tx, id: string): Promise<AssignmentListItem | null>;
+  listActive(tx: Tx, limit: number): Promise<AssignmentListItem[]>;
+  revoke(
+    tx: Tx,
+    input: { id: string; revokedBy: string; reason: string; at: Date },
+  ): Promise<boolean>;
 }
 
 export interface OrgTreeReader {

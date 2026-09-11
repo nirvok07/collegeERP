@@ -2,6 +2,9 @@ import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
   AccountRecord,
+  AssignmentListItem,
+  PersonListFilter,
+  PersonListItem,
   RefreshTokenRecord,
   AccountRepository,
   CreateAssignmentInput,
@@ -39,6 +42,63 @@ export class PgPersonRepository implements PersonRepository {
       [id],
     );
     return rows[0] ? toPerson(rows[0]) : null;
+  }
+
+  async findByEmail(tx: Tx, email: string): Promise<PersonRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, tenant_id, full_name, primary_email, primary_phone, person_type, status, version
+         FROM persons WHERE primary_email = $1 AND deleted_at IS NULL`,
+      [email],
+    );
+    return rows[0] ? toPerson(rows[0]) : null;
+  }
+
+  /**
+   * One query for the list. Roles are aggregated rather than fetched per row,
+   * because N+1 on the screen an administrator lives in is the difference
+   * between a product that feels fast and one that does not.
+   */
+  async list(tx: Tx, filter: PersonListFilter): Promise<PersonListItem[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT p.id            AS person_id,
+              p.full_name,
+              p.primary_email,
+              p.person_type,
+              ua.id           AS account_id,
+              ua.status       AS account_status,
+              ua.last_login_at,
+              COALESCE(
+                array_agg(rd.key ORDER BY rd.key) FILTER (WHERE rd.key IS NOT NULL),
+                '{}'
+              ) AS role_keys
+         FROM persons p
+         LEFT JOIN user_accounts ua
+                ON ua.person_id = p.id AND ua.status <> 'archived'
+         LEFT JOIN role_assignments ra
+                ON ra.person_id = p.id AND ra.status = 'active'
+               AND ra.valid_from <= now()
+               AND (ra.valid_to IS NULL OR ra.valid_to > now())
+         LEFT JOIN role_definitions rd ON rd.id = ra.role_id
+        WHERE p.deleted_at IS NULL
+          AND ($1::text IS NULL OR p.full_name ILIKE '%' || $1 || '%'
+                                OR p.primary_email ILIKE '%' || $1 || '%')
+          AND ($2::text IS NULL OR p.person_type = $2)
+          AND ($3::text IS NULL OR ua.status = $3)
+        GROUP BY p.id, ua.id
+        ORDER BY p.full_name
+        LIMIT $4`,
+      [filter.search ?? null, filter.personType ?? null, filter.accountStatus ?? null, filter.limit],
+    );
+    return rows.map((r) => ({
+      personId: r.person_id,
+      fullName: r.full_name,
+      primaryEmail: r.primary_email,
+      personType: r.person_type,
+      accountId: r.account_id,
+      accountStatus: r.account_status,
+      lastLoginAt: r.last_login_at,
+      roleKeys: r.role_keys as string[],
+    }));
   }
 }
 
@@ -178,7 +238,26 @@ export class PgPlatformAccountRepository implements PlatformAccountRepository {
   }
 }
 
+const ROLE_COLUMNS = `id, tenant_id, key, name, permission_keys, allowed_scope_types,
+              requires_approval, is_system`;
+
 export class PgRoleDefinitionRepository implements RoleDefinitionRepository {
+  async findById(tx: Tx, id: string): Promise<RoleDefinitionRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT ${ROLE_COLUMNS} FROM role_definitions WHERE id = $1 AND status = 'active'`, [id],
+    );
+    return rows[0] ? toRole(rows[0]) : null;
+  }
+
+  async listAvailable(tx: Tx): Promise<RoleDefinitionRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT DISTINCT ON (key) ${ROLE_COLUMNS}
+         FROM role_definitions WHERE status = 'active'
+        ORDER BY key, tenant_id NULLS LAST`,
+    );
+    return rows.map(toRole);
+  }
+
   async findByKey(tx: Tx, key: string): Promise<RoleDefinitionRecord | null> {
     // Tenant-cloned roles win over the platform template of the same key.
     const { rows } = await clientOf(tx).query(
@@ -190,14 +269,7 @@ export class PgRoleDefinitionRepository implements RoleDefinitionRepository {
         LIMIT 1`,
       [key],
     );
-    const r = rows[0];
-    return r
-      ? {
-          id: r.id, tenantId: r.tenant_id, key: r.key, name: r.name,
-          permissionKeys: r.permission_keys, allowedScopeTypes: r.allowed_scope_types,
-          requiresApproval: r.requires_approval, isSystem: r.is_system,
-        }
-      : null;
+    return rows[0] ? toRole(rows[0]) : null;
   }
 }
 
@@ -239,6 +311,39 @@ export class PgRoleAssignmentRepository implements RoleAssignmentRepository {
       validFrom: r.valid_from,
       validTo: r.valid_to,
     }));
+  }
+
+  async findActiveById(tx: Tx, id: string): Promise<AssignmentListItem | null> {
+    const { rows } = await clientOf(tx).query(
+      `${ASSIGNMENT_SELECT} WHERE ra.id = $1`, [id],
+    );
+    return rows[0] ? toAssignment(rows[0]) : null;
+  }
+
+  async listActive(tx: Tx, limit: number): Promise<AssignmentListItem[]> {
+    const { rows } = await clientOf(tx).query(
+      `${ASSIGNMENT_SELECT} WHERE ra.status = 'active' ORDER BY ra.granted_at DESC LIMIT $1`,
+      [limit],
+    );
+    return rows.map(toAssignment);
+  }
+
+  /**
+   * Revocation is conditional on the row still being active, so two concurrent
+   * revocations cannot both report success and write two audit events.
+   */
+  async revoke(
+    tx: Tx,
+    input: { id: string; revokedBy: string; reason: string; at: Date },
+  ): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE role_assignments
+          SET status = 'revoked', revoked_at = $2, revoked_by = $3,
+              revocation_reason = $4, version = version + 1
+        WHERE id = $1 AND status = 'active'`,
+      [input.id, input.at, input.revokedBy, input.reason],
+    );
+    return (rowCount ?? 0) > 0;
   }
 
   async countActiveByRoleKey(tx: Tx, roleKey: string): Promise<number> {
@@ -359,6 +464,31 @@ export class PgLoginAttemptRepository implements LoginAttemptRepository {
       [input.id, input.tenantId, input.identifierHash, input.accountId, input.outcome, input.failureReason, input.ipHash],
     );
   }
+}
+
+const ASSIGNMENT_SELECT = `
+  SELECT ra.id, ra.person_id, p.full_name AS person_name, rd.key AS role_key,
+         rd.name AS role_name, ra.scope_type, ra.scope_ref_id, ra.valid_from,
+         ra.valid_to, ra.status, ra.source, ra.granted_at
+    FROM role_assignments ra
+    JOIN role_definitions rd ON rd.id = ra.role_id
+    JOIN persons p ON p.id = ra.person_id`;
+
+function toAssignment(r: any): AssignmentListItem {
+  return {
+    id: r.id, personId: r.person_id, personName: r.person_name, roleKey: r.role_key,
+    roleName: r.role_name, scopeType: r.scope_type, scopeRefId: r.scope_ref_id,
+    validFrom: r.valid_from, validTo: r.valid_to, status: r.status,
+    source: r.source, grantedAt: r.granted_at,
+  };
+}
+
+function toRole(r: any): RoleDefinitionRecord {
+  return {
+    id: r.id, tenantId: r.tenant_id, key: r.key, name: r.name,
+    permissionKeys: r.permission_keys, allowedScopeTypes: r.allowed_scope_types,
+    requiresApproval: r.requires_approval, isSystem: r.is_system,
+  };
 }
 
 function toPerson(r: any): PersonRecord {

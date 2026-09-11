@@ -6,11 +6,11 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     57 backend + 18 web = 75 passing
-Next      S3 M1 write surface: invite, assign role with scope, revoke
+Tests     74 backend + 18 web = 92 passing
+Next      S3b console People screen; then M2 academic structure
 Blocked   OD-1 affiliating vs autonomous, OD-4 money
-Note      Supabase direct host is IPv6-only and unreachable here; the pooler
-          URI is needed to switch development off local PostgreSQL
+Note      Supabase session pooler URI still REQUIRED. The direct host is
+          IPv6-only and unreachable here; local PostgreSQL stays active.
 ```
 
 ## Completed slices
@@ -129,6 +129,39 @@ detection. No business logic is duplicated per client.
 Verified against the running server: cookie is HttpOnly, a reload restores with
 no credentials, ten consecutive renewals succeed, a replayed token is refused,
 and sign-out makes the token unusable.
+
+### S3a — M1 write surface (backend)
+
+Invite a person, grant authority with scope and validity, revoke it with a
+reason, list people and active assignments. 15 tests.
+
+**Rules that actually enforce the model**, rather than being hidden by the UI:
+nobody may change their own authority, including an administrator, since that is
+the one role positioned to escalate itself. A duplicate grant at the same scope
+is refused by a partial unique index, not by a check that can race. Revocation
+requires a reason, so no audit entry is ever blank, and is conditional on the row
+still being active, so two concurrent revocations cannot both succeed. A college
+cannot be left with no administrator, protected by two independent rules.
+
+Granting authority is a separate permission from inviting someone, so an
+account manager cannot quietly hand out roles.
+
+The people list aggregates roles in one query rather than N+1, because it is the
+screen an administrator lives in.
+
+Every grant and revocation invalidates that person's authority cache, so a
+change reaches their next request instead of waiting out the 15-minute ceiling.
+
+### Supabase readiness
+
+`migrations/006` closes a real exposure found while preparing for Supabase. Its
+Data API publishes the `public` schema to anyone holding the publishable key.
+Most tables are safe because their RLS policies key off a setting PostgREST never
+provides, but `institutions` and `platform_accounts` carry no tenant column and
+had no policy, and the latter holds emails and credential hashes. The migration
+revokes the `anon` and `authenticated` roles, revokes PUBLIC, sets default
+privileges for future tables, and gives both tables deny-by-default policies. It
+is a no-op on a plain PostgreSQL instance.
 
 ## Deviations from specification, recorded
 

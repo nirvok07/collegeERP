@@ -7,6 +7,7 @@ import { httpStatusFor, type Failure } from '../../core/errors.ts';
 import type { Result } from '../../core/result.ts';
 import { registerAuthRoutes } from '../../modules/identity/presentation/auth-routes.ts';
 import { registerInstitutionRoutes } from '../../modules/institution/presentation/institution-routes.ts';
+import { registerPeopleRoutes } from '../../modules/identity/presentation/people-routes.ts';
 import type { AccessTokenClaims } from '../../shared/application/ports.ts';
 
 declare module 'fastify' {
@@ -119,6 +120,7 @@ export async function buildServer(container: Container): Promise<FastifyInstance
   await app.register(async (v1) => {
     await registerAuthRoutes(v1, container);
     await registerInstitutionRoutes(v1, container);
+    await registerPeopleRoutes(v1, container);
   }, { prefix: '/v1' });
 
   return app;

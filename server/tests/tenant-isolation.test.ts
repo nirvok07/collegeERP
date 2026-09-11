@@ -7,7 +7,7 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  APP_URL, buildTestApp, provisionCollege, resetData, seedPlatformAccount,
+  APP_URL, buildTestApp, MIGRATOR_URL, provisionCollege, resetData, seedPlatformAccount,
   setupDatabase, signInPlatform, type TestApp,
 } from './helpers.ts';
 import { createPool } from '../src/infrastructure/db/pool.ts';
@@ -181,5 +181,37 @@ describe('tenant isolation under row level security', () => {
     assert.equal(a.status, 201);
     assert.equal(b.status, 201, 'uniqueness is per tenant, not global');
     assert.notEqual(a.body.data.administrator.person_id, b.body.data.administrator.person_id);
+  });
+});
+
+describe('Supabase Data API exposure', () => {
+  it('no table is readable by PUBLIC, so a future role grant cannot leak data', async () => {
+    const pool = createPool(MIGRATOR_URL);
+    try {
+      const { rows } = await pool.query(
+        `SELECT table_name FROM information_schema.role_table_grants
+          WHERE grantee = 'PUBLIC' AND table_schema = 'public'`,
+      );
+      assert.deepEqual(rows, [], 'PUBLIC holds no grant on any table');
+    } finally {
+      await pool.end();
+    }
+  });
+
+  it('institutions and platform_accounts are policy-protected despite having no tenant column', async () => {
+    const pool = createPool(MIGRATOR_URL);
+    try {
+      const { rows } = await pool.query(
+        `SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class
+          WHERE relname IN ('institutions','platform_accounts')`,
+      );
+      assert.equal(rows.length, 2);
+      for (const row of rows) {
+        assert.equal(row.relrowsecurity, true, `${row.relname} has row level security`);
+        assert.equal(row.relforcerowsecurity, true, `${row.relname} forces it on the owner too`);
+      }
+    } finally {
+      await pool.end();
+    }
   });
 });
