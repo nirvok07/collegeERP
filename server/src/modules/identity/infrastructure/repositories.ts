@@ -2,6 +2,7 @@ import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
   AccountRecord,
+  RefreshTokenRecord,
   AccountRepository,
   CreateAssignmentInput,
   CredentialRepository,
@@ -128,6 +129,21 @@ export class PgPlatformAccountRepository implements PlatformAccountRepository {
       `SELECT id, email, full_name, status, failed_attempts, locked_until
          FROM platform_accounts WHERE email = $1`,
       [email],
+    );
+    const r = rows[0];
+    return r
+      ? {
+          id: r.id, email: r.email, fullName: r.full_name, status: r.status,
+          failedAttempts: r.failed_attempts, lockedUntil: r.locked_until,
+        }
+      : null;
+  }
+
+  async findById(tx: Tx, id: string): Promise<PlatformAccountRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, email, full_name, status, failed_attempts, locked_until
+         FROM platform_accounts WHERE id = $1`,
+      [id],
     );
     const r = rows[0];
     return r
@@ -280,15 +296,45 @@ export class PgRefreshTokenRepository implements RefreshTokenRepository {
   async issue(
     tx: Tx,
     input: {
-      id: string; tenantId: string | null; accountId: string | null;
+      id: string; familyId: string; tenantId: string | null; accountId: string | null;
       platformAccountId: string | null; tokenHash: string; expiresAt: Date;
     },
   ): Promise<void> {
     await clientOf(tx).query(
-      `INSERT INTO refresh_tokens (id, tenant_id, account_id, platform_account_id, token_hash, expires_at)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [input.id, input.tenantId, input.accountId, input.platformAccountId, input.tokenHash, input.expiresAt],
+      `INSERT INTO refresh_tokens
+         (id, family_id, tenant_id, account_id, platform_account_id, token_hash, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [input.id, input.familyId, input.tenantId, input.accountId,
+       input.platformAccountId, input.tokenHash, input.expiresAt],
     );
+  }
+
+  async resolve(tx: Tx, tokenHash: string): Promise<RefreshTokenRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT * FROM auth_resolve_refresh_token($1)`, [tokenHash],
+    );
+    const r = rows[0];
+    return r
+      ? {
+          id: r.id, familyId: r.family_id, tenantId: r.tenant_id, accountId: r.account_id,
+          platformAccountId: r.platform_account_id, expiresAt: r.expires_at,
+          consumedAt: r.consumed_at, revokedAt: r.revoked_at,
+        }
+      : null;
+  }
+
+  async consume(tx: Tx, id: string, replacedBy: string, at: Date): Promise<void> {
+    await clientOf(tx).query(
+      `UPDATE refresh_tokens SET consumed_at = $2, replaced_by = $3, last_used_at = $2 WHERE id = $1`,
+      [id, at, replacedBy],
+    );
+  }
+
+  async revokeFamily(tx: Tx, familyId: string, reason: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT auth_revoke_token_family($1,$2) AS n`, [familyId, reason],
+    );
+    return rows[0]?.n ?? 0;
   }
 
   async revokeAllForAccount(tx: Tx, accountId: string, at: Date): Promise<void> {

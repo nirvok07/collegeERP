@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import { createHash } from 'node:crypto';
 import type { Container } from '../../container.ts';
 import { httpStatusFor, type Failure } from '../../core/errors.ts';
@@ -12,6 +13,24 @@ declare module 'fastify' {
   interface FastifyRequest {
     actor?: AccessTokenClaims;
   }
+}
+
+export const REFRESH_COOKIE = 'college_erp_rt';
+
+/**
+ * The refresh token is the long-lived credential, so the browser must never be
+ * able to read it: httpOnly puts it beyond JavaScript, which is what makes an
+ * XSS bug unable to steal a session. Path is narrowed to the auth routes so it
+ * is not attached to ordinary API calls.
+ */
+export function refreshCookieOptions(config: { NODE_ENV: string; REFRESH_TOKEN_TTL_DAYS: number }) {
+  return {
+    httpOnly: true,
+    sameSite: 'lax' as const,
+    secure: config.NODE_ENV === 'production',
+    path: '/v1/auth',
+    maxAge: config.REFRESH_TOKEN_TTL_DAYS * 86_400,
+  };
 }
 
 export const ipHashOf = (req: FastifyRequest): string =>
@@ -64,9 +83,14 @@ export async function buildServer(container: Container): Promise<FastifyInstance
     },
     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
     allowedHeaders: ['content-type', 'authorization'],
-    credentials: false,
+    // Credentials are required for the refresh cookie. Safe only because the
+    // origin list is explicit: a wildcard origin with credentials is refused by
+    // browsers, and would be wrong here anyway.
+    credentials: true,
     maxAge: 600,
   });
+
+  await app.register(cookie, { secret: container.config.COOKIE_SECRET });
 
   /**
    * Identity only. A valid token proves who the caller is and nothing about what

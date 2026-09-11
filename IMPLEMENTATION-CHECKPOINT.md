@@ -6,9 +6,11 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     45 backend + 11 web = 56 passing
+Tests     57 backend + 18 web = 75 passing
 Next      S3 M1 write surface: invite, assign role with scope, revoke
 Blocked   OD-1 affiliating vs autonomous, OD-4 money
+Note      Supabase direct host is IPv6-only and unreachable here; the pooler
+          URI is needed to switch development off local PostgreSQL
 ```
 
 ## Completed slices
@@ -97,9 +99,36 @@ headers and scope attributes.
 **CORS.** An explicit origin allowlist, never a wildcard. Credentials off, since
 the console sends a bearer token and no cookie crosses the origin.
 
-**Not built.** Token refresh, so a session ends after 15 minutes. Pagination, not
-needed at 50 rows. Saved views, filter rail and command palette, which belong
-with the people list in S3.
+**Not built.** Pagination, not needed at 50 rows. Saved views, filter rail and
+command palette, which belong with the people list in S3.
+
+### S2b — Persistent sessions (AD-25, AD-26)
+
+The user is no longer signed out while still working.
+
+**Backend.** Refresh tokens rotate on every use and carry a family id. Expiry
+slides forward from the renewal, not from sign-in, so an active user is never
+asked to sign in again. Replaying a consumed token revokes the whole family and
+writes an audit event. Renewal re-checks account status, which is how a
+suspension reaches someone already signed in. Two narrow SECURITY DEFINER
+functions resolve and revoke by token hash, because the tenant is unknown until
+the row is found and row level security needs the tenant to find it.
+
+**Web.** Access token in memory only, refresh token in an httpOnly cookie.
+Nothing sensitive is in localStorage or sessionStorage, asserted by a test.
+Startup calls refresh, so a browser reload restores the session silently.
+Renewal fires 60 seconds before expiry, is single-flight so ten concurrent 401s
+cause one renewal, and retries with backoff on transient failure while keeping
+the user signed in. A dropped network shows a banner saying the session is
+intact; only a server refusal ends it.
+
+**Mobile contract.** Flutter posts the refresh token in the request body and
+stores it in platform secure storage. Same endpoint, same rotation, same reuse
+detection. No business logic is duplicated per client.
+
+Verified against the running server: cookie is HttpOnly, a reload restores with
+no credentials, ten consecutive renewals succeed, a replayed token is refused,
+and sign-out makes the token unusable.
 
 ## Deviations from specification, recorded
 

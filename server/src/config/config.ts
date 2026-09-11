@@ -12,6 +12,8 @@ const schema = z.object({
   MIGRATION_DATABASE_URL: z.string().min(1),
   /** Comma-separated origins allowed to call the API from a browser. */
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:4173'),
+  /** Signs the refresh cookie. Distinct from JWT_SECRET so they rotate independently. */
+  COOKIE_SECRET: z.string().min(32),
 });
 
 export type Config = z.infer<typeof schema>;
@@ -24,6 +26,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     DATABASE_URL:
       env.DATABASE_URL ?? 'postgres://erp_app:erp_app_local@localhost:5432/college_erp_dev',
     JWT_SECRET: env.JWT_SECRET ?? 'dev-only-secret-not-for-production-use-32b',
+    COOKIE_SECRET: env.COOKIE_SECRET ?? env.JWT_SECRET ?? 'dev-only-cookie-secret-not-for-production',
     MIGRATION_DATABASE_URL:
       env.MIGRATION_DATABASE_URL ??
       'postgres://erp_migrator:erp_migrator_local@localhost:5432/college_erp_dev',

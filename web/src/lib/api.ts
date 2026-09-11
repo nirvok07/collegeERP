@@ -24,12 +24,20 @@ const UNEXPECTED: ApiFailure = {
   message: 'Something went wrong. Please try again.',
 };
 
+const SESSION_ENDED: ApiFailure = {
+  code: 'UNAUTHENTICATED',
+  message: 'Your session has ended. Please sign in again.',
+};
+
 export interface ApiClientOptions {
   baseUrl: string;
-  /** Returns the current access token, or null when signed out. */
+  /** Returns a usable access token, or null when one must be renewed. */
   getToken: () => string | null;
-  /** Called when the server rejects the token, so the shell can sign out. */
-  onUnauthenticated?: () => void;
+  /**
+   * Renews the access token. Returns false when the session genuinely ended.
+   * Single-flight upstream, so many simultaneous 401s cause one renewal.
+   */
+  renew: () => Promise<boolean>;
 }
 
 export class ApiClient {
@@ -47,10 +55,18 @@ export class ApiClient {
     return this.request<T>('POST', path, body);
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<ApiResult<T>> {
-    const token = this.options.getToken();
-    let response: Response;
+  private async request<T>(method: string, path: string, body?: unknown, isRetry = false): Promise<ApiResult<T>> {
+    let token = this.options.getToken();
 
+    // The token is missing or about to expire. Renew before spending a request,
+    // rather than letting the user's action fail and be retried.
+    if (!token) {
+      const renewed = await this.options.renew();
+      if (!renewed) return { ok: false, error: SESSION_ENDED };
+      token = this.options.getToken();
+    }
+
+    let response: Response;
     try {
       response = await fetch(`${this.options.baseUrl}${path}`, {
         method,
@@ -64,7 +80,13 @@ export class ApiClient {
       return { ok: false, error: NETWORK_FAILURE };
     }
 
-    if (response.status === 401 && token) this.options.onUnauthenticated?.();
+    // A token rejected mid-flight: renew once and replay. Only one retry, so a
+    // server that always answers 401 cannot become an infinite loop.
+    if (response.status === 401 && !isRetry) {
+      const renewed = await this.options.renew();
+      if (renewed) return this.request<T>(method, path, body, true);
+      return { ok: false, error: SESSION_ENDED };
+    }
 
     let payload: unknown;
     try {

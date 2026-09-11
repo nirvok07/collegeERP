@@ -67,6 +67,7 @@ export interface CredentialRepository {
 
 export interface PlatformAccountRepository {
   findByEmail(tx: Tx, email: string): Promise<PlatformAccountRecord | null>;
+  findById(tx: Tx, id: string): Promise<PlatformAccountRecord | null>;
   findCredentialHash(tx: Tx, id: string): Promise<string | null>;
   updateSecurityState(
     tx: Tx,
@@ -132,11 +133,23 @@ export interface InvitationRepository {
   consume(tx: Tx, id: string, at: Date): Promise<void>;
 }
 
+export interface RefreshTokenRecord {
+  id: string;
+  familyId: string;
+  tenantId: string | null;
+  accountId: string | null;
+  platformAccountId: string | null;
+  expiresAt: Date;
+  consumedAt: Date | null;
+  revokedAt: Date | null;
+}
+
 export interface RefreshTokenRepository {
   issue(
     tx: Tx,
     input: {
       id: string;
+      familyId: string;
       tenantId: string | null;
       accountId: string | null;
       platformAccountId: string | null;
@@ -144,6 +157,15 @@ export interface RefreshTokenRepository {
       expiresAt: Date;
     },
   ): Promise<void>;
+  /**
+   * Resolves a presented token before any tenant context exists. Backed by a
+   * narrow SECURITY DEFINER function: an unguessable hash in, one row out.
+   */
+  resolve(tx: Tx, tokenHash: string): Promise<RefreshTokenRecord | null>;
+  /** Marks a token exchanged and links its successor, so replay is detectable. */
+  consume(tx: Tx, id: string, replacedBy: string, at: Date): Promise<void>;
+  /** Reuse detection and sign-out both revoke the whole family. */
+  revokeFamily(tx: Tx, familyId: string, reason: string): Promise<number>;
   revokeAllForAccount(tx: Tx, accountId: string, at: Date): Promise<void>;
 }
 

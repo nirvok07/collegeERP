@@ -372,3 +372,44 @@ actually targets. One responsive Flutter app for everyone, rejected for both rea
 being the reason the two surfaces will look like one product. The console is plain React with no
 component framework, so the approved design system is implemented directly rather than fought.
 Reversal is cheap today and expensive once the admissions and finance screens exist.
+
+---
+
+**AD-25 — Session lifetime and access-token lifetime are separate concerns**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* A user must not be signed out while still working. Access tokens stay short, 15
+minutes, because they travel on every request and cannot be revoked mid-life. The session is
+long and sliding, because the person is still at their desk. Conflating the two produces either
+an insecure long-lived access token or an ERP that signs a clerk out mid-admission.
+
+*Alternatives.* Long-lived access tokens, rejected: unrevocable for their whole life. A fixed
+session with no renewal, rejected: it is the behaviour being removed. Tokens that never expire,
+rejected outright.
+
+*Impact.* Refresh tokens rotate on every use, carry a family id, and slide their expiry forward
+from the moment of renewal rather than from sign-in. Presenting an already-consumed token means
+replay or theft, so the whole family is revoked and the event is audited. Renewal also re-checks
+account status, which is how a suspension reaches an already-signed-in user.
+
+---
+
+**AD-26 — Web keeps the refresh token in an httpOnly cookie and the access token in memory**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* The refresh token is the long-lived credential. Anything readable by JavaScript is
+readable by an XSS bug, so it must not be in localStorage, sessionStorage or a JS-visible cookie.
+httpOnly puts it beyond script entirely. The access token lives in memory only and is re-minted
+on load, so nothing sensitive is persisted by the client at all.
+
+*Alternatives.* Refresh token in localStorage, rejected: one XSS bug is a stolen session that
+survives a password change. sessionStorage, rejected for the same reason and because it also
+signs the user out per tab.
+
+*Impact.* CORS carries credentials, which is safe only against the explicit origin allowlist
+already in place. The cookie path is narrowed to the auth routes, so it is not attached to
+ordinary API calls. A cold start costs one refresh request. Mobile does not use cookies: Flutter
+receives the token in the response body and stores it in platform secure storage, exercising the
+same endpoint and the same rotation rules.

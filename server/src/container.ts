@@ -36,6 +36,7 @@ import { AuthorityService } from './modules/identity/application/resolve-authori
 import type { Deps as IdentityProvisioningDeps } from './modules/identity/application/provision-initial-admin.ts';
 import type { AuthenticateDeps } from './modules/identity/application/authenticate.ts';
 import type { AcceptInvitationDeps } from './modules/identity/application/accept-invitation.ts';
+import type { RefreshSessionDeps } from './modules/identity/application/refresh-session.ts';
 import type { ProvisionInstitutionDeps } from './modules/institution/application/provision-institution.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
 
@@ -47,6 +48,7 @@ export interface Container {
   identityProvisioning: IdentityProvisioningDeps;
   authenticate: AuthenticateDeps;
   acceptInvitation: AcceptInvitationDeps;
+  refreshSession: RefreshSessionDeps;
   provisionInstitution: ProvisionInstitutionDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
@@ -105,6 +107,10 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       audit, hasher, tokens, clock, ids, refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
     },
     acceptInvitation: { uow, invitations, accounts, credentials, audit, hasher, tokens, clock, ids },
+    refreshSession: {
+      uow, refreshTokens, accounts, platformAccounts, audit, tokens, clock, ids,
+      refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
+    },
     provisionInstitution: {
       uow, institutions, campuses, identity: identityProvisioning, audit, ids, clock,
     },

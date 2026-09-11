@@ -1,21 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Banner, Button, Field } from '../../components/index.tsx';
-import type { ApiClient, ApiFailure } from '../../lib/api.ts';
-import type { StoredSession } from '../../lib/session.ts';
+import type { ApiFailure } from '../../lib/api.ts';
+import type { AuthSession } from '../../lib/auth.ts';
 import './sign-in.css';
-
-interface LoginResponse {
-  actor: { actor_type: 'platform' | 'person'; actor_id: string; full_name: string };
-  access_token: string;
-  access_token_expires_at: string;
-  refresh_token: string;
-}
 
 /**
  * S6 sign in. One identifier, one credential, nothing else above the fold.
  * Errors are inline and never a full-page state.
  */
-export function SignInPage({ api, onSignedIn }: { api: ApiClient; onSignedIn: (s: StoredSession) => void }) {
+export function SignInPage({ auth }: { auth: AuthSession }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -26,20 +19,10 @@ export function SignInPage({ api, onSignedIn }: { api: ApiClient; onSignedIn: (s
     setSubmitting(true);
     setFailure(null);
 
-    const result = await api.post<LoginResponse>('/v1/auth/platform/login', { email, password });
+    // The session manager owns the tokens; this screen only reports failure.
+    const result = await auth.signIn(email, password);
     setSubmitting(false);
-
-    if (!result.ok) { setFailure(result.error); return; }
-    onSignedIn({
-      accessToken: result.value.access_token,
-      refreshToken: result.value.refresh_token,
-      accessTokenExpiresAt: result.value.access_token_expires_at,
-      actor: {
-        actorId: result.value.actor.actor_id,
-        fullName: result.value.actor.full_name,
-        actorType: result.value.actor.actor_type,
-      },
-    });
+    if (!result.ok) setFailure(result.failure);
   }
 
   return (

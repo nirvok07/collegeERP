@@ -66,6 +66,10 @@ export class JwtTokenIssuer implements TokenIssuer {
         act: claims.actorType,
         tid: claims.tenantId,
         aid: claims.accountId,
+        // A unique id per token. Without it two tokens minted in the same second
+        // with identical claims are byte-identical, which makes a renewed token
+        // indistinguishable from the one it replaced in logs and traces.
+        jti: randomUUID(),
       },
       this.secret,
       { expiresIn: this.accessTtlSeconds, algorithm: 'HS256' },

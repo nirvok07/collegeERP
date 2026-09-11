@@ -239,8 +239,12 @@ async function issueTokens(
   const access = deps.tokens.issueAccessToken(claims);
   const refresh = deps.tokens.issueOpaqueToken();
   const refreshExpiresAt = new Date(at.getTime() + deps.refreshTtlDays * 86_400_000);
+  const tokenId = deps.ids.next();
   await deps.refreshTokens.issue(tx, {
-    id: deps.ids.next(),
+    id: tokenId,
+    // A fresh sign-in starts a new family. Every rotation that follows keeps it,
+    // so the whole chain can be revoked together if a token is ever replayed.
+    familyId: tokenId,
     tenantId: owner.tenantId,
     accountId: owner.accountId,
     platformAccountId: owner.platformAccountId,

@@ -1,10 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { Container } from '../../../container.ts';
-import { ipHashOf, sendFailure, sendOk, sendResult } from '../../../infrastructure/http/server.ts';
+import {
+  ipHashOf, refreshCookieOptions, REFRESH_COOKIE, sendFailure, sendOk, sendResult,
+} from '../../../infrastructure/http/server.ts';
 import { fail } from '../../../core/errors.ts';
 import { authenticatePlatformUser, authenticateTenantUser } from '../application/authenticate.ts';
 import { acceptInvitation } from '../application/accept-invitation.ts';
+import { endSession, refreshSession } from '../application/refresh-session.ts';
 
 const platformLogin = z.object({
   email: z.string().email(),
@@ -34,6 +37,9 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
       password: parsed.data.password,
       ipHash: ipHashOf(req),
     });
+    if (result.ok) {
+      reply.setCookie(REFRESH_COOKIE, result.value.tokens.refreshToken, refreshCookieOptions(c.config));
+    }
     return sendResult(reply, mapTokens(result), 200, req.log.warn.bind(req.log));
   });
 
@@ -54,6 +60,9 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
       password: parsed.data.password,
       ipHash: ipHashOf(req),
     });
+    if (result.ok) {
+      reply.setCookie(REFRESH_COOKIE, result.value.tokens.refreshToken, refreshCookieOptions(c.config));
+    }
     return sendResult(reply, mapTokens(result), 200, req.log.warn.bind(req.log));
   });
 
@@ -73,6 +82,48 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     });
     if (!result.ok) return sendFailure(reply, result.error);
     return sendOk(reply, { account_id: result.value.accountId });
+  });
+
+  /**
+   * Session renewal. Both clients use this endpoint and the same rotation rules.
+   *
+   * The browser sends nothing: the refresh token rides in an httpOnly cookie it
+   * cannot read. Flutter sends the token in the body, because a mobile app has
+   * no cookie jar worth relying on and keeps the token in platform secure
+   * storage instead. One mechanism, two transports.
+   */
+  app.post('/auth/refresh', async (req, reply) => {
+    const fromCookie = req.cookies[REFRESH_COOKIE];
+    const fromBody = (req.body as { refresh_token?: string } | undefined)?.refresh_token;
+    const presented = fromCookie ?? fromBody;
+
+    if (!presented) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Your session has ended. Please sign in again.'));
+    }
+
+    const result = await refreshSession(c.refreshSession, {
+      refreshToken: presented,
+      ipHash: ipHashOf(req),
+    });
+
+    if (!result.ok) {
+      // The session cannot be renewed, so clear the cookie rather than leaving
+      // the browser to present a dead token on every future request.
+      reply.clearCookie(REFRESH_COOKIE, refreshCookieOptions(c.config));
+      return sendFailure(reply, result.error);
+    }
+
+    reply.setCookie(REFRESH_COOKIE, result.value.tokens.refreshToken, refreshCookieOptions(c.config));
+    return sendResult(reply, mapTokens(result), 200);
+  });
+
+  /** Explicit sign-out ends the whole token family, not just this device's token. */
+  app.post('/auth/logout', async (req, reply) => {
+    const presented =
+      req.cookies[REFRESH_COOKIE] ?? (req.body as { refresh_token?: string } | undefined)?.refresh_token;
+    if (presented) await endSession(c.refreshSession, { refreshToken: presented });
+    reply.clearCookie(REFRESH_COOKIE, refreshCookieOptions(c.config));
+    return sendOk(reply, { signed_out: true });
   });
 
   /**
@@ -117,7 +168,7 @@ async function resolveTenantId(c: Container, code: string): Promise<string | nul
 }
 
 function mapTokens(
-  result: Awaited<ReturnType<typeof authenticatePlatformUser>>,
+  result: Awaited<ReturnType<typeof authenticatePlatformUser | typeof refreshSession>>,
 ) {
   if (!result.ok) return result;
   const { actor, tokens } = result.value;
