@@ -265,3 +265,50 @@ worse.
 *Impact.* Read-only at the policy layer rather than in the interface. Maximum sixty minutes with
 no extension. A persistent banner. Every record read is audited, not merely the session. The
 Principal sees requested, used and unused grants alike.
+
+---
+
+**AD-20 — PROPOSED, NOT YET APPROVED. Tenant provisioning runs as one transaction across M1 and M2**
+
+*Status.* Proposed on 2026-09-12. It narrows AD-10, which is approved architecture, so it is not
+in force until explicitly approved.
+
+*Reason.* Creating a college and its first administrator is one business act. Splitting it across
+an event boundary permits a college to exist with no administrator, which is not a degraded state
+but an unusable one, recoverable only by support. There are also no consumers to be eventually
+consistent with, because the tenant did not exist a moment earlier.
+
+*Alternatives.* Event-driven provisioning per AD-10, rejected because the failure mode is an
+orphaned tenant. A saga with compensation, rejected as machinery that costs more than the
+single transaction it replaces, for one operation that runs a few times a month. Requiring the
+administrator to be created in a second step, rejected by the stated requirement.
+
+*Scope of the exception, deliberately narrow.* A shared transaction is permitted only for
+bootstrap provisioning of a new tenant, only between M2 as orchestrator and M1's provisioning
+capability, and only before the tenant has any users. Every other cross-module interaction
+remains event-driven under AD-10. M2 calls a declared M1 capability. It does not write M1's
+tables, so the ownership rule in Blueprint 3 §3.3 is untouched.
+
+*Impact.* One documented exception to AD-10. Notification delivery stays outside the transaction,
+since email cannot be transactional. If approved, M2's specification inherits this as a
+constraint rather than rediscovering it.
+
+---
+
+**AD-21 — PROPOSED, NOT YET APPROVED. No denormalized administrator pointer on the institution**
+
+*Status.* Proposed on 2026-09-12, alongside AD-20.
+
+*Reason.* The obvious implementation of "a college has an admin" is a column on the institution,
+or an `is_primary_admin` flag on the assignment. Either creates a second source of truth for
+authority, contradicting AD-1, and each breaks the moment a college has two administrators or
+replaces one.
+
+*Alternatives.* `institution.admin_user_id`, rejected. It answers "who is the admin" with a
+different mechanism from every other authority question in the system. An `is_primary` flag,
+rejected for the same reason, and because primacy has no meaning in the permission model.
+
+*Impact.* "Who administers this college" is answered by querying active assignments for the
+College Administrator role at institution scope, exactly as every other authority question is
+answered. Replacement, suspension and multiple administrators work with no new mechanism. The
+onboarding screen shows the current administrators from that query, not from a stored pointer.

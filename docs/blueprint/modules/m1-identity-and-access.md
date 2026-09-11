@@ -130,11 +130,52 @@ expires automatically.
 Format per workflow: trigger, actor, preconditions, inputs, validation, rules, decision, state
 change, data change, notification, approval, next, success, failure, correction, audit.
 
+### W0 — Provision a college with its initial administrator
+
+The first workflow chronologically, and the only one that creates a tenant. One flow, one
+transaction, three entities that stay conceptually separate.
+
+- **Trigger.** A new college is onboarded.
+- **Actor.** Platform Owner. No other actor can perform it.
+- **Preconditions.** None inside the tenant, because the tenant does not exist yet. This is the
+  only workflow in the system with no preconditions, which is precisely what makes it a bootstrap.
+- **Inputs.** College identity and configuration, plus the initial administrator's name, email
+  and phone, entered in the same form.
+- **Validation.** College code unique across the platform. Administrator email well-formed.
+  Seat and plan limits set. The administrator's email is validated for deliverability shape but
+  not for prior existence, since prior existence is scoped to a tenant that does not yet exist.
+- **Business rules.** BR-25 and BR-26 below.
+- **State change, all inside one transaction.**
+  1. Institution created with status `active` or `trial`. Owned by M2.
+  2. Person created, `person_type` staff, status `provisional`. Owned by M1.
+  3. UserAccount created with status `invited`. Owned by M1.
+  4. RoleAssignment created: role College Administrator, `scope_type` institution,
+     `scope_ref_id` the new institution, validity open-ended, `source` bootstrap,
+     `granted_by` the Platform Owner, status `active`.
+  5. InvitationToken issued.
+- **Outside the transaction.** Invitation delivery, which is queued and retried. Email cannot be
+  transactional, so the boundary sits exactly here: every record commits together, delivery is
+  best-effort with visible status.
+- **Notification.** Invitation to the administrator. Confirmation to the Platform Owner carrying
+  the delivery status, not a claim of success.
+- **Approval.** None inside the tenant. Authorization comes from the platform, per BR-25.
+- **Success.** The administrator activates, sets a credential, enrols a second factor because the
+  role is sensitive, and has full authority over their college immediately.
+- **Failure.** Any step failing rolls back all of it. A college with no administrator is not a
+  recoverable state, it is a support ticket, so partial success is not permitted.
+- **Correction.** Wrong email is corrected by reissuing the invitation, which invalidates the
+  previous token. A wrong person entirely is corrected by assigning a second administrator and
+  revoking the first, which is the ordinary W4 and W5 path and needs no special mechanism.
+- **Audit.** Institution created, person created, account created and assignment granted, all
+  under one correlation id, attributed to the Platform Owner, with the bootstrap source recorded
+  so this grant is distinguishable from every ordinary grant during a later access review.
+
 ### W1 — Invite and activate an account
 
 - **Trigger.** A person needs access, usually from `employee.created` or `student.admitted`.
 - **Actor.** System Administrator or HR Officer, or the system automatically.
-- **Preconditions.** A Person record exists. No active account for that person.
+- **Preconditions.** A Person record exists, or is created in the same transaction as part of
+  W0 or a bulk import. No active account for that person.
 - **Inputs.** Person, contact channel, initial role assignment, validity.
 - **Validation.** Contact is unique among active accounts in the tenant. The person has no
   active account. The proposed assignment is within the inviter's own authority.
@@ -358,6 +399,19 @@ Provisional exists because an applicant is a person before anyone has checked a 
 ---
 
 ## 6. Business rules
+
+**Bootstrap**
+
+- BR-25 IF a role assignment is created during tenant provisioning THEN it is authorized by
+  platform authority and BR-2's in-tenant approval requirement does not apply. Without this
+  exception the first administrator can never be created, because their approver would have to
+  exist inside a tenant that has no users yet. The exception is narrow: it applies only to
+  `source = bootstrap`, only at institution scope, only to the College Administrator role, and
+  only while the tenant has no other active administrator.
+- BR-26 The initial administrator holds an ordinary role assignment. It carries no flag, no
+  primacy and no special status. Replacement, suspension, revocation and additional
+  administrators are the ordinary W4 and W5 paths, and the bootstrap grant is revocable like any
+  other once a second administrator exists, per BR-8.
 
 **Authorization**
 
@@ -1127,6 +1181,12 @@ a test from day one or it will rot within three releases.
   fastest route to a shared-account culture.
 - **OD-M1-3. Who may create a person, HR only or also the office?** *Default:* HR owns staff,
   Admissions owns students, and the administrator can create in either with a reason recorded.
+- **OD-M1-5. Is identity per tenant or per platform?** Today a Person carries a `tenant_id`, so
+  a consultant administering three colleges holds three identities and three logins. That is the
+  strictest possible isolation and the simplest permission model, at the cost of a worse
+  experience for the small number of people who genuinely work across colleges. *Recommended
+  default:* keep identity per tenant, and add a platform-level identity link later if real demand
+  appears. Reversing this later means merging accounts, which W11 already supports.
 - **OD-M1-4. Retention period for deactivated persons.** *Default:* seven years after the last
   audit-relevant event, configurable per tenant, since statutory requirements differ by state.
 

@@ -6,7 +6,7 @@ Phase:    P18 module execution (1/24)
 Blocked:  OD-1, OD-3, OD-4, OD-9, OD-10
 Gate:     NOT READY - 5 critical blockers
 Next:     M2 Institution Setup
-Drift:    3 open (see section 7)
+Drift:    3 open (see section 7) + AD-20/AD-21 awaiting approval
 ```
 
 The control system above `prompt1.md`, `prompt2.md` and `module-controller.md`. It does not
