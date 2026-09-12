@@ -24,7 +24,7 @@ and open to being overruled.
 | ID | Requirement | Status | Reflected in |
 |---|---|---|---|
 | R1 | App name is **College** | Active | [Roadmap](10-roadmap.md) Phase 0 |
-| R2 | Bundle and application id is `com.nirvok.collegeErp` | Active | [Roadmap](10-roadmap.md) Phase 0 |
+| R2 | Bundle and application id is `com.nirvok.collegeErp` | Active: set on Android and iOS; Firebase re-registration pending | [Mobile Platform Configuration](12-mobile-platform-config.md), [Roadmap](10-roadmap.md) Phase 0 |
 | R3 | Flutter application targeting Android and iOS. No web or desktop in release one | Superseded by R28 | — |
 
 ## Engineering priorities

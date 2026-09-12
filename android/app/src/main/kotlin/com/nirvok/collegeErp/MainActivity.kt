@@ -1,4 +1,4 @@
-package com.example.college_erp
+package com.nirvok.collegeErp
 
 import io.flutter.embedding.android.FlutterActivity
 

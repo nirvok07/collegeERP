@@ -1,10 +1,16 @@
 # College ERP — Project Documentation
 
-Multi-tenant college ERP built with Flutter. One codebase serves four roles across many
-colleges: a platform **Super Admin**, a per-college **Admin**, **Teachers**, and **Students**.
+Multi-tenant college ERP serving a platform **Super Admin**, per-college **Admins**, **Teachers**
+and **Students** across many colleges. One backend, one database, one authorization model, and
+two first-class clients (AD-24):
+
+- **Web** — React, Vite and TypeScript, in `web/`. The back office.
+- **Mobile** — Flutter for Android and iOS, at the repository root. Students and faculty.
+- There is no Flutter Web.
 
 - App name: **College**
-- Bundle / application id: `com.nirvok.collegeErp`
+- Bundle / application id: `com.nirvok.collegeErp`, with Firebase re-registration pending
+  ([Mobile Platform Configuration](12-mobile-platform-config.md))
 - Priorities: clean architecture, offline-first, Cubit, Dio, premium UI/UX.
 
 ## Read in this order
@@ -22,6 +28,7 @@ colleges: a platform **Super Admin**, a per-college **Admin**, **Teachers**, and
 | 9 | [Testing](09-testing.md) | What is tested and how |
 | 10 | [Roadmap](10-roadmap.md) | Phased delivery plan and milestones |
 | 11 | [Decisions](11-decisions.md) | Chosen options, rejected options, and why |
+| 12 | [Mobile Platform Configuration](12-mobile-platform-config.md) | App identity, Firebase registration, what device validation must confirm |
 | — | [Requirements](requirements.md) | The living register of what was asked for, and where each requirement lives |
 
 ## Enterprise blueprint
