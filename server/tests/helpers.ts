@@ -42,6 +42,8 @@ export async function resetData(): Promise<void> {
       'devices', 'credentials', 'role_assignments',
       // Attendance references a class session, so it goes before delivery.
       'attendance_corrections', 'attendance_records', 'attendance_sheets',
+      // Assessment references offerings and students, so it goes before both.
+      'assessment_mark_corrections', 'assessment_marks', 'assessment_components',
       // Delivery references offerings and rooms, so it goes before both.
       'class_sessions', 'timetable_slots', 'non_teaching_days',
       // Enrolment references offerings, sections, students and persons.

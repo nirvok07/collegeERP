@@ -9,6 +9,8 @@ import { SectionDrawer } from './SectionDrawer.tsx';
 import { OfferingDrawer } from './OfferingDrawer.tsx';
 import { InstructorDrawer } from './InstructorDrawer.tsx';
 import { TimetableDrawer } from '../delivery/TimetableDrawer.tsx';
+import { AssessmentPlanDrawer } from '../assessment/AssessmentPlanDrawer.tsx';
+import { AssessmentSheetDrawer } from '../assessment/AssessmentSheetDrawer.tsx';
 import {
   COMPONENT_LABEL, NO_FILTERS, blockedReason, isFiltering, leadOf, unstaffedCount, visibleGroups,
   type AcademicYear, type Offering, type OfferingFilters, type OfferingStatus, type Section,
@@ -24,6 +26,8 @@ export interface TeachingPermissions {
   assignInstructors: boolean;
   /** M4. A weekly pattern belongs to the course, so it is set from here. */
   manageSessions: boolean;
+  /** M7. The assessment plan belongs to the course too, and is departmental. */
+  planAssessment: boolean;
 }
 
 const SECTION_TONE: Record<SectionStatus, ChipTone> = {
@@ -59,6 +63,8 @@ export function TeachingPage({ api, can }: { api: ApiClient; can: TeachingPermis
   const [instructorFor, setInstructorFor] = useState<Offering | null>(null);
   const [cancelling, setCancelling] = useState<Cancellation | null>(null);
   const [timetableFor, setTimetableFor] = useState<Offering | null>(null);
+  const [assessmentFor, setAssessmentFor] = useState<Offering | null>(null);
+  const [sheetFor, setSheetFor] = useState<string | null>(null);
   const toast = useToast();
 
   // The calendar and the program list load once. The current academic year
@@ -347,6 +353,11 @@ export function TeachingPage({ api, can }: { api: ApiClient; can: TeachingPermis
                             Timetable
                           </Button>
                         )}
+                        {can.planAssessment && offering.status !== 'cancelled' && (
+                          <Button variant="text" onClick={() => setAssessmentFor(offering)}>
+                            Assessment
+                          </Button>
+                        )}
 
                         {can.manageOfferings && (
                           <span className="offering__actions">
@@ -415,6 +426,20 @@ export function TeachingPage({ api, can }: { api: ApiClient; can: TeachingPermis
           toast(`${code} added to ${offeringFor?.label ?? 'the section'}`);
           void load('refresh');
         }}
+      />
+
+      <AssessmentPlanDrawer
+        offering={assessmentFor}
+        api={api}
+        onClose={() => setAssessmentFor(null)}
+        onOpenSheet={(id) => { setAssessmentFor(null); setSheetFor(id); }}
+      />
+
+      <AssessmentSheetDrawer
+        componentId={sheetFor}
+        api={api}
+        onClose={() => setSheetFor(null)}
+        onChanged={(message) => toast(message)}
       />
 
       <TimetableDrawer

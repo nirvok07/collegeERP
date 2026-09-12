@@ -1,0 +1,20 @@
+/* A plan row opens its sheet, so the whole row is the target. */
+.plan-row {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+  padding: 0; background: transparent; border: none; text-align: start; cursor: pointer;
+  color: inherit; font: inherit;
+}
+
+/* A score field and the two non-scores beside it, on one line, because entering
+   sixty results is keyboard work and the eye should not have to travel. */
+.score-entry { display: inline-flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+.score-entry__input {
+  width: 72px; min-height: 32px; padding: 0 var(--space-sm);
+  background: var(--surface); color: var(--text-primary);
+  border: 1px solid var(--outline-strong); border-radius: var(--radius-input);
+  font: var(--text-body); text-align: right;
+  transition: border-color var(--state), box-shadow var(--state);
+}
+.score-entry__input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
+.score-entry__input::placeholder { color: var(--text-tertiary); }
+.score-entry__error { flex-basis: 100%; font: var(--text-caption); color: var(--error); }

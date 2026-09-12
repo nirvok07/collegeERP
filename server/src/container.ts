@@ -66,6 +66,10 @@ import {
 } from './modules/attendance/infrastructure/repositories.ts';
 import type { AttendanceDeps } from './modules/attendance/application/manage-attendance.ts';
 import {
+  PgAssessmentMarkRepository, PgComponentRepository,
+} from './modules/assessment/infrastructure/repositories.ts';
+import type { AssessmentDeps } from './modules/assessment/application/manage-assessment.ts';
+import {
   PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
 } from './modules/curriculum/infrastructure/repositories.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
@@ -93,6 +97,7 @@ export interface Container {
   sessions: SessionDeps;
   enrolment: EnrolmentDeps;
   attendance: AttendanceDeps;
+  assessment: AssessmentDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -233,6 +238,16 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       sheets: new PgSheetRepository(),
       marks: new PgMarkRepository(),
       sessions: sessionRepository,
+      enrolments: enrolmentRepository,
+      reach: reachReader,
+    },
+    // M7 consumes M3's offering, M5's roster and the one reach reader, so which
+    // teaching a person can act on is stated in exactly one place.
+    assessment: {
+      uow, audit, ids, clock,
+      components: new PgComponentRepository(),
+      marks: new PgAssessmentMarkRepository(),
+      offerings: offeringRepository,
       enrolments: enrolmentRepository,
       reach: reachReader,
     },

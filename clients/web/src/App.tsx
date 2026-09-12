@@ -11,6 +11,7 @@ import { TeachingPage } from './features/teaching/TeachingPage.tsx';
 import { DeliveryPage } from './features/delivery/DeliveryPage.tsx';
 import { StudentsPage } from './features/students/StudentsPage.tsx';
 import { AttendancePage } from './features/attendance/AttendancePage.tsx';
+import { AssessmentPage } from './features/assessment/AssessmentPage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -161,6 +162,7 @@ function sectionsFor(
             manageOfferings: permissions.has('offering.manage'),
             assignInstructors: permissions.has('instructor.assign'),
             manageSessions: permissions.has('session.manage'),
+            planAssessment: permissions.has('assessment.plan'),
           }}
         />
       ),
@@ -207,6 +209,15 @@ function sectionsFor(
       // No permissions prop: what this reader may do with a register is stated
       // per register by the server, which resolves it against the cohort.
       render: () => <AttendancePage api={api} />,
+    });
+  }
+  // The verification queue. Only somebody who may verify has anything to do here;
+  // the server narrows it further to the cohorts they reach.
+  if (permissions?.has('assessment.verify')) {
+    items.push({
+      key: 'assessment',
+      label: 'Assessment',
+      render: () => <AssessmentPage api={api} />,
     });
   }
   if (items.length === 0) {

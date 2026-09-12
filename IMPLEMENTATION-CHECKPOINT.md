@@ -7,11 +7,22 @@ Slices    S1 backend foundation — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework, in clients/web/
           Flutter for Android and iOS at the repository root; no Flutter Web
-Tests     277 backend + 148 web + 81 Flutter = 506 passing
-Next      Internal assessment and marks, or the approvals capability that
-          attendance corrections and timetable publication are both waiting on.
-          Attendance percentage and eligibility are deliberately unbuilt: they
-          need the counting rules, which belong with examinations
+Tests     314 backend + 161 web + 104 Flutter = 579 passing
+Next      Waiting on the owner. Candidates, each blocked or gated differently:
+          M10 examinations and results (blocked on OD-1); a student role and
+          student surface (needed before any student sees a mark); the approvals
+          capability P1 (attendance corrections, mark verification and timetable
+          publication all wait on it); and the offline outbox (Drift 5)
+
+M7 INTERNAL ASSESSMENT: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
+  Blueprint M9, the half of roadmap Phase 6 that OD-1 does not touch (AD-55).
+  The department plans each course's components and weights on the web; the
+  teacher records when one was held, enters results and submits on Flutter;
+  the head of department verifies and corrects with a reason (AD-57). A mark
+  is scored, absent or exempt, and absent is never zero (AD-56).
+  NOT built: students seeing marks (no student role exists; publication is
+  M10's), totals, grades, pass or fail, attendance eligibility, and end
+  examinations. Each is recorded with its reason.
 
 CLIENT HARDENING: DONE, ONE ITEM PENDING OUTSIDE THE REPOSITORY
   App identity is com.nirvok.collegeErp on Android and iOS, displayed as
@@ -295,6 +306,42 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M7 — Internal assessment
+
+Designed before any table, in `docs/blueprint/modules/m7-internal-assessment.md`.
+
+**Where the slice stops, and why.** Roadmap Phase 6 mixes blueprint M9 and M10.
+The blueprint's ownership table gives internal marks to M9 and publication to
+M10, and OD-1 decides M10 while assumption S4 leaves M9 untouched. So M7 is M9
+and nothing more (AD-55).
+
+**The component is the mark sheet.** One component, such as Test 1, carries its
+maximum, its weight, the date it was held, and the state of the act of marking.
+Attendance needed a separate sheet table only because M4 owns the session; M7
+owns the component outright.
+
+**Absent is not zero** (AD-56). A mark is scored, absent or exempt. Storing a
+missed test as 0 would already have decided that it counts against the student,
+which is examination policy.
+
+**The roster is taken on the day it was held** (AD-50 again). A component takes
+no marks until it has a date, and the date, maximum and weight all freeze once
+the first mark exists.
+
+**Weights never exceed 100.** Enforced by the database under an advisory lock, so
+two components added at once cannot each see 60 and together make 120. They need
+not equal 100 while a plan is built.
+
+**Two checks moved up from the database to the application.** PostgreSQL renders
+numeric values with their scale, so a refusal left to a trigger told users a
+course's weights "would total 110.00" and that a score of "60.00" was too high.
+The weight total and a corrected score's maximum are now said in words first; the
+triggers remain the guarantee.
+
+**Every PL/pgSQL variable is prefixed.** Migration 016 exists because a variable
+named like a column broke every attendance write at runtime; migration 017 was
+written so that cannot recur.
 
 ### Client hardening: canonical identity and the web directory collision
 

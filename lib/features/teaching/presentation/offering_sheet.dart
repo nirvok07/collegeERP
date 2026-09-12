@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/routes.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/session/session_manager.dart';
@@ -89,6 +90,30 @@ class _OfferingSheet extends StatelessWidget {
             ],
 
             if (!offering.isOver) _NextClasses(offeringId: offering.id),
+
+            // Where a teacher enters results. The plan comes from the department,
+            // so this opens what exists rather than offering to create anything.
+            if (offering.status != 'cancelled')
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.base),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pushNamed(
+                        Routes.courseAssessments,
+                        arguments: CourseAssessmentsArgs(
+                          offeringId: offering.id,
+                          courseTitle: offering.courseTitle,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.fact_check_outlined, size: 18),
+                    label: const Text('Marks and assessments'),
+                  ),
+                ),
+              ),
 
             // Why a class that has not started is shown at all: the assignment
             // is real, so the teacher can see it coming. Saying what is missing

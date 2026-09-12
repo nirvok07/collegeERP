@@ -95,6 +95,8 @@ than from a feature list.
 | R35 | The roster of a class is resolved as of that class's own date. A student who left in week ten is still on week three's register, and one who joined in week six is not | Active | [ADR](blueprint/adr.md) AD-50, [M5/M6](blueprint/modules/m5-m6-attendance.md) |
 | R36 | Attendance is recorded against a concrete class session, one state per student, and a submitted register is never edited: it is corrected, with a reason, by an authority the teacher does not hold | Active | [ADR](blueprint/adr.md) AD-51, AD-53 |
 | R37 | A register is written as one batch under optimistic concurrency, so two people marking one class cannot overwrite each other. Offline capture is explicitly not promised until an outbox exists | Active | [ADR](blueprint/adr.md) AD-52 |
+| R38 | An internal mark records what happened: a score, absent, or exempt. A zero never stands in for a missed assessment, and totals and grades belong to examinations | Active | [ADR](blueprint/adr.md) AD-56, [M7](blueprint/modules/m7-internal-assessment.md) |
+| R39 | The department sets the assessment plan and verifies and corrects submitted marks; the teacher enters and submits. A submitted sheet is corrected with a reason, never reopened | Active | [ADR](blueprint/adr.md) AD-57 |
 
 ## Assumptions awaiting confirmation
 

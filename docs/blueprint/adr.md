@@ -785,6 +785,7 @@ migration comment for no gain in clarity.
 | **M4** | **Room, TimetableSlot, ClassSession** | **M6 Timetable** |
 | **M5** | **Student, SectionMembership, OfferingEnrolment** | **M5 Student Records** (its roster part) |
 | **M6** | **Attendance sheet, record and correction** | **M7 Attendance** |
+| **M7** | **Internal assessment: components, marks, corrections** | **M9 Internal Assessment** |
 
 *Consequences.* An implementation module number means the delivery slice, never the registry row.
 The blueprint registry stays the subject map for planning. Any document that says "M4" without
@@ -1088,3 +1089,77 @@ root. The `web/**` analyzer exclusion was first removed as unnecessary, then del
 the project owner as a guard: it matches nothing today, and it stops a stray `web/` from being
 analyzed if one is ever recreated. It does not make Flutter treat the project as a web app; only a
 `web/index.html` does that.
+
+
+---
+
+**AD-55 — Internal assessment is built now; examinations wait for OD-1**
+
+*Status.* Approved and active, 2026-09-13.
+
+*Reason.* Roadmap Phase 6, Exams and results, is next after Attendance, and it mixes two modules
+the blueprint keeps apart. Blueprint 3 gives *internal assessment marks* to M9 and the
+`marks.published` event, the moment a mark becomes visible to a student, to M10. OD-1,
+affiliating or autonomous, is still open and decides almost everything about M10. It decides
+nothing about M9: assumption S4 makes the college the authority for internal assessment in both
+cases.
+
+*Decision.* Build M9 as implementation module M7 (AD-44), and stop at its boundary.
+
+*Not built, each for a reason.* Students seeing marks and report cards: no student role exists on
+any client, and publication is M10's event. Internal totals, grades, pass or fail: how absent and
+exempt count is examination policy, and the grading scheme it needs does not exist. Eligibility
+from attendance: M10, and it needs counting rules this project has not decided. End examinations
+and the university result mirror: OD-1.
+
+*Drift recorded, not acted on.* The roadmap says no feature phase begins before the offline sync
+engine passes its test matrix. Every slice since M3 has proceeded without it, under AD-9's
+narrowing of offline to field roles and the owner's slice-by-slice direction. See Drift 5 in the
+master checklist.
+
+---
+
+**AD-56 — A mark records what happened, not what it is worth**
+
+*Status.* Approved and active, 2026-09-13.
+
+*Decision.* Every mark carries a status as well as a score: `scored` with a score from zero to the
+component's maximum, `absent` with none, or `exempt` with none. Zero is a score and is distinct
+from absent; absent is distinct from exempt; a student with no row has no result yet, which is
+distinct from all three.
+
+*Reason.* Storing a missed test as 0 has already decided that it counts against the student, and
+that is examination policy, not a fact about the test. Recording what happened keeps the record
+true whichever policy M10 adopts. The same reasoning kept `null` apart from `absent` in
+attendance (AD-51).
+
+*Consequences.* Scores allow two decimal places, because half marks are routine. Weights are
+percentages whose sum per course may not exceed 100, enforced by the database under an advisory
+lock so two concurrent additions cannot together pass it; they need not equal 100 while a plan is
+built, and how they combine into a total is M10's. No total is computed anywhere in M7.
+
+---
+
+**AD-57 — The plan is the department's, the marks are the teacher's, and a submitted sheet is
+corrected, never reopened**
+
+*Status.* Approved and active, 2026-09-13.
+
+*Decision.* Heads of department and administrators define the plan, on the web, holding
+`assessment.plan`: in Indian colleges the internal scheme is fixed per course by regulation or
+department, and Blueprint 2 D5 says "define an assessment plan per course from the grading
+scheme". Teachers record when a component was held, enter results and submit, on Flutter (AD-24),
+holding `assessment.mark` and `assessment.submit` bounded by instructor assignment exactly as
+AD-40 requires. Heads of department verify and correct, holding `assessment.verify` and
+`assessment.correct`.
+
+*Lifecycle.* `draft`, `submitted`, `verified`, or `cancelled` from draft when never held. There is
+no return to draft: a head of department who finds an error corrects it with a reason, applied by
+the correction row's own trigger, which is AD-51's rule applied again. Verification is a
+permission-gated transition because the approvals capability P1 does not exist; when it does,
+verification becomes its step and the permission does not move.
+
+*What freezes.* Maximum marks, weight and the date held freeze once the first mark exists: a 45
+out of 50 must not become 45 out of 40, and the roster is taken as of the date held (AD-50), so
+moving the date would change who was expected. A component cannot take marks until it has a
+date, because a test that has not been given a date has not happened.

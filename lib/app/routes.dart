@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../core/design/tokens.dart';
+import '../features/assessment/presentation/course_assessments_screen.dart';
+import '../features/assessment/presentation/mark_sheet_screen.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
 
 /// Route names. No raw path string appears in a widget.
 abstract final class Routes {
   static const attendance = '/attendance';
+  static const courseAssessments = '/assessments';
+  static const markSheet = '/assessments/sheet';
 }
 
 /// One typed argument class per route that needs arguments, never a raw map.
@@ -20,6 +24,18 @@ class AttendanceArgs {
 
 /// Flutter's own Navigator with a central `onGenerateRoute`, as the client
 /// architecture requires. No routing package: this covers the need without one.
+/// Identifiers only; the screens read their own data.
+class CourseAssessmentsArgs {
+  const CourseAssessmentsArgs({required this.offeringId, required this.courseTitle});
+  final String offeringId;
+  final String courseTitle;
+}
+
+class MarkSheetArgs {
+  const MarkSheetArgs({required this.componentId});
+  final String componentId;
+}
+
 abstract final class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -27,6 +43,17 @@ abstract final class AppRouter {
         final args = settings.arguments;
         if (args is! AttendanceArgs) return _unknown(settings);
         return _page(settings, AttendanceScreen(sessionId: args.sessionId));
+      case Routes.courseAssessments:
+        final args = settings.arguments;
+        if (args is! CourseAssessmentsArgs) return _unknown(settings);
+        return _page(
+          settings,
+          CourseAssessmentsScreen(offeringId: args.offeringId, courseTitle: args.courseTitle),
+        );
+      case Routes.markSheet:
+        final args = settings.arguments;
+        if (args is! MarkSheetArgs) return _unknown(settings);
+        return _page(settings, MarkSheetScreen(componentId: args.componentId));
       default:
         return _unknown(settings);
     }

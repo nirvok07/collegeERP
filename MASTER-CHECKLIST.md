@@ -559,6 +559,21 @@ before the enterprise brief and the blueprint written after it. Not silently res
   every migration comment for no gain in clarity.
 - **Approval required.** No. It records divergence that already existed rather than creating it.
 
+### Drift 5 — Feature phases have outrun the sync engine
+
+- **Problem.** `docs/10-roadmap.md` says no feature phase begins before the sync engine passes its
+  offline test matrix, because retrofitting offline behaviour is the most expensive mistake
+  available. The sync engine has not been built, and M3 through M7 have shipped regardless.
+- **Why it happened.** AD-9 narrowed offline capability to field roles on mobile, and each slice was
+  directed by the owner explicitly. Attendance, the one field workflow, deliberately promises no
+  offline capture and keeps unsent marks on screen instead (AD-52).
+- **Impact.** Medium and growing. Every mobile write added since, attendance and assessment marks
+  among them, is another path the outbox will have to cover when it arrives.
+- **Recommended resolution.** Either retire the sequencing rule in favour of AD-9, or schedule the
+  outbox for attendance and marks as the next mobile slice. The owner's call; recorded so it is a
+  decision rather than a slide.
+- **Approval required.** Yes.
+
 ### Also noted, not drift but gaps created by the scope change
 
 - `docs/03-offline-first.md` commits to system-wide offline. AD-9 narrowed it to field roles on

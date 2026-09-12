@@ -102,6 +102,14 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // Append-only, like the audit log: a correction's history cannot be rewritten
   // by any code path, because no code path holds the privilege to try.
   attendance_corrections: 'INSERT+SELECT',
+
+  // Internal assessment. Components and marks are amended while a sheet is
+  // open, and the triggers decide what an UPDATE may do. No DELETE anywhere:
+  // a component is cancelled, and marks stay because results will cite them.
+  assessment_components: 'INSERT+SELECT+UPDATE',
+  assessment_marks: 'INSERT+SELECT+UPDATE',
+  // Append-only, like the audit log and attendance corrections.
+  assessment_mark_corrections: 'INSERT+SELECT',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */
