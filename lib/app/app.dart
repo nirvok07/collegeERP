@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'routes.dart';
 import '../core/design/theme.dart';
 import '../core/error/failure.dart';
 import '../core/design/tokens.dart';
@@ -114,6 +115,9 @@ class _CollegeAppState extends State<CollegeApp> {
     return MaterialApp(
       title: 'College',
       debugShowCheckedModeBanner: false,
+      // Flutter's own Navigator with a central generator, per the client
+      // architecture. The shell stays in `home`; pushes go through this.
+      onGenerateRoute: AppRouter.onGenerateRoute,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       home: switch (_phase) {

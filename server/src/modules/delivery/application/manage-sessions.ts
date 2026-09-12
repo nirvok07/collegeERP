@@ -9,7 +9,7 @@
 import { Err, Ok, type Result } from '../../../core/result.ts';
 import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
-import type { UnitOfWork } from '../../../shared/application/unit-of-work.ts';
+import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type { OfferingRepository } from '../../teaching/application/ports.ts';
 import type {
   SessionFilter, SessionRecord, SessionRepository, TeachingReachReader,
@@ -321,4 +321,23 @@ export async function reassignSession(
 function translate(e: unknown, fallback: string) {
   if (e instanceof AppException) return fail(e.code, e.message || fallback);
   throw e;
+}
+
+/**
+ * Records a class as taught inside another module's transaction.
+ *
+ * Submitting an attendance register is evidence that the class happened, and
+ * leaving the session merely scheduled would leave the two records
+ * contradicting each other. The write stays here, in the module that owns the
+ * session lifecycle, rather than M6 reaching into this table.
+ *
+ * Returns false when the session was already completed or cancelled, which is a
+ * no-op rather than an error: the caller only wanted the two records to agree.
+ */
+export function recordTaughtWithin(
+  deps: Pick<SessionDeps, 'sessions'>,
+  tx: Tx,
+  input: { sessionId: string; by: string; at: Date },
+): Promise<boolean> {
+  return deps.sessions.complete(tx, { id: input.sessionId, by: input.by, at: input.at });
 }

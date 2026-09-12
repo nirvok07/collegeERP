@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/routes.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../domain/class_session.dart';
@@ -127,14 +128,34 @@ class _SessionSheetState extends State<_SessionSheet> {
                 ),
               ),
 
-            // The one write a teacher makes here. Attendance is a later module,
-            // and nothing on this sheet pretends otherwise.
-            if (session.canMarkTaught && session.iAmTeaching)
+            // Attendance first: it is why a teacher opens a class, and
+            // submitting a register records the class as taught anyway.
+            if (!session.isCancelled && session.iAmTeaching)
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.base),
                 child: SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pushNamed(
+                        Routes.attendance,
+                        arguments: AttendanceArgs(sessionId: session.id),
+                      );
+                    },
+                    icon: const Icon(Icons.how_to_reg_outlined, size: 18),
+                    label: Text(session.isTaught ? 'View the register' : 'Take attendance'),
+                  ),
+                ),
+              ),
+
+            // Still offered, for a class taught without a register to take.
+            if (session.canMarkTaught && session.iAmTeaching)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
                     onPressed: _busy ? null : _mark,
                     child: Text(_busy ? 'Recording' : 'I taught this class'),
                   ),

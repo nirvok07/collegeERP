@@ -11,6 +11,8 @@ import '../../features/organisation/data/organisation_api.dart';
 import '../../features/people/data/people_api.dart';
 import '../../features/teaching/data/teaching_api.dart';
 import '../../features/teaching/domain/teaching_repository.dart';
+import '../../features/attendance/data/attendance_api.dart';
+import '../../features/attendance/domain/attendance_repository.dart';
 import '../../features/delivery/data/delivery_api.dart';
 import '../../features/delivery/domain/delivery_repository.dart';
 
@@ -42,5 +44,6 @@ void configureDependencies() {
     // HTTP adapter.
     ..registerLazySingleton<TeachingRepository>(() => TeachingApi(locator<ApiClient>()))
     ..registerLazySingleton<DeliveryRepository>(() => DeliveryApi(locator<ApiClient>()))
+    ..registerLazySingleton<AttendanceRepository>(() => AttendanceApi(locator<ApiClient>()))
     ..registerLazySingleton(() => AuthorityApi(locator<ApiClient>()));
 }

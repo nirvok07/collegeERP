@@ -953,3 +953,104 @@ of a class.
 *Rejected.* Deriving the roster from cohort membership alone, which breaks electives; and an
 exception-only model recording just drops and adds, which would have to be replaced when M5 arrives
 properly.
+
+---
+
+**AD-51 — Attendance is a sheet per class session and a record per student, with two states and no
+unlock**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Shape.* One `attendance_sheet` per class session, holding the state of the act of marking, and one
+`attendance_record` per student on it, holding one state. The sheet is a separate table from
+`class_sessions` because M4 owns the teaching occurrence and M6 owns what was recorded about it; a
+column on M4's table would put attendance state inside the teaching-delivery boundary. The sheet is
+created by the first mark rather than by scheduling, so a term of classes does not carry a term of
+empty registers.
+
+*States.* `present`, `absent`, `late`, `excused`. Late is recorded because colleges record it.
+Excused covers sanctioned absence, which Blueprint 2 D4 names as a workflow ("record a duty leave
+exemption") and which would otherwise be faked as `present`, making the register wrong. Deliberately
+not states: `medical` (a reason for excused), `holiday` (a property of the day, owned by M4),
+`cancelled` (a property of the session), and `not marked`, which is the absence of a row and is
+represented that way. **No percentage is computed anywhere in this slice**: how late and excused
+count toward eligibility is a rule that belongs with examinations, and deciding it now would bake
+one college's policy into the schema.
+
+*Lifecycle.* `draft` then `submitted`, and **there is no unlock**. A submitted register stays
+submitted; changing a mark afterwards is a correction that records the old state, the new state, who
+changed it and why. An unlock is an invitation to edit history quietly and a correction is a
+statement that history was wrong: only one of those is auditable. A term-level lock after results
+would need a locking authority and an examination module, and is recorded as deferred rather than
+guessed.
+
+*The correction is the mechanism, not a note about one.* Inserting the correction row is what
+changes the mark: a database trigger applies it, having first checked that the register is submitted
+and that the stated previous state is the one actually there. Skipping the paper trail would mean
+not making the change at all. `attendance_corrections` is granted INSERT and SELECT only, like the
+audit log, so no code path holds the privilege to rewrite a mark's history.
+
+*Enforced in the database.* One state per student per session. A mark's student must have been
+enrolled in that course **on the class's own date**, which is AD-50's rule doing its work. A
+cancelled class takes no attendance. A submitted register accepts no new marks and no direct edits.
+A submitted register never returns to draft. Every correction states a reason.
+
+*One cross-module effect.* Submitting a register records the class as taught, because submitting is
+evidence that the class happened and leaving the session merely `scheduled` would leave the two
+records contradicting each other. That write belongs to M4 and is performed by an M4 function inside
+M6's transaction, not by reaching into M4's table.
+
+---
+
+**AD-52 — One register is written as a batch under optimistic concurrency**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Two teachers can hold the same register: a lead and a co-instructor, or a teacher and the
+office entering a paper sheet. Silently overwriting each other would produce a register nobody
+recognises. A pessimistic lock is worse: a lock held across a classroom is abandoned the moment
+somebody walks out of the room.
+
+*Mechanism.* The sheet carries a `version`. Marking sends the version the client last read; if it no
+longer matches, the write is refused and the message says somebody else changed the register, so the
+client re-reads instead of clobbering. Submission takes the version too, so nobody submits a
+register that changed under them. Zero means no register exists yet, which is how the first mark
+opens one.
+
+*Batch.* The whole set of marks is one request and one transaction: fifty marks either all land or
+none do, and a classroom of sixty is never sixty requests. The triggers still fire per row, so one
+ineligible student fails the whole statement, which is the correct outcome for a register.
+
+*Client side.* Every tap lands in a local draft and nothing is sent until the teacher saves, because
+a classroom is exactly where the network is worst and a lost tap is a wrong academic record. A
+failed save keeps every mark on screen. Only what changed is sent, so a save cannot overwrite a mark
+somebody else made in the meantime. This is **not** offline support: nothing survives the app being
+killed, and the screen says so. Durable capture needs an outbox and a replay policy, and promising
+it without those is how attendance data goes missing.
+
+---
+
+**AD-53 — Correcting a submitted register is the head of department's authority, not the teacher's**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Blueprint 2 D4 is explicit: "Every attendance correction after submission by the HOD or
+Class Advisor, with a reason." A teacher who can quietly change their own submitted register is the
+single fastest way to make an attendance record untrustworthy, which is the one thing this module
+exists to prevent.
+
+*Decision.* Faculty hold `attendance.read`, `attendance.mark` and `attendance.submit`. They do not
+hold `attendance.correct`, which sits with the head of department and the college administrator.
+Until then a teacher asks, which is a real cost and the right one.
+
+*What is deferred.* The blueprint's authority is an **approval**, not a permission: a teacher
+requests a correction and the head of department approves it. Approvals are a platform capability
+that does not exist. When it arrives, the request path is added and this permission does not move.
+
+*How the two questions stay separate.* AD-40 is untouched. `attendance.mark` says a person may
+record attendance; M3's instructor assignment says which classes that reaches, checked by the same
+reader `session.deliver` uses. Acting administratively is decided by **scope breadth**, not by a
+second permission: holding the permission institution-wide is what lets a coordinator enter a paper
+register for a teacher who cannot, and anything narrower must be teaching the course. A faculty
+member granted over section A therefore cannot reach section B whatever their assignments say,
+because the permission is evaluated against the class's own cohort.

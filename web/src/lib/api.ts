@@ -59,6 +59,11 @@ export class ApiClient {
     return this.request<T>('PATCH', path, body);
   }
 
+  /** A batch replacement of something that exists, attendance being the case. */
+  put<T>(path: string, body: unknown): Promise<ApiResult<T>> {
+    return this.request<T>('PUT', path, body);
+  }
+
   del<T>(path: string): Promise<ApiResult<T>> {
     return this.request<T>('DELETE', path);
   }

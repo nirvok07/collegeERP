@@ -1,0 +1,71 @@
+.registers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-sm); }
+
+.register-row {
+  display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;
+  padding: var(--space-md) var(--space-base);
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--radius-card);
+  transition: background var(--dur-micro) var(--ease-sharp);
+}
+.register-row:hover { background: var(--surface-hover); }
+
+/* A class whose day has gone with nobody accounting for it. The left edge
+   rather than a colour wash, so the row stays readable. */
+.register-row--late { box-shadow: inset 3px 0 0 var(--warning); }
+
+.register-row__when {
+  display: flex; flex-direction: column; min-width: 90px; font: var(--text-body);
+}
+.register-row__main {
+  flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px;
+  padding: 0; background: transparent; border: none; text-align: start; cursor: pointer;
+  color: inherit; font: inherit;
+}
+.register-row__progress { font: var(--text-caption); color: var(--text-secondary); }
+.tally { font: var(--text-caption); color: var(--text-secondary); }
+
+/* ---- One register ------------------------------------------------------ */
+.register__summary {
+  display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;
+  font: var(--text-caption); color: var(--text-secondary);
+}
+.register__unmarked { color: var(--warning); }
+
+.register { list-style: none; margin: 0; padding: 0; }
+.register__row {
+  display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;
+  padding: var(--space-sm) 0; border-bottom: 1px solid var(--outline);
+}
+.register__row:last-child { border-bottom: none; }
+.register__who { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 2px; font: var(--text-body); }
+.register__state { font: var(--text-label); color: var(--text-secondary); }
+.register__history {
+  flex-basis: 100%; display: flex; flex-direction: column; gap: 2px;
+  font: var(--text-caption); color: var(--text-tertiary);
+}
+
+/* Four states in one row, because reaching "late" through a menu is a second
+   tap for something a register needs often. */
+.marks { display: inline-flex; gap: var(--space-xs); }
+.mark {
+  width: 32px; height: 32px; display: grid; place-items: center;
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--outline); border-radius: var(--radius-pill);
+  font: var(--text-label); cursor: pointer;
+  transition: background var(--dur-micro) var(--ease-sharp),
+              border-color var(--dur-micro) var(--ease-sharp),
+              color var(--dur-micro) var(--ease-sharp),
+              transform var(--press);
+}
+.mark:hover { background: var(--surface-variant); }
+.mark:active { transform: scale(0.94); }
+.mark--on { color: var(--on-primary); }
+.mark--present { background: var(--success); border-color: var(--success); }
+.mark--absent { background: var(--error); border-color: var(--error); }
+.mark--late { background: var(--warning); border-color: var(--warning); }
+.mark--excused { background: var(--info); border-color: var(--info); }
+
+@media (max-width: 720px) {
+  .register-row__main { flex-basis: 100%; order: 2; }
+  .register-row__progress, .tally { order: 3; }
+}

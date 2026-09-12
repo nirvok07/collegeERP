@@ -10,12 +10,11 @@ import '../error/result.dart';
 /// contract: success carries `data`, failure carries `error` with a user-safe
 /// message that is shown verbatim rather than reworded here.
 class ApiClient {
-  ApiClient({
-    Dio? dio,
-    required this._accessToken,
-    required this._renew,
-  })  : _dio = dio ??
-            Dio(BaseOptions(
+  ApiClient({Dio? dio, required this._accessToken, required this._renew})
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               baseUrl: AppConfig.current.apiBaseUrl,
               connectTimeout: const Duration(seconds: 15),
               receiveTimeout: const Duration(seconds: 30),
@@ -23,7 +22,8 @@ class ApiClient {
               // every path returns a Result and none escapes as a raw DioException.
               validateStatus: (_) => true,
               contentType: 'application/json',
-            ));
+            ),
+          );
 
   final Dio _dio;
   final Future<String?> Function() _accessToken;
@@ -34,6 +34,11 @@ class ApiClient {
 
   Future<Result<T>> post<T>(String path, Object? body, T Function(dynamic) parse) =>
       _send(path, 'POST', body, parse);
+
+  /// A partial replacement of something that exists. Used where the server
+  /// models a batch edit rather than a transition, attendance being the case.
+  Future<Result<T>> put<T>(String path, Object? body, T Function(dynamic) parse) =>
+      _send(path, 'PUT', body, parse);
 
   Future<Result<T>> _send<T>(
     String path,
@@ -98,11 +103,13 @@ Result<T> parseEnvelope<T>(int status, dynamic body, T Function(dynamic) parse) 
     if (raw is Map) {
       raw.forEach((key, value) => fieldErrors['$key'] = '$value');
     }
-    return Err(Failure(
-      code: FailureCode.fromWire(error['code'] as String?),
-      message: (error['message'] as String?) ?? Failure.unknown.message,
-      fieldErrors: fieldErrors,
-    ));
+    return Err(
+      Failure(
+        code: FailureCode.fromWire(error['code'] as String?),
+        message: (error['message'] as String?) ?? Failure.unknown.message,
+        fieldErrors: fieldErrors,
+      ),
+    );
   }
 
   if (!body.containsKey('data')) return const Err(Failure.unknown);

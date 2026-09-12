@@ -1,3 +1,9 @@
+import {
+  DAY_NAMES, addDays, dayLabel, isoDayOfWeek, rangeLabel, startOfWeek, today,
+} from '../../lib/dates.ts';
+
+export { DAY_NAMES, addDays, dayLabel, isoDayOfWeek, rangeLabel, startOfWeek, today };
+
 export type SessionStatus = 'scheduled' | 'completed' | 'cancelled';
 export type RoomKind = 'classroom' | 'lab' | 'seminar' | 'auditorium';
 
@@ -82,8 +88,6 @@ export interface GenerationReport {
   occurrences: Array<{ date: string; starts_at: string; ends_at: string; room_id: string | null }>;
 }
 
-export const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
 export const COMPONENT_LABEL: Record<string, string> = {
   lecture: 'Lecture', lab: 'Lab', tutorial: 'Tutorial',
 };
@@ -91,45 +95,6 @@ export const COMPONENT_LABEL: Record<string, string> = {
 export const ROOM_KIND_LABEL: Record<RoomKind, string> = {
   classroom: 'Classroom', lab: 'Lab', seminar: 'Seminar room', auditorium: 'Auditorium',
 };
-
-/* ------------------------------------------------------------ calendar maths */
-/**
- * Every date here is a 'YYYY-MM-DD' string handled in UTC.
- *
- * A local Date would shift the day for every timezone east of UTC and again
- * across a daylight-saving boundary, which is how a timetable ends up wrong by
- * one day in some months and right in others.
- */
-const DAY_MS = 86_400_000;
-
-export const today = (): string => new Date().toISOString().slice(0, 10);
-
-export function addDays(date: string, days: number): string {
-  return new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
-}
-
-/** ISO-8601 day numbering: 1 is Monday, 7 is Sunday. */
-export function isoDayOfWeek(date: string): number {
-  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
-  return day === 0 ? 7 : day;
-}
-
-/** Weeks start on Monday, which is how a college timetable is drawn. */
-export function startOfWeek(date: string): string {
-  return addDays(date, -(isoDayOfWeek(date) - 1));
-}
-
-export function dayLabel(date: string): string {
-  return `${DAY_NAMES[isoDayOfWeek(date) - 1]}, ${new Date(`${date}T00:00:00Z`)
-    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' })}`;
-}
-
-export function rangeLabel(from: string, to: string): string {
-  if (from === to) return dayLabel(from);
-  const fmt = (d: string) => new Date(`${d}T00:00:00Z`)
-    .toLocaleDateString(undefined, { day: 'numeric', month: 'short', timeZone: 'UTC' });
-  return `${fmt(from)} to ${fmt(to)}`;
-}
 
 /* ----------------------------------------------------------------- grouping */
 

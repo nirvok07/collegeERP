@@ -6,11 +6,31 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     218 backend + 113 web + 57 Flutter = 388 passing
-Next      Attendance, the first module that records something against a class
-          session. Everything it needs now exists: a frozen occurrence to point
-          at, and an authorization shape where the role permits the action and
-          the instructor assignment bounds its reach (AD-40)
+Tests     277 backend + 148 web + 81 Flutter = 506 passing
+Next      Internal assessment and marks, or the approvals capability that
+          attendance corrections and timetable publication are both waiting on.
+          Attendance percentage and eligibility are deliberately unbuilt: they
+          need the counting rules, which belong with examinations
+
+M6 ATTENDANCE: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
+  A register per class session, a mark per student, and corrections. Two states,
+  draft and submitted, and no unlock: a submitted register changes only by a
+  correction that records who changed what and why, and the corrections table is
+  append-only by privilege as well as by design.
+  Flutter is the primary surface here, which is the first slice where that is
+  literally true: all present in one tap, four states per row, one batch write,
+  and an unsaved count that never lies. Web is the administrative and corrective
+  surface.
+  NOT built: attendance percentage, eligibility, detention, defaulter lists, a
+  correction request-and-approve workflow, a term-level lock, and offline
+  capture. Each is recorded with its reason.
+
+M5 STUDENT RECORDS: MINIMUM ONLY, BACKEND + WEB
+  Student, cohort membership and enrolment in a course offering, added under M5's
+  own ownership because attendance needed a roster and none existed (AD-50).
+  Admissions, status history, transfers, guardians and alumni are M5's real
+  surface and are not built. Flutter gets no student register: that is an
+  administrator's screen, and the roster reaches mobile inside attendance.
 
 M4 TEACHING DELIVERY: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   Room, timetable slot and class session are built on all three sides. The web
@@ -263,6 +283,62 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M6 — Attendance, on M5's minimum roster
+
+Designed before any table, in `docs/blueprint/modules/m5-m6-attendance.md`.
+
+**The dependency decided the shape.** Attendance answers which enrolled students
+were accounted for, and every word of that existed except *enrolled students*.
+So the slice added the minimum M5 roster first, under M5's own ownership
+(AD-50), and attendance consumes it. Two bindings, because an elective splits a
+cohort: a roster built from membership alone would show a teacher sixty names
+and invite forty wrong absences.
+
+**The rule the whole thing turns on.** A class session's roster is every student
+whose enrolment was live **on that class's own date**, never today. A student who
+withdrew in week ten is still on week three's register; one who joined in week
+six is not. The database checks enrolment the same way before it accepts a mark.
+
+**Two states, and no unlock** (AD-51). A submitted register stays submitted, and
+a change is a correction recording the old state, the new state, who and why.
+Inserting the correction is what applies it: a trigger does the update, having
+checked that the register is submitted and that the stated previous state is the
+one actually there. `attendance_corrections` holds INSERT and SELECT only, so no
+code path can rewrite a mark's history.
+
+**Four states, each earning its place.** present, absent, late, excused. No
+percentage anywhere: how late and excused count toward eligibility belongs with
+examinations, and deciding it here would bake one college's policy into the
+schema.
+
+**One batch, optimistic concurrency** (AD-52). The sheet carries a version; a
+stale write is refused and says somebody else changed the register. Fifty marks
+are one transaction, and a sixty-student class is never sixty requests.
+
+**Corrections are the head of department's authority** (AD-53), which is
+Blueprint 2 D4's own rule. Faculty mark and submit; they do not correct. The
+approval workflow that would let a teacher request one needs the approvals
+capability, so until then a teacher asks.
+
+**Flutter is the primary client, literally.** Marking is a phone task performed
+standing in front of sixty people. All present in one tap, four states per row
+reachable without a menu, one batch write, an unsaved count that never lies, and
+a confirm before leaving with unsent marks. Offline is not promised: a failed
+save keeps every tap on screen, and the screen says nothing survives the app
+being killed. The first `onGenerateRoute` router arrived with it, since this is
+the app's first pushed screen.
+
+**Submitting a register records the class as taught**, through an M4 function
+inside M6's transaction, because submitting is evidence the class happened and
+two records disagreeing about that is worse than a small cross-module call.
+
+**Two defects found while building.** A PL/pgSQL variable named `offering_id`
+shadowed the column of the same name, so every attendance write failed at
+runtime with an ambiguous-reference error; migration 016 replaces the function
+forward rather than editing an applied migration. And the batch reported a
+version one ahead of reality on the request that creates a register, which made
+the next write look stale.
 
 ### M4 — Teaching Delivery: room, timetable slot and class session
 

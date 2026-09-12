@@ -10,6 +10,7 @@ import { CurriculumPage } from './features/curriculum/CurriculumPage.tsx';
 import { TeachingPage } from './features/teaching/TeachingPage.tsx';
 import { DeliveryPage } from './features/delivery/DeliveryPage.tsx';
 import { StudentsPage } from './features/students/StudentsPage.tsx';
+import { AttendancePage } from './features/attendance/AttendancePage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -197,6 +198,15 @@ function sectionsFor(
           }}
         />
       ),
+    });
+  }
+  if (permissions?.has('attendance.read')) {
+    items.push({
+      key: 'attendance',
+      label: 'Attendance',
+      // No permissions prop: what this reader may do with a register is stated
+      // per register by the server, which resolves it against the cohort.
+      render: () => <AttendancePage api={api} />,
     });
   }
   if (items.length === 0) {

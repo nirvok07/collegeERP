@@ -62,6 +62,10 @@ import {
 } from './modules/enrolment/infrastructure/repositories.ts';
 import type { EnrolmentDeps } from './modules/enrolment/application/manage-students.ts';
 import {
+  PgMarkRepository, PgSheetRepository,
+} from './modules/attendance/infrastructure/repositories.ts';
+import type { AttendanceDeps } from './modules/attendance/application/manage-attendance.ts';
+import {
   PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
 } from './modules/curriculum/infrastructure/repositories.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
@@ -88,6 +92,7 @@ export interface Container {
   timetable: TimetableDeps;
   sessions: SessionDeps;
   enrolment: EnrolmentDeps;
+  attendance: AttendanceDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -127,6 +132,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const studentRepository = new PgStudentRepository();
   const membershipRepository = new PgMembershipRepository();
   const enrolmentRepository = new PgEnrolmentRepository();
+  const reachReader = new PgTeachingReachReader();
 
   // Cloudinary only when configured; otherwise an in-memory adapter, so the
   // application never branches on which one it received.
@@ -206,7 +212,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       uow, audit, ids, clock,
       sessions: sessionRepository,
       offerings: offeringRepository,
-      reach: new PgTeachingReachReader(),
+      reach: reachReader,
     },
     // M5 reads M1's person port and M3's section and offering ports. It owns the
     // student record and the two bindings, and duplicates none of them.
@@ -218,6 +224,17 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       persons,
       sections: sectionRepository,
       offerings: offeringRepository,
+    },
+    // M6 consumes M4's session and M5's roster through their ports, and reuses
+    // the same reach reader session completion uses, so there is one statement
+    // of which teaching a person can act on.
+    attendance: {
+      uow, audit, ids, clock,
+      sheets: new PgSheetRepository(),
+      marks: new PgMarkRepository(),
+      sessions: sessionRepository,
+      enrolments: enrolmentRepository,
+      reach: reachReader,
     },
     close: async () => {
       if (!pool) await dbPool.end();

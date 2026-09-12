@@ -94,6 +94,14 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   students: 'INSERT+SELECT+UPDATE',
   section_memberships: 'INSERT+SELECT+UPDATE',
   offering_enrolments: 'INSERT+SELECT+UPDATE',
+
+  // Attendance. Sheets and marks are amended while a register is open, and the
+  // triggers decide what an UPDATE may actually do.
+  attendance_sheets: 'INSERT+SELECT+UPDATE',
+  attendance_records: 'INSERT+SELECT+UPDATE',
+  // Append-only, like the audit log: a correction's history cannot be rewritten
+  // by any code path, because no code path holds the privilege to try.
+  attendance_corrections: 'INSERT+SELECT',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */
