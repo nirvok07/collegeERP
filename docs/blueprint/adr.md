@@ -1083,5 +1083,8 @@ moving Flutter to `clients/mobile/` later is available and unforced.
 project targets the web. Adding a real Flutter Web scaffold beside React to satisfy the tooling,
 which creates the duplicate web client AD-24 forbids.
 
-*Consequence.* Flutter no longer finds a web target, the `web/**` analyzer exclusion is removed as
-unnecessary, and no directory named `web/` exists at the root.
+*Consequence.* Flutter no longer finds a web target and no directory named `web/` exists at the
+root. The `web/**` analyzer exclusion was first removed as unnecessary, then deliberately kept by
+the project owner as a guard: it matches nothing today, and it stops a stray `web/` from being
+analyzed if one is ever recreated. It does not make Flutter treat the project as a web app; only a
+`web/index.html` does that.
