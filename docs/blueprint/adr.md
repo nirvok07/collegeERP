@@ -413,3 +413,58 @@ already in place. The cookie path is narrowed to the auth routes, so it is not a
 ordinary API calls. A cold start costs one refresh request. Mobile does not use cookies: Flutter
 receives the token in the response body and stores it in platform secure storage, exercising the
 same endpoint and the same rotation rules.
+
+---
+
+**AD-27 — Archiving an organisational unit is refused while authority is scoped to it**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Blueprint 3 §3.5 proposed marking such assignments invalid and listing them for
+remediation. Implementing M2 showed that hides the consequence at the moment the decision is
+made: the archive succeeds, access silently stops working, and someone discovers it later.
+Refusing, and naming the people who hold that access, forces the reorganisation into the right
+order. Move them, then archive.
+
+*Alternatives.* Invalid-scope state with a remediation list, rejected as above. Cascade the
+revocation, rejected because removing someone's authority as a side effect of an unrelated
+administrative action is exactly what AD-13 exists to prevent.
+
+*Impact.* Supersedes the invalid-scope proposal in Blueprint 3 §3.5. The refusal message names
+up to three holders, so it is actionable rather than a count. Archiving a campus is refused the
+same way, and additionally while it still holds active departments.
+
+---
+
+**AD-28 — Cross-module scope questions go through a declared capability, not a shared read**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* M2 must know whether anyone holds authority over a department before archiving it.
+Querying `role_assignments` directly would make M2 a second reader of M1's table and therefore a
+second interpretation of what "active authority" means, which drifts the moment either changes.
+
+*Alternatives.* Direct query, rejected on ownership. A domain event after the fact, rejected
+because the answer is needed before the decision, not after it.
+
+*Impact.* M1 exposes `occupancyOfScope`, the same shape as the provisioning capability M2
+already calls under AD-20. Any future module owning a scope target asks the same way.
+
+---
+
+**AD-29 — Organisational structure administration is web-only, by intent**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Creating campuses and departments is a rare administrative act performed by one or two
+people, involving hierarchy and codes that other records reference permanently. It is desktop
+work. Building it for touch would serve nobody and would cost a second set of screens to
+maintain.
+
+*Alternatives.* Both clients from the start, rejected as effort with no user. Mobile-first,
+rejected outright for this capability.
+
+*Impact.* The write surface is web-only. The read surface is deliberately not: the API returns
+two flat lists and the client assembles the tree, so a phone can drill down one level at a time
+rather than receiving a nested structure shaped for a desktop layout. Mobile will read the tree
+as soon as it shows a teacher their department, and nothing here has to change for that.

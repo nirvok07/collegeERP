@@ -6,8 +6,8 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     82 backend + 39 web = 121 passing
-Next      M2 academic structure, or Flutter client bootstrap
+Tests     97 backend + 48 web = 145 passing
+Next      Flutter client bootstrap, or M2 programs and course structure
 Blocked   OD-1 affiliating vs autonomous, OD-4 money
 Note      Supabase session pooler URI still REQUIRED. The direct host is
           IPv6-only and unreachable here; local PostgreSQL stays active.
@@ -222,6 +222,33 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M2 — organisational tree (campuses and departments)
+
+The structure M1 scopes authority against. Campuses and departments existed in
+migration 001 with tenant isolation; what was missing was lifecycle, an
+application layer and a surface. All three now exist, and department-scoped role
+grants work as a result.
+
+**Migration 007** adds status, archived_at and archived_by to both units. Codes
+are unique among active units only, so archiving frees a code for reuse rather
+than reserving it forever. A partial index enforces exactly one default campus.
+
+**Archiving is refused while authority is scoped to the unit** (AD-27), and the
+refusal names up to three of the people holding it. The earlier blueprint
+proposal to mark such assignments invalid was rejected during implementation: it
+hides the consequence at the moment of the decision.
+
+**M2 asks M1 through a declared capability** (AD-28) rather than reading
+role_assignments, so there is one interpretation of active authority.
+
+**Web-only by intent** (AD-29), recorded rather than assumed. The read API stays
+two flat lists which the client assembles, so a phone can drill down one level
+at a time instead of receiving a desktop-shaped tree.
+
+**Department scope is now real in the UI.** The assign drawer offers
+department-scoped roles only when departments exist, so there is never an empty
+picker, and roles whose only scope the tree cannot yet express stay hidden.
 
 ### Motion system (`web/src/design/motion.css`, `motion.ts`)
 

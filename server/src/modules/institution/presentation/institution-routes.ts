@@ -2,7 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { Container } from '../../../container.ts';
 import { sendFailure, sendOk, sendResult } from '../../../infrastructure/http/server.ts';
-import { requirePlatformActor } from '../../../infrastructure/http/guards.ts';
+import { requirePermission, requirePlatformActor } from '../../../infrastructure/http/guards.ts';
+import { institutionScope } from '../../identity/domain/scope.ts';
+import {
+  archiveCampus, archiveDepartment, createCampus, createDepartment,
+  listCampuses, listDepartments, renameDepartment, type OrgActor,
+} from '../application/manage-org-units.ts';
 import { fail } from '../../../core/errors.ts';
 import { provisionInstitution } from '../application/provision-institution.ts';
 
@@ -19,7 +24,100 @@ const provision = z.object({
   }),
 });
 
+const unitBody = z.object({
+  name: z.string().min(2).max(120),
+  code: z.string().min(1).max(32),
+});
+const departmentBody = unitBody.extend({ campus_id: z.string().uuid() });
+const renameBody = z.object({ name: z.string().min(2).max(120) });
+const archiveBody = z.object({ reason: z.string().min(1).max(500) });
+
 export async function registerInstitutionRoutes(app: FastifyInstance, c: Container) {
+  const orgActor = (req: { actor?: { sub: string; tenantId: string | null } }): OrgActor => ({
+    tenantId: req.actor!.tenantId!,
+    personId: req.actor!.sub,
+  });
+
+  const validationFailure = (issues: z.ZodIssue[]) => {
+    const fieldErrors: Record<string, string> = {};
+    for (const issue of issues) fieldErrors[issue.path.join('.')] = issue.message;
+    return fail('VALIDATION_FAILED', 'Check the highlighted fields.', { fieldErrors });
+  };
+
+  /*
+   * The organisational tree. Read by anyone who can see people, because scope
+   * names appear wherever authority is shown; written only by campus and
+   * department managers.
+   */
+  app.get('/campuses', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'person.read', institutionScope()))) return reply;
+    const includeArchived = (req.query as { archived?: string }).archived === 'true';
+    const rows = await listCampuses(c.manageOrg, orgActor(req), includeArchived);
+    return sendOk(reply, rows.map((campus) => ({
+      id: campus.id, name: campus.name, code: campus.code,
+      is_default: campus.isDefault, status: campus.status,
+      department_count: campus.departmentCount,
+    })));
+  });
+
+  app.post('/campuses', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'campus.manage', institutionScope()))) return reply;
+    const parsed = unitBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const result = await createCampus(c.manageOrg, orgActor(req), parsed.data);
+    return sendResult(reply, result, 201);
+  });
+
+  app.post('/campuses/:id/archive', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'campus.manage', institutionScope()))) return reply;
+    const parsed = archiveBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const result = await archiveCampus(c.manageOrg, orgActor(req), {
+      id: (req.params as { id: string }).id, reason: parsed.data.reason,
+    });
+    return sendResult(reply, result);
+  });
+
+  app.get('/departments', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'person.read', institutionScope()))) return reply;
+    const includeArchived = (req.query as { archived?: string }).archived === 'true';
+    const rows = await listDepartments(c.manageOrg, orgActor(req), includeArchived);
+    return sendOk(reply, rows.map((d) => ({
+      id: d.id, name: d.name, code: d.code, status: d.status,
+      campus_id: d.campusId, campus_name: d.campusName,
+    })));
+  });
+
+  app.post('/departments', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'department.manage', institutionScope()))) return reply;
+    const parsed = departmentBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const result = await createDepartment(c.manageOrg, orgActor(req), {
+      campusId: parsed.data.campus_id, name: parsed.data.name, code: parsed.data.code,
+    });
+    return sendResult(reply, result, 201);
+  });
+
+  app.patch('/departments/:id', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'department.manage', institutionScope()))) return reply;
+    const parsed = renameBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const result = await renameDepartment(c.manageOrg, orgActor(req), {
+      id: (req.params as { id: string }).id, name: parsed.data.name,
+    });
+    return sendResult(reply, result);
+  });
+
+  app.post('/departments/:id/archive', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'department.manage', institutionScope()))) return reply;
+    const parsed = archiveBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const result = await archiveDepartment(c.manageOrg, orgActor(req), {
+      id: (req.params as { id: string }).id, reason: parsed.data.reason,
+    });
+    return sendResult(reply, result);
+  });
+
   /**
    * W0. One request creates the institution and its first administrator, per
    * AD-20. The response carries the invitation token once; it is never stored

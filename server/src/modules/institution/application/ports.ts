@@ -18,9 +18,47 @@ export interface InstitutionRepository {
   list(tx: Tx, limit: number): Promise<InstitutionRecord[]>;
 }
 
+export interface CampusRecord {
+  id: string;
+  tenantId: string;
+  name: string;
+  code: string;
+  isDefault: boolean;
+  status: 'active' | 'archived';
+  departmentCount: number;
+  version: number;
+}
+
+export interface DepartmentRecord {
+  id: string;
+  tenantId: string;
+  campusId: string;
+  campusName: string;
+  name: string;
+  code: string;
+  status: 'active' | 'archived';
+  version: number;
+}
+
 export interface CampusRepository {
   create(
     tx: Tx,
     input: { id: string; tenantId: string; name: string; code: string; isDefault: boolean },
   ): Promise<{ id: string }>;
+  findById(tx: Tx, id: string): Promise<CampusRecord | null>;
+  list(tx: Tx, includeArchived: boolean): Promise<CampusRecord[]>;
+  rename(tx: Tx, id: string, name: string): Promise<boolean>;
+  archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean>;
+}
+
+export interface DepartmentRepository {
+  create(
+    tx: Tx,
+    input: { id: string; tenantId: string; campusId: string; name: string; code: string },
+  ): Promise<{ id: string }>;
+  findById(tx: Tx, id: string): Promise<DepartmentRecord | null>;
+  list(tx: Tx, includeArchived: boolean): Promise<DepartmentRecord[]>;
+  rename(tx: Tx, id: string, name: string): Promise<boolean>;
+  archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean>;
+  countActive(tx: Tx, campusId: string): Promise<number>;
 }

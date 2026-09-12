@@ -1,6 +1,9 @@
 import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
-import type { CampusRepository, InstitutionRecord, InstitutionRepository } from '../application/ports.ts';
+import type {
+  CampusRecord, CampusRepository, DepartmentRecord, DepartmentRepository,
+  InstitutionRecord, InstitutionRepository,
+} from '../application/ports.ts';
 
 const COLUMNS = `id, code, name, status, plan, seat_limit, timezone, version`;
 
@@ -32,6 +35,13 @@ export class PgInstitutionRepository implements InstitutionRepository {
   }
 }
 
+/** Department counts come from the same query as the campus, never per row. */
+const CAMPUS_SELECT = `
+  SELECT c.id, c.tenant_id, c.name, c.code, c.is_default, c.status, c.version,
+         (SELECT count(*)::int FROM departments d
+           WHERE d.campus_id = c.id AND d.status = 'active') AS department_count
+    FROM campuses c`;
+
 export class PgCampusRepository implements CampusRepository {
   async create(
     tx: Tx,
@@ -44,6 +54,121 @@ export class PgCampusRepository implements CampusRepository {
     );
     return { id: rows[0].id };
   }
+
+  async findById(tx: Tx, id: string): Promise<CampusRecord | null> {
+    const { rows } = await clientOf(tx).query(`${CAMPUS_SELECT} WHERE c.id = $1`, [id]);
+    return rows[0] ? toCampus(rows[0]) : null;
+  }
+
+  async list(tx: Tx, includeArchived: boolean): Promise<CampusRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `${CAMPUS_SELECT}
+        WHERE ($1::boolean OR c.status = 'active')
+        ORDER BY c.is_default DESC, c.name`,
+      [includeArchived],
+    );
+    return rows.map(toCampus);
+  }
+
+  async rename(tx: Tx, id: string, name: string): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE campuses SET name = $2, updated_at = now(), version = version + 1
+        WHERE id = $1 AND status = 'active'`,
+      [id, name],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  /** Conditional on still being active, so two archivals cannot both succeed. */
+  async archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE campuses
+          SET status = 'archived', archived_at = $2, archived_by = $3,
+              updated_at = now(), version = version + 1
+        WHERE id = $1 AND status = 'active'`,
+      [id, at, by],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+}
+
+const DEPARTMENT_SELECT = `
+  SELECT d.id, d.tenant_id, d.campus_id, c.name AS campus_name,
+         d.name, d.code, d.status, d.version
+    FROM departments d
+    JOIN campuses c ON c.id = d.campus_id`;
+
+export class PgDepartmentRepository implements DepartmentRepository {
+  async create(
+    tx: Tx,
+    input: { id: string; tenantId: string; campusId: string; name: string; code: string },
+  ): Promise<{ id: string }> {
+    const { rows } = await clientOf(tx).query(
+      `INSERT INTO departments (id, tenant_id, campus_id, name, code)
+       VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [input.id, input.tenantId, input.campusId, input.name, input.code],
+    );
+    return { id: rows[0].id };
+  }
+
+  async findById(tx: Tx, id: string): Promise<DepartmentRecord | null> {
+    const { rows } = await clientOf(tx).query(`${DEPARTMENT_SELECT} WHERE d.id = $1`, [id]);
+    return rows[0] ? toDepartment(rows[0]) : null;
+  }
+
+  async list(tx: Tx, includeArchived: boolean): Promise<DepartmentRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `${DEPARTMENT_SELECT}
+        WHERE ($1::boolean OR d.status = 'active')
+        ORDER BY c.name, d.name`,
+      [includeArchived],
+    );
+    return rows.map(toDepartment);
+  }
+
+  async rename(tx: Tx, id: string, name: string): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE departments SET name = $2, updated_at = now(), version = version + 1
+        WHERE id = $1 AND status = 'active'`,
+      [id, name],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE departments
+          SET status = 'archived', archived_at = $2, archived_by = $3,
+              updated_at = now(), version = version + 1
+        WHERE id = $1 AND status = 'active'`,
+      [id, at, by],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async countActive(tx: Tx, campusId: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT count(*)::int AS n FROM departments
+        WHERE campus_id = $1 AND status = 'active'`,
+      [campusId],
+    );
+    return rows[0]?.n ?? 0;
+  }
+}
+
+function toCampus(r: any): CampusRecord {
+  return {
+    id: r.id, tenantId: r.tenant_id, name: r.name, code: r.code,
+    isDefault: r.is_default, status: r.status,
+    departmentCount: r.department_count, version: r.version,
+  };
+}
+
+function toDepartment(r: any): DepartmentRecord {
+  return {
+    id: r.id, tenantId: r.tenant_id, campusId: r.campus_id, campusName: r.campus_name,
+    name: r.name, code: r.code, status: r.status, version: r.version,
+  };
 }
 
 function toInstitution(r: any): InstitutionRecord {

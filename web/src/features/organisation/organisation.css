@@ -1,0 +1,53 @@
+.org-tree { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-base); }
+
+.org-campus {
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--radius-card); overflow: hidden;
+}
+.org-campus--archived { opacity: 0.6; }
+
+.org-campus__head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-base); padding: var(--space-base) var(--space-lg);
+  background: var(--surface-variant); border-bottom: 1px solid var(--outline);
+  flex-wrap: wrap;
+}
+.org-campus__identity { display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap; min-width: 0; }
+.org-campus__name { font: var(--text-title-lg); }
+.org-campus__actions { display: flex; gap: var(--space-xs); }
+
+.org-code {
+  padding: 1px var(--space-sm); border-radius: var(--radius-input);
+  background: var(--surface); border: 1px solid var(--outline);
+  font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.org-departments { list-style: none; margin: 0; padding: 0; }
+.org-department {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--outline);
+  transition: background var(--dur-micro) var(--ease-sharp);
+}
+.org-department:last-child { border-bottom: none; }
+.org-department:hover { background: var(--surface-hover); }
+.org-department--archived { opacity: 0.6; }
+.org-department__name { font: var(--text-title); flex: 1; min-width: 0; }
+.org-department__actions { margin-inline-start: auto; }
+
+.org-empty { padding: var(--space-lg); color: var(--text-tertiary); font: var(--text-body); }
+.org-skeleton { display: flex; flex-direction: column; gap: var(--space-base); }
+
+.toggle {
+  display: inline-flex; align-items: center; gap: var(--space-sm);
+  font: var(--text-body); color: var(--text-secondary); cursor: pointer;
+}
+
+/* On a phone the nesting stays, but the header stacks so the campus name is
+   never truncated to make room for actions. */
+@media (max-width: 720px) {
+  .org-campus__head { flex-direction: column; align-items: flex-start; }
+  .org-campus__actions { width: 100%; }
+  .org-department { flex-wrap: wrap; }
+}

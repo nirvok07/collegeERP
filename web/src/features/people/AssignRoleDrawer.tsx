@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Banner, Button, Drawer, Field, StatusChip } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
+import type { Department } from '../organisation/types.ts';
 import type { Assignment, Person, Role } from './types.ts';
 
 /**
@@ -25,26 +26,52 @@ export function AssignRoleDrawer({
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [revoking, setRevoking] = useState<Assignment | null>(null);
   const [reason, setReason] = useState('');
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departmentId, setDepartmentId] = useState('');
 
   useEffect(() => {
     if (!person) return;
     setLoading(true);
     setFailure(null);
     setRoleKey('');
+    setDepartmentId('');
     void api.get<Assignment[]>('/v1/assignments').then((r) => {
       setLoading(false);
       if (r.ok) setAssignments(r.value.filter((a) => a.person_id === person.person_id));
       else setFailure(r.error);
+    });
+    // Department scope became real once M2 provided the units. The picker is
+    // populated from actual departments, never shown empty.
+    void api.get<Department[]>('/v1/departments').then((r) => {
+      if (r.ok) setDepartments(r.value.filter((d) => d.status === 'active'));
     });
   }, [person, api]);
 
   if (!person) return null;
 
   const role = roles.find((r) => r.key === roleKey);
-  const held = new Set(assignments.map((a) => a.role_key));
-  const grantable = roles.filter(
-    (r) => r.allowed_scope_types.includes('institution') && !held.has(r.key),
-  );
+  const held = new Set(assignments.map((a) => `${a.role_key}:${a.scope_ref_id ?? 'institution'}`));
+
+  const scopeType = role?.allowed_scope_types.includes('institution')
+    ? 'institution'
+    : role?.allowed_scope_types.includes('department')
+      ? 'department'
+      : null;
+
+  // A department-scoped role needs a department chosen, and there must be one
+  // to choose. Roles whose only scopes we cannot yet express stay out.
+  const grantable = roles.filter((r) => {
+    if (r.allowed_scope_types.includes('institution')) {
+      return !held.has(`${r.key}:institution`);
+    }
+    return r.allowed_scope_types.includes('department') && departments.length > 0;
+  });
+
+  const needsDepartment = scopeType === 'department';
+  const canGrant = Boolean(role) && (!needsDepartment || Boolean(departmentId));
+  const scopeName = needsDepartment
+    ? departments.find((d) => d.id === departmentId)?.name ?? 'a department'
+    : 'the whole college';
 
   async function grant() {
     if (!role || !person) return;
@@ -53,11 +80,12 @@ export function AssignRoleDrawer({
     const result = await api.post('/v1/assignments', {
       person_id: person.person_id,
       role_key: role.key,
-      scope_type: 'institution',
+      scope_type: scopeType,
+      ...(needsDepartment ? { scope_ref_id: departmentId } : {}),
     });
     setBusy(false);
     if (!result.ok) { setFailure(result.error); return; }
-    onChanged(`${person.full_name} can now ${role.summary.replace(/^Can /, '')}`);
+    onChanged(`${person.full_name} can now ${role.summary.replace(/^Can /, '')} in ${scopeName}`);
     onClose();
   }
 
@@ -93,7 +121,7 @@ export function AssignRoleDrawer({
         ) : (
           <>
             <Button variant="secondary" onClick={onClose}>Close</Button>
-            <Button variant="primary" onClick={() => void grant()} loading={busy} disabled={!role}>
+            <Button variant="primary" onClick={() => void grant()} loading={busy} disabled={!canGrant}>
               Grant access
             </Button>
           </>
@@ -130,7 +158,9 @@ export function AssignRoleDrawer({
                     <div>
                       <div className="table__primary">{a.role_name}</div>
                       <div className="table__secondary">
-                        Whole college
+                        {a.scope_type === 'institution'
+                          ? 'Whole college'
+                          : departments.find((d) => d.id === a.scope_ref_id)?.name ?? a.scope_type}
                         {a.valid_to ? ` · until ${new Date(a.valid_to).toLocaleDateString()}` : ''}
                         {a.source === 'bootstrap' ? ' · created with the college' : ''}
                       </div>
@@ -159,10 +189,28 @@ export function AssignRoleDrawer({
                 <span className="field__message">{role ? role.summary : ' '}</span>
               </div>
             )}
-            {role && (
+            {needsDepartment && (
+              <div className="field">
+                <label className="field__label" htmlFor="grant-department">Department</label>
+                <select
+                  id="grant-department" className="field__input" value={departmentId}
+                  onChange={(e) => setDepartmentId(e.currentTarget.value)}
+                >
+                  <option value="">Choose a department</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name} · {d.campus_name}</option>
+                  ))}
+                </select>
+                <span className="field__message">
+                  They will see only this department, not the whole college.
+                </span>
+              </div>
+            )}
+
+            {role && canGrant && (
               <Banner tone="info">
-                {person.full_name} will be able to {role.summary.replace(/^Can /, '')} across the
-                whole college, effective immediately.
+                {person.full_name} will be able to {role.summary.replace(/^Can /, '')} in{' '}
+                {scopeName}, effective immediately.
               </Banner>
             )}
             <p className="table__muted" style={{ marginTop: 'var(--space-sm)' }}>

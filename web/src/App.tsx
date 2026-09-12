@@ -5,6 +5,7 @@ import { AuthSession, type Actor } from './lib/auth.ts';
 import { SignInPage } from './features/auth/SignInPage.tsx';
 import { InstitutionsPage } from './features/institutions/InstitutionsPage.tsx';
 import { PeoplePage } from './features/people/PeoplePage.tsx';
+import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -125,6 +126,13 @@ function sectionsFor(
       key: 'people',
       label: 'People',
       render: () => <PeoplePage api={api} canManage={permissions.has('account.manage')} />,
+    });
+    items.push({
+      key: 'organisation',
+      label: 'Organisation',
+      render: () => (
+        <OrganisationPage api={api} canManage={permissions.has('department.manage')} />
+      ),
     });
   }
   if (items.length === 0) {

@@ -30,6 +30,7 @@ import {
 } from './modules/identity/infrastructure/repositories.ts';
 import {
   PgCampusRepository,
+  PgDepartmentRepository,
   PgInstitutionRepository,
 } from './modules/institution/infrastructure/repositories.ts';
 import { AuthorityService } from './modules/identity/application/resolve-authority.ts';
@@ -39,6 +40,7 @@ import type { AcceptInvitationDeps } from './modules/identity/application/accept
 import type { RefreshSessionDeps } from './modules/identity/application/refresh-session.ts';
 import type { ManagePeopleDeps } from './modules/identity/application/manage-people.ts';
 import type { ProvisionInstitutionDeps } from './modules/institution/application/provision-institution.ts';
+import type { ManageOrgDeps } from './modules/institution/application/manage-org-units.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
 
 export interface Container {
@@ -54,6 +56,7 @@ export interface Container {
   roleDefinitions: PgRoleDefinitionRepository;
   roleAssignments: PgRoleAssignmentRepository;
   provisionInstitution: ProvisionInstitutionDeps;
+  manageOrg: ManageOrgDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -81,6 +84,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const orgTree = new PgOrgTreeReader();
   const institutions = new PgInstitutionRepository();
   const campuses = new PgCampusRepository();
+  const departments = new PgDepartmentRepository();
 
   // Cloudinary only when configured; otherwise an in-memory adapter, so the
   // application never branches on which one it received.
@@ -124,6 +128,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     provisionInstitution: {
       uow, institutions, campuses, identity: identityProvisioning, audit, ids, clock,
     },
+    manageOrg: { uow, campuses, departments, audit, ids, clock },
     close: async () => {
       if (!pool) await dbPool.end();
     },
