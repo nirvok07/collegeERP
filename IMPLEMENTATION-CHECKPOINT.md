@@ -1,18 +1,36 @@
 # Implementation Checkpoint
 
 ```
-UPDATED   2026-09-12
+UPDATED   2026-09-13
 Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework, in clients/web/
           Flutter for Android and iOS at the repository root; no Flutter Web
-Tests     314 backend + 161 web + 104 Flutter = 579 passing
-Next      Waiting on the owner. Candidates, each blocked or gated differently:
-          M10 examinations and results (blocked on OD-1); a student role and
-          student surface (needed before any student sees a mark); the approvals
-          capability P1 (attendance corrections, mark verification and timetable
-          publication all wait on it); and the offline outbox (Drift 5)
+Tests     327 backend + 161 web + 117 Flutter = 605 passing
+Next      Outbox slice two, the durable local queue, waits on one decision:
+          the local store (Drift over SQLite, with encryption at rest for
+          students' data). Otherwise waiting on the owner: a student role and
+          account issuance, the approvals capability P1, and device validation
+          once Firebase is registered. M10 stays blocked on OD-1
+
+OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
+  Chosen by the platform readiness review as the highest-value unblocked
+  capability. Every teacher field write can now be sent twice safely: an
+  Idempotency-Key makes the server return the first outcome to a resend,
+  instead of refusing it as "somebody else changed this" (AD-58). That false
+  conflict could happen today on any flaky classroom network, offline or not.
+  Six routes opt in: attendance save and submit, recording a class as taught,
+  and an assessment's date, marks and submission. No other route stores a
+  response. Keys belong to one person in one college and are bound to the
+  exact request.
+  Flutter reuses a key only while the identical save is retried, including
+  across its renew-and-resend on an expired token. The web client does not
+  send keys yet; its writes behave exactly as before.
+  NOT built: the queue itself (slice two), its Sync Center, and offline
+  reads. Drift 5 stays open.
+  NOT VERIFIED on a device: the Android build still stops at the Google
+  Services step until Firebase is re-registered, and iOS needs Xcode.
 
 M7 INTERNAL ASSESSMENT: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   Blueprint M9, the half of roadmap Phase 6 that OD-1 does not touch (AD-55).

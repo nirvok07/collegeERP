@@ -97,6 +97,7 @@ than from a feature list.
 | R37 | A register is written as one batch under optimistic concurrency, so two people marking one class cannot overwrite each other. Offline capture is explicitly not promised until an outbox exists | Active | [ADR](blueprint/adr.md) AD-52 |
 | R38 | An internal mark records what happened: a score, absent, or exempt. A zero never stands in for a missed assessment, and totals and grades belong to examinations | Active | [ADR](blueprint/adr.md) AD-56, [M7](blueprint/modules/m7-internal-assessment.md) |
 | R39 | The department sets the assessment plan and verifies and corrects submitted marks; the teacher enters and submits. A submitted sheet is corrected with a reason, never reopened | Active | [ADR](blueprint/adr.md) AD-57 |
+| R40 | A teacher's field write is safe to send twice. A resend of a write whose response was lost gets its first outcome back, and is never applied twice or refused as someone else's change | Active | [ADR](blueprint/adr.md) AD-58, [Outbox](blueprint/capabilities/offline-outbox.md) |
 
 ## Assumptions awaiting confirmation
 
