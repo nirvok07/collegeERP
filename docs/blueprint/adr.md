@@ -468,3 +468,58 @@ rejected outright for this capability.
 two flat lists and the client assembles the tree, so a phone can drill down one level at a time
 rather than receiving a nested structure shaped for a desktop layout. Mobile will read the tree
 as soon as it shows a teacher their department, and nothing here has to change for that.
+
+---
+
+**AD-30 — Firebase is platform infrastructure, three services only**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Mobile needs push delivery, a safe way to turn client behaviour off remotely, and
+crash diagnostics. None of those are domain concerns, and all three are things a backend cannot
+do from the server side alone.
+
+*Approved.* Cloud Messaging for delivery only, with the backend deciding who is notified and
+why. Remote Config for client flags, kill-switches and rollout. Crashlytics for diagnostics.
+
+*Rejected.* Firebase Auth, because identity is ERP-owned and a second authentication system
+would fork the authorization model. Firestore and Realtime Database, because PostgreSQL is the
+source of truth. Firebase Storage, because media belongs to Cloudinary behind the storage port.
+The generated `firebase_options.dart` carries a `storageBucket` field regardless; that is
+generated output, not a decision.
+
+*Impact.* Every Firebase import lives in `lib/core/platform/firebase_services.dart` and nothing
+above it knows Firebase exists. Remote Config has compiled defaults and never blocks startup, so
+the app works offline, during an outage, and on a device with no Play Services. Crashlytics
+receives no credential and no personal data, and is not an audit mechanism: the backend audit
+trail remains authoritative.
+
+---
+
+**AD-31 — Flutter implements the same motion principles with native mechanisms**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Copying CSS keyframes into Flutter would produce animation that fights the platform.
+The principles transfer; the implementation should not.
+
+*Impact.* The same four duration bands and curve roles live in `AppMotion`, expressed as Dart
+constants and Flutter curves. Page transitions use a rise-and-fade builder on Android and the
+platform transition on iOS. The stagger cap is the same eight items, and `MediaQuery`'s
+`disableAnimations` removes travel while keeping indeterminate progress moving, matching the web
+rule that a frozen spinner reads as hung.
+
+---
+
+**AD-32 — Mobile reads; the desktop console writes structure and authority**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Granting authority needs a scope picker over the organisation tree, and editing
+structure is rare hierarchical work. Both are desktop tasks, per AD-29. A partial version on a
+phone would invite mistakes rather than prevent them.
+
+*Impact.* The mobile People and Organisation surfaces are read-only, and say so where a user
+might look for the action. This is a deliberate, recorded split rather than unfinished work.
+It is expected to change: attendance marking, the first genuinely mobile-first workflow under
+AD-9, is a write surface and belongs on the phone rather than the desktop.

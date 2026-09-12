@@ -1,0 +1,30 @@
+import 'package:get_it/get_it.dart';
+
+import '../network/api_client.dart';
+import '../network/auth_api.dart';
+import '../session/session_manager.dart';
+import '../session/session_store.dart';
+import '../../features/organisation/data/organisation_api.dart';
+import '../../features/people/data/people_api.dart';
+
+final locator = GetIt.instance;
+
+/// Composition root. The only place adapters meet the rest of the app, mirroring
+/// the backend's container so both sides read the same way.
+void configureDependencies() {
+  locator
+    ..registerLazySingleton(SessionStore.new)
+    ..registerLazySingleton(AuthApi.new)
+    ..registerLazySingleton(() => SessionManager(
+          api: locator<AuthApi>(),
+          store: locator<SessionStore>(),
+        ))
+    ..registerLazySingleton(() => ApiClient(
+          // The client asks for a token rather than holding one, so a renewal
+          // never requires rebuilding it.
+          accessToken: () async => locator<SessionManager>().accessToken,
+          renew: () => locator<SessionManager>().renew(),
+        ))
+    ..registerLazySingleton(() => PeopleApi(locator<ApiClient>()))
+    ..registerLazySingleton(() => OrganisationApi(locator<ApiClient>()));
+}

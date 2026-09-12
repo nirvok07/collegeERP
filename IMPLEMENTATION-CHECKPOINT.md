@@ -6,8 +6,8 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     97 backend + 48 web = 145 passing
-Next      Flutter client bootstrap, or M2 programs and course structure
+Tests     97 backend + 48 web + 19 Flutter = 164 passing
+Next      M2 programs and courses, or mobile write surfaces when M4 arrives
 Blocked   OD-1 affiliating vs autonomous, OD-4 money
 Note      Supabase session pooler URI still REQUIRED. The direct host is
           IPv6-only and unreachable here; local PostgreSQL stays active.
@@ -222,6 +222,39 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### Flutter client bootstrap (`lib/`)
+
+The counter demo is gone. Flutter is now a real client on the same backend, the
+same domain and the same authorization model, with no business rule duplicated
+from web.
+
+**Structure** mirrors the backend and the approved architecture: `core/` for
+config, errors, network, session, design, platform and the composition root;
+`features/` split into data, domain and presentation. Cubit for state, Dio for
+HTTP, get_it for wiring, exactly as the architecture fixed.
+
+**Session** reuses the existing model rather than inventing one. The refresh
+token lives in platform secure storage, Keychain or Keystore, and travels in the
+request body because a mobile app has no cookie jar worth relying on. The
+backend already accepted that transport. A stored token means no sign-in screen
+on launch however long the app was closed, renewal is single-flight sixty
+seconds before expiry, and a dropped connection shows a banner rather than
+signing anyone out.
+
+**Firebase** (AD-30) is confined to one file. Cloud Messaging, Remote Config and
+Crashlytics only. No Auth, no Firestore, no Storage. Remote Config has compiled
+defaults and never blocks startup, so the app works offline and on a device with
+no Play Services.
+
+**Motion** (AD-31) uses the same bands and curve roles expressed natively rather
+than copied from CSS. Stagger capped at the same eight items, and the platform
+reduced-motion setting removes travel while indeterminate progress keeps moving.
+
+**Read-only by intent** (AD-32). Granting authority needs a scope picker over the
+organisation tree, which is desktop work under AD-29. The person sheet says so
+where a user would look for the action. Attendance, the first mobile-first write
+surface, will change this.
 
 ### M2 — organisational tree (campuses and departments)
 
