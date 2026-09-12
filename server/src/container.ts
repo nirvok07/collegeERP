@@ -43,6 +43,10 @@ import type { ManagePeopleDeps } from './modules/identity/application/manage-peo
 import type { ManageDevicesDeps } from './modules/identity/application/manage-devices.ts';
 import type { ProvisionInstitutionDeps } from './modules/institution/application/provision-institution.ts';
 import type { ManageOrgDeps } from './modules/institution/application/manage-org-units.ts';
+import type { CurriculumDeps } from './modules/curriculum/application/manage-curriculum.ts';
+import {
+  PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
+} from './modules/curriculum/infrastructure/repositories.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
 
 export interface Container {
@@ -60,6 +64,7 @@ export interface Container {
   roleAssignments: PgRoleAssignmentRepository;
   provisionInstitution: ProvisionInstitutionDeps;
   manageOrg: ManageOrgDeps;
+  curriculum: CurriculumDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -134,6 +139,12 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       uow, institutions, campuses, identity: identityProvisioning, audit, ids, clock,
     },
     manageOrg: { uow, campuses, departments, audit, ids, clock },
+    curriculum: {
+      uow, audit, ids, clock,
+      programs: new PgProgramRepository(),
+      courses: new PgCourseRepository(),
+      curriculum: new PgCurriculumRepository(),
+    },
     close: async () => {
       if (!pool) await dbPool.end();
     },

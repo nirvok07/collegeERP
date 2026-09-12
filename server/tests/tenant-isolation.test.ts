@@ -139,14 +139,23 @@ describe('tenant isolation under row level security', () => {
     }
   });
 
-  it('the application role holds no DELETE grant on any table', async () => {
+  it('DELETE exists only where a draft must be editable', async () => {
     const pool = createPool(APP_URL);
     try {
       const { rows } = await pool.query(
         `SELECT table_name FROM information_schema.role_table_grants
-          WHERE grantee = 'erp_app' AND privilege_type = 'DELETE'`,
+          WHERE grantee = 'erp_app' AND privilege_type = 'DELETE'
+          ORDER BY table_name`,
       );
-      assert.equal(rows.length, 0, 'AD-8 and BR-17: soft delete only, nothing is removed');
+      // AD-8 and BR-17 hold for every record that can be referenced later:
+      // soft delete, so tombstones propagate and audit stays resolvable.
+      //
+      // curriculum_entries is the single exception, and a narrow one. A draft
+      // curriculum is authored by adding and removing courses, and an entry in
+      // a draft has never been referenced by anything: no student is bound to
+      // an unpublished version. The trigger confines the grant to drafts, so a
+      // published entry cannot be deleted even with the privilege present.
+      assert.deepEqual(rows.map((r) => r.table_name), ['curriculum_entries']);
     } finally {
       await pool.end();
     }

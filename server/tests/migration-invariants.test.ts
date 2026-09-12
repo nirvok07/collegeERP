@@ -57,6 +57,16 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // Push registrations. No DELETE: revocation is a visible state, so a device
   // that was signed out of stays in the register.
   devices: 'INSERT+SELECT+UPDATE',
+
+  // Curriculum spine. Immutability of published versions is enforced by
+  // trigger, not by withholding UPDATE, because superseding is a legitimate
+  // transition that the trigger permits and everything else it refuses.
+  programs: 'INSERT+SELECT+UPDATE',
+  courses: 'INSERT+SELECT+UPDATE',
+  curriculum_versions: 'INSERT+SELECT+UPDATE',
+  // The one table with DELETE: a draft is edited by removing entries, and the
+  // trigger confines deletion to drafts.
+  curriculum_entries: 'DELETE+INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */
@@ -137,12 +147,15 @@ describe('application role privileges', () => {
     }
   });
 
-  it('holds no DELETE on any table', async () => {
+  it('holds DELETE only where a draft must be editable', async () => {
     const { rows } = await migratorPool.query(
       `SELECT table_name FROM information_schema.role_table_grants
         WHERE grantee = $1 AND privilege_type = 'DELETE'`, [APP_ROLE],
     );
-    assert.deepEqual(rows, []);
+    assert.deepEqual(
+      rows.map((r) => r.table_name), ['curriculum_entries'],
+      'every other table soft-deletes, so tombstones propagate and audit resolves',
+    );
   });
 
   it('cannot create objects, own tables, or inherit another role', async () => {

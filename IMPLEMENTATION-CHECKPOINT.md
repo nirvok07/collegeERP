@@ -6,8 +6,16 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     106 backend + 48 web + 24 Flutter = 178 passing
-Next      M2 programs and courses (the curriculum spine)
+Tests     129 backend + 48 web + 24 Flutter = 201 passing
+Next      Curriculum web workspace, then M3 (which owns sections)
+
+CURRICULUM SPINE: BACKEND COMPLETE / WEB PENDING / FLUTTER DEFERRED
+  Deliberate and documented, not silently left behind. Curriculum authoring is
+  a hierarchical, low-frequency desktop workflow under AD-29, so the web
+  workspace is the next slice. Flutter gets curriculum READ only when there is
+  a reader who needs it: a student viewing their own requirements, which needs
+  M5 to own the student-to-version binding first. Building a mobile curriculum
+  browser before that reader exists would be a screen with no user.
 
 PLATFORM RUNTIME VALIDATION: DEFERRED
   Android build, iOS build, Firebase platform config, notification
@@ -232,6 +240,38 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M2 — curriculum spine (programs, versions, courses)
+
+Designed before any table, in `docs/blueprint/modules/m2-curriculum-spine.md`,
+because AD-3 fixed the principle and not the model.
+
+**Four entities, deliberately not three.** Program, curriculum version, course,
+and the entry that places a course inside a version. Collapsing the last two is
+the classic failure here: credits on a course would make a 2024 transcript
+change when the 2026 regulation was written (AD-33).
+
+**Immutability is a trigger, not a convention** (AD-34). One refuses any change
+to a published version except superseding; the other refuses insert, update and
+delete of its entries. A test bypasses the application and confirms the database
+still refuses, because this rule should not depend on every future code path
+remembering it.
+
+**Errata and amendments are separate operations** (AD-35). A revision keeps the
+regulation year, an amendment starts a new one, both copy their predecessor's
+entries, both require a reason, and the audit trail records which kind occurred.
+Only an erratum rebinds students, and that binding belongs to M5.
+
+**Publication validates the whole document** because it cannot be undone: an
+empty curriculum is refused, and an empty term is refused by number.
+
+**Section scope now has an owner** (AD-36): M3 Teaching Operations. It has been
+declarable and unresolvable since migration 001. No code changed; the reference
+stopped being ownerless.
+
+**One open assumption**, OD-M2-1: a curriculum version belongs to a program, and
+a program to one department on one campus. A campus running its own variant gets
+its own program record.
 
 ### Push device registration (M1 + Flutter)
 

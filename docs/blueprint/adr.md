@@ -523,3 +523,84 @@ phone would invite mistakes rather than prevent them.
 might look for the action. This is a deliberate, recorded split rather than unfinished work.
 It is expected to change: attendance marking, the first genuinely mobile-first workflow under
 AD-9, is a write surface and belongs on the phone rather than the desktop.
+
+---
+
+**AD-33 — Course identity is separate from curriculum placement**
+
+*Status.* Approved and active, 2026-09-12. Implements AD-3.
+
+*Reason.* A course is a catalogue entry; what it is worth and where it sits are properties of a
+particular regulation. `CS301` may be 4 credits in semester 5 under the 2024 regulation and 3
+credits in semester 4 under 2026. Storing credits on the course would make a 2024 student's
+transcript change when the 2026 regulation was written, which is the exact failure AD-3 exists
+to prevent.
+
+*Alternatives.* Credits on the course, rejected as above. A join table with extra columns,
+rejected as the same thing with a different name; `curriculum_entries` is a first-class entity
+with its own identity and lifecycle.
+
+*Impact.* `courses` carries no credits and no term. A course code is unique across every status
+and can never be reused, because transcripts name it permanently. Titles may be corrected;
+historical reads resolve credits through the entry, so a rename changes how an old transcript
+reads a name and nothing about what it was worth.
+
+---
+
+**AD-34 — Published curriculum immutability is enforced by database trigger**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* This is the invariant with the longest blast radius in the product: getting it wrong
+rewrites graduation requirements for students already part-way through a degree, silently and
+irreversibly. A rule of that weight should not depend on every future code path remembering it.
+
+*Alternatives.* Application checks alone, rejected: correct today, one forgotten path from
+failing. Withholding UPDATE at the grant level, rejected because superseding is a legitimate
+transition that must remain possible.
+
+*Impact.* Two triggers. One refuses any change to a published or superseded version except the
+single transition to superseded. The other refuses insert, update and delete of entries whose
+parent version is published, so adding a course to a published curriculum is as impossible as
+editing one. A test bypasses the application entirely and confirms the database still refuses.
+
+---
+
+**AD-35 — Errata and amendments are different operations**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* A typo in a published curriculum and a genuine change of requirements look similar and
+behave oppositely. An erratum means the approving body's intent was always different, so affected
+students move to the corrected version. An amendment means requirements changed, so existing
+cohorts stay where they are. Letting one behave like the other is how requirements change under
+people's feet.
+
+*Alternatives.* A single "new version" operation, rejected because the system would have to guess
+which of the two it was, and guessing wrong is unrecoverable.
+
+*Impact.* A revision keeps the regulation year and increments the revision; an amendment is a new
+regulation year. Both copy their predecessor's entries so the author starts from what exists. Both
+require a reason, recorded in the audit trail under distinct actions, so a registrar can see years
+later which kind of change occurred. Student rebinding on an erratum belongs to M5, which owns
+the binding.
+
+---
+
+**AD-36 — Section scope belongs to M3 Teaching Operations, not the curriculum**
+
+*Status.* Approved and active, 2026-09-12. Resolves an ownerless reference.
+
+*Reason.* Section scope has been declarable and unresolvable since migration 001: it appears in
+the `scope_type` constraint and in the Faculty role's allowed scopes, no table defines a section,
+the resolver returns empty ancestry, and the web client already excludes those roles from grant.
+A section is a teaching group, defined by a term and a timetable, not by a curriculum.
+
+*Alternatives.* Defining sections in the curriculum slice, rejected: it would couple a permanent,
+regulation-scoped document to a per-term operational grouping, and create a dependency from M2 on
+an academic calendar M2 does not own.
+
+*Impact.* No code changes in this slice. The reference now has a named owner. When M3 creates
+sections, ancestry will be `section → program → department → campus`, which the existing resolver
+already walks once rows exist, and the Faculty role becomes grantable at section scope with no
+change to M1.
