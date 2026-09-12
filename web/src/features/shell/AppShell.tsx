@@ -74,7 +74,11 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="page">{current?.render()}</main>
+      {/* Keyed on the section, so switching remounts and replays the entrance.
+          One animated element, not one per row of whatever it contains. */}
+      <main className="page">
+        <div className="shell__section" key={current?.key}>{current?.render()}</div>
+      </main>
     </div>
   );
 }

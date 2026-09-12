@@ -5,9 +5,14 @@
   background: var(--surface); color: var(--text-secondary);
   border: 1px solid var(--outline); border-radius: var(--radius-pill);
   font: var(--text-caption); cursor: pointer;
-  transition: background var(--state), border-color var(--state), color var(--state);
+  transition:
+    background var(--dur-micro) var(--ease-sharp),
+    border-color var(--dur-micro) var(--ease-sharp),
+    color var(--dur-micro) var(--ease-sharp),
+    transform var(--press);
 }
 .filter:hover { background: var(--surface-variant); }
+.filter:active { transform: scale(0.97); }
 .filter--on { background: var(--primary-subtle); border-color: var(--primary); color: var(--primary); }
 .filter__count { opacity: 0.75; }
 
@@ -34,6 +39,8 @@
   transition: background var(--state), color var(--state);
 }
 .segmented__option--on { background: var(--surface); color: var(--text-primary); box-shadow: var(--shadow-1); }
+.access-row { transition: background var(--state), border-color var(--state); }
+.access-row:hover { background: var(--surface-hover); }
 
 @media (max-width: 720px) {
   .table__actions { text-align: left; }

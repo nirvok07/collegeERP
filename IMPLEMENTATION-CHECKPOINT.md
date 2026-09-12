@@ -6,7 +6,7 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     82 backend + 26 web = 108 passing
+Tests     82 backend + 39 web = 121 passing
 Next      M2 academic structure, or Flutter client bootstrap
 Blocked   OD-1 affiliating vs autonomous, OD-4 money
 Note      Supabase session pooler URI still REQUIRED. The direct host is
@@ -222,6 +222,33 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### Motion system (`web/src/design/motion.css`, `motion.ts`)
+
+Every animated value in the product now comes from one file. Four duration bands
+chosen by interaction complexity, four easing curves, and eight presets covering
+rise, fade, pop, drawer, bottom sheet, capped stagger, changed-row highlight and
+press feedback. Documented in [design system 7.7](docs/07-design-system.md).
+
+**Feedback outranks everything.** Pressed states use the shortest band and the
+sharpest curve, so a click is never queued behind a larger transition. Section
+changes animate one wrapper element rather than each row of their content, so a
+page change costs one compositor layer regardless of what it contains.
+
+**Performance is enforced, not intended.** A test parses the stylesheet and fails
+on any keyframe property that can trigger layout, so only transform, opacity and
+colour are animated. Table rows change background on hover and never transform.
+Row actions reserve their space and fade rather than reflowing the row. Stagger
+is capped at eight rows in CSS and dropped entirely above twenty-four in
+`motion.ts`, because past that it explains nothing and only costs frames.
+
+**Reduced motion keeps meaning.** Durations collapse and travel goes to zero,
+positional entrances become fades so arrival is still signalled, and
+indeterminate progress keeps looping because a frozen spinner reads as hung.
+
+**GSAP was considered and rejected.** Every motion here is a transform or opacity
+change on a single element, which CSS runs on the compositor with no library.
+The reasoning is recorded in the design system so it is not revisited by accident.
 
 ### Supabase readiness
 

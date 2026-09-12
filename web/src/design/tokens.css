@@ -70,12 +70,7 @@
   --text-label: 600 14px/1.4 var(--font);
   --text-caption: 500 12px/1.4 var(--font);
 
-  /* Motion (§7.7). Nothing exceeds 300ms except a sheet. */
-  --press: 100ms cubic-bezier(0.4, 0, 0.2, 1);
-  --state: 150ms cubic-bezier(0.33, 1, 0.68, 1);
-  --expand: 250ms cubic-bezier(0.65, 0, 0.35, 1);
-  --enter: 250ms cubic-bezier(0.33, 1, 0.68, 1);
-  --sheet: 300ms cubic-bezier(0.33, 1, 0.68, 1);
+  /* Motion tokens live in motion.css, the single source for animated values. */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -142,11 +137,3 @@
   --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
 }
 
-/* Reduced motion collapses every transition to a cross-fade (§7.7). */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --press: 1ms linear; --state: 1ms linear; --expand: 1ms linear;
-    --enter: 1ms linear; --sheet: 1ms linear;
-  }
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
-}

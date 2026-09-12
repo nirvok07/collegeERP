@@ -8,6 +8,7 @@
   transition: background var(--state), color var(--state);
 }
 .shell__tab:hover { background: var(--surface-variant); color: var(--text-primary); }
+.shell__tab:active { transform: scale(0.98); }
 .shell__tab--on { background: var(--primary-subtle); color: var(--primary); }
 .shell__kbd {
   padding: 0 4px; border-radius: 4px; background: var(--surface-variant);
@@ -20,3 +21,7 @@
   .shell__nav { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; }
   .shell__kbd { display: none; }
 }
+
+/* The active indicator is a transform on one element rather than a colour
+   change on each tab, so switching sections animates a single compositor layer. */
+.shell__section { animation: m-rise-in var(--page) both; }

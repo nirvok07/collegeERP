@@ -112,23 +112,77 @@ Offline is a modifier on all five, not a sixth state: a persistent slim banner r
 
 ## 7.7 Motion
 
-| Interaction | Duration | Curve |
+Motion is part of the product, not decoration. It exists to explain hierarchy,
+state change, navigation, feedback and spatial relationship. Every animated value in
+the product comes from one file, `web/src/design/motion.css`, and no screen invents
+its own duration, curve or keyframe.
+
+### Duration bands
+
+Chosen by interaction complexity, not applied uniformly. A larger surface gets a
+longer duration because it travels further, and reads as the same speed.
+
+| Token | Value | Used for |
 |---|---|---|
-| Press feedback, ripple and scale to 0.98 | 100ms | easeOut |
-| Chip, checkbox, switch state change | 150ms | easeOutCubic |
-| Expand and collapse | 250ms | easeInOutCubic |
-| Page transition | 250ms | easeOutCubic, slide with fade |
-| Bottom sheet | 300ms | easeOutCubic |
-| List item stagger on first load | 200ms, 30ms apart, first 8 items only | easeOut |
-| Skeleton shimmer | 1200ms loop | linear |
+| `--dur-micro` | 140ms | Press, hover, chip, checkbox |
+| `--dur-state` | 180ms | Colour, badge, inline validation |
+| `--dur-panel` | 260ms | Drawer, popover, collapse |
+| `--dur-page` | 300ms | Section change, sheet |
+| `--dur-exit` | 140ms | Every exit |
 
-Rules: nothing exceeds 300ms except a sheet. Nothing animates on every rebuild. A list staggers
-on first load only, never on refresh. All motion respects the platform reduce-motion setting and
-collapses to a cross-fade when it is on.
+Exits are deliberately shorter than entrances. Waiting for something to leave is
+dead time; waiting for something to arrive is anticipation.
 
-Purposeful moments worth animating: attendance status toggling per student, marks saving with a
-check that settles, a pending row becoming synced, a section expanding, and the offline banner
-sliding in.
+### Easing
+
+`--ease-out` for entrances, which decelerate into place. `--ease-in` for exits,
+which accelerate away. `--ease-in-out` for movement between two on-screen states.
+`--ease-sharp` for pressed feedback, nearly linear because the eye reads it as
+instant. Linear is used only for indeterminate progress.
+
+### Presets
+
+`.m-rise` content arriving in place. `.m-fade` a cross-fade when nothing moved.
+`.m-pop` popovers, scaling from 0.97 so it does not read as bouncy. `.m-drawer`
+and `.m-bottom-sheet` panels entering from the edge they will return to.
+`.m-stagger` capped list entry. `.m-changed` a one-pass highlight on a row whose
+value just changed. `.m-press` pressed feedback.
+
+### Motion hierarchy
+
+Feedback outranks everything. A press must never be delayed or queued behind a
+larger transition, which is why pressed states use the shortest band and the
+sharpest curve. Section transitions animate one wrapper element rather than each
+row of their content, so a page change costs one compositor layer regardless of
+how much is inside it.
+
+### Performance
+
+Keyframes animate only `transform`, `opacity` and colour, which is enforced by a
+test that parses the stylesheet and fails on any property that can trigger
+layout. Table rows change background on hover and never transform, so pointer
+movement over a long table repaints nothing geometric. Row actions reserve their
+space and fade, rather than appearing and reflowing the row.
+
+Stagger is capped at eight rows in CSS, and dropped entirely above twenty-four
+in `motion.ts`, because past that it stops explaining arrival order and only
+costs frames.
+
+### Reduced motion
+
+Durations collapse to 1ms and travel distances to zero. Positional entrances
+become a fade, so arrival is still signalled without movement. Indeterminate
+progress keeps looping, because a frozen spinner reads as a hung interface. The
+interface must never become harder to understand because motion was removed.
+
+### On GSAP
+
+Not used, and not needed here. Every motion in this product is a transform or an
+opacity change on a single element, which CSS runs on the compositor with no
+library. GSAP earns its place for coordinated timelines and complex sequenced
+storytelling; adding it for a drawer slide would cost bundle size and a second
+animation vocabulary for no gain. Revisit only if a genuinely orchestrated
+sequence appears, and record the reason at that point.
 
 ## 7.8 Responsiveness and accessibility
 

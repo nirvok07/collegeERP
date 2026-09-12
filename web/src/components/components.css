@@ -6,8 +6,14 @@
   min-height: 40px; padding: 0 var(--space-base);
   border: 1px solid transparent; border-radius: var(--radius-input);
   font: var(--text-label); cursor: pointer; white-space: nowrap;
-  transition: background var(--state), border-color var(--state), transform var(--press), color var(--state);
+  transition:
+    background var(--dur-micro) var(--ease-sharp),
+    border-color var(--dur-micro) var(--ease-sharp),
+    color var(--dur-micro) var(--ease-sharp),
+    transform var(--press);
 }
+/* Feedback is the highest tier of the motion hierarchy: never delayed, never
+   queued behind a larger transition. */
 .btn:active:not(:disabled) { transform: scale(0.98); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn--primary { background: var(--primary); color: var(--on-primary); }
@@ -39,7 +45,11 @@
 .field__input:hover:not(:disabled) { border-color: var(--text-tertiary); }
 .field__input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
 .field--invalid .field__input { border-color: var(--error); }
-.field__message { font: var(--text-caption); color: var(--text-secondary); min-height: 16px; }
+.field__message {
+  font: var(--text-caption); color: var(--text-secondary); min-height: 16px;
+  transition: color var(--state);
+}
+.field--invalid .field__input { animation: m-fade-in var(--dur-state) var(--ease-out); }
 .field--invalid .field__message { color: var(--error); }
 
 /* ---- Table ------------------------------------------------------------- */
@@ -54,8 +64,13 @@
 }
 .table td { padding: var(--space-md) var(--space-base); border-bottom: 1px solid var(--outline); vertical-align: middle; }
 .table tbody tr:last-child td { border-bottom: none; }
-.table tbody tr { transition: background var(--state); }
+.table tbody tr { transition: background var(--dur-micro) var(--ease-sharp); }
 .table tbody tr:hover { background: var(--surface-hover); }
+/* Row actions appear on hover but occupy their space always, so nothing reflows. */
+.table tbody .row-action { opacity: 0; transition: opacity var(--dur-micro) var(--ease-sharp); }
+.table tbody tr:hover .row-action,
+.table tbody tr:focus-within .row-action { opacity: 1; }
+@media (hover: none) { .table tbody .row-action { opacity: 1; } }
 .table__primary { font: var(--text-title); color: var(--text-primary); }
 .table__secondary { font: var(--text-body); color: var(--text-secondary); }
 
@@ -92,15 +107,18 @@
 @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
 
 /* ---- Drawer ------------------------------------------------------------ */
-.scrim { position: fixed; inset: 0; background: rgb(0 0 0 / 0.4); animation: fade var(--enter); z-index: 40; }
-@keyframes fade { from { opacity: 0; } }
+.scrim {
+  position: fixed; inset: 0; background: rgb(0 0 0 / 0.4); z-index: 40;
+  animation: m-fade-in var(--enter) both;
+}
 .drawer {
   position: fixed; inset-block: 0; inset-inline-end: 0; z-index: 50;
   width: min(520px, 100%); display: flex; flex-direction: column;
   background: var(--surface); box-shadow: var(--shadow-3);
-  animation: slide-in var(--sheet);
+  /* Enters from the edge it will return to, so its origin stays obvious. */
+  animation: m-slide-from-end var(--sheet) both;
+  will-change: transform;
 }
-@keyframes slide-in { from { transform: translateX(100%); } }
 .drawer__head { display: flex; align-items: flex-start; justify-content: space-between;
   gap: var(--space-base); padding: var(--space-xl); border-bottom: 1px solid var(--outline); }
 .drawer__title { font: var(--text-title-lg); }
@@ -120,9 +138,9 @@
   display: flex; align-items: center; gap: var(--space-md);
   padding: var(--space-md) var(--space-base); border-radius: var(--radius-input);
   background: var(--text-primary); color: var(--background);
-  box-shadow: var(--shadow-2); font: var(--text-body); animation: toast-in var(--enter);
+  box-shadow: var(--shadow-2); font: var(--text-body);
+  animation: m-rise-in var(--enter) both;
 }
-@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 .toast--error { background: var(--error); color: #fff; }
 
 /* ---- Banner ------------------------------------------------------------ */

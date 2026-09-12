@@ -7,6 +7,7 @@ import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import { InvitePersonDrawer } from './InvitePersonDrawer.tsx';
 import { AssignRoleDrawer } from './AssignRoleDrawer.tsx';
 import { InvitationDrawer } from '../institutions/InvitationDrawer.tsx';
+import { staggerClass, useNewlyAdded } from '../../design/motion.ts';
 import type { Person, Role } from './types.ts';
 import './people.css';
 
@@ -75,6 +76,10 @@ export function PeoplePage({ api, canManage }: { api: ApiClient; canManage: bool
       return r.full_name.toLowerCase().includes(q) || (r.email ?? '').toLowerCase().includes(q);
     });
   }, [rows, query, typeFilter]);
+
+  // A row that has just been invited is highlighted once, so the operator sees
+  // where their action landed without scanning the whole table.
+  const newlyAdded = useNewlyAdded(filtered, (p) => p.person_id);
 
   const counts = useMemo(() => ({
     all: rows.length,
@@ -158,12 +163,15 @@ export function PeoplePage({ api, canManage }: { api: ApiClient; canManage: bool
                 {canManage && <th scope="col"><span className="visually-hidden">Actions</span></th>}
               </tr>
             </thead>
-            <tbody>
+            <tbody className={status === 'loading' ? '' : staggerClass(filtered.length)}>
               {status === 'loading' ? (
                 <SkeletonRows rows={6} widths={['45%', '30%', '64px', '72px']} />
               ) : (
                 filtered.map((person) => (
-                  <tr key={person.person_id}>
+                  <tr
+                    key={person.person_id}
+                    className={newlyAdded.has(person.person_id) ? 'm-changed' : undefined}
+                  >
                     <td>
                       <div className="table__primary">{person.full_name}</div>
                       <div className="table__secondary">{person.email ?? '—'}</div>
@@ -189,7 +197,9 @@ export function PeoplePage({ api, canManage }: { api: ApiClient; canManage: bool
                     </td>
                     {canManage && (
                       <td className="table__actions">
-                        <Button variant="text" onClick={() => setAssignTo(person)}>Manage access</Button>
+                        <span className="row-action">
+                          <Button variant="text" onClick={() => setAssignTo(person)}>Manage access</Button>
+                        </span>
                       </td>
                     )}
                   </tr>

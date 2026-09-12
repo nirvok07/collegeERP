@@ -1,0 +1,148 @@
+/*
+ * MOTION SYSTEM — the single source for every animated value in the product.
+ *
+ * Screens consume these tokens and presets. No component invents a duration, an
+ * easing curve or a keyframe of its own; when one genuinely needs to, it is
+ * added here first so the whole product inherits it.
+ *
+ * The bands below are chosen by interaction complexity, not applied uniformly.
+ * A longer transition on a bigger surface reads as the same speed to a user,
+ * because the distance travelled is larger.
+ */
+:root {
+  /* ---- Easing -------------------------------------------------------- */
+  /* Entering elements decelerate: fast at the start, settling at the end. */
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  /* Leaving elements accelerate away, so exits feel shorter than they are. */
+  --ease-in: cubic-bezier(0.32, 0, 0.67, 0);
+  /* Movement between two on-screen states, symmetric at both ends. */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Pressed feedback. Nearly linear, because the eye reads it as instant. */
+  --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- Duration bands ------------------------------------------------ */
+  --dur-micro: 140ms;   /* press, hover, checkbox, chip            120-180 */
+  --dur-state: 180ms;   /* colour, badge, inline validation        160-220 */
+  --dur-panel: 260ms;   /* drawer, popover, collapse               220-300 */
+  --dur-page: 300ms;    /* section change, sheet                   250-400 */
+
+  /* Exits are deliberately shorter than entrances. Waiting for something to
+     leave is dead time; waiting for something to arrive is anticipation. */
+  --dur-exit: 140ms;
+
+  /* ---- Presets, the combinations screens actually use ----------------- */
+  --press: var(--dur-micro) var(--ease-sharp);
+  --state: var(--dur-state) var(--ease-out);
+  --expand: var(--dur-panel) var(--ease-in-out);
+  --enter: var(--dur-panel) var(--ease-out);
+  --sheet: var(--dur-page) var(--ease-out);
+  --page: var(--dur-page) var(--ease-out);
+
+  /* ---- Spatial constants --------------------------------------------- */
+  /* Entering content rises a short distance, so it reads as arriving from the
+     flow of the page rather than appearing from nowhere. */
+  --rise: 8px;
+  --rise-lg: 12px;
+
+  /* Only the first rows of a list stagger. Beyond this the effect stops
+     aiding comprehension and starts costing frames on a long table. */
+  --stagger-step: 24ms;
+}
+
+/* =====================================================================
+   PRESETS
+   Transform and opacity only, so every one of these runs on the compositor
+   and never triggers layout.
+   ===================================================================== */
+
+@keyframes m-rise-in {
+  from { opacity: 0; transform: translate3d(0, var(--rise), 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes m-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes m-scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes m-slide-from-end {
+  from { transform: translate3d(100%, 0, 0); }
+  to   { transform: none; }
+}
+@keyframes m-slide-from-bottom {
+  from { transform: translate3d(0, 100%, 0); }
+  to   { transform: none; }
+}
+@keyframes m-pulse-once {
+  0%   { background-color: var(--primary-subtle); }
+  100% { background-color: transparent; }
+}
+
+/* Content arriving in place: a section change, an empty state resolving. */
+.m-rise { animation: m-rise-in var(--enter) both; }
+
+/* A cross-fade, for when nothing moved spatially and only content differs. */
+.m-fade { animation: m-fade-in var(--state) both; }
+
+/* Popovers and menus grow from nearly full size; a larger scale reads as bouncy. */
+.m-pop { animation: m-scale-in var(--dur-panel) var(--ease-out) both; transform-origin: top; }
+
+/* Panels enter from the edge they will return to, preserving where they live. */
+.m-drawer { animation: m-slide-from-end var(--sheet) both; }
+.m-bottom-sheet { animation: m-slide-from-bottom var(--sheet) both; }
+
+/*
+ * Staggered list entry, capped.
+ *
+ * Rows past the cap appear with no delay rather than continuing the ramp, so a
+ * 500-row table costs the same as an 8-row one and nothing waits half a second
+ * to become visible.
+ */
+.m-stagger > * { animation: m-rise-in var(--enter) both; }
+.m-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.m-stagger > *:nth-child(2) { animation-delay: calc(var(--stagger-step) * 1); }
+.m-stagger > *:nth-child(3) { animation-delay: calc(var(--stagger-step) * 2); }
+.m-stagger > *:nth-child(4) { animation-delay: calc(var(--stagger-step) * 3); }
+.m-stagger > *:nth-child(5) { animation-delay: calc(var(--stagger-step) * 4); }
+.m-stagger > *:nth-child(6) { animation-delay: calc(var(--stagger-step) * 5); }
+.m-stagger > *:nth-child(7) { animation-delay: calc(var(--stagger-step) * 6); }
+.m-stagger > *:nth-child(8) { animation-delay: calc(var(--stagger-step) * 7); }
+.m-stagger > *:nth-child(n + 9) { animation-delay: 0ms; }
+
+/* A row whose value just changed. One pass, then it stops drawing attention. */
+.m-changed { animation: m-pulse-once var(--dur-page) var(--ease-out) both; }
+
+/* Pressed feedback, the one thing that must never be delayed or queued. */
+.m-press { transition: transform var(--press); }
+.m-press:active:not(:disabled) { transform: scale(0.98); }
+
+/* =====================================================================
+   REDUCED MOTION
+   Movement is removed; state-change feedback is kept. A user who cannot
+   see a drawer slide must still see that a drawer appeared.
+   ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-micro: 1ms; --dur-state: 1ms; --dur-panel: 1ms;
+    --dur-page: 1ms; --dur-exit: 1ms;
+    --rise: 0px; --rise-lg: 0px; --stagger-step: 0ms;
+  }
+
+  /* Positional keyframes collapse to a fade, which still says "this is new"
+     without moving anything across the screen. */
+  .m-rise, .m-pop, .m-drawer, .m-bottom-sheet, .m-stagger > * {
+    animation: m-fade-in 1ms linear both;
+  }
+  .m-press:active:not(:disabled) { transform: none; }
+
+  /* Indeterminate progress keeps moving: it is the only signal that work is
+     still happening, and freezing it would read as a hung interface. */
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+  .refresh-bar__fill, .btn__spinner, .skeleton {
+    animation-duration: 1200ms !important;
+    animation-iteration-count: infinite !important;
+  }
+}
