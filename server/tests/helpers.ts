@@ -38,6 +38,8 @@ export async function resetData(): Promise<void> {
     // be both unnecessary and, for a published curriculum version, correctly
     // refused by its immutability trigger.
     for (const table of [
+      // A cache of outcomes that references persons, so it goes first.
+      'idempotency_keys',
       'audit_events', 'login_attempts', 'refresh_tokens', 'invitation_tokens',
       'devices', 'credentials', 'role_assignments',
       // Attendance references a class session, so it goes before delivery.

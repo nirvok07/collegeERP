@@ -16,12 +16,23 @@ class AttendanceApi implements AttendanceRepository {
     required String sessionId,
     required int version,
     required List<Map<String, Object?>> marks,
-  }) => _client.put('/v1/sessions/$sessionId/attendance', {
-    'version': version,
-    'marks': marks,
-  }, (data) => ((data as Map)['version'] as num).toInt());
+    required String idempotencyKey,
+  }) => _client.put(
+    '/v1/sessions/$sessionId/attendance',
+    {'version': version, 'marks': marks},
+    (data) => ((data as Map)['version'] as num).toInt(),
+    idempotencyKey: idempotencyKey,
+  );
 
   @override
-  Future<Result<void>> submit({required String sessionId, required int version}) =>
-      _client.post('/v1/sessions/$sessionId/attendance/submit', {'version': version}, (_) {});
+  Future<Result<void>> submit({
+    required String sessionId,
+    required int version,
+    required String idempotencyKey,
+  }) => _client.post(
+    '/v1/sessions/$sessionId/attendance/submit',
+    {'version': version},
+    (_) {},
+    idempotencyKey: idempotencyKey,
+  );
 }

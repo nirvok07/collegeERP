@@ -1163,3 +1163,38 @@ verification becomes its step and the permission does not move.
 out of 50 must not become 45 out of 40, and the roster is taken as of the date held (AD-50), so
 moving the date would change who was expected. A component cannot take marks until it has a
 date, because a test that has not been given a date has not happened.
+
+---
+
+**AD-58 — Field writes are made replay-safe by an idempotency key, layered over version pinning**
+
+*Status.* Approved and active, 2026-09-13. Slice one of the offline outbox; Drift 5 stays open.
+
+*Problem.* Attendance and marks writes are pinned to a version (AD-52), which correctly stops two
+different writes from overwriting each other. It cannot tell the same write arriving twice from a
+different one. So a write whose response was lost, and which is sent again, is refused as
+"somebody else changed this" although it committed. That is a false conflict today on any flaky
+network, and it would make an offline queue unusable, since a queue resends by design.
+
+*Decision.* Each field write carries an `Idempotency-Key`. The server stores the outcome against
+the key, scoped to the calling person in their college and bound to a hash of the method, address
+and body, and returns the stored outcome to a resend instead of applying or refusing it. Six
+routes opt in: attendance save and submit, recording a class as taught, and an assessment's date,
+marks and submission. Every other route ignores the header, so no response carrying a secret is
+ever stored.
+
+*Rules.* Successes and client errors are kept for 24 hours and replayed exactly. A server error
+releases the key. A key reused for a different request is refused. A concurrent duplicate is told
+to try again; a reservation running longer than two minutes is treated as abandoned and taken
+over.
+
+*Why not inside the write's transaction.* That would thread idempotency through every use case.
+Reserving before and completing after, each in its own transaction, leaves one gap: a crash
+between the write committing and its outcome being recorded. Every covered write is already
+version-pinned or state-guarded, so a resend there reports an honest conflict and is never
+applied twice.
+
+*Consequences.* The version and the key answer different questions and both stay. The Flutter
+client reuses a key only while retrying the identical save. The web client does not send keys yet;
+its writes are unaffected. The queue itself, slice two, still needs a durable local store and the
+decision that goes with it. See docs/blueprint/capabilities/offline-outbox.md.

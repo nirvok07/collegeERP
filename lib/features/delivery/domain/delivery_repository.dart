@@ -13,6 +13,7 @@ abstract interface class DeliveryRepository {
   Future<Result<List<ClassSession>>> mySessions({required String from, required String to});
 
   /// Records that a class was taught. The server checks both the permission and
-  /// that this person's teaching actually reaches the class (AD-40).
-  Future<Result<void>> markTaught(String sessionId);
+  /// that this person's teaching actually reaches the class (AD-40). The key
+  /// makes a resend safe rather than "already recorded" (AD-58).
+  Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey});
 }

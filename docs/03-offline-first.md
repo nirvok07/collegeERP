@@ -47,6 +47,11 @@ the record's id rather than issuing its own.
 The idempotency key makes a replayed request safe. If the response was lost but the server
 committed, the retry returns the original result rather than creating a duplicate.
 
+*Implemented, 2026-09-13 (AD-58).* The key travels as an `Idempotency-Key` header on the field
+writes, scoped to the calling person and bound to the request. It composes with the version
+pinning of AD-52 rather than replacing it: the version stops two different writes from
+overwriting each other, and the key recognises the same write arriving twice.
+
 ## 3.4 Ordering and dependencies
 
 The outbox drains strictly in order per entity type. A create must be sent before the update

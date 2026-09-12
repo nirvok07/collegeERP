@@ -190,7 +190,7 @@ export async function registerAssessmentRoutes(app: FastifyInstance, c: Containe
     });
   });
 
-  app.post('/assessments/:id/held-on', async (req, reply) => {
+  app.post('/assessments/:id/held-on', { config: { idempotent: true } }, async (req, reply) => {
     const parsed = heldOnBody.safeParse(req.body);
     if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
     const component = await componentFor(req, reply as never);
@@ -204,7 +204,7 @@ export async function registerAssessmentRoutes(app: FastifyInstance, c: Containe
     }));
   });
 
-  app.put('/assessments/:id/marks', async (req, reply) => {
+  app.put('/assessments/:id/marks', { config: { idempotent: true } }, async (req, reply) => {
     const parsed = marksBody.safeParse(req.body);
     if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
     const component = await componentFor(req, reply as never);
@@ -223,7 +223,7 @@ export async function registerAssessmentRoutes(app: FastifyInstance, c: Containe
     }));
   });
 
-  app.post('/assessments/:id/submit', async (req, reply) => {
+  app.post('/assessments/:id/submit', { config: { idempotent: true } }, async (req, reply) => {
     const parsed = versionBody.safeParse(req.body);
     if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
     const component = await componentFor(req, reply as never);

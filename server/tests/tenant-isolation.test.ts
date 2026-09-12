@@ -160,8 +160,11 @@ describe('tenant isolation under row level security', () => {
       //
       // non_teaching_days: a mistyped holiday is a typo, not history. Session
       // generation reads the list live and stores no reference to it.
+      //
+      // idempotency_keys: a cache of request outcomes. A server error releases a
+      // key, outcomes expire after a day, and nothing references a row.
       assert.deepEqual(
-        rows.map((r) => r.table_name), ['curriculum_entries', 'non_teaching_days'],
+        rows.map((r) => r.table_name), ['curriculum_entries', 'idempotency_keys', 'non_teaching_days'],
       );
     } finally {
       await pool.end();

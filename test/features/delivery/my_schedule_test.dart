@@ -69,6 +69,7 @@ class _FakeRepository implements DeliveryRepository {
   Result<void> markResult = const Ok<void>(null);
   final windows = <String>[];
   final marked = <String>[];
+  final keys = <String>[];
 
   @override
   Future<Result<List<ClassSession>>> mySessions({
@@ -80,8 +81,9 @@ class _FakeRepository implements DeliveryRepository {
   }
 
   @override
-  Future<Result<void>> markTaught(String sessionId) async {
+  Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey}) async {
     marked.add(sessionId);
+    keys.add(idempotencyKey);
     return markResult;
   }
 }
@@ -280,5 +282,20 @@ void main() {
       expect(cubit.state.schedule.today.single.isTaught, isFalse);
       expect(cubit.state.marking, isNull, reason: 'the row stops showing progress');
     });
+
+    test('reuses its key when recording the same class is retried after a failure', () async {
+      final repository = _FakeRepository(Ok([ClassSession.fromJson(sessionJson())]));
+      repository.markResult = const Err(Failure.network);
+      final cubit = MyScheduleCubit(repository, today: '2026-06-10');
+      await cubit.load();
+
+      final session = cubit.state.schedule.today.single;
+      await cubit.markTaught(session);
+      await cubit.markTaught(session);
+
+      expect(repository.keys, hasLength(2));
+      expect(repository.keys[0], repository.keys[1], reason: 'not "already recorded" on a resend');
+    });
+
   });
 }

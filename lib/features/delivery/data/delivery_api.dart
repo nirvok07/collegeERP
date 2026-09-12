@@ -19,6 +19,11 @@ class DeliveryApi implements DeliveryRepository {
       );
 
   @override
-  Future<Result<void>> markTaught(String sessionId) =>
-      _client.post('/v1/sessions/$sessionId/complete', const {}, (_) {});
+  Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey}) =>
+      _client.post(
+        '/v1/sessions/$sessionId/complete',
+        const {},
+        (_) {},
+        idempotencyKey: idempotencyKey,
+      );
 }

@@ -339,7 +339,7 @@ export async function registerDeliveryRoutes(app: FastifyInstance, c: Container)
    * administrator holding `session.manage` may record it for a teacher who
    * cannot, and the audit entry distinguishes the two.
    */
-  app.post('/sessions/:id/complete', async (req, reply) => {
+  app.post('/sessions/:id/complete', { config: { idempotent: true } }, async (req, reply) => {
     if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
       return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
     }

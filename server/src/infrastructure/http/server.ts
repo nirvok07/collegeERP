@@ -15,6 +15,7 @@ import { registerDeliveryRoutes } from '../../modules/delivery/presentation/deli
 import { registerEnrolmentRoutes } from '../../modules/enrolment/presentation/enrolment-routes.ts';
 import { registerAttendanceRoutes } from '../../modules/attendance/presentation/attendance-routes.ts';
 import { registerAssessmentRoutes } from '../../modules/assessment/presentation/assessment-routes.ts';
+import { registerIdempotency } from './idempotency.ts';
 import type { AccessTokenClaims } from '../../shared/application/ports.ts';
 
 declare module 'fastify' {
@@ -110,6 +111,10 @@ export async function buildServer(container: Container): Promise<FastifyInstance
     const claims = container.authenticate.tokens.verifyAccessToken(header.slice(7));
     if (claims) req.actor = claims;
   });
+
+  // After the request hook has established who is asking, and before any
+  // route runs: a replay is answered without the handler ever executing.
+  registerIdempotency(app, container);
 
   app.setErrorHandler((error, req, reply) => {
     req.log.error({ err: error }, 'unhandled request error');

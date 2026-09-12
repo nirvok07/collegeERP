@@ -32,13 +32,21 @@ class ApiClient {
   Future<Result<T>> get<T>(String path, T Function(dynamic) parse) =>
       _send(path, 'GET', null, parse);
 
-  Future<Result<T>> post<T>(String path, Object? body, T Function(dynamic) parse) =>
-      _send(path, 'POST', body, parse);
+  Future<Result<T>> post<T>(
+    String path,
+    Object? body,
+    T Function(dynamic) parse, {
+    String? idempotencyKey,
+  }) => _send(path, 'POST', body, parse, idempotencyKey: idempotencyKey);
 
   /// A partial replacement of something that exists. Used where the server
   /// models a batch edit rather than a transition, attendance being the case.
-  Future<Result<T>> put<T>(String path, Object? body, T Function(dynamic) parse) =>
-      _send(path, 'PUT', body, parse);
+  Future<Result<T>> put<T>(
+    String path,
+    Object? body,
+    T Function(dynamic) parse, {
+    String? idempotencyKey,
+  }) => _send(path, 'PUT', body, parse, idempotencyKey: idempotencyKey);
 
   Future<Result<T>> _send<T>(
     String path,
@@ -46,6 +54,7 @@ class ApiClient {
     Object? body,
     T Function(dynamic) parse, {
     bool isRetry = false,
+    String? idempotencyKey,
   }) async {
     var token = await _accessToken();
 
@@ -63,7 +72,12 @@ class ApiClient {
         data: body,
         options: Options(
           method: method,
-          headers: token == null ? null : {'authorization': 'Bearer $token'},
+          headers: {
+            if (token != null) 'authorization': 'Bearer $token',
+            // Replay safety (AD-58): the same key on a resend lets the server
+            // return its first outcome instead of a false conflict.
+            'idempotency-key': ?idempotencyKey,
+          },
         ),
       );
     } on DioException {
@@ -74,7 +88,7 @@ class ApiClient {
     // server answering 401 unconditionally cannot become an infinite loop.
     if (response.statusCode == 401 && !isRetry) {
       if (await _renew()) {
-        return _send(path, method, body, parse, isRetry: true);
+        return _send(path, method, body, parse, isRetry: true, idempotencyKey: idempotencyKey);
       }
       return const Err(Failure.sessionEnded);
     }

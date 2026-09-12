@@ -68,6 +68,7 @@ class _FakeRepository implements AssessmentRepository {
   List<AssessmentComponent> components;
   Result<void> writeResult = const Ok<void>(null);
   final writes = <String>[];
+  final keys = <String>[];
   int reads = 0;
   int? lastVersion;
   List<Map<String, Object?>>? lastMarks;
@@ -86,8 +87,10 @@ class _FakeRepository implements AssessmentRepository {
     required String componentId,
     required int version,
     required String heldOn,
+    required String idempotencyKey,
   }) async {
     writes.add('held:$heldOn');
+    keys.add(idempotencyKey);
     lastVersion = version;
     return writeResult;
   }
@@ -97,16 +100,23 @@ class _FakeRepository implements AssessmentRepository {
     required String componentId,
     required int version,
     required List<Map<String, Object?>> marks,
+    required String idempotencyKey,
   }) async {
     writes.add('save');
+    keys.add(idempotencyKey);
     lastVersion = version;
     lastMarks = marks;
     return writeResult;
   }
 
   @override
-  Future<Result<void>> submit({required String componentId, required int version}) async {
+  Future<Result<void>> submit({
+    required String componentId,
+    required int version,
+    required String idempotencyKey,
+  }) async {
     writes.add('submit');
+    keys.add(idempotencyKey);
     lastVersion = version;
     return writeResult;
   }
@@ -362,5 +372,34 @@ void main() {
       cubit.setScore('s1', '42');
       expect(cubit.state.draft!.isDirty, isFalse);
     });
+
+    test('reuses its key when the identical sheet is retried after a failure', () async {
+      final repository = _FakeRepository()..writeResult = const Err(Failure.network);
+      final cubit = MarkSheetCubit(repository, 'a1');
+      await cubit.load();
+
+      cubit.setScore('s1', '42');
+      await cubit.save();
+      await cubit.save();
+
+      expect(repository.keys, hasLength(2));
+      expect(repository.keys[0], repository.keys[1]);
+    });
+
+    test('takes a new key for the next save once one has landed', () async {
+      final repository = _FakeRepository();
+      final cubit = MarkSheetCubit(repository, 'a1');
+      await cubit.load();
+
+      cubit.setScore('s1', '42');
+      await cubit.save();
+      cubit.setScore('s1', '42');
+      await cubit.save();
+
+      // The same-looking request after a success is a new write, not a resend.
+      expect(repository.keys, hasLength(2));
+      expect(repository.keys[0], isNot(repository.keys[1]));
+    });
+
   });
 }

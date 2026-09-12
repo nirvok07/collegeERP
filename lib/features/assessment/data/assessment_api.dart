@@ -22,22 +22,36 @@ class AssessmentApi implements AssessmentRepository {
     required String componentId,
     required int version,
     required String heldOn,
-  }) => _client.post('/v1/assessments/$componentId/held-on', {
-    'version': version,
-    'held_on': heldOn,
-  }, (_) {});
+    required String idempotencyKey,
+  }) => _client.post(
+    '/v1/assessments/$componentId/held-on',
+    {'version': version, 'held_on': heldOn},
+    (_) {},
+    idempotencyKey: idempotencyKey,
+  );
 
   @override
   Future<Result<void>> saveMarks({
     required String componentId,
     required int version,
     required List<Map<String, Object?>> marks,
-  }) => _client.put('/v1/assessments/$componentId/marks', {
-    'version': version,
-    'marks': marks,
-  }, (_) {});
+    required String idempotencyKey,
+  }) => _client.put(
+    '/v1/assessments/$componentId/marks',
+    {'version': version, 'marks': marks},
+    (_) {},
+    idempotencyKey: idempotencyKey,
+  );
 
   @override
-  Future<Result<void>> submit({required String componentId, required int version}) =>
-      _client.post('/v1/assessments/$componentId/submit', {'version': version}, (_) {});
+  Future<Result<void>> submit({
+    required String componentId,
+    required int version,
+    required String idempotencyKey,
+  }) => _client.post(
+    '/v1/assessments/$componentId/submit',
+    {'version': version},
+    (_) {},
+    idempotencyKey: idempotencyKey,
+  );
 }

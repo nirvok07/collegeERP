@@ -10,10 +10,12 @@ abstract interface class AssessmentRepository {
 
   Future<Result<AssessmentSheet>> readSheet(String componentId);
 
+  /// Every write below carries a key that makes a resend safe (AD-58).
   Future<Result<void>> recordHeldOn({
     required String componentId,
     required int version,
     required String heldOn,
+    required String idempotencyKey,
   });
 
   /// One request for the whole sheet, pinned to the version the teacher read.
@@ -21,7 +23,12 @@ abstract interface class AssessmentRepository {
     required String componentId,
     required int version,
     required List<Map<String, Object?>> marks,
+    required String idempotencyKey,
   });
 
-  Future<Result<void>> submit({required String componentId, required int version});
+  Future<Result<void>> submit({
+    required String componentId,
+    required int version,
+    required String idempotencyKey,
+  });
 }

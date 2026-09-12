@@ -572,6 +572,9 @@ before the enterprise brief and the blueprint written after it. Not silently res
 - **Recommended resolution.** Either retire the sequencing rule in favour of AD-9, or schedule the
   outbox for attendance and marks as the next mobile slice. The owner's call; recorded so it is a
   decision rather than a slide.
+- **Progress, 2026-09-13.** Slice one landed: field writes are replay-safe (AD-58), which the queue
+  needs and which fixes false conflicts on flaky networks today. Slice two, the durable queue,
+  waits on the local-store decision. **Not closed.**
 - **Approval required.** Yes.
 
 ### Also noted, not drift but gaps created by the scope change

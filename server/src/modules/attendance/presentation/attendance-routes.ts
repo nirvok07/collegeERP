@@ -109,7 +109,7 @@ export async function registerAttendanceRoutes(app: FastifyInstance, c: Containe
     });
   });
 
-  app.put('/sessions/:id/attendance', async (req, reply) => {
+  app.put('/sessions/:id/attendance', { config: { idempotent: true } }, async (req, reply) => {
     const parsed = markBody.safeParse(req.body);
     if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
 
@@ -133,7 +133,7 @@ export async function registerAttendanceRoutes(app: FastifyInstance, c: Containe
     }));
   });
 
-  app.post('/sessions/:id/attendance/submit', async (req, reply) => {
+  app.post('/sessions/:id/attendance/submit', { config: { idempotent: true } }, async (req, reply) => {
     const parsed = submitBody.safeParse(req.body);
     if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
 

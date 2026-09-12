@@ -85,6 +85,7 @@ class _FakeRepository implements AttendanceRepository {
   Result<int> saveResult = const Ok(1);
   Result<void> submitResult = const Ok<void>(null);
   final saved = <Map<String, Object?>>[];
+  final keys = <String>[];
   int reads = 0;
   int submits = 0;
   int? lastVersion;
@@ -100,15 +101,22 @@ class _FakeRepository implements AttendanceRepository {
     required String sessionId,
     required int version,
     required List<Map<String, Object?>> marks,
+    required String idempotencyKey,
   }) async {
     lastVersion = version;
     saved.add({'version': version, 'marks': marks});
+    keys.add(idempotencyKey);
     return saveResult;
   }
 
   @override
-  Future<Result<void>> submit({required String sessionId, required int version}) async {
+  Future<Result<void>> submit({
+    required String sessionId,
+    required int version,
+    required String idempotencyKey,
+  }) async {
     submits++;
+    keys.add(idempotencyKey);
     lastVersion = version;
     return submitResult;
   }
@@ -387,5 +395,50 @@ void main() {
       expect(cubit.state.status, LoadStatus.success, reason: 'the roster stays on screen');
       expect(cubit.state.failure, Failure.network);
     });
+
+    test('reuses its key when the identical save is retried after a failure', () async {
+      final repository = _FakeRepository(Ok(parse(sheetJson())));
+      repository.saveResult = const Err(Failure.network);
+      final cubit = AttendanceCubit(repository, 'cs1');
+      await cubit.load();
+
+      cubit.mark('st1', AttendanceMark.present);
+      await cubit.save();
+      await cubit.save();
+
+      // The first response may have been lost after the server committed. The
+      // same key lets the server answer the resend with its first outcome.
+      expect(repository.keys, hasLength(2));
+      expect(repository.keys[0], repository.keys[1]);
+    });
+
+    test('takes a new key once the marks change', () async {
+      final repository = _FakeRepository(Ok(parse(sheetJson())));
+      repository.saveResult = const Err(Failure.network);
+      final cubit = AttendanceCubit(repository, 'cs1');
+      await cubit.load();
+
+      cubit.mark('st1', AttendanceMark.present);
+      await cubit.save();
+      cubit.mark('st2', AttendanceMark.absent);
+      await cubit.save();
+
+      expect(repository.keys[0], isNot(repository.keys[1]));
+    });
+
+    test('takes a new key for the next save after a success', () async {
+      final repository = _FakeRepository(Ok(parse(sheetJson())));
+      final cubit = AttendanceCubit(repository, 'cs1');
+      await cubit.load();
+
+      cubit.mark('st1', AttendanceMark.present);
+      await cubit.save();
+      cubit.mark('st1', AttendanceMark.present);
+      await cubit.save();
+
+      expect(repository.keys, hasLength(2));
+      expect(repository.keys[0], isNot(repository.keys[1]));
+    });
+
   });
 }

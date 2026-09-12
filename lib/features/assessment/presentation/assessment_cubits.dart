@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/network/idempotency.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../domain/assessment.dart';
 import '../domain/assessment_repository.dart';
@@ -93,6 +96,11 @@ class MarkSheetCubit extends Cubit<MarkSheetState> {
   final AssessmentRepository _repository;
   final String componentId;
 
+  // One key per logical write, kept while that exact write is retried (AD-58).
+  final _dating = IdempotentWrite();
+  final _saving = IdempotentWrite();
+  final _submitting = IdempotentWrite();
+
   Future<void> load({bool refresh = false}) async {
     emit(
       state.copyWith(
@@ -138,11 +146,15 @@ class MarkSheetCubit extends Cubit<MarkSheetState> {
   Future<String?> recordHeldOn(String heldOn) async {
     final draft = state.draft;
     if (draft == null) return null;
+    final version = draft.sheet.component.version;
     return _write(
-      () => _repository.recordHeldOn(
+      _dating,
+      '$version:$heldOn',
+      (key) => _repository.recordHeldOn(
         componentId: componentId,
-        version: draft.sheet.component.version,
+        version: version,
         heldOn: heldOn,
+        idempotencyKey: key,
       ),
     );
   }
@@ -150,11 +162,16 @@ class MarkSheetCubit extends Cubit<MarkSheetState> {
   Future<String?> save() async {
     final draft = state.draft;
     if (draft == null || !draft.canSave) return null;
+    final version = draft.sheet.component.version;
+    final payload = draft.payload();
     return _write(
-      () => _repository.saveMarks(
+      _saving,
+      jsonEncode({'v': version, 'm': payload}),
+      (key) => _repository.saveMarks(
         componentId: componentId,
-        version: draft.sheet.component.version,
-        marks: draft.payload(),
+        version: version,
+        marks: payload,
+        idempotencyKey: key,
       ),
     );
   }
@@ -163,22 +180,34 @@ class MarkSheetCubit extends Cubit<MarkSheetState> {
     final draft = state.draft;
     if (draft == null) return null;
     if (draft.isDirty) return 'Save your changes first.';
+    final version = draft.sheet.component.version;
     return _write(
-      () => _repository.submit(componentId: componentId, version: draft.sheet.component.version),
+      _submitting,
+      '$version',
+      (key) => _repository.submit(componentId: componentId, version: version, idempotencyKey: key),
     );
   }
 
   /// Sends one write. On failure nothing local is cleared; on success the sheet
   /// is re-read rather than patched, so the screen shows what the server holds.
-  Future<String?> _write(Future<Result<void>> Function() send) async {
+  ///
+  /// The signature describes the request. Retried unchanged, it keeps its key,
+  /// so a resend after a lost response gets the server's first outcome rather
+  /// than a false conflict (AD-58).
+  Future<String?> _write(
+    IdempotentWrite write,
+    String signature,
+    Future<Result<void>> Function(String key) send,
+  ) async {
     emit(state.copyWith(busy: true, clearFailure: true));
-    final result = await send();
+    final result = await send(write.keyFor(signature));
     if (isClosed) return null;
     final failure = result.failureOrNull;
     if (failure != null) {
       emit(state.copyWith(busy: false, failure: failure));
       return failure.message;
     }
+    write.settle();
     emit(state.copyWith(busy: false));
     await load(refresh: true);
     return null;

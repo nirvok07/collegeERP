@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/network/idempotency.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../domain/attendance_repository.dart';
 import '../domain/attendance_sheet.dart';
@@ -51,6 +54,10 @@ class AttendanceCubit extends Cubit<AttendanceState> {
   final AttendanceRepository _repository;
   final String sessionId;
 
+  // One key per logical write, kept while that exact write is retried (AD-58).
+  final _saving = IdempotentWrite();
+  final _submitting = IdempotentWrite();
+
   Future<void> load({bool refresh = false}) async {
     emit(
       state.copyWith(
@@ -100,10 +107,14 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     if (draft == null || !draft.isDirty) return null;
 
     emit(state.copyWith(saving: true, clearFailure: true));
+    final payload = draft.payload();
     final result = await _repository.saveMarks(
       sessionId: sessionId,
       version: draft.sheet.version,
-      marks: draft.payload(),
+      marks: payload,
+      // The same batch on the same version is the same write, so a retry after
+      // a lost response reuses its key and cannot be refused as a conflict.
+      idempotencyKey: _saving.keyFor(jsonEncode({'v': draft.sheet.version, 'm': payload})),
     );
     if (isClosed) return null;
 
@@ -114,6 +125,7 @@ class AttendanceCubit extends Cubit<AttendanceState> {
       return failure.message;
     }
 
+    _saving.settle();
     // Re-read rather than patching a version number locally, so the screen
     // always shows what the server actually holds.
     emit(state.copyWith(saving: false));
@@ -128,13 +140,18 @@ class AttendanceCubit extends Cubit<AttendanceState> {
     if (draft.isDirty) return 'Save your changes first.';
 
     emit(state.copyWith(submitting: true, clearFailure: true));
-    final result = await _repository.submit(sessionId: sessionId, version: draft.sheet.version);
+    final result = await _repository.submit(
+      sessionId: sessionId,
+      version: draft.sheet.version,
+      idempotencyKey: _submitting.keyFor('${draft.sheet.version}'),
+    );
     if (isClosed) return null;
 
     final failure = result.failureOrNull;
     emit(state.copyWith(submitting: false, failure: failure));
     if (failure != null) return failure.message;
 
+    _submitting.settle();
     await load(refresh: true);
     return null;
   }

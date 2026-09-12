@@ -8,13 +8,18 @@ import 'attendance_sheet.dart';
 abstract interface class AttendanceRepository {
   Future<Result<AttendanceSheet>> readSheet(String sessionId);
 
-  /// One request for the whole batch. Sixty students is never sixty requests,
-  /// and the version pins the write to the register the teacher was looking at.
+  /// One request for the whole batch, pinned to the version the teacher was
+  /// looking at. The key makes a resend of the same batch safe (AD-58).
   Future<Result<int>> saveMarks({
     required String sessionId,
     required int version,
     required List<Map<String, Object?>> marks,
+    required String idempotencyKey,
   });
 
-  Future<Result<void>> submit({required String sessionId, required int version});
+  Future<Result<void>> submit({
+    required String sessionId,
+    required int version,
+    required String idempotencyKey,
+  });
 }

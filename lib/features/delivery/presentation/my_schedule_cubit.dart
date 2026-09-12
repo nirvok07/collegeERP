@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/network/idempotency.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../domain/class_session.dart';
 import '../domain/delivery_repository.dart';
@@ -43,6 +44,9 @@ class MyScheduleCubit extends Cubit<MyScheduleState> {
 
   final DeliveryRepository _repository;
   final String _today;
+
+  // One key per class being recorded, kept while that write is retried (AD-58).
+  final _taught = IdempotentWrite();
 
   String get today => _today;
 
@@ -91,12 +95,16 @@ class MyScheduleCubit extends Cubit<MyScheduleState> {
   /// state, so the screen always shows what the server actually holds.
   Future<Failure?> markTaught(ClassSession session) async {
     emit(state.copyWith(marking: session.id, clearFailure: true));
-    final result = await _repository.markTaught(session.id);
+    final result = await _repository.markTaught(
+      session.id,
+      idempotencyKey: _taught.keyFor(session.id),
+    );
     if (isClosed) return null;
 
     final failure = result.failureOrNull;
     emit(state.copyWith(clearMarking: true));
     if (failure != null) return failure;
+    _taught.settle();
 
     await load(refresh: true);
     return null;

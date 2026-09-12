@@ -110,6 +110,11 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   assessment_marks: 'INSERT+SELECT+UPDATE',
   // Append-only, like the audit log and attendance corrections.
   assessment_mark_corrections: 'INSERT+SELECT',
+
+  // Replay-safe writes (AD-58). DELETE because this is a cache of outcomes, not
+  // history: a server error releases a key and old outcomes expire, and nothing
+  // references a row.
+  idempotency_keys: 'DELETE+INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */
@@ -197,7 +202,7 @@ describe('application role privileges', () => {
         ORDER BY table_name`, [APP_ROLE],
     );
     assert.deepEqual(
-      rows.map((r) => r.table_name), ['curriculum_entries', 'non_teaching_days'],
+      rows.map((r) => r.table_name), ['curriculum_entries', 'idempotency_keys', 'non_teaching_days'],
       'every other table soft-deletes, so tombstones propagate and audit resolves',
     );
   });
