@@ -81,3 +81,89 @@ export interface SectionRepository {
   }): Promise<boolean>;
   setCapacity(tx: Tx, id: string, capacity: number | null): Promise<boolean>;
 }
+
+/* ----------------------------------------------------------- offerings -- */
+
+export type OfferingStatus = 'planned' | 'active' | 'completed' | 'cancelled';
+export type OfferingComponent = 'lecture' | 'lab' | 'tutorial';
+export type InstructorRole = 'lead' | 'co' | 'assistant';
+
+export interface InstructorSummary {
+  assignmentId: string;
+  personId: string;
+  fullName: string;
+  role: InstructorRole;
+  validFrom: Date;
+}
+
+export interface OfferingRecord {
+  id: string;
+  sectionId: string;
+  sectionLabel: string;
+  sectionStatus: SectionStatus;
+  programId: string;
+  programName: string;
+  departmentName: string;
+  termId: string;
+  termName: string;
+  academicYearName: string;
+  termNumber: number;
+  courseId: string;
+  courseCode: string;
+  courseTitle: string;
+  component: OfferingComponent;
+  status: OfferingStatus;
+  cancelledReason: string | null;
+  /** Live assignments only. Ended ones are history, read separately. */
+  instructors: InstructorSummary[];
+}
+
+export interface OfferingFilter {
+  sectionId?: string | null;
+  courseId?: string | null;
+  termId?: string | null;
+  programId?: string | null;
+  status?: OfferingStatus | null;
+  /** Offerings this person is currently assigned to teach. */
+  instructorPersonId?: string | null;
+  unstaffedOnly?: boolean;
+}
+
+export interface AssignmentHistoryRecord {
+  id: string;
+  personId: string;
+  fullName: string;
+  role: InstructorRole;
+  validFrom: Date;
+  validTo: Date | null;
+  endReason: string | null;
+}
+
+export interface OfferingRepository {
+  create(tx: Tx, input: {
+    id: string; tenantId: string; sectionId: string; courseId: string;
+    component: OfferingComponent;
+  }): Promise<void>;
+  findById(tx: Tx, id: string): Promise<OfferingRecord | null>;
+  list(tx: Tx, filter: OfferingFilter): Promise<OfferingRecord[]>;
+  transition(tx: Tx, input: {
+    id: string; from: OfferingStatus; to: OfferingStatus; at: Date; reason: string | null;
+  }): Promise<boolean>;
+  /** Used when a section completes: its active teaching ends with the term. */
+  completeActiveForSection(tx: Tx, sectionId: string, at: Date): Promise<string[]>;
+  listActiveForSection(tx: Tx, sectionId: string): Promise<OfferingRecord[]>;
+}
+
+export interface InstructorAssignmentRepository {
+  assign(tx: Tx, input: {
+    id: string; tenantId: string; offeringId: string; personId: string;
+    role: InstructorRole; assignedBy: string; at: Date;
+  }): Promise<void>;
+  /** Ends an assignment rather than deleting it, so history survives. */
+  end(tx: Tx, input: {
+    id: string; endedBy: string; reason: string; at: Date;
+  }): Promise<boolean>;
+  findLive(tx: Tx, offeringId: string, personId: string): Promise<{ id: string; role: InstructorRole } | null>;
+  findLiveById(tx: Tx, assignmentId: string): Promise<{ id: string; offeringId: string; personId: string; role: InstructorRole } | null>;
+  history(tx: Tx, offeringId: string): Promise<AssignmentHistoryRecord[]>;
+}

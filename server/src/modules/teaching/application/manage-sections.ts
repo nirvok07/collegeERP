@@ -13,8 +13,8 @@ import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
-  AcademicYearRecord, AcademicYearRepository, SectionFilter, SectionRecord,
-  SectionRepository, SectionStatus, TermRecord, TermRepository,
+  AcademicYearRecord, AcademicYearRepository, OfferingRepository, SectionFilter,
+  SectionRecord, SectionRepository, SectionStatus, TermRecord, TermRepository,
 } from './ports.ts';
 import { occupancyOfSection } from './section-capability.ts';
 
@@ -28,6 +28,8 @@ export interface TeachingDeps {
   years: AcademicYearRepository;
   terms: TermRepository;
   sections: SectionRepository;
+  /** Same module: a section's lifecycle reaches its own teaching. */
+  offerings: OfferingRepository;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -257,6 +259,17 @@ export async function transitionSection(
           return Err(fail('CONFLICT',
             `${occupancy.enrolled} ${occupancy.enrolled === 1 ? 'student is' : 'students are'} enrolled in section ${section.label}. Move them before cancelling it.`));
         }
+
+        // Cancelling claims the teaching should not have happened, which is a
+        // different statement from "the term ended". Each active course needs
+        // its own decision, so this refuses rather than cascading.
+        const active = await deps.offerings.listActiveForSection(tx, input.id);
+        if (active.length > 0) {
+          const names = active.slice(0, 3).map((o) => o.courseCode).join(', ');
+          const rest = active.length - Math.min(active.length, 3);
+          return Err(fail('CONFLICT',
+            `${names}${rest > 0 ? ` and ${rest} more` : ''} ${active.length === 1 ? 'is' : 'are'} still being taught in section ${section.label}. Cancel or complete them first.`));
+        }
       }
 
       const moved = await deps.sections.transition(tx, {
@@ -265,13 +278,35 @@ export async function transitionSection(
       });
       if (!moved) return Err(fail('CONFLICT', 'That section was changed by someone else just now.'));
 
+      // The term ending is the natural end of its teaching, so completion
+      // cascades rather than asking an operator to close fifty offerings by
+      // hand. Each one is audited individually, so the cascade is visible.
+      let completedOfferings = 0;
+      if (input.to === 'completed') {
+        const ids = await deps.offerings.completeActiveForSection(tx, input.id, at);
+        completedOfferings = ids.length;
+        for (const offeringId of ids) {
+          await deps.audit.record({
+            correlationId: deps.ids.next(), tenantId: actor.tenantId,
+            actorType: 'person', actorId: actor.personId,
+            action: 'offering.completed', subjectType: 'course_offering', subjectId: offeringId,
+            scopeType: 'section', scopeRefId: input.id,
+            before: { status: 'active' }, after: { status: 'completed' },
+            reason: 'The section completed, ending its teaching',
+          }, tx);
+        }
+      }
+
       await deps.audit.record({
         correlationId: deps.ids.next(), tenantId: actor.tenantId,
         actorType: 'person', actorId: actor.personId,
         action: `section.${input.to}`, subjectType: 'section', subjectId: input.id,
         scopeType: 'section', scopeRefId: input.id,
         before: { status: section.status },
-        after: { status: input.to, label: section.label },
+        after: {
+          status: input.to, label: section.label,
+          ...(completedOfferings > 0 ? { completedOfferings } : {}),
+        },
         reason: input.reason?.trim() ?? null,
       }, tx);
 

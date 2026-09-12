@@ -672,3 +672,91 @@ never defines one. Terminology is fixed: an **academic year** is the institution
 named as the institution names it, a **term** is a numbered division inside it, and there is no
 third word. Exactly one academic year per institution is current, enforced by a partial unique
 index, because every downstream module asks for it and two would make the answer arbitrary.
+
+---
+
+**AD-40 — A role assignment is a permission; an instructor assignment is a reach constraint**
+
+*Status.* Approved and active, 2026-09-12. Narrows a line in Blueprint 2 without changing AD-1.
+
+*Problem.* Blueprint 2 describes `teaching_assignments` as "the authorization source for every
+teacher action". Read literally that contradicts AD-1, under which role assignments are the sole
+source of authority and `can()` is the only decision point. Two sources of authorization would be
+exactly the second permission system this slice was told not to build.
+
+*Decision.* They answer different questions, and the split is recorded rather than resolved by
+picking a winner.
+
+| Question | Answered by | Owner |
+|---|---|---|
+| May this person do it at all? | The role assignment, through `can()` | M1 |
+| Which offerings does that reach? | The active instructor assignment | M3 |
+
+*Consequences.* `GET /v1/me/teaching` introduces no permission: reading your own teaching is
+self-scoped, and the set is derived from the token subject, never from anything the client sends.
+Administrative reads use `offering.read` at institution scope, as sections do. Write paths that
+arrive later, attendance first, will require both conditions, combined in one place rather than
+as identity checks scattered through controllers.
+
+*Rejected.* Treating an instructor assignment as a grant, which would mean a teacher's authority
+lived in two tables and revoking a role would not revoke their reach.
+
+---
+
+**AD-41 — Offering identity is (section, course, component), and the term is deliberately absent**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* A section already carries its term. Restating the term in the offering key would permit
+an offering whose term contradicts its section's, which is a class of bug worth making
+unrepresentable rather than validating.
+
+*Component* is `lecture`, `lab` or `tutorial`. Indian engineering colleges routinely staff a lab
+separately from the lecture that shares its course code, in a different room and often with
+different faculty. Without the column the same course could not be offered twice to one cohort,
+and colleges would work around it with duplicate course codes, which would corrupt transcripts.
+One column buys the correct model.
+
+*Impact.* A partial unique index over non-cancelled offerings enforces the key. Section and
+course are frozen by trigger once an offering is active, for the same reason Section freezes:
+attendance will reference the offering by identity, and re-pointing it would move records between
+cohorts. Cross-listing one offering to two sections is not modelled; no requirement asks for it
+and it would complicate attendance for a case that may never arrive.
+
+---
+
+**AD-42 — Instructor assignment is a validity-bounded record, never a column, and ending one
+requires a reason**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Teachers change mid-term. Attendance taken in week three was taken by whoever was
+teaching in week three, and a column on the offering would overwrite that fact. A table with
+`valid_from` and `valid_to` keeps "who was teaching on 14 August" answerable for as long as the
+records that depend on it exist.
+
+*Impact.* Assignments are never deleted. Reassignment ends the current record and opens the next.
+A partial unique index admits one live `lead` per offering, because co-teaching is real but
+ambiguity about who owns a class is not, and a second index admits one live assignment per person
+per offering so the same teacher cannot be both lead and co. Ending an assignment requires a
+reason, because an end date alone explains nothing to whoever reads the term later. A completed
+or cancelled offering accepts no assignment changes at all: its teaching record stands as it was.
+
+---
+
+**AD-43 — Mobile navigation is built from server-resolved authority, not from a role held on the
+device**
+
+*Status.* Approved and active, 2026-09-12. Extends AD-18 and AD-24 to the mobile shell.
+
+*Reason.* The first teacher surface made the question unavoidable: the app previously showed the
+same three tabs to everyone, which would have shown a faculty member an administrator's People
+and Organisation screens. Authority is role × scope × validity and only the server can resolve
+it, so the shell reads `/v1/auth/me` once per session and builds its destinations from the
+permission set.
+
+*Impact.* A surface the user has no authority for is absent, not disabled, matching the web
+console. A person with no grants at all gets the designed no-access state with a way to sign out,
+not an empty list. A failed authority read leaves the tabs unresolved and offers a retry rather
+than guessing wide, so nothing is ever shown that the server would refuse. The client-side
+decision shapes the interface only; every request is checked again server-side.

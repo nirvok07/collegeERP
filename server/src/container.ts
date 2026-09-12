@@ -46,8 +46,10 @@ import type { ManageOrgDeps } from './modules/institution/application/manage-org
 import type { CurriculumDeps } from './modules/curriculum/application/manage-curriculum.ts';
 import type { TeachingDeps } from './modules/teaching/application/manage-sections.ts';
 import {
-  PgAcademicYearRepository, PgSectionRepository, PgTermRepository,
+  PgAcademicYearRepository, PgInstructorAssignmentRepository, PgOfferingRepository,
+  PgSectionRepository, PgTermRepository,
 } from './modules/teaching/infrastructure/repositories.ts';
+import type { OfferingDeps } from './modules/teaching/application/manage-offerings.ts';
 import {
   PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
 } from './modules/curriculum/infrastructure/repositories.ts';
@@ -70,6 +72,7 @@ export interface Container {
   manageOrg: ManageOrgDeps;
   curriculum: CurriculumDeps;
   teaching: TeachingDeps;
+  offerings: OfferingDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -99,6 +102,8 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const institutions = new PgInstitutionRepository();
   const campuses = new PgCampusRepository();
   const departments = new PgDepartmentRepository();
+  const sectionRepository = new PgSectionRepository();
+  const offeringRepository = new PgOfferingRepository();
 
   // Cloudinary only when configured; otherwise an in-memory adapter, so the
   // application never branches on which one it received.
@@ -154,7 +159,14 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       uow, audit, ids, clock,
       years: new PgAcademicYearRepository(),
       terms: new PgTermRepository(),
-      sections: new PgSectionRepository(),
+      sections: sectionRepository,
+      offerings: offeringRepository,
+    },
+    offerings: {
+      uow, audit, ids, clock,
+      offerings: offeringRepository,
+      instructors: new PgInstructorAssignmentRepository(),
+      sections: sectionRepository,
     },
     close: async () => {
       if (!pool) await dbPool.end();

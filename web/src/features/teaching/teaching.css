@@ -1,0 +1,89 @@
+/* A refresh that failed with data already on screen: warn, keep the data. */
+.teaching__degraded { margin-bottom: var(--space-base); }
+.teaching__degraded > span { flex: 1; }
+
+/* A program select reads as one more filter, so it is shaped like the pills
+   beside it. Its native caret stays: without it the control looks like a button
+   and nobody discovers that it opens a list. */
+.filter--select { padding-inline-end: var(--space-xs); }
+
+/* ---- Cohorts ----------------------------------------------------------- */
+.cohorts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-base); }
+.cohort {
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--radius-card); overflow: hidden;
+}
+.cohort__head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-base); padding: var(--space-base);
+  border-bottom: 1px solid var(--outline); background: var(--surface-variant);
+  flex-wrap: wrap;
+}
+.cohort__name { font: var(--text-title); display: flex; align-items: baseline; gap: var(--space-md); flex-wrap: wrap; }
+.cohort__label { font: var(--text-body); color: var(--text-secondary); }
+.cohort__meta {
+  display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;
+  margin-top: var(--space-sm); font: var(--text-caption); color: var(--text-secondary);
+}
+.cohort__actions { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.cohort__empty { padding: var(--space-base); color: var(--text-tertiary); font: var(--text-body); }
+
+.cohort-skeleton { display: flex; flex-direction: column; gap: var(--space-base); }
+.cohort-skeleton__card { height: 132px; border-radius: var(--radius-card); }
+
+/* ---- Offerings --------------------------------------------------------- */
+.offerings { list-style: none; margin: 0; padding: 0; }
+.offering {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md) var(--space-base); border-bottom: 1px solid var(--outline);
+  transition: background var(--dur-micro) var(--ease-sharp);
+  flex-wrap: wrap;
+}
+.offering:last-child { border-bottom: none; }
+.offering:hover { background: var(--surface-hover); }
+.offering__title { flex: 1; min-width: 0; font: var(--text-body); display: flex; align-items: center; gap: var(--space-sm); }
+.offering__component {
+  padding: 1px var(--space-sm); border-radius: var(--radius-pill);
+  background: var(--surface-variant); border: 1px solid var(--outline);
+  font: var(--text-caption); color: var(--text-secondary);
+}
+.offering__actions { display: flex; gap: var(--space-sm); }
+
+/* The reason a course cannot start is written out, not left to a tooltip on a
+   disabled button that a keyboard user would never see. */
+.offering__blocked {
+  flex-basis: 100%; font: var(--text-caption); color: var(--warning);
+}
+
+/* Who teaches this, answered on the row and changed from the row. */
+.instructor {
+  display: inline-flex; align-items: center; gap: var(--space-sm);
+  min-height: 28px; padding: 0 var(--space-md); max-width: 220px;
+  background: transparent; color: var(--text-primary);
+  border: 1px dashed transparent; border-radius: var(--radius-pill);
+  font: var(--text-body); cursor: pointer; text-align: start;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: background var(--dur-micro) var(--ease-sharp),
+              border-color var(--dur-micro) var(--ease-sharp);
+}
+.instructor:hover { background: var(--surface-variant); border-color: var(--outline-strong); }
+.instructor--none { color: var(--primary); border-color: var(--outline-strong); }
+.instructor__more { color: var(--text-secondary); font: var(--text-caption); }
+
+/* ---- Assignment panel -------------------------------------------------- */
+.assignees, .history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-sm); }
+.assignee, .history__row {
+  display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;
+  padding: var(--space-md); background: var(--surface-variant);
+  border: 1px solid var(--outline); border-radius: var(--radius-input);
+}
+.assignee__name { font: var(--text-body); flex: 1; min-width: 120px; }
+.assignee__since { font: var(--text-caption); color: var(--text-secondary); }
+.history__reason { flex-basis: 100%; font: var(--text-caption); color: var(--text-tertiary); }
+
+@media (max-width: 720px) {
+  .offering { align-items: flex-start; }
+  .offering__title { flex-basis: 100%; order: 2; }
+  .instructor { order: 3; max-width: none; }
+  .cohort__actions { width: 100%; }
+}

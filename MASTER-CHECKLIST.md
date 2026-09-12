@@ -524,12 +524,15 @@ before the enterprise brief and the blueprint written after it. Not silently res
 ### Drift 2 — Terminology, Subject versus Course
 
 - **Problem.** `docs/04-data-model.md` uses `subjects`. Blueprint 2 and 3 use Course, with
-  CourseOffering as course × term × section.
+  CourseOffering described as course × term × section.
 - **Impact.** Medium. Left unresolved this becomes two tables and two screens for one concept.
-- **Recommended resolution.** Adopt **Course** as the entity and **Subject** as a display synonym
-  where an institution prefers it, configurable per tenant. Settle it in the glossary, P0.4,
-  before M3 is designed.
-- **Approval required.** Low risk, but record it.
+- **Resolution, applied 2026-09-12.** **Course** is the entity, built as `courses` in migration
+  009, and **Subject** is a display synonym for tenants that prefer it. The blueprint's
+  "course × term × section" was also narrowed while building: offering identity is
+  **(section, course, component)** and the term is deliberately absent, because a section already
+  carries its term and restating it would allow an offering that contradicts its own cohort. See
+  AD-41. `docs/04-data-model.md` still says `subjects` and remains the stale document.
+- **Approval required.** Low risk, recorded.
 
 ### Drift 3 — Phase numbering collision
 

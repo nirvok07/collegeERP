@@ -73,6 +73,11 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   academic_years: 'INSERT+SELECT+UPDATE',
   terms: 'INSERT+SELECT+UPDATE',
   sections: 'INSERT+SELECT+UPDATE',
+
+  // Teaching. No DELETE: an offering is cancelled and an assignment is ended,
+  // because attendance and results will reference both by identity.
+  course_offerings: 'INSERT+SELECT+UPDATE',
+  instructor_assignments: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

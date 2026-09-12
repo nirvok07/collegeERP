@@ -6,17 +6,20 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     152 backend + 68 web + 24 Flutter = 244 passing
-Next      M3 slice two: CourseOffering (course x section x term) and instructor
-          assignment, which unlocks both the web section workspace's instructor
-          column and the first genuine Flutter teaching surface
+Tests     178 backend + 87 web + 38 Flutter = 303 passing
+Next      M4 Attendance, the first module that needs both an instructor
+          assignment and a class session. Its authorization is already decided:
+          the role permits the action, the instructor assignment bounds its
+          reach (AD-40)
 
-M3 SECTION: BACKEND COMPLETE / WEB PENDING / FLUTTER DEFERRED
-  Flutter is deferred for one honest reason, not symmetry: a teacher's sections
-  are derived from instructor assignment, which lives on CourseOffering and does
-  not exist yet. A section list on mobile today would show an administrator's
-  view of every section in the college, which is not a mobile workflow. Flutter
-  lands with slice two, when there is a teacher to show it to.
+M3 TEACHING OPERATIONS: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
+  Section, CourseOffering and instructor assignment are built on all three
+  sides. The web console gets the administrator's workspace: cohort, the courses
+  taught to it, and who teaches each, with assignment in place. Flutter gets the
+  teacher's own teaching and nothing else, derived server-side from the token
+  subject. Attendance is M4 and is not built.
+  Still unbuilt inside M3: timetable, rooms and class sessions. Attendance needs
+  a session, which is the next thing M3 owes M4.
 
 CURRICULUM: BACKEND COMPLETE / WEB COMPLETE / FLUTTER DEFERRED
   Flutter deferral is deliberate and recorded, not forgotten. Authoring is a
@@ -250,6 +253,56 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M3 — Teaching Operations, slice two: CourseOffering and instructor assignment
+
+Designed before any table, in `docs/blueprint/modules/m3-course-offering.md`.
+
+**Two questions, not one authorization system** (AD-40). Blueprint 2 called
+`teaching_assignments` "the authorization source for every teacher action",
+which read literally contradicts AD-1. The conflict was flagged rather than
+resolved by preference: a role assignment answers whether a person may act at
+all, and an instructor assignment answers which offerings that reaches. So
+`GET /v1/me/teaching` adds no permission, derives its set from the token
+subject, and accepts nothing from the client that could widen it.
+
+**Identity excludes the term and includes the component** (AD-41). A section
+already carries its term, so restating it would allow an offering that
+contradicts its own cohort. `component` exists because colleges staff a lab
+separately from the lecture sharing its course code; without it they would fake
+the case with duplicate course codes and corrupt transcripts.
+
+**Assignment is a record, not a column** (AD-42). Attendance taken in week three
+was taken by whoever taught in week three. Reassignment ends one row and opens
+the next, ending requires a reason, and nothing is ever deleted.
+
+**The section lifecycle meets the offering lifecycle asymmetrically.**
+Completing a section completes its active offerings in the same transaction,
+each audited individually so the cascade is visible. Cancelling a section is
+refused while any offering is active, naming them, because cancellation claims
+the teaching should not have happened and that deserves a decision per offering.
+
+**Web: one screen answers the whole relationship.** Cohort, then the courses
+taught to it, then who teaches each, with the instructor assigned from the row
+rather than from a separate screen. The blocking reason is written out, not left
+to a disabled button and a tooltip a keyboard user would never see. The course
+picker offers what the published curriculum expects for that cohort's term
+first, and the catalogue second, so departing from the regulation is a visible
+choice. Four CSS patterns that three features now share moved into the shared
+stylesheet, so no feature imports another feature's CSS to lay out its own page.
+
+**Flutter: the teacher's own teaching, and nothing else.** Grouped by the class
+they walk into, with finished terms kept out of the way but never lost. State is
+shown in a teacher's words: "not started", not `planned`. The shell became
+permission-aware in the process (AD-43): it reads `/v1/auth/me` once and builds
+its tabs from the resolved permission set, so a faculty member no longer sees an
+administrator's People and Organisation screens. `TeachingRepository` is a
+domain port, so the cubit is tested without a server.
+
+**Two defects found and fixed while building**, both mine, both in the test
+reset: the delete order violated `course_offerings_course_id_fkey` by clearing
+curriculum before the offerings referencing it, and the section transition query
+left `$4` unreferenced on one branch, which PostgreSQL rejects outright.
 
 ### M3 — Teaching Operations, slice one: Section
 

@@ -90,12 +90,6 @@
 }
 .entry:last-child { border-bottom: none; }
 .entry:hover { background: var(--surface-hover); }
-.entry__code {
-  padding: 1px var(--space-sm); border-radius: var(--radius-input);
-  background: var(--surface-variant); border: 1px solid var(--outline);
-  font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px;
-  color: var(--text-secondary); white-space: nowrap;
-}
 .entry__title { flex: 1; min-width: 0; font: var(--text-body); }
 .entry__credits { font: var(--text-label); color: var(--text-secondary); }
 

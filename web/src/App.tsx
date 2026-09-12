@@ -7,6 +7,7 @@ import { InstitutionsPage } from './features/institutions/InstitutionsPage.tsx';
 import { PeoplePage } from './features/people/PeoplePage.tsx';
 import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
 import { CurriculumPage } from './features/curriculum/CurriculumPage.tsx';
+import { TeachingPage } from './features/teaching/TeachingPage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -140,6 +141,24 @@ function sectionsFor(
       label: 'Curriculum',
       render: () => (
         <CurriculumPage api={api} canManage={permissions.has('department.manage')} />
+      ),
+    });
+  }
+  // Teaching has its own gate: a head of department reads sections and staffs
+  // courses without necessarily being able to read the whole staff directory.
+  if (permissions?.has('section.read')) {
+    items.push({
+      key: 'teaching',
+      label: 'Teaching',
+      render: () => (
+        <TeachingPage
+          api={api}
+          can={{
+            manageSections: permissions.has('section.manage'),
+            manageOfferings: permissions.has('offering.manage'),
+            assignInstructors: permissions.has('instructor.assign'),
+          }}
+        />
       ),
     });
   }

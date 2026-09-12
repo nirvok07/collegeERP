@@ -88,6 +88,8 @@ than from a feature list.
 | R29 | A user must never be unexpectedly signed out. Sessions persist across browser reload and app restart, renew automatically, and survive a temporary network failure. Only an unrenewable session, explicit sign-out or a revoked credential ends one | Active | [ADR](blueprint/adr.md) AD-25, AD-26 |
 | R30 | Development runs against Supabase-hosted PostgreSQL over DATABASE_URL, with no Supabase SDK, so production is a configuration change | Active | [Blueprint 4](blueprint/04-nfr-and-deployment.md), `server/.env` |
 | R27 | Creating a college and its initial College Admin is one onboarding flow, not two mandatory steps. The entities stay separate: college is the tenant, user is the identity, admin is an access assignment. The architecture must still support replacement, suspension and multiple administrators | Active | [M1](blueprint/modules/m1-identity-and-access.md) W0, BR-25, BR-26, [ADR](blueprint/adr.md) AD-20, AD-21 |
+| R31 | Teacher-facing access is derived from authoritative assignments and scopes on the server. A client never tells the backend which sections it teaches, and no second teacher-permission system exists | Active | [ADR](blueprint/adr.md) AD-40, [M3 offering](blueprint/modules/m3-course-offering.md) §5 |
+| R32 | Mobile shows a teacher their own teaching only, never an administrator's college-wide section list. Each client gets the surface its user actually works in | Active | [ADR](blueprint/adr.md) AD-43, `lib/features/teaching/` |
 
 ## Assumptions awaiting confirmation
 

@@ -152,3 +152,92 @@
 .banner--error { background: var(--error-subtle); border-color: var(--error); color: var(--error); }
 .banner--info { background: var(--info-subtle); border-color: var(--info); color: var(--info); }
 .banner--warning { background: var(--warning-subtle); border-color: var(--warning); color: var(--warning); }
+
+/* ---- Page frame --------------------------------------------------------
+   Shared by every workspace, so a screen never has to import another
+   feature's stylesheet to lay out its own header. */
+.page { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: var(--space-xl); }
+.page__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: var(--space-base); margin-bottom: var(--space-lg); flex-wrap: wrap;
+}
+.page__title { font: var(--text-headline); }
+.page__sub { font: var(--text-body); color: var(--text-secondary); margin-top: var(--space-xs); }
+.page__actions { display: flex; align-items: center; gap: var(--space-md); }
+
+.search {
+  min-height: 40px; width: 260px; padding: 0 var(--space-md);
+  background: var(--surface); border: 1px solid var(--outline-strong);
+  border-radius: var(--radius-input); color: var(--text-primary);
+  transition: border-color var(--state), box-shadow var(--state);
+}
+.search::placeholder { color: var(--text-tertiary); }
+.search:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
+
+/* ---- Filter pills ------------------------------------------------------ */
+.filters { display: flex; gap: var(--space-sm); margin-bottom: var(--space-base); flex-wrap: wrap; }
+.filter {
+  display: inline-flex; align-items: center; gap: var(--space-sm);
+  min-height: 32px; padding: 0 var(--space-md);
+  background: var(--surface); color: var(--text-secondary);
+  border: 1px solid var(--outline); border-radius: var(--radius-pill);
+  font: var(--text-caption); cursor: pointer;
+  transition:
+    background var(--dur-micro) var(--ease-sharp),
+    border-color var(--dur-micro) var(--ease-sharp),
+    color var(--dur-micro) var(--ease-sharp),
+    transform var(--press);
+}
+.filter:hover { background: var(--surface-variant); }
+.filter:active { transform: scale(0.97); }
+.filter--on { background: var(--primary-subtle); border-color: var(--primary); color: var(--primary); }
+.filter__count { opacity: 0.75; }
+
+/* ---- Code token -------------------------------------------------------- */
+.entry__code {
+  padding: 1px var(--space-sm); border-radius: var(--radius-input);
+  background: var(--surface-variant); border: 1px solid var(--outline);
+  font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px;
+  color: var(--text-secondary); white-space: nowrap;
+}
+
+/* ---- Searchable picker ------------------------------------------------- */
+/* ---- Course catalogue ------------------------------------------------ */
+.catalog {
+  max-height: 320px; overflow-y: auto;
+  border: 1px solid var(--outline); border-radius: var(--radius-input);
+}
+.catalog__row {
+  display: flex; align-items: center; gap: var(--space-md); width: 100%;
+  padding: var(--space-md) var(--space-base); background: transparent;
+  border: none; border-bottom: 1px solid var(--outline); text-align: start; cursor: pointer;
+  transition: background var(--dur-micro) var(--ease-sharp);
+}
+.catalog__row:last-child { border-bottom: none; }
+.catalog__row:hover:not(:disabled) { background: var(--surface-hover); }
+.catalog__row--on { background: var(--primary-subtle); }
+.catalog__row:disabled { opacity: 0.5; cursor: not-allowed; }
+.catalog__title { flex: 1; min-width: 0; font: var(--text-body); }
+.catalog__note { font: var(--text-caption); color: var(--text-tertiary); }
+.catalog__empty { padding: var(--space-base); color: var(--text-tertiary); font: var(--text-body); }
+.catalog__chosen { font: var(--text-body); display: flex; align-items: center; gap: var(--space-sm); }
+
+/* On a narrow screen the actions take the full width and the search grows
+   into it, rather than a header that wraps into three ragged lines. */
+@media (max-width: 720px) {
+  .page { padding: var(--space-base); }
+  .page__actions { width: 100%; }
+  .search { flex: 1; width: auto; }
+}
+
+/* Keeps the header from jumping by two pixels when a refresh starts. */
+.refresh-bar__spacer { height: 2px; }
+
+/* ---- Drawer helpers ---------------------------------------------------- */
+.drawer__section {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-md);
+  font: var(--text-title); margin-top: var(--space-sm);
+}
+.drawer__note { font: var(--text-body); color: var(--text-secondary); }
+.drawer__row { display: flex; gap: var(--space-md); align-items: flex-end; flex-wrap: wrap; }
+.drawer__row > .field--inline { flex: 1; min-width: 160px; }

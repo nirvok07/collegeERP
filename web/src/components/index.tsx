@@ -179,6 +179,74 @@ export function Drawer({
   );
 }
 
+/**
+ * A destructive step that needs an explanation, asked for in the product's own
+ * language rather than through a browser prompt.
+ *
+ * The reason is required, not optional: a cancellation with no stated cause
+ * leaves whoever reads the record next term with no way to understand it.
+ */
+export function ReasonDrawer({
+  open, title, subtitle, label, placeholder, confirmLabel, body, onClose, onConfirm,
+}: {
+  open: boolean;
+  title: string;
+  subtitle?: string;
+  label: string;
+  placeholder?: string;
+  confirmLabel: string;
+  body?: ReactNode;
+  onClose: () => void;
+  /** Resolves to an error message to show in place, or null on success. */
+  onConfirm: (reason: string) => Promise<string | null>;
+}) {
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (open) { setReason(''); setBusy(false); setError(null); }
+  }, [open]);
+
+  if (!open) return null;
+
+  async function confirm() {
+    setBusy(true);
+    setError(null);
+    const failed = await onConfirm(reason.trim());
+    setBusy(false);
+    if (failed) { setError(failed); return; }
+    onClose();
+  }
+
+  return (
+    <Drawer
+      open
+      title={title}
+      subtitle={subtitle}
+      onClose={onClose}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={busy}>Keep it</Button>
+          <Button
+            variant="danger" loading={busy} disabled={reason.trim().length === 0}
+            onClick={() => void confirm()}
+          >
+            {confirmLabel}
+          </Button>
+        </>
+      }
+    >
+      {error && <Banner tone="error">{error}</Banner>}
+      {body}
+      <Field
+        label={label} value={reason} autoFocus placeholder={placeholder}
+        onChange={(e) => setReason(e.currentTarget.value)}
+      />
+    </Drawer>
+  );
+}
+
 /* ---- Toasts ------------------------------------------------------------ */
 
 interface Toast { id: number; message: string; tone: 'neutral' | 'error' }

@@ -40,6 +40,8 @@ export async function resetData(): Promise<void> {
     for (const table of [
       'audit_events', 'login_attempts', 'refresh_tokens', 'invitation_tokens',
       'devices', 'credentials', 'role_assignments',
+      // Teaching references courses and sections, so it goes before both.
+      'instructor_assignments', 'course_offerings',
       'curriculum_entries', 'curriculum_versions', 'courses',
       'sections', 'terms', 'academic_years',
       'programs', 'departments', 'campuses',

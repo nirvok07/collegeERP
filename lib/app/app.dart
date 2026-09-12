@@ -3,15 +3,19 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/design/theme.dart';
+import '../core/error/failure.dart';
 import '../core/design/tokens.dart';
 import '../core/di/locator.dart';
 import '../core/platform/device_registration.dart';
 import '../core/platform/firebase_services.dart';
+import '../core/widgets/screen_state.dart';
+import '../core/session/authority.dart';
 import '../core/session/session_manager.dart';
 import '../core/session/session_store.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/organisation/presentation/organisation_screen.dart';
 import '../features/people/presentation/people_screen.dart';
+import '../features/teaching/presentation/my_teaching_screen.dart';
 
 class CollegeApp extends StatefulWidget {
   const CollegeApp({super.key});
@@ -27,6 +31,8 @@ class _CollegeAppState extends State<CollegeApp> {
   _Phase _phase = _Phase.restoring;
   String? _rememberedInstitution;
   String? _degradedMessage;
+  Authority? _authority;
+  Failure? _authorityFailure;
 
   @override
   void initState() {
@@ -49,11 +55,30 @@ class _CollegeAppState extends State<CollegeApp> {
     if (!mounted) return;
     setState(() => _phase = restored ? _Phase.signedIn : _Phase.signedOut);
     if (restored) {
+      unawaited(_loadAuthority());
       FirebaseServices.instance.identify(_session.actor?.id);
       // Registered after the session exists, because the call is authenticated
       // and the backend ties the device to the account that owns it.
       unawaited(locator<DeviceRegistration>().register());
     }
+  }
+
+  /// Which surfaces exist is decided by what the server says this person may
+  /// do, never by a role name kept on the device. A screen the user cannot use
+  /// is absent rather than disabled: a disabled tab advertises something they
+  /// will never have.
+  Future<void> _loadAuthority() async {
+    final result = await locator<AuthorityApi>().mine();
+    if (!mounted) return;
+    // A failed read leaves the tabs unresolved rather than guessing wide. The
+    // shell retries, and nothing is shown that the server would refuse.
+    result.when(
+      ok: (authority) => setState(() {
+        _authority = authority;
+        _authorityFailure = null;
+      }),
+      err: (failure) => setState(() => _authorityFailure = failure),
+    );
   }
 
   void _onSessionEvent(SessionEvent event) {
@@ -63,11 +88,15 @@ class _CollegeAppState extends State<CollegeApp> {
         case SignedIn():
           _phase = _Phase.signedIn;
           _degradedMessage = null;
+          _authority = null;
+          _authorityFailure = null;
+          unawaited(_loadAuthority());
           FirebaseServices.instance.identify(event.actor.id);
           unawaited(locator<DeviceRegistration>().register());
         case SignedOut():
           _phase = _Phase.signedOut;
           _degradedMessage = null;
+          _authority = null;
           FirebaseServices.instance.identify(null);
         case SessionDegraded():
           // The session is intact and renewal is retrying. Say so, and leave the
@@ -89,7 +118,12 @@ class _CollegeAppState extends State<CollegeApp> {
       home: switch (_phase) {
         _Phase.restoring => const _RestoringScreen(),
         _Phase.signedOut => SignInScreen(rememberedInstitution: _rememberedInstitution),
-        _Phase.signedIn => _HomeShell(degradedMessage: _degradedMessage),
+        _Phase.signedIn => _HomeShell(
+          degradedMessage: _degradedMessage,
+          authority: _authority,
+          authorityFailure: _authorityFailure,
+          onRetryAuthority: _loadAuthority,
+        ),
       },
     );
   }
@@ -108,78 +142,202 @@ class _RestoringScreen extends StatelessWidget {
   }
 }
 
+/// One tab per surface the signed-in person can actually use.
+///
 /// Bottom navigation, which is what a phone expects. The web console uses tabs
-/// in a top bar; neither is a translation of the other.
+/// in a top bar; neither is a translation of the other. What the two clients do
+/// share is the rule: a surface the user has no authority for is absent, not
+/// disabled.
 class _HomeShell extends StatefulWidget {
-  const _HomeShell({this.degradedMessage});
+  const _HomeShell({
+    this.degradedMessage,
+    required this.authority,
+    required this.authorityFailure,
+    required this.onRetryAuthority,
+  });
+
   final String? degradedMessage;
+  final Authority? authority;
+  final Failure? authorityFailure;
+  final Future<void> Function() onRetryAuthority;
 
   @override
   State<_HomeShell> createState() => _HomeShellState();
 }
 
+class _Tab {
+  const _Tab({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.screen,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final Widget screen;
+}
+
 class _HomeShellState extends State<_HomeShell> {
   int _index = 0;
+
+  /// Teaching comes first for everybody who has it, because it is the surface a
+  /// teacher opens the app for. Nobody sees a college-wide section list here:
+  /// that is an administrator's screen and lives in the web console.
+  List<_Tab> _tabs(Authority authority) {
+    return [
+      if (authority.can('offering.read'))
+        const _Tab(
+          label: 'Teaching',
+          icon: Icons.school_outlined,
+          selectedIcon: Icons.school_rounded,
+          screen: MyTeachingScreen(),
+        ),
+      if (authority.can('person.read'))
+        const _Tab(
+          label: 'People',
+          icon: Icons.people_outline_rounded,
+          selectedIcon: Icons.people_rounded,
+          screen: PeopleScreen(),
+        ),
+      // The organisation tree is read behind `person.read`, which is the
+      // permission the campus and department endpoints actually require.
+      if (authority.can('person.read'))
+        const _Tab(
+          label: 'Organisation',
+          icon: Icons.account_tree_outlined,
+          selectedIcon: Icons.account_tree_rounded,
+          screen: OrganisationScreen(),
+        ),
+      const _Tab(
+        label: 'Account',
+        icon: Icons.person_outline_rounded,
+        selectedIcon: Icons.person_rounded,
+        screen: _AccountScreen(),
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authority = widget.authority;
+
+    return Scaffold(
+      body: Column(
+        children: [
+          if (widget.degradedMessage != null) _DegradedBanner(message: widget.degradedMessage!),
+          Expanded(
+            child: authority == null
+                ? widget.authorityFailure == null
+                      // Resolving authority, which is one request. A quiet
+                      // placeholder rather than a spinner that would flash.
+                      ? const SizedBox.shrink()
+                      : ErrorView(
+                          failure: widget.authorityFailure!,
+                          onRetry: () => widget.onRetryAuthority(),
+                        )
+                : _Body(tabs: _tabs(authority), index: _index, hasAccess: authority.hasAccess),
+          ),
+        ],
+      ),
+      bottomNavigationBar: authority == null || _tabs(authority).length < 2
+          ? null
+          : NavigationBar(
+              selectedIndex: _index.clamp(0, _tabs(authority).length - 1),
+              onDestinationSelected: (i) => setState(() => _index = i),
+              destinations: [
+                for (final tab in _tabs(authority))
+                  NavigationDestination(
+                    icon: Icon(tab.icon),
+                    selectedIcon: Icon(tab.selectedIcon),
+                    label: tab.label,
+                  ),
+              ],
+            ),
+    );
+  }
+}
+
+class _Body extends StatelessWidget {
+  const _Body({required this.tabs, required this.index, required this.hasAccess});
+
+  final List<_Tab> tabs;
+  final int index;
+  final bool hasAccess;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!hasAccess && tabs.length == 1) {
+      // Normal on a first day: the account works, nobody has granted it
+      // anything yet. A designed state, not an error (AD-18).
+      return const _NoAccessScreen();
+    }
+    // IndexedStack keeps each tab's scroll position and state, which is what
+    // makes switching feel instant rather than reloaded.
+    return IndexedStack(
+      index: index.clamp(0, tabs.length - 1),
+      children: [for (final tab in tabs) tab.screen],
+    );
+  }
+}
+
+class _DegradedBanner extends StatelessWidget {
+  const _DegradedBanner({required this.message});
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: Column(
-        children: [
-          if (widget.degradedMessage != null)
-            Material(
-              color: scheme.tertiaryContainer,
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.base,
-                    vertical: AppSpacing.sm,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.cloud_off_rounded, size: 18, color: scheme.onTertiaryContainer),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Text(
-                          '${widget.degradedMessage} You are still signed in.',
-                          style: TextStyle(color: scheme.onTertiaryContainer, fontSize: 13),
-                        ),
-                      ),
-                    ],
-                  ),
+    return Material(
+      color: scheme.tertiaryContainer,
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              Icon(Icons.cloud_off_rounded, size: 18, color: scheme.onTertiaryContainer),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  '$message You are still signed in.',
+                  style: TextStyle(color: scheme.onTertiaryContainer, fontSize: 13),
                 ),
               ),
-            ),
-          Expanded(
-            // IndexedStack keeps each tab's scroll position and state, which is
-            // what makes switching feel instant rather than reloaded.
-            child: IndexedStack(
-              index: _index,
-              children: const [PeopleScreen(), OrganisationScreen(), _AccountScreen()],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.people_outline_rounded),
-            selectedIcon: Icon(Icons.people_rounded),
-            label: 'People',
+    );
+  }
+}
+
+class _NoAccessScreen extends StatelessWidget {
+  const _NoAccessScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('College')),
+      body: Column(
+        children: [
+          const Expanded(
+            child: EmptyView(
+              title: 'No access yet',
+              body:
+                  'Your account is active, but nobody has given you access to anything yet. '
+                  'Ask your college administrator to grant you a role.',
+              icon: Icons.lock_outline_rounded,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.account_tree_outlined),
-            selectedIcon: Icon(Icons.account_tree_rounded),
-            label: 'Organisation',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Account',
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.base),
+            child: TextButton(
+              onPressed: () => locator<SessionManager>().signOut(),
+              child: const Text('Sign out'),
+            ),
           ),
         ],
       ),

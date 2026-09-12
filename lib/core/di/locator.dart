@@ -5,9 +5,12 @@ import '../platform/device_registration.dart';
 import '../platform/firebase_services.dart';
 import '../network/auth_api.dart';
 import '../session/session_manager.dart';
+import '../session/authority.dart';
 import '../session/session_store.dart';
 import '../../features/organisation/data/organisation_api.dart';
 import '../../features/people/data/people_api.dart';
+import '../../features/teaching/data/teaching_api.dart';
+import '../../features/teaching/domain/teaching_repository.dart';
 
 final locator = GetIt.instance;
 
@@ -17,20 +20,24 @@ void configureDependencies() {
   locator
     ..registerLazySingleton(SessionStore.new)
     ..registerLazySingleton(AuthApi.new)
-    ..registerLazySingleton(() => SessionManager(
-          api: locator<AuthApi>(),
-          store: locator<SessionStore>(),
-        ))
-    ..registerLazySingleton(() => ApiClient(
-          // The client asks for a token rather than holding one, so a renewal
-          // never requires rebuilding it.
-          accessToken: () async => locator<SessionManager>().accessToken,
-          renew: () => locator<SessionManager>().renew(),
-        ))
-    ..registerLazySingleton(() => DeviceRegistration(
-          locator<ApiClient>(),
-          FirebaseServices.instance,
-        ))
+    ..registerLazySingleton(
+      () => SessionManager(api: locator<AuthApi>(), store: locator<SessionStore>()),
+    )
+    ..registerLazySingleton(
+      () => ApiClient(
+        // The client asks for a token rather than holding one, so a renewal
+        // never requires rebuilding it.
+        accessToken: () async => locator<SessionManager>().accessToken,
+        renew: () => locator<SessionManager>().renew(),
+      ),
+    )
+    ..registerLazySingleton(
+      () => DeviceRegistration(locator<ApiClient>(), FirebaseServices.instance),
+    )
     ..registerLazySingleton(() => PeopleApi(locator<ApiClient>()))
-    ..registerLazySingleton(() => OrganisationApi(locator<ApiClient>()));
+    ..registerLazySingleton(() => OrganisationApi(locator<ApiClient>()))
+    // Registered behind its domain port, so presentation never names the
+    // HTTP adapter.
+    ..registerLazySingleton<TeachingRepository>(() => TeachingApi(locator<ApiClient>()))
+    ..registerLazySingleton(() => AuthorityApi(locator<ApiClient>()));
 }
