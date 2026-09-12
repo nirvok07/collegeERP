@@ -18,6 +18,7 @@ import {
 } from './infrastructure/media/cloudinary-storage.ts';
 import {
   PgAccountRepository,
+  PgDeviceRepository,
   PgCredentialRepository,
   PgInvitationRepository,
   PgLoginAttemptRepository,
@@ -39,6 +40,7 @@ import type { AuthenticateDeps } from './modules/identity/application/authentica
 import type { AcceptInvitationDeps } from './modules/identity/application/accept-invitation.ts';
 import type { RefreshSessionDeps } from './modules/identity/application/refresh-session.ts';
 import type { ManagePeopleDeps } from './modules/identity/application/manage-people.ts';
+import type { ManageDevicesDeps } from './modules/identity/application/manage-devices.ts';
 import type { ProvisionInstitutionDeps } from './modules/institution/application/provision-institution.ts';
 import type { ManageOrgDeps } from './modules/institution/application/manage-org-units.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
@@ -53,6 +55,7 @@ export interface Container {
   acceptInvitation: AcceptInvitationDeps;
   refreshSession: RefreshSessionDeps;
   managePeople: ManagePeopleDeps;
+  manageDevices: ManageDevicesDeps;
   roleDefinitions: PgRoleDefinitionRepository;
   roleAssignments: PgRoleAssignmentRepository;
   provisionInstitution: ProvisionInstitutionDeps;
@@ -81,6 +84,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const invitations = new PgInvitationRepository();
   const refreshTokens = new PgRefreshTokenRepository();
   const loginAttempts = new PgLoginAttemptRepository();
+  const devices = new PgDeviceRepository();
   const orgTree = new PgOrgTreeReader();
   const institutions = new PgInstitutionRepository();
   const campuses = new PgCampusRepository();
@@ -123,6 +127,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       uow, persons, accounts, assignments, roles, invitations, audit, ids, clock, tokens,
       invitationTtlHours: config.INVITATION_TTL_HOURS,
     },
+    manageDevices: { uow, devices, audit, ids, clock, tokens },
     roleDefinitions: roles,
     roleAssignments: assignments,
     provisionInstitution: {

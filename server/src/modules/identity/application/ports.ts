@@ -213,6 +213,33 @@ export interface RefreshTokenRepository {
   revokeAllForAccount(tx: Tx, accountId: string, at: Date): Promise<void>;
 }
 
+export interface DeviceRecord {
+  id: string;
+  tenantId: string;
+  personId: string;
+  accountId: string;
+  platform: string;
+}
+
+export interface DeviceRepository {
+  create(
+    tx: Tx,
+    input: {
+      id: string; tenantId: string; personId: string; accountId: string;
+      platform: string; pushTokenHash: string;
+      appVersion: string | null; deviceLabel: string | null;
+    },
+  ): Promise<void>;
+  findActiveByTokenHash(tx: Tx, tokenHash: string): Promise<DeviceRecord | null>;
+  /** Re-points an existing registration at the current account and marks it seen. */
+  touch(
+    tx: Tx,
+    id: string,
+    input: { personId: string; accountId: string; appVersion: string | null; at: Date },
+  ): Promise<void>;
+  revokeForAccount(tx: Tx, accountId: string, reason: string, at: Date): Promise<number>;
+}
+
 export interface LoginAttemptRepository {
   record(
     tx: Tx,

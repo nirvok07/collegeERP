@@ -2,6 +2,8 @@ import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
   AccountRecord,
+  DeviceRecord,
+  DeviceRepository,
   AssignmentListItem,
   PersonListFilter,
   PersonListItem,
@@ -447,6 +449,63 @@ export class PgRefreshTokenRepository implements RefreshTokenRepository {
       `UPDATE refresh_tokens SET revoked_at = $2 WHERE account_id = $1 AND revoked_at IS NULL`,
       [accountId, at],
     );
+  }
+}
+
+export class PgDeviceRepository implements DeviceRepository {
+  async create(
+    tx: Tx,
+    input: {
+      id: string; tenantId: string; personId: string; accountId: string;
+      platform: string; pushTokenHash: string;
+      appVersion: string | null; deviceLabel: string | null;
+    },
+  ): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO devices
+         (id, tenant_id, person_id, account_id, platform, push_token_hash, app_version, device_label)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [input.id, input.tenantId, input.personId, input.accountId, input.platform,
+       input.pushTokenHash, input.appVersion, input.deviceLabel],
+    );
+  }
+
+  async findActiveByTokenHash(tx: Tx, tokenHash: string): Promise<DeviceRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, tenant_id, person_id, account_id, platform
+         FROM devices WHERE push_token_hash = $1 AND revoked_at IS NULL`,
+      [tokenHash],
+    );
+    const r = rows[0];
+    return r
+      ? {
+          id: r.id, tenantId: r.tenant_id, personId: r.person_id,
+          accountId: r.account_id, platform: r.platform,
+        }
+      : null;
+  }
+
+  async touch(
+    tx: Tx,
+    id: string,
+    input: { personId: string; accountId: string; appVersion: string | null; at: Date },
+  ): Promise<void> {
+    await clientOf(tx).query(
+      `UPDATE devices
+          SET person_id = $2, account_id = $3, app_version = COALESCE($4, app_version),
+              last_seen_at = $5
+        WHERE id = $1`,
+      [id, input.personId, input.accountId, input.appVersion, input.at],
+    );
+  }
+
+  async revokeForAccount(tx: Tx, accountId: string, reason: string, at: Date): Promise<number> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE devices SET revoked_at = $2, revoked_reason = $3
+        WHERE account_id = $1 AND revoked_at IS NULL`,
+      [accountId, at, reason],
+    );
+    return rowCount ?? 0;
   }
 }
 

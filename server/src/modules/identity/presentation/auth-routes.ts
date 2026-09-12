@@ -8,6 +8,7 @@ import { fail } from '../../../core/errors.ts';
 import { authenticatePlatformUser, authenticateTenantUser } from '../application/authenticate.ts';
 import { acceptInvitation } from '../application/accept-invitation.ts';
 import { endSession, refreshSession } from '../application/refresh-session.ts';
+import { registerDevice, revokeDevicesForAccount } from '../application/manage-devices.ts';
 
 const platformLogin = z.object({
   email: z.string().email(),
@@ -18,6 +19,13 @@ const tenantLogin = z.object({
   institution_code: z.string().min(1),
   identifier: z.string().min(1),
   password: z.string().min(1),
+});
+
+const deviceBody = z.object({
+  platform: z.enum(['android', 'ios', 'web']),
+  push_token: z.string().min(8).max(4096),
+  app_version: z.string().max(40).optional(),
+  device_label: z.string().max(80).optional(),
 });
 
 const accept = z.object({
@@ -117,10 +125,54 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     return sendResult(reply, mapTokens(result), 200);
   });
 
-  /** Explicit sign-out ends the whole token family, not just this device's token. */
+  /**
+   * Registers where this user can be reached by push.
+   *
+   * The ERP decides who is notified and why; this records only the address.
+   * Re-registering the same device re-points it at the current account, which
+   * is what stops a shared handset delivering the previous user's notifications.
+   */
+  app.post('/devices', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId || !req.actor.accountId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const parsed = deviceBody.safeParse(req.body);
+    if (!parsed.success) {
+      return sendFailure(reply, fail('VALIDATION_FAILED', 'That device registration is not valid.'));
+    }
+
+    const result = await registerDevice(c.manageDevices, {
+      tenantId: req.actor.tenantId,
+      personId: req.actor.sub,
+      accountId: req.actor.accountId,
+      platform: parsed.data.platform,
+      pushToken: parsed.data.push_token,
+      appVersion: parsed.data.app_version ?? null,
+      deviceLabel: parsed.data.device_label ?? null,
+    });
+
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, { device_id: result.value.deviceId }, 201);
+  });
+
+  /**
+   * Explicit sign-out ends the whole token family, not just this device's token,
+   * and stops push to that account. A shared device must leak nothing to the
+   * next person, per the security documentation.
+   */
   app.post('/auth/logout', async (req, reply) => {
     const presented =
       req.cookies[REFRESH_COOKIE] ?? (req.body as { refresh_token?: string } | undefined)?.refresh_token;
+
+    if (req.actor?.actorType === 'person' && req.actor.tenantId && req.actor.accountId) {
+      await revokeDevicesForAccount(c.manageDevices, {
+        tenantId: req.actor.tenantId,
+        accountId: req.actor.accountId,
+        personId: req.actor.sub,
+        reason: 'signed_out',
+      });
+    }
+
     if (presented) await endSession(c.refreshSession, { refreshToken: presented });
     reply.clearCookie(REFRESH_COOKIE, refreshCookieOptions(c.config));
     return sendOk(reply, { signed_out: true });

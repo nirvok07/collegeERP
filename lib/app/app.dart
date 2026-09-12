@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../core/design/theme.dart';
 import '../core/design/tokens.dart';
 import '../core/di/locator.dart';
+import '../core/platform/device_registration.dart';
 import '../core/platform/firebase_services.dart';
 import '../core/session/session_manager.dart';
 import '../core/session/session_store.dart';
@@ -49,7 +50,9 @@ class _CollegeAppState extends State<CollegeApp> {
     setState(() => _phase = restored ? _Phase.signedIn : _Phase.signedOut);
     if (restored) {
       FirebaseServices.instance.identify(_session.actor?.id);
-      unawaited(FirebaseServices.instance.registerForPush());
+      // Registered after the session exists, because the call is authenticated
+      // and the backend ties the device to the account that owns it.
+      unawaited(locator<DeviceRegistration>().register());
     }
   }
 
@@ -61,7 +64,7 @@ class _CollegeAppState extends State<CollegeApp> {
           _phase = _Phase.signedIn;
           _degradedMessage = null;
           FirebaseServices.instance.identify(event.actor.id);
-          unawaited(FirebaseServices.instance.registerForPush());
+          unawaited(locator<DeviceRegistration>().register());
         case SignedOut():
           _phase = _Phase.signedOut;
           _degradedMessage = null;

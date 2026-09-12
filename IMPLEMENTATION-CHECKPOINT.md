@@ -6,8 +6,18 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     97 backend + 48 web + 19 Flutter = 164 passing
-Next      M2 programs and courses, or mobile write surfaces when M4 arrives
+Tests     106 backend + 48 web + 24 Flutter = 178 passing
+Next      M2 programs and courses (the curriculum spine)
+
+PLATFORM RUNTIME VALIDATION: DEFERRED
+  Android build, iOS build, Firebase platform config, notification
+  permissions, signing and provisioning, emulator networking and
+  physical-device testing are a dedicated later phase. Nothing here claims
+  Android or iOS production readiness. Static analysis, unit tests,
+  typechecks and API verification are what currently stand behind the
+  mobile client.
+  Emulator note for that phase: localhost does not reach the Mac host, so
+  pass --dart-define=API_BASE_URL=http://10.0.2.2:3000
 Blocked   OD-1 affiliating vs autonomous, OD-4 money
 Note      Supabase session pooler URI still REQUIRED. The direct host is
           IPv6-only and unreachable here; local PostgreSQL stays active.
@@ -222,6 +232,25 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### Push device registration (M1 + Flutter)
+
+Closes a gap the bootstrap introduced: Flutter fetched an FCM token and dropped
+it, so the approved push decision could not deliver anything.
+
+Migration 008 adds `devices`. The push token is stored **hashed**, because a
+push token is a capability rather than an identifier: anyone holding it can
+notify that device, so a database leak must not hand an attacker the ability to
+push to every user. The token never appears in the audit trail either, which a
+test asserts.
+
+Re-registering the same handset updates the row rather than adding one, and
+re-points it at whoever is signed in now. That is what stops a shared device
+delivering the previous user's notifications. Signing out revokes it, which the
+security documentation already required and nothing implemented.
+
+The invariant suite caught the new table before any of this was wired, which is
+the privilege model working as intended.
 
 ### Flutter client bootstrap (`lib/`)
 

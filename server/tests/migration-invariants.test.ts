@@ -53,6 +53,10 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // Platform accounts are created by an operator, never by a request path, so
   // no INSERT: no endpoint can mint one.
   platform_accounts: 'SELECT+UPDATE',
+
+  // Push registrations. No DELETE: revocation is a visible state, so a device
+  // that was signed out of stays in the register.
+  devices: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

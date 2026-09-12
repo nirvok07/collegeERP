@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 
 import '../network/api_client.dart';
+import '../platform/device_registration.dart';
+import '../platform/firebase_services.dart';
 import '../network/auth_api.dart';
 import '../session/session_manager.dart';
 import '../session/session_store.dart';
@@ -24,6 +26,10 @@ void configureDependencies() {
           // never requires rebuilding it.
           accessToken: () async => locator<SessionManager>().accessToken,
           renew: () => locator<SessionManager>().renew(),
+        ))
+    ..registerLazySingleton(() => DeviceRegistration(
+          locator<ApiClient>(),
+          FirebaseServices.instance,
         ))
     ..registerLazySingleton(() => PeopleApi(locator<ApiClient>()))
     ..registerLazySingleton(() => OrganisationApi(locator<ApiClient>()));
