@@ -783,7 +783,8 @@ migration comment for no gain in clarity.
 | M2 | Institution setup, academic structure, curriculum, calendar | M2 + M3 |
 | M3 | Section, CourseOffering, instructor assignment | part of M3's entity list |
 | **M4** | **Room, TimetableSlot, ClassSession** | **M6 Timetable** |
-| M5 onward | Attendance next | M7 Attendance |
+| **M5** | **Student, SectionMembership, OfferingEnrolment** | **M5 Student Records** (its roster part) |
+| **M6** | **Attendance sheet, record and correction** | **M7 Attendance** |
 
 *Consequences.* An implementation module number means the delivery slice, never the registry row.
 The blueprint registry stays the subject map for planning. Any document that says "M4" without
@@ -912,3 +913,43 @@ instant genuinely is one.
 both clients, and in the arithmetic that expands a weekly pattern across a term. Date maths in the
 web and Flutter clients is done in UTC on those strings for the same reason, so no daylight-saving
 boundary can move a class by a day.
+
+
+---
+
+**AD-50 — M5's roster arrives with attendance, under M5's name, and is resolved as of a date**
+
+*Status.* Approved and active, 2026-09-12. Follows AD-39 and AD-47.
+
+*Problem.* Attendance answers: for this class session, which enrolled students were accounted for?
+Every word of that existed except *enrolled students*. There was no student record, no enrolment
+and no cohort membership anywhere: only `persons.person_type = 'student'`, and `sections.capacity`
+as a number that counted nobody. Attendance could not be built on top of nothing.
+
+*Decision.* Add the minimum roster under M5's name and have M6 consume it, rather than letting
+attendance grow its own student model. Blueprint 2 D3 makes M5 the owner of `Student` and
+`Enrolment`, and that ownership is recorded here even though the code arrived with the module that
+needed it. Same move as the academic calendar (AD-39) and non-teaching days (AD-47).
+
+*What M5 got:* a student record keyed to an M1 person, validity-bounded cohort membership, and
+validity-bounded enrolment in a course offering. *What it did not get:* enquiries, applications,
+merit lists, seat allocation, admission offers, fee linkage, status history beyond the current
+status, transfers, re-admission, no-dues clearance, guardians, alumni. Those are M5's real surface.
+
+*Two bindings, not one.* Cohort membership says which section a student belongs to; enrolment says
+which of its courses they take. Both exist because an elective splits a cohort: twenty of sixty
+students take it, and a roster built from membership alone would show the teacher sixty names and
+invite forty wrong absences. That corrupts the academic record, which is the one thing the slice
+exists to prevent. Enrolment is created in bulk when a student is placed, never typed course by
+course.
+
+*The rule that makes history safe.* **The roster of a class session is every student whose
+enrolment was live on the session's own date, never today.** A student who withdrew in week ten
+still appears on week three's sheet; a student who joined in week six does not. Without it,
+correcting a historical sheet would silently change who was expected in the room. Both bindings
+therefore carry `date` validity rather than timestamps, so no timezone can move a student in or out
+of a class.
+
+*Rejected.* Deriving the roster from cohort membership alone, which breaks electives; and an
+exception-only model recording just drops and adds, which would have to be replaced when M5 arrives
+properly.

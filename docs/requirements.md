@@ -92,6 +92,7 @@ than from a feature list.
 | R32 | Mobile shows a teacher their own teaching only, never an administrator's college-wide section list. Each client gets the surface its user actually works in | Active | [ADR](blueprint/adr.md) AD-43, `lib/features/teaching/` |
 | R33 | Attendance requires a stable teaching occurrence first. A class session is modelled, identified and frozen once taught, so no later edit can move historical attendance to another occurrence | Active | [ADR](blueprint/adr.md) AD-45, [M4](blueprint/modules/m4-teaching-delivery.md) |
 | R34 | Scheduling invariants live in the database: one room and one teacher per hour, inside the term, against teaching that still expects to happen. Frontend validation is guidance, never the guarantee | Active | [ADR](blueprint/adr.md) AD-48, `server/migrations/013_teaching_delivery.sql` |
+| R35 | The roster of a class is resolved as of that class's own date. A student who left in week ten is still on week three's register, and one who joined in week six is not | Active | [ADR](blueprint/adr.md) AD-50, [M5/M6](blueprint/modules/m5-m6-attendance.md) |
 
 ## Assumptions awaiting confirmation
 

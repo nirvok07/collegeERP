@@ -42,6 +42,8 @@ export async function resetData(): Promise<void> {
       'devices', 'credentials', 'role_assignments',
       // Delivery references offerings and rooms, so it goes before both.
       'class_sessions', 'timetable_slots', 'non_teaching_days',
+      // Enrolment references offerings, sections, students and persons.
+      'offering_enrolments', 'section_memberships', 'students',
       // Teaching references courses and sections, so it goes before both.
       'instructor_assignments', 'course_offerings',
       'curriculum_entries', 'curriculum_versions', 'courses',

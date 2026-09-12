@@ -88,6 +88,12 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // The second table with DELETE: a mistyped holiday is a typo, not history.
   // Nothing references a non-teaching day and generation reads it live.
   non_teaching_days: 'DELETE+INSERT+SELECT+UPDATE',
+
+  // Student records. No DELETE: a placement is ended and a student is
+  // withdrawn, because attendance and results reference both by identity.
+  students: 'INSERT+SELECT+UPDATE',
+  section_memberships: 'INSERT+SELECT+UPDATE',
+  offering_enrolments: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

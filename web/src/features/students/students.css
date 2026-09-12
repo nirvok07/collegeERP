@@ -1,0 +1,15 @@
+/* The register is scanned by name and number together, so they sit in one cell
+   rather than two columns that force the eye to travel. */
+.who { display: flex; align-items: center; gap: var(--space-md); min-width: 0; }
+.who__mark {
+  display: grid; place-items: center; width: 32px; height: 32px; flex: none;
+  background: var(--primary-subtle); color: var(--primary);
+  border-radius: var(--radius-pill); font: var(--text-label);
+}
+.who__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.table__wrap { overflow-x: auto; }
+
+@media (max-width: 720px) {
+  .who__mark { display: none; }
+}

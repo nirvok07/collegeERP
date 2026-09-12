@@ -9,6 +9,7 @@ import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
 import { CurriculumPage } from './features/curriculum/CurriculumPage.tsx';
 import { TeachingPage } from './features/teaching/TeachingPage.tsx';
 import { DeliveryPage } from './features/delivery/DeliveryPage.tsx';
+import { StudentsPage } from './features/students/StudentsPage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -159,6 +160,21 @@ function sectionsFor(
             manageOfferings: permissions.has('offering.manage'),
             assignInstructors: permissions.has('instructor.assign'),
             manageSessions: permissions.has('session.manage'),
+          }}
+        />
+      ),
+    });
+  }
+  if (permissions?.has('student.read')) {
+    items.push({
+      key: 'students',
+      label: 'Students',
+      render: () => (
+        <StudentsPage
+          api={api}
+          can={{
+            manageStudents: permissions.has('student.manage'),
+            manageEnrolment: permissions.has('enrolment.manage'),
           }}
         />
       ),

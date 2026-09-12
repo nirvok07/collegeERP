@@ -58,6 +58,10 @@ import type { RoomDeps } from './modules/delivery/application/manage-rooms.ts';
 import type { TimetableDeps } from './modules/delivery/application/manage-timetable.ts';
 import type { SessionDeps } from './modules/delivery/application/manage-sessions.ts';
 import {
+  PgEnrolmentRepository, PgMembershipRepository, PgStudentRepository,
+} from './modules/enrolment/infrastructure/repositories.ts';
+import type { EnrolmentDeps } from './modules/enrolment/application/manage-students.ts';
+import {
   PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
 } from './modules/curriculum/infrastructure/repositories.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
@@ -83,6 +87,7 @@ export interface Container {
   rooms: RoomDeps;
   timetable: TimetableDeps;
   sessions: SessionDeps;
+  enrolment: EnrolmentDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -119,6 +124,9 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const nonTeachingDays = new PgNonTeachingDayRepository();
   const slotRepository = new PgSlotRepository();
   const sessionRepository = new PgSessionRepository();
+  const studentRepository = new PgStudentRepository();
+  const membershipRepository = new PgMembershipRepository();
+  const enrolmentRepository = new PgEnrolmentRepository();
 
   // Cloudinary only when configured; otherwise an in-memory adapter, so the
   // application never branches on which one it received.
@@ -199,6 +207,17 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       sessions: sessionRepository,
       offerings: offeringRepository,
       reach: new PgTeachingReachReader(),
+    },
+    // M5 reads M1's person port and M3's section and offering ports. It owns the
+    // student record and the two bindings, and duplicates none of them.
+    enrolment: {
+      uow, audit, ids, clock,
+      students: studentRepository,
+      memberships: membershipRepository,
+      enrolments: enrolmentRepository,
+      persons,
+      sections: sectionRepository,
+      offerings: offeringRepository,
     },
     close: async () => {
       if (!pool) await dbPool.end();
