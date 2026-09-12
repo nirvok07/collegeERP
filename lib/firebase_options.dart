@@ -51,18 +51,17 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyABUGWI11G8BZTeAhbZvJtaKUe3skt2K64',
-    appId: '1:949790606532:android:0ec6aa603983b634573591',
+    appId: '1:949790606532:android:ce8194dcbf12bb46573591',
     messagingSenderId: '949790606532',
     projectId: 'collegeerp-6a872',
     storageBucket: 'collegeerp-6a872.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA5uJiMgcVHdrldTlsFLwywPsFWSgtUSFI',
-    appId: '1:949790606532:ios:ab755e6db19bde54573591',
+    appId: '1:949790606532:ios:a96311ee62a1d6ac573591',
     messagingSenderId: '949790606532',
     projectId: 'collegeerp-6a872',
     storageBucket: 'collegeerp-6a872.firebasestorage.app',
-    iosBundleId: 'com.example.collegeErp',
+    iosBundleId: 'com.nirvok.collegeErp',
   );
 }

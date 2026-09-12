@@ -11,8 +11,8 @@ Tests     327 backend + 161 web + 117 Flutter = 605 passing
 Next      Outbox slice two, the durable local queue, waits on one decision:
           the local store (Drift over SQLite, with encryption at rest for
           students' data). Otherwise waiting on the owner: a student role and
-          account issuance, the approvals capability P1, and device validation
-          once Firebase is registered. M10 stays blocked on OD-1
+          account issuance, the approvals capability P1, and FCM validation
+          once a dev account is signed in on the phone. M10 stays blocked on OD-1
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked
@@ -29,8 +29,8 @@ OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   send keys yet; its writes behave exactly as before.
   NOT built: the queue itself (slice two), its Sync Center, and offline
   reads. Drift 5 stays open.
-  NOT VERIFIED on a device: the Android build still stops at the Google
-  Services step until Firebase is re-registered, and iOS needs Xcode.
+  NOT VERIFIED on a device: the retry paths need a signed-in dev account
+  on the phone. iOS needs Xcode.
 
 M7 INTERNAL ASSESSMENT: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   Blueprint M9, the half of roadmap Phase 6 that OD-1 does not touch (AD-55).
@@ -42,16 +42,13 @@ M7 INTERNAL ASSESSMENT: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   M10's), totals, grades, pass or fail, attendance eligibility, and end
   examinations. Each is recorded with its reason.
 
-CLIENT HARDENING: DONE, ONE ITEM PENDING OUTSIDE THE REPOSITORY
-  App identity is com.nirvok.collegeErp on Android and iOS, displayed as
-  College (requirement R2). React moved from web/ to clients/web/ (AD-54),
-  so Flutter no longer finds a web target: `flutter build web` now answers
-  "not configured for the web" where before it built a 151 MB bundle with
-  React's node_modules copied in.
-  PENDING, needs Firebase console access: register Android and iOS apps for
-  com.nirvok.collegeErp and re-run flutterfire configure. Until then the
-  Android build fails at the Google Services step, by design and with the
-  reason written at that line. Steps in docs/12-mobile-platform-config.md.
+CLIENT HARDENING: DONE. FIREBASE REGISTERED FOR com.nirvok.collegeErp (2026-09-13)
+  Registered with flutterfire configure; generated files regenerated, none
+  hand-edited. Android debug build runs on a physical phone: launch, API,
+  Firebase, Crashlytics and Remote Config VERIFIED. FCM NOT VERIFIED (needs a
+  signed-in dev account). iOS BLOCKED on Xcode. Console steps left: APNs key,
+  release SHA fingerprints, deleting the com.example apps.
+  Evidence table in docs/12-mobile-platform-config.md.
 
 M6 ATTENDANCE: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   A register per class session, a mark per student, and corrections. Two states,

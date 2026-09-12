@@ -18,42 +18,52 @@ Requirement R2 fixes the application identity. Nothing else is invented.
 The Dart package is still named `college_erp`, which is correct and unrelated: a Dart package
 name must be snake_case, it appears only in `package:` imports, and no store or Firebase sees it.
 
-## 12.2 Firebase: pending re-registration
+## 12.2 Firebase: registered for com.nirvok.collegeErp
 
-**Not done, and deliberately not faked.** Firebase project `collegeerp-6a872` has an Android app
-registered for `com.example.college_erp` and an iOS app registered for `com.example.collegeErp`.
-Three generated files still describe those registrations:
+**Done 2026-09-13, with the official CLI flow.** `flutterfire configure --project=collegeerp-6a872
+--platforms=android,ios --android-package-name=com.nirvok.collegeErp
+--ios-bundle-id=com.nirvok.collegeErp` registered two new apps and regenerated
+`google-services.json`, `GoogleService-Info.plist`, `firebase_options.dart` and `firebase.json`.
+It also added the Crashlytics Gradle plugin. No generated file was edited by hand.
 
-- `android/app/google-services.json`
-- `ios/Runner/GoogleService-Info.plist`
-- `lib/firebase_options.dart`
+| Platform | Firebase app id |
+|---|---|
+| Android | `1:949790606532:android:ce8194dcbf12bb46573591` |
+| iOS | `1:949790606532:ios:a96311ee62a1d6ac573591` |
 
-They are left exactly as generated. Editing the package name inside them by hand would let the
-build pass while pointing the app at a registration made for a different identity, which is
-worse than a build that fails and says why.
+`google-services.json` still lists the old `com.example.college_erp` client beside the new one;
+the build selects by package name, so it is inert.
 
-**Consequences until it is done:**
+**Tooling note.** FlutterFire fails with "doesn't support Dart 3.3.0" when Homebrew's `dart` is
+first on PATH. Put Flutter's bundled Dart first and reactivate it:
+`export PATH="$(dirname "$(readlink -f "$(which flutter)")")/cache/dart-sdk/bin:$PATH"` then
+`dart pub global activate flutterfire_cli`.
 
-- The Android build fails at the Google Services step with a message that no client matches
-  `com.nirvok.collegeErp`. The reason is written at that line in `build.gradle.kts`.
-- iOS builds, but Firebase is configured for a different bundle, so FCM and Crashlytics cannot be
-  trusted there.
-- The app itself still runs: `FirebaseServices.initialise` guards every step and continues
-  without Firebase, so no screen depends on it.
+**Still needs console access, and is not done:**
 
-**To complete it, with console access to `collegeerp-6a872`:**
+1. Upload the APNs authentication key for the new iOS app, or FCM cannot reach iOS devices.
+2. Add the signing-certificate SHA-1 and SHA-256 for the Android app once release signing exists.
+3. Delete the two `com.example.*` apps from the project, then re-run the configure command so
+   the old client leaves `google-services.json`.
 
-1. Register an Android app with package name `com.nirvok.collegeErp`.
-2. Register an iOS app with bundle identifier `com.nirvok.collegeErp`.
-3. Upload the APNs authentication key for the new iOS app, or FCM cannot reach iOS devices.
-4. Add the signing-certificate SHA-1 and SHA-256 for the Android app once release signing exists.
-5. From the repository root, run `flutterfire configure --project=collegeerp-6a872`, choosing
-   Android and iOS only. It regenerates all three files.
-6. Confirm each regenerated file names `com.nirvok.collegeErp`, then delete the two
-   `com.example.*` apps from the project so nothing keeps sending to them.
-7. Remove the PENDING comment from `build.gradle.kts`.
+Web is never selected. There is no Flutter Web client (AD-24, AD-54).
 
-Web is never selected in step 5. There is no Flutter Web client (AD-24, AD-54).
+### Device validation, 2026-09-13
+
+Debug build on a physical Android 14 phone over USB, API reached with
+`adb reverse tcp:3000 tcp:3000` and the default `API_BASE_URL`; no configuration changed.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Android build | VERIFIED | `flutter build apk --debug` succeeds |
+| Launch | VERIFIED | Sign-in screen rendered, no crash |
+| API connectivity | VERIFIED | A wrong sign-in from the phone reached the server, was recorded as a login attempt, and the server's refusal was shown |
+| Firebase initialisation | VERIFIED | `FirebaseApp initialization successful`, no Dart-side fallback message |
+| Crashlytics initialisation | VERIFIED | `Initializing Firebase Crashlytics for com.nirvok.collegeErp`. Collection is off in debug by design, so crash delivery is NOT VERIFIED |
+| Remote Config | VERIFIED | A fetch was activated; no "using defaults" message |
+| FCM registration | NOT VERIFIED | Runs only after a successful sign-in; needs a dev account on the phone |
+| FCM delivery | NOT VERIFIED | Needs a registered token and a send |
+| iOS, any check | BLOCKED | Xcode is not installed; only Command Line Tools are active |
 
 ## 12.3 What only the device-validation phase can confirm
 
