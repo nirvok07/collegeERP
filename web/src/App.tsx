@@ -4,6 +4,8 @@ import { ApiClient, type ApiFailure } from './lib/api.ts';
 import { AuthSession, type Actor } from './lib/auth.ts';
 import { SignInPage } from './features/auth/SignInPage.tsx';
 import { InstitutionsPage } from './features/institutions/InstitutionsPage.tsx';
+import { PeoplePage } from './features/people/PeoplePage.tsx';
+import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -14,6 +16,7 @@ export function App() {
   const [phase, setPhase] = useState<Phase>('restoring');
   const [actor, setActor] = useState<Actor | null>(null);
   const [degraded, setDegraded] = useState<ApiFailure | null>(null);
+  const [permissions, setPermissions] = useState<Set<string> | null>(null);
   const restored = useRef(false);
 
   const api = useMemo(
@@ -31,7 +34,7 @@ export function App() {
         setActor(event.actor); setDegraded(null); setPhase('signed-in');
         break;
       case 'signed-out':
-        setActor(null); setDegraded(null); setPhase('signed-out');
+        setActor(null); setDegraded(null); setPermissions(null); setPhase('signed-out');
         break;
       case 'degraded':
         // The session is intact and renewal is retrying. Say so, and keep the
@@ -72,6 +75,14 @@ export function App() {
     };
   }, [auth]);
 
+  // Authority is read from the server, never inferred from the actor kind, so
+  // the interface reflects the same resolution the server enforces.
+  useEffect(() => {
+    if (phase !== 'signed-in' || !actor) return;
+    if (actor.actorType === 'platform') { setPermissions(new Set(['platform.tenant.manage'])); return; }
+    void loadPermissions(api).then(setPermissions);
+  }, [phase, actor, api]);
+
   const signOut = useCallback(() => { void auth.signOut(); }, [auth]);
 
   if (phase === 'restoring') return <RestoringScreen />;
@@ -84,11 +95,54 @@ export function App() {
         </div>
       )}
       {phase === 'signed-in' && actor ? (
-        <InstitutionsPage api={api} actorName={actor.fullName} onSignOut={signOut} />
+        <AppShell
+          actor={actor}
+          scopeLabel={actor.actorType === 'platform' ? 'Platform' : 'College'}
+          onSignOut={signOut}
+          items={sectionsFor(actor.actorType, permissions, api)}
+        />
       ) : (
         <SignInPage auth={auth} />
       )}
     </ToastHost>
+  );
+}
+
+/**
+ * Sections the signed-in actor can actually reach. Absent, never disabled.
+ */
+function sectionsFor(
+  actorType: 'platform' | 'person',
+  permissions: Set<string> | null,
+  api: ApiClient,
+): NavItem[] {
+  if (actorType === 'platform') {
+    return [{ key: 'institutions', label: 'Colleges', render: () => <InstitutionsPage api={api} /> }];
+  }
+  const items: NavItem[] = [];
+  if (permissions?.has('person.read')) {
+    items.push({
+      key: 'people',
+      label: 'People',
+      render: () => <PeoplePage api={api} canManage={permissions.has('account.manage')} />,
+    });
+  }
+  if (items.length === 0) {
+    items.push({ key: 'none', label: 'Home', render: () => <NoAccessYet /> });
+  }
+  return items;
+}
+
+/** AD-18. No access is a designed state, normal on a first day, not an error. */
+function NoAccessYet() {
+  return (
+    <div className="state">
+      <h2 className="state__title">No access yet</h2>
+      <p className="state__body">
+        Your account is active, but nobody has given you access to anything.
+        Ask your college administrator to grant you a role.
+      </p>
+    </div>
   );
 }
 

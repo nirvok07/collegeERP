@@ -6,8 +6,8 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     74 backend + 18 web = 92 passing
-Next      S3b console People screen; then M2 academic structure
+Tests     82 backend + 26 web = 108 passing
+Next      M2 academic structure, or Flutter client bootstrap
 Blocked   OD-1 affiliating vs autonomous, OD-4 money
 Note      Supabase session pooler URI still REQUIRED. The direct host is
           IPv6-only and unreachable here; local PostgreSQL stays active.
@@ -193,6 +193,35 @@ migrations apply; the application role holds no DELETE on any table; audit
 tables grant INSERT and SELECT only, and an UPDATE against them is refused;
 neither role has superuser or BYPASSRLS; PUBLIC holds nothing. The application
 then signs in, provisions a college, invites a person and lists people.
+
+### S3b — People screen and role-driven shell (`web/`)
+
+The M1 write surface now has an interface. Verified against the running backend,
+not only in tests: roles endpoint, invite with a role in one request, the list as
+rendered, self-grant refused with 403, revoke without a reason refused with 422,
+revoke with a reason accepted.
+
+**Navigation follows permissions, not actor kind.** `AppShell` builds its
+sections from the permission set returned by `/v1/auth/me`, so a section is
+absent rather than disabled. A person with no assignment gets the designed
+"No access yet" screen from AD-18, which is normal on a first day.
+
+**Plain language over permission lists.** The server returns a one-sentence
+summary per role and both drawers show it, because nobody reads eleven
+permission keys and predicts the effect. The invite drawer states what the
+person will be able to do before the button is pressed.
+
+**Revocation asks for a reason** because the server requires one, so no audit
+entry can read "someone removed this". The confirmation states that access
+disappears on the person's next action rather than at their next sign-in.
+
+**Scope is deliberately limited to institution level.** Department-scoped roles
+are listed but not grantable, because granting one needs a scope picker over an
+organisational tree that M2 owns and which does not exist yet. Offering a picker
+with nothing in it would be worse than omitting it.
+
+**Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
+`Esc` closes a drawer.
 
 ### Supabase readiness
 

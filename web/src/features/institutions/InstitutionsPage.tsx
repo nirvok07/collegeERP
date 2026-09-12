@@ -27,9 +27,7 @@ const STATUS_TONE: Record<string, ChipTone> = {
   active: 'success', trial: 'info', suspended: 'warning', closed: 'neutral',
 };
 
-export function InstitutionsPage({ api, onSignOut, actorName }: {
-  api: ApiClient; onSignOut: () => void; actorName: string;
-}) {
+export function InstitutionsPage({ api }: { api: ApiClient }) {
   const [rows, setRows] = useState<Institution[]>([]);
   const [status, setStatus] = useState<Status>('loading');
   const [failure, setFailure] = useState<ApiFailure | null>(null);
@@ -75,22 +73,8 @@ export function InstitutionsPage({ api, onSignOut, actorName }: {
   }, [rows, query]);
 
   return (
-    <div className="shell">
-      <header className="shell__bar">
-        <div className="shell__brand">
-          <span className="shell__mark" aria-hidden="true">C</span>
-          <span className="shell__product">College</span>
-          <span className="shell__scope">Platform</span>
-        </div>
-        <div className="shell__actor">
-          <span className="shell__name">{actorName}</span>
-          <Button variant="text" onClick={onSignOut}>Sign out</Button>
-        </div>
-      </header>
-
+    <>
       {status === 'refreshing' ? <RefreshBar /> : <div style={{ height: 2 }} />}
-
-      <main className="page">
         <div className="page__head">
           <div>
             <h1 className="page__title">Colleges</h1>
@@ -160,8 +144,6 @@ export function InstitutionsPage({ api, onSignOut, actorName }: {
             </table>
           </div>
         )}
-      </main>
-
       <ProvisionDrawer
         open={provisionOpen}
         api={api}
@@ -175,7 +157,7 @@ export function InstitutionsPage({ api, onSignOut, actorName }: {
       />
 
       <InvitationDrawer result={invitation} onClose={() => setInvitation(null)} />
-    </div>
+    </>
   );
 }
 

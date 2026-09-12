@@ -1,0 +1,22 @@
+.shell__nav { display: flex; gap: var(--space-xs); flex: 1; justify-content: center; }
+.shell__tab {
+  display: inline-flex; align-items: center; gap: var(--space-sm);
+  min-height: 32px; padding: 0 var(--space-md);
+  background: transparent; color: var(--text-secondary);
+  border: none; border-radius: var(--radius-input);
+  font: var(--text-label); cursor: pointer;
+  transition: background var(--state), color var(--state);
+}
+.shell__tab:hover { background: var(--surface-variant); color: var(--text-primary); }
+.shell__tab--on { background: var(--primary-subtle); color: var(--primary); }
+.shell__kbd {
+  padding: 0 4px; border-radius: 4px; background: var(--surface-variant);
+  color: var(--text-tertiary); font: var(--text-caption); font-family: ui-monospace, monospace;
+}
+.shell__tab--on .shell__kbd { background: var(--surface); }
+
+@media (max-width: 720px) {
+  .shell__bar { flex-wrap: wrap; }
+  .shell__nav { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; }
+  .shell__kbd { display: none; }
+}
