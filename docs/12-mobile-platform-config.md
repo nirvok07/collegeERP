@@ -57,11 +57,12 @@ Debug build on a physical Android 14 phone over USB, API reached with
 |---|---|---|
 | Android build | VERIFIED | `flutter build apk --debug` succeeds |
 | Launch | VERIFIED | Sign-in screen rendered, no crash |
-| API connectivity | VERIFIED | A wrong sign-in from the phone reached the server, was recorded as a login attempt, and the server's refusal was shown |
+| API connectivity | VERIFIED | A wrong sign-in from the phone reached the normal dev server on port 3000, and the server's refusal was shown |
 | Firebase initialisation | VERIFIED | `FirebaseApp initialization successful`, no Dart-side fallback message |
 | Crashlytics initialisation | VERIFIED | `Initializing Firebase Crashlytics for com.nirvok.collegeErp`. Collection is off in debug by design, so crash delivery is NOT VERIFIED |
 | Remote Config | VERIFIED | A fetch was activated; no "using defaults" message |
 | FCM registration | NOT VERIFIED | Runs only after a successful sign-in; needs a dev account on the phone |
+| Push token hashed, never audited | VERIFIED in code and backend tests | Not yet observed on a device row |
 | FCM delivery | NOT VERIFIED | Needs a registered token and a send |
 | iOS, any check | BLOCKED | Xcode is not installed; only Command Line Tools are active |
 

@@ -1198,3 +1198,22 @@ applied twice.
 client reuses a key only while retrying the identical save. The web client does not send keys yet;
 its writes are unaffected. The queue itself, slice two, still needs a durable local store and the
 decision that goes with it. See docs/blueprint/capabilities/offline-outbox.md.
+
+---
+
+**AD-59 — The mobile local store is Drift over SQLite3MultipleCiphers, keyed from the platform keystore**
+
+*Status.* PROPOSED, 2026-09-13. Awaiting owner approval before any dependency is added.
+
+*Decision.* Drift over `package:sqlite3` 3.x, with its build hook selecting SQLite3MultipleCiphers.
+A random 256-bit key lives in `flutter_secure_storage`, which means the Android Keystore and the iOS
+Keychain with this-device-only access. The database is excluded from backup. An unreadable key means
+the database is recreated and the loss is stated; it is never silently worked around.
+
+*Why.* Queued registers and marks are students' personal data, so plaintext SQLite is not
+acceptable. The legacy `sqlcipher_flutter_libs` package is end-of-life. SQLite3MultipleCiphers is
+built by the same maintainer, avoids OpenSSL on Android, and ships a newer SQLite than the
+SQLCipher build.
+
+*Adds.* `drift` and `sqlite3` as dependencies; `drift_dev` and `build_runner` for development only.
+See docs/blueprint/capabilities/offline-outbox.md §7.

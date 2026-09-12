@@ -575,6 +575,11 @@ before the enterprise brief and the blueprint written after it. Not silently res
 - **Progress, 2026-09-13.** Slice one landed: field writes are replay-safe (AD-58), which the queue
   needs and which fixes false conflicts on flaky networks today. Slice two, the durable queue,
   waits on the local-store decision. **Not closed.**
+- **Drift 6, 2026-09-13: push tokens are stored hash-only.** The M1 design names the device field
+  `push_token_ref`. The built `devices` table keeps a SHA-256 of the token, so the backend can
+  match a device but can never send it a push. The owner is the notifications slice. It needs a
+  recoverable token, encrypted with a server-held key and kept apart from the lookup hash. Until
+  then, push delivery can only be tested from the Firebase console.
 - **Approval required.** Yes.
 
 ### Also noted, not drift but gaps created by the scope change

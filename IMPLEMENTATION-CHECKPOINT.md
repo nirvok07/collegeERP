@@ -8,11 +8,9 @@ Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework, in clients/web/
           Flutter for Android and iOS at the repository root; no Flutter Web
 Tests     327 backend + 161 web + 117 Flutter = 605 passing
-Next      Outbox slice two, the durable local queue, waits on one decision:
-          the local store (Drift over SQLite, with encryption at rest for
-          students' data). Otherwise waiting on the owner: a student role and
-          account issuance, the approvals capability P1, and FCM validation
-          once a dev account is signed in on the phone. M10 stays blocked on OD-1
+Next      Owner approval of AD-59, the encrypted local store, then build outbox
+          slice two from docs/blueprint/capabilities/offline-outbox.md §7.
+          Device: sign in on the phone to verify FCM registration
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked
@@ -43,12 +41,10 @@ M7 INTERNAL ASSESSMENT: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   examinations. Each is recorded with its reason.
 
 CLIENT HARDENING: DONE. FIREBASE REGISTERED FOR com.nirvok.collegeErp (2026-09-13)
-  Registered with flutterfire configure; generated files regenerated, none
-  hand-edited. Android debug build runs on a physical phone: launch, API,
-  Firebase, Crashlytics and Remote Config VERIFIED. FCM NOT VERIFIED (needs a
-  signed-in dev account). iOS BLOCKED on Xcode. Console steps left: APNs key,
-  release SHA fingerprints, deleting the com.example apps.
-  Evidence table in docs/12-mobile-platform-config.md.
+  Android debug build on a physical phone: launch, API on port 3000, Firebase,
+  Crashlytics and Remote Config VERIFIED. FCM NOT VERIFIED: needs a signed-in
+  dev account. The backend cannot send a push (Drift 6). iOS BLOCKED: no Xcode.
+  Evidence in docs/12-mobile-platform-config.md.
 
 M6 ATTENDANCE: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   A register per class session, a mark per student, and corrections. Two states,

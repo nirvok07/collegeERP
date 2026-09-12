@@ -82,23 +82,117 @@ crash rather than to every lost response.
   resend is safe too.
 - Nothing about the screens changes. A save that fails keeps every mark on screen, as before.
 
-## 7. Slice two: the queue itself
+## 7. Slice two: the durable queue — design, not yet built
 
-Not built yet, and it needs one decision first.
+Status: **designed, awaiting approval of AD-59** (the local store). Nothing below is implemented.
 
-- **A durable local store.** Offline First specifies Drift over SQLite. The queued marks are
-  students' personal data, so encryption at rest belongs in that decision. Adding the dependency
-  needs a line in Decisions, as the architecture requires.
-- **Ordering.** Per sheet: the date held before marks, marks before submission. Across sheets
-  there is no ordering to keep.
-- **Retry and backoff.** 2s, 8s, 30s, 2m, 10m, capped at six attempts, then parked as failed.
-- **Conflicts.** A 409 after offline edits means somebody else changed the sheet. The queue never
-  rebases marks onto a newer version by itself: an attendance register is a record, and a person
-  decides. The row goes to Needs attention.
-- **Sessions offline.** The device stays signed in offline (AD-25, AD-26). A 401 pauses the drain,
-  the session renews, and the drain resumes.
-- **What the teacher sees.** Pending, sent, and needs attention, per sheet, and a Sync Center that
-  never discards a failed write without asking.
+### 7.1 What may be queued
 
-Slice one is its prerequisite and is useful on its own: it makes every retry of a field write
-safe today, online or not.
+A closed allowlist of typed operations, not a generic mutation queue. The enum is the contract;
+anything not in it cannot be enqueued, by type.
+
+| Kind | Route | Target |
+|---|---|---|
+| `attendance.save` | PUT `/sessions/:id/attendance` | session |
+| `attendance.submit` | POST `/sessions/:id/attendance/submit` | session |
+| `session.taught` | POST `/sessions/:id/complete` | session |
+| `assessment.heldOn` | POST `/assessments/:id/held-on` | component |
+| `assessment.marks` | PUT `/assessments/:id/marks` | component |
+| `assessment.submit` | POST `/assessments/:id/submit` | component |
+
+Never queued: sign-in, renewal, sign-out, device registration, corrections, verification,
+anything administrative. Corrections and verification carry authority that must be checked live.
+
+### 7.2 Offline reads the queue needs
+
+Marking a register offline needs its roster. So the same store caches **the last sheet read**
+for each session and component (read-through), and the schedule prefetches the sheets for
+today's and tomorrow's classes. This is the minimum pull side; it is not the general sync engine.
+
+### 7.3 Operation record
+
+`id`, `kind`, `tenant_id`, `person_id`, `target_id`, `payload` (JSON), `base_version`,
+`version_from` (`fixed` or `predecessor`), `idempotency_key`, `state`, `attempts`,
+`next_attempt_at`, `last_error_code`, `last_error_message`, `created_at`, `updated_at`.
+
+States: `pending` → `sending` → `synced`, or `failed` (needs attention) or `conflict`.
+
+### 7.4 Idempotency (AD-58)
+
+- The key is minted at enqueue and **persisted with the operation**, so it survives restarts and
+  a resend after a crash is replay-safe.
+- An operation never attempted may be edited in place; its key is re-minted with it. Once
+  attempted, its payload is frozen: a later edit becomes a new operation.
+- Consecutive unsent `attendance.save` or `assessment.marks` for one target coalesce into one
+  (latest value per student). Nothing coalesces across a submit.
+
+### 7.5 Ordering and versions
+
+- FIFO per target; targets drain independently. `heldOn` precedes `marks` precedes `submit`.
+- An offline save-then-submit cannot know the submit's version in advance. It is enqueued with
+  `version_from = predecessor` and takes the version the save returned. If the predecessor fails,
+  its dependants wait; they are never sent on a guessed version.
+
+### 7.6 Outcomes
+
+| Response | Result |
+|---|---|
+| 2xx, or a replay | `synced`; the cached sheet is refreshed from the server |
+| 409 | `conflict`. Never rebased automatically: a register is a record, and a person decides |
+| 422 | `failed`, message kept |
+| 403 | `failed`: authority or reach changed since enqueue |
+| 401 | Renew and resend with the same key. If renewal needs a fresh sign-in, the queue pauses and says so. Nothing is dropped and the user is never signed out (AD-25, AD-26) |
+| 5xx, timeout, no network | Retry at 2s, 8s, 30s, 2m, 10m; after 6 attempts, `failed` |
+
+Drains on: connectivity regained, app resumed, after enqueue, and a manual "send now".
+
+### 7.7 Identity
+
+- Operations belong to the person and college that made them, and are drained only while that
+  same person is signed in. Another account on the device never sends them.
+- Sign-out with unsent operations says how many and requires an explicit "discard" to proceed.
+  Security policy wipes the local database on sign-out (docs/08), so that is the only moment data
+  can be lost, and never silently.
+
+### 7.8 Encryption at rest (AD-59)
+
+- Drift over `package:sqlite3` 3.x with the build hook set to **SQLite3MultipleCiphers**
+  (`hooks: user_defines: sqlite3: source: sqlite3mc`). The legacy `sqlcipher_flutter_libs` and
+  `sqlite3_flutter_libs` are end-of-life. sqlite3mc avoids linking OpenSSL on Android.
+- A random 256-bit key is generated on first open and kept in `flutter_secure_storage`: the
+  Android Keystore, and the iOS Keychain as "after first unlock, this device only", so it never
+  leaves the device in a backup. It is applied with `PRAGMA key` before any other statement.
+- The database file is excluded from Android backup, so a restored phone never holds a file
+  without its key.
+- If the key is unreadable (a reinstall or a Keystore reset), the database is deleted and
+  recreated, and the teacher is told unsent items were lost. It cannot be recovered by design.
+- Nothing from the queue is logged, sent to Crashlytics or put in a notification.
+
+### 7.9 Crash recovery and cleanup
+
+- On start, `sending` becomes `pending`. The persisted key makes the resend safe.
+- `synced` operations are deleted after 24 hours, matching the server's key lifetime. `failed`
+  and `conflict` stay until a person acts. Nothing is discarded automatically.
+- A pending operation older than 24 hours still sends. It has lost replay protection, but version
+  pinning still prevents a double apply.
+- Cached sheets older than the term, or belonging to another person, are purged.
+
+### 7.10 What the teacher sees
+
+- Per sheet: saved on this phone, sending, sent, or needs attention.
+- A Sync Center lists what needs attention, with the server's reason, retry, and an explicit
+  discard with confirmation.
+- Screens keep working from the cache offline. A submitted register still shows as "waiting to
+  send" until the server confirms, never as submitted.
+
+### 7.11 Local schema migrations
+
+Drift `schemaVersion` with stepwise migrations, and schema snapshots checked in and tested with
+`drift_dev`. A migration that would drop pending operations is forbidden. It must carry them
+forward.
+
+### 7.12 Tests required
+
+Coalescing, ordering, predecessor versions, each outcome row, key persistence across a simulated
+restart, account isolation, the sign-out warning, key loss, and an encrypted file that cannot be
+opened without its key. On device: airplane mode, mark, submit, reconnect, confirmed on the server.
