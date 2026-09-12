@@ -15,6 +15,7 @@ import '../core/session/session_store.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/organisation/presentation/organisation_screen.dart';
 import '../features/people/presentation/people_screen.dart';
+import '../features/delivery/presentation/my_schedule_screen.dart';
 import '../features/teaching/presentation/my_teaching_screen.dart';
 
 class CollegeApp extends StatefulWidget {
@@ -187,6 +188,15 @@ class _HomeShellState extends State<_HomeShell> {
   /// that is an administrator's screen and lives in the web console.
   List<_Tab> _tabs(Authority authority) {
     return [
+      // The day comes before the term: a teacher opens the app to find out
+      // where they are due now, not to review what they teach this semester.
+      if (authority.can('session.read'))
+        const _Tab(
+          label: 'Schedule',
+          icon: Icons.event_outlined,
+          selectedIcon: Icons.event_rounded,
+          screen: MyScheduleScreen(),
+        ),
       if (authority.can('offering.read'))
         const _Tab(
           label: 'Teaching',
@@ -364,10 +374,7 @@ class _AccountScreen extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.error),
-            title: Text(
-              'Sign out',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
+            title: Text('Sign out', style: TextStyle(color: Theme.of(context).colorScheme.error)),
             onTap: () => session.signOut(),
           ),
         ],

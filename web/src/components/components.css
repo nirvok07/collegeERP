@@ -241,3 +241,18 @@
 .drawer__note { font: var(--text-body); color: var(--text-secondary); }
 .drawer__row { display: flex; gap: var(--space-md); align-items: flex-end; flex-wrap: wrap; }
 .drawer__row > .field--inline { flex: 1; min-width: 160px; }
+
+/* ---- Segmented control -------------------------------------------------
+   Two or three mutually exclusive views. Shared, so no feature imports
+   another feature's stylesheet to draw its own toggle. */
+.segmented {
+  display: inline-flex; padding: 2px; gap: 2px;
+  background: var(--surface-variant); border: 1px solid var(--outline);
+  border-radius: var(--radius-input);
+}
+.segmented__option {
+  min-height: 32px; padding: 0 var(--space-base); border: none; background: transparent;
+  color: var(--text-secondary); border-radius: 6px; cursor: pointer; font: var(--text-label);
+  transition: background var(--state), color var(--state);
+}
+.segmented__option--on { background: var(--surface); color: var(--text-primary); box-shadow: var(--shadow-1); }

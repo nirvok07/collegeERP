@@ -139,7 +139,7 @@ describe('tenant isolation under row level security', () => {
     }
   });
 
-  it('DELETE exists only where a draft must be editable', async () => {
+  it('DELETE exists only where nothing historical can be lost', async () => {
     const pool = createPool(APP_URL);
     try {
       const { rows } = await pool.query(
@@ -150,12 +150,19 @@ describe('tenant isolation under row level security', () => {
       // AD-8 and BR-17 hold for every record that can be referenced later:
       // soft delete, so tombstones propagate and audit stays resolvable.
       //
-      // curriculum_entries is the single exception, and a narrow one. A draft
-      // curriculum is authored by adding and removing courses, and an entry in
-      // a draft has never been referenced by anything: no student is bound to
-      // an unpublished version. The trigger confines the grant to drafts, so a
-      // published entry cannot be deleted even with the privilege present.
-      assert.deepEqual(rows.map((r) => r.table_name), ['curriculum_entries']);
+      // Two narrow exceptions, both for rows nothing can reference.
+      //
+      // curriculum_entries: a draft curriculum is authored by adding and
+      // removing courses, and an entry in a draft has never been referenced by
+      // anything, because no student is bound to an unpublished version. The
+      // trigger confines the grant to drafts, so a published entry cannot be
+      // deleted even with the privilege present.
+      //
+      // non_teaching_days: a mistyped holiday is a typo, not history. Session
+      // generation reads the list live and stores no reference to it.
+      assert.deepEqual(
+        rows.map((r) => r.table_name), ['curriculum_entries', 'non_teaching_days'],
+      );
     } finally {
       await pool.end();
     }

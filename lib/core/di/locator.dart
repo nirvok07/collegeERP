@@ -11,6 +11,8 @@ import '../../features/organisation/data/organisation_api.dart';
 import '../../features/people/data/people_api.dart';
 import '../../features/teaching/data/teaching_api.dart';
 import '../../features/teaching/domain/teaching_repository.dart';
+import '../../features/delivery/data/delivery_api.dart';
+import '../../features/delivery/domain/delivery_repository.dart';
 
 final locator = GetIt.instance;
 
@@ -39,5 +41,6 @@ void configureDependencies() {
     // Registered behind its domain port, so presentation never names the
     // HTTP adapter.
     ..registerLazySingleton<TeachingRepository>(() => TeachingApi(locator<ApiClient>()))
+    ..registerLazySingleton<DeliveryRepository>(() => DeliveryApi(locator<ApiClient>()))
     ..registerLazySingleton(() => AuthorityApi(locator<ApiClient>()));
 }

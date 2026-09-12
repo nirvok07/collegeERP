@@ -1,0 +1,92 @@
+/* Day and week both render as lists. A seven-column grid is a wall to read, and
+   cannot carry a room, a teacher and a state in every cell without becoming
+   unreadable at the width a browser actually has. */
+.days { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-base); }
+.days__note { margin-top: var(--space-base); font: var(--text-caption); color: var(--text-tertiary); }
+
+.day {
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--radius-card); overflow: hidden;
+}
+.day__head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md);
+  padding: var(--space-md) var(--space-base);
+  background: var(--surface-variant); border-bottom: 1px solid var(--outline);
+}
+.day__name { font: var(--text-title); }
+.day__count { font: var(--text-caption); color: var(--text-secondary); }
+
+.classes { list-style: none; margin: 0; padding: 0; }
+.class-row {
+  display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;
+  padding: var(--space-md) var(--space-base); border-bottom: 1px solid var(--outline);
+  transition: background var(--dur-micro) var(--ease-sharp);
+}
+.class-row:last-child { border-bottom: none; }
+.class-row:hover { background: var(--surface-hover); }
+
+/* Something on this class needs attention. A left edge rather than a colour
+   wash, so the row stays readable and the signal survives a monochrome screen. */
+.class-row--flagged { box-shadow: inset 3px 0 0 var(--warning); }
+.class-row--off { opacity: 0.6; }
+
+.class-row__time {
+  display: flex; flex-direction: column; min-width: 58px;
+  font: var(--text-body); color: var(--text-primary);
+}
+.class-row__until { font: var(--text-caption); color: var(--text-tertiary); }
+
+.class-row__main {
+  flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 2px;
+  padding: 0; background: transparent; border: none; text-align: start; cursor: pointer;
+  color: inherit; font: inherit;
+}
+.class-row__course { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; font: var(--text-body); }
+.class-row__context { font: var(--text-caption); color: var(--text-secondary); }
+
+.class-row__where {
+  min-width: 72px; font: var(--text-label); color: var(--text-secondary);
+}
+.class-row__who {
+  min-width: 120px; display: flex; align-items: center; gap: var(--space-sm);
+  font: var(--text-label); color: var(--text-secondary);
+}
+.class-row__tag {
+  padding: 1px var(--space-sm); border-radius: var(--radius-pill);
+  background: var(--surface-variant); border: 1px solid var(--outline);
+  font: var(--text-caption); color: var(--text-secondary);
+}
+
+/* The reason something is wrong, written out. A tooltip on a disabled control
+   is invisible to a keyboard and to a hurried reader. */
+.class-row__warning {
+  flex-basis: 100%; font: var(--text-caption); color: var(--warning);
+}
+
+/* ---- Date stepper ------------------------------------------------------- */
+.stepper {
+  display: inline-flex; align-items: center;
+  border: 1px solid var(--outline-strong); border-radius: var(--radius-input);
+  overflow: hidden; background: var(--surface);
+}
+.stepper__btn, .stepper__now {
+  min-height: 40px; padding: 0 var(--space-md); border: none; background: transparent;
+  color: var(--text-primary); cursor: pointer; font: var(--text-label);
+  transition: background var(--dur-micro) var(--ease-sharp), transform var(--press);
+}
+.stepper__now { border-inline: 1px solid var(--outline); }
+.stepper__btn:hover, .stepper__now:hover { background: var(--surface-hover); }
+.stepper__btn:active, .stepper__now:active { transform: scale(0.97); }
+
+/* ---- Clash report ------------------------------------------------------- */
+.clash {
+  padding: var(--space-md); border-radius: var(--radius-input);
+  background: var(--error-subtle); border: 1px solid var(--error);
+  font: var(--text-caption); color: var(--text-primary);
+}
+
+@media (max-width: 720px) {
+  .class-row__main { flex-basis: 100%; order: 2; }
+  .class-row__where, .class-row__who { order: 3; }
+  .page__actions { flex-wrap: wrap; }
+}

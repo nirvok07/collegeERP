@@ -4,6 +4,8 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/session/session_manager.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../delivery/domain/class_session.dart';
+import '../../delivery/domain/delivery_repository.dart';
 import '../domain/teaching_offering.dart';
 
 /// The teaching context for one course: which class, which program, which term,
@@ -86,6 +88,8 @@ class _OfferingSheet extends StatelessWidget {
                 ),
             ],
 
+            if (!offering.isOver) _NextClasses(offeringId: offering.id),
+
             // Why a class that has not started is shown at all: the assignment
             // is real, so the teacher can see it coming. Saying what is missing
             // is better than an empty screen on the first day of term.
@@ -131,6 +135,63 @@ class _Fact extends StatelessWidget {
           Expanded(child: Text(value, style: Theme.of(context).textTheme.bodyMedium)),
         ],
       ),
+    );
+  }
+}
+
+/// The next few occurrences of this course, read from the teacher's own feed.
+///
+/// Reaches the delivery feature through its domain port, never through its
+/// cubit or its HTTP client, which is what keeps the two features independent.
+/// Read-only on purpose: recording a class as taught lives in one place, the
+/// schedule, so there is one write path to reason about.
+class _NextClasses extends StatelessWidget {
+  const _NextClasses({required this.offeringId});
+
+  final String offeringId;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final today = todayDate();
+
+    return FutureBuilder(
+      future: locator<DeliveryRepository>().mySessions(from: today, to: shiftDate(today, 14)),
+      builder: (context, snapshot) {
+        // No spinner and no error: this is supporting detail on a sheet that is
+        // already useful without it.
+        final result = snapshot.data;
+        if (result == null) return const SizedBox.shrink();
+        final mine = (result.valueOrNull ?? const <ClassSession>[])
+            .where((s) => s.offeringId == offeringId && !s.isCancelled)
+            .take(3)
+            .toList();
+        if (mine.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: AppSpacing.base),
+            Text('Next classes', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            for (final session in mine)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                child: Text(
+                  '${dayLabel(session.date, today)} · ${session.timeLabel} · '
+                  '${session.whereLabel}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Record a class as taught from your schedule.',
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ],
+        );
+      },
     );
   }
 }

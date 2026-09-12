@@ -8,6 +8,7 @@ import type { Program } from '../curriculum/types.ts';
 import { SectionDrawer } from './SectionDrawer.tsx';
 import { OfferingDrawer } from './OfferingDrawer.tsx';
 import { InstructorDrawer } from './InstructorDrawer.tsx';
+import { TimetableDrawer } from '../delivery/TimetableDrawer.tsx';
 import {
   COMPONENT_LABEL, NO_FILTERS, blockedReason, isFiltering, leadOf, unstaffedCount, visibleGroups,
   type AcademicYear, type Offering, type OfferingFilters, type OfferingStatus, type Section,
@@ -21,6 +22,8 @@ export interface TeachingPermissions {
   manageSections: boolean;
   manageOfferings: boolean;
   assignInstructors: boolean;
+  /** M4. A weekly pattern belongs to the course, so it is set from here. */
+  manageSessions: boolean;
 }
 
 const SECTION_TONE: Record<SectionStatus, ChipTone> = {
@@ -55,6 +58,7 @@ export function TeachingPage({ api, can }: { api: ApiClient; can: TeachingPermis
   const [offeringFor, setOfferingFor] = useState<Section | null>(null);
   const [instructorFor, setInstructorFor] = useState<Offering | null>(null);
   const [cancelling, setCancelling] = useState<Cancellation | null>(null);
+  const [timetableFor, setTimetableFor] = useState<Offering | null>(null);
   const toast = useToast();
 
   // The calendar and the program list load once. The current academic year
@@ -335,6 +339,15 @@ export function TeachingPage({ api, can }: { api: ApiClient; can: TeachingPermis
                           {offering.status}
                         </StatusChip>
 
+                        {/* When it meets lives here, on the course, because a
+                            weekly pattern is a property of this course and not
+                            of a separate scheduling screen. */}
+                        {can.manageSessions && offering.status !== 'cancelled' && (
+                          <Button variant="text" onClick={() => setTimetableFor(offering)}>
+                            Timetable
+                          </Button>
+                        )}
+
                         {can.manageOfferings && (
                           <span className="offering__actions">
                             {offering.status === 'planned' && (
@@ -402,6 +415,14 @@ export function TeachingPage({ api, can }: { api: ApiClient; can: TeachingPermis
           toast(`${code} added to ${offeringFor?.label ?? 'the section'}`);
           void load('refresh');
         }}
+      />
+
+      <TimetableDrawer
+        offering={timetableFor}
+        api={api}
+        canManage={can.manageSessions}
+        onClose={() => setTimetableFor(null)}
+        onScheduled={(message) => toast(message)}
       />
 
       <ReasonDrawer

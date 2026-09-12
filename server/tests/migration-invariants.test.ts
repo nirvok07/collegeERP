@@ -78,6 +78,16 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // because attendance and results will reference both by identity.
   course_offerings: 'INSERT+SELECT+UPDATE',
   instructor_assignments: 'INSERT+SELECT+UPDATE',
+
+  // Teaching delivery. No DELETE: a room is archived, a slot removed, a class
+  // cancelled, because attendance will reference the class and the rest carries
+  // the provenance of what produced it.
+  rooms: 'INSERT+SELECT+UPDATE',
+  timetable_slots: 'INSERT+SELECT+UPDATE',
+  class_sessions: 'INSERT+SELECT+UPDATE',
+  // The second table with DELETE: a mistyped holiday is a typo, not history.
+  // Nothing references a non-teaching day and generation reads it live.
+  non_teaching_days: 'DELETE+INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */
@@ -158,13 +168,14 @@ describe('application role privileges', () => {
     }
   });
 
-  it('holds DELETE only where a draft must be editable', async () => {
+  it('holds DELETE only where nothing historical can be lost', async () => {
     const { rows } = await migratorPool.query(
       `SELECT table_name FROM information_schema.role_table_grants
-        WHERE grantee = $1 AND privilege_type = 'DELETE'`, [APP_ROLE],
+        WHERE grantee = $1 AND privilege_type = 'DELETE'
+        ORDER BY table_name`, [APP_ROLE],
     );
     assert.deepEqual(
-      rows.map((r) => r.table_name), ['curriculum_entries'],
+      rows.map((r) => r.table_name), ['curriculum_entries', 'non_teaching_days'],
       'every other table soft-deletes, so tombstones propagate and audit resolves',
     );
   });

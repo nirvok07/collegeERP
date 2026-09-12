@@ -8,6 +8,7 @@ import { PeoplePage } from './features/people/PeoplePage.tsx';
 import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
 import { CurriculumPage } from './features/curriculum/CurriculumPage.tsx';
 import { TeachingPage } from './features/teaching/TeachingPage.tsx';
+import { DeliveryPage } from './features/delivery/DeliveryPage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -157,6 +158,26 @@ function sectionsFor(
             manageSections: permissions.has('section.manage'),
             manageOfferings: permissions.has('offering.manage'),
             assignInstructors: permissions.has('instructor.assign'),
+            manageSessions: permissions.has('session.manage'),
+          }}
+        />
+      ),
+    });
+  }
+  // Delivery is its own section: the question "what is happening today" is a
+  // different job from "who teaches what", and the same person rarely does both
+  // at the same moment.
+  if (permissions?.has('session.read')) {
+    items.push({
+      key: 'timetable',
+      label: 'Timetable',
+      render: () => (
+        <DeliveryPage
+          api={api}
+          can={{
+            manageSessions: permissions.has('session.manage'),
+            manageRooms: permissions.has('room.manage'),
+            manageCalendar: permissions.has('term.manage'),
           }}
         />
       ),

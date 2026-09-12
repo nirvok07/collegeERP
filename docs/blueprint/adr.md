@@ -760,3 +760,155 @@ console. A person with no grants at all gets the designed no-access state with a
 not an empty list. A failed authority read leaves the tabs unresolved and offers a retry rather
 than guessing wide, so nothing is ever shown that the server would refuse. The client-side
 decision shapes the interface only; every request is checked again server-side.
+
+---
+
+**AD-44 — Implementation module numbers are a delivery stream, separate from the blueprint
+registry**
+
+*Status.* Approved and active, 2026-09-12. Records existing divergence rather than creating it.
+
+*Problem.* Blueprint 3's registry numbers modules by subject: M4 is Admissions, M6 Timetable, M7
+Attendance. The implementation has been numbering by delivery order since migration 001, and the
+two have already diverged: implementation M2 absorbed the blueprint's M2 Institution Setup and M3
+Academic Structure, and implementation M3 Teaching Operations has no blueprint number at all. The
+`permissions.module` column holds the implementation numbers in shipped rows.
+
+*Decision.* Keep both, and state the mapping. Renumbering would rewrite shipped data and every
+migration comment for no gain in clarity.
+
+| Implementation | Owns | Blueprint registry |
+|---|---|---|
+| M1 | Identity, roles, permissions, authority | M1 Identity and Access |
+| M2 | Institution setup, academic structure, curriculum, calendar | M2 + M3 |
+| M3 | Section, CourseOffering, instructor assignment | part of M3's entity list |
+| **M4** | **Room, TimetableSlot, ClassSession** | **M6 Timetable** |
+| M5 onward | Attendance next | M7 Attendance |
+
+*Consequences.* An implementation module number means the delivery slice, never the registry row.
+The blueprint registry stays the subject map for planning. Any document that says "M4" without
+qualification means the implementation stream, because that is what the code and the database say.
+
+---
+
+**AD-45 — A class session is a separate entity from its timetable slot, identified by
+(offering, date, start), and frozen once taught**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* A slot is a recurring intention and gets edited; a session is one occurrence and is a
+fact. One row serving both would mean that correcting next week's timetable rewrote the record of
+last week's class, and attendance taken under the old time would describe a lesson that now claims
+to have happened elsewhere. The slot is the plan, the session is the fact, and facts do not move
+when plans change.
+
+*Identity.* `(offering, session_date, starts_at)`, unique among non-cancelled sessions. The
+offering already binds section, course and component, so none is restated. The generating slot is
+recorded as provenance only: deleting a pattern must not orphan the record of a class that was
+taught, and an ad-hoc make-up class has no slot at all.
+
+*Freezing.* Editable while `scheduled`, immutable once `completed`. Rescheduling moves the row in
+place and keeps where it came from, because no attendance can exist for a class that has not been
+taught. After teaching, the same operation is refused by trigger rather than accepted and audited.
+
+*Terminology.* Blueprint 2 D4 calls this a `SessionOccurrence`. It is a **class session** here and
+in the code, renamed once, with no third word.
+
+*Also decided.* `planned` and `in_progress` are not session states. A generated session is
+scheduled, with no earlier condition to be in; and a state with no consequence is speculation
+until attendance capture exists. Unmarked is derived, never stored: a fourth status would need a
+background job and would be wrong for as long as that job lagged. The blueprint's
+`TimetableVersion`, with publication approved by the head of department, is deferred: attendance
+does not need it, approvals are a platform capability that does not exist, and a draft-versus-
+published timetable doubles every read path.
+
+---
+
+**AD-46 — M4 owns the room, and the boundary to a future facilities domain is stated now**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* Two classes must not occupy one room at one time, and that check needs an identity to
+hold a lock against; a free-text room name cannot be compared reliably, because `Room 204`, `204`
+and `LH-204` are three strings and one room. Teaching delivery is the only thing that needs a room
+today, and the alternative is worse: putting rooms in institution setup invites capacity planning,
+maintenance, asset tags and non-teaching bookings into a module whose job is organisational
+structure.
+
+*Scope.* Exactly four facts: campus, code, seats, kind. Capacity is compared against cohort size
+as a **warning, never a refusal**, because colleges routinely teach sixty-five students in a
+sixty-seat room and a system that refuses to schedule that is a system people work around.
+
+*Boundary.* If a facilities domain arrives (blueprint M19), rooms move there and M4 keeps only the
+reference. M4 owns *when a room is used for teaching*, never the room's existence, condition or
+non-teaching use.
+
+---
+
+**AD-47 — Non-teaching days belong to M2, and are the negative subset of the blueprint's
+CalendarDay**
+
+*Status.* Approved and active, 2026-09-12. Follows AD-39 exactly.
+
+*Reason.* Session generation must skip holidays, and generating fifteen weeks of classes without
+them puts classes on Diwali, which corrupts every later unmarked-session and attendance report.
+The institution's calendar is academic structure: examinations, admissions and payroll will all
+ask about holidays. Absorbing the holiday list into M4 because M4 needed it first would put it
+under teaching operations.
+
+*Shape.* Explicit non-teaching dates with a label, and nothing else. There is no weekly working
+pattern, because the weekly pattern is already expressed by which days carry timetable slots: a
+college closed on Sunday has no Sunday slots. The table is named `non_teaching_days` rather than
+`calendar_days` because it stores only the negative case; the blueprint's fuller CalendarDay can
+arrive later without a rename of what exists.
+
+*Consequence.* Removing a holiday does not retroactively create the classes it prevented.
+Generation is idempotent, so running it again is the fix, and a hidden side effect is not.
+
+*Where the code sits.* The table, repository and routes live in the delivery module beside their
+only consumer, guarded by M2's `term.manage`. That follows AD-39's own precedent: academic years
+and terms are attributed to M2 while `PgTermRepository` sits in the teaching module. Attribution
+decides who owns the concept and which permission guards it, not which folder holds one table.
+
+---
+
+**AD-48 — Scheduling conflicts are enforced by trigger with an advisory lock, not by an exclusion
+constraint**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* `EXCLUDE USING gist` over a time range is the textbook answer and would be better, but
+comparing the room identity inside it needs `btree_gist`, and `CREATE EXTENSION` requires an
+ownership the least-privilege migration role does not hold on managed PostgreSQL. This is the same
+constraint that removed `citext` in migration 001.
+
+*Mechanism.* The trigger takes `pg_advisory_xact_lock` on the room, and separately on the
+effective instructor, before it looks for an overlap. Two concurrent inserts into one room
+therefore serialise instead of racing, and the lock costs nothing in the normal case where a
+coordinator is the only writer. Overlap is half-open, so a class ending at 10:00 does not conflict
+with one starting at 10:00: back-to-back periods are how every timetable in the country is built.
+
+*Upgrade path.* On a deployment where the migration role owns its database, the same invariant can
+move to an exclusion constraint without changing any application code, because nothing outside the
+database depends on how the refusal is produced.
+
+---
+
+**AD-49 — A DATE column is read as a calendar date, never as an instant**
+
+*Status.* Approved and active, 2026-09-12. Fixes shipped behaviour.
+
+*Problem.* The `pg` driver parses a DATE column into a JavaScript `Date` at **local** midnight, so
+`'2026-09-12'` read in India became `2026-09-11T18:30:00Z`. Anything that then formatted it
+through `toISOString`, which is the only safe way to format a `Date`, reported the previous day.
+Academic year, term and class session dates were all exposed to that, and the error was invisible
+in any timezone at or west of UTC.
+
+*Decision.* The driver is configured once, where it is created, to hand DATE (oid 1082) back as
+the text PostgreSQL sent, which is already ISO `YYYY-MM-DD`. Timestamps are untouched, because an
+instant genuinely is one.
+
+*Consequence.* Calendar dates stay strings end to end: in the repositories, in the API envelope, in
+both clients, and in the arithmetic that expands a weekly pattern across a term. Date maths in the
+web and Flutter clients is done in UTC on those strings for the same reason, so no daylight-saving
+boundary can move a class by a day.

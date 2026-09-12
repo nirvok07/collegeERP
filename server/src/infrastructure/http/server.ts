@@ -11,6 +11,7 @@ import { registerPeopleRoutes } from '../../modules/identity/presentation/people
 import { registerCurriculumRoutes } from '../../modules/curriculum/presentation/curriculum-routes.ts';
 import { registerTeachingRoutes } from '../../modules/teaching/presentation/teaching-routes.ts';
 import { registerOfferingRoutes } from '../../modules/teaching/presentation/offering-routes.ts';
+import { registerDeliveryRoutes } from '../../modules/delivery/presentation/delivery-routes.ts';
 import type { AccessTokenClaims } from '../../shared/application/ports.ts';
 
 declare module 'fastify' {
@@ -127,6 +128,7 @@ export async function buildServer(container: Container): Promise<FastifyInstance
     await registerCurriculumRoutes(v1, container);
     await registerTeachingRoutes(v1, container);
     await registerOfferingRoutes(v1, container);
+    await registerDeliveryRoutes(v1, container);
   }, { prefix: '/v1' });
 
   return app;

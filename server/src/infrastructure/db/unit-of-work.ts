@@ -67,6 +67,21 @@ function translate(e: unknown): unknown {
       e,
     );
   }
+  // A trigger that refused a state change or an identity edit. The message it
+  // raised names the course, the cohort or the room involved, which is the only
+  // part an operator can act on, so it is preserved rather than replaced.
+  if (code === '23001') {
+    return new AppException(
+      'CONFLICT', fromTrigger ? error!.message! : 'That change is not allowed.', e,
+    );
+  }
+  // Two classes competing for one room or one teacher. The trigger names what
+  // is already there.
+  if (code === '23P01') {
+    return new AppException(
+      'CONFLICT', fromTrigger ? error!.message! : 'That time is already taken.', e,
+    );
+  }
   if (code === '2BP01') return new AppException('CONFLICT', error!.message!, e);
   if (code === '42501') return new AppException('FORBIDDEN', 'Not permitted.', e);
   return e;

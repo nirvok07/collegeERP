@@ -90,6 +90,8 @@ than from a feature list.
 | R27 | Creating a college and its initial College Admin is one onboarding flow, not two mandatory steps. The entities stay separate: college is the tenant, user is the identity, admin is an access assignment. The architecture must still support replacement, suspension and multiple administrators | Active | [M1](blueprint/modules/m1-identity-and-access.md) W0, BR-25, BR-26, [ADR](blueprint/adr.md) AD-20, AD-21 |
 | R31 | Teacher-facing access is derived from authoritative assignments and scopes on the server. A client never tells the backend which sections it teaches, and no second teacher-permission system exists | Active | [ADR](blueprint/adr.md) AD-40, [M3 offering](blueprint/modules/m3-course-offering.md) §5 |
 | R32 | Mobile shows a teacher their own teaching only, never an administrator's college-wide section list. Each client gets the surface its user actually works in | Active | [ADR](blueprint/adr.md) AD-43, `lib/features/teaching/` |
+| R33 | Attendance requires a stable teaching occurrence first. A class session is modelled, identified and frozen once taught, so no later edit can move historical attendance to another occurrence | Active | [ADR](blueprint/adr.md) AD-45, [M4](blueprint/modules/m4-teaching-delivery.md) |
+| R34 | Scheduling invariants live in the database: one room and one teacher per hour, inside the term, against teaching that still expects to happen. Frontend validation is guidance, never the guarantee | Active | [ADR](blueprint/adr.md) AD-48, `server/migrations/013_teaching_delivery.sql` |
 
 ## Assumptions awaiting confirmation
 

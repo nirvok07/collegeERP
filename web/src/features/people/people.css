@@ -10,17 +10,6 @@
   border: 1px solid var(--outline); border-radius: var(--radius-input);
 }
 
-.segmented {
-  display: inline-flex; padding: 2px; gap: 2px;
-  background: var(--surface-variant); border: 1px solid var(--outline);
-  border-radius: var(--radius-input);
-}
-.segmented__option {
-  min-height: 32px; padding: 0 var(--space-base); border: none; background: transparent;
-  color: var(--text-secondary); border-radius: 6px; cursor: pointer; font: var(--text-label);
-  transition: background var(--state), color var(--state);
-}
-.segmented__option--on { background: var(--surface); color: var(--text-primary); box-shadow: var(--shadow-1); }
 .access-row { transition: background var(--state), border-color var(--state); }
 .access-row:hover { background: var(--surface-hover); }
 

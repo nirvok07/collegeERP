@@ -544,6 +544,21 @@ before the enterprise brief and the blueprint written after it. Not silently res
   **Release 1 to 5**, module phases become **Tier 0 to 4**. One word each, used consistently.
 - **Approval required.** No, but do it before more documents are written.
 
+### Drift 4 — Module numbering collision
+
+- **Problem.** Blueprint 3's registry numbers modules by subject: M4 is Admissions, M6 Timetable,
+  M7 Attendance. The implementation numbers by delivery order, and the two had already diverged
+  before this was noticed: implementation M2 absorbed the blueprint's M2 and M3, implementation M3
+  Teaching Operations has no registry row, and the `permissions.module` column holds the
+  implementation numbers in shipped rows.
+- **Impact.** High for communication, zero for correctness. "M4" meant two different modules in
+  two documents that are both current.
+- **Resolution, applied 2026-09-12.** Both numbering schemes are kept and the mapping is recorded
+  in AD-44. An implementation module number means the delivery slice; the registry stays the
+  subject map for planning. Renumbering was rejected: it would rewrite shipped database rows and
+  every migration comment for no gain in clarity.
+- **Approval required.** No. It records divergence that already existed rather than creating it.
+
 ### Also noted, not drift but gaps created by the scope change
 
 - `docs/03-offline-first.md` commits to system-wide offline. AD-9 narrowed it to field roles on

@@ -6,11 +6,22 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     178 backend + 87 web + 38 Flutter = 303 passing
-Next      M4 Attendance, the first module that needs both an instructor
-          assignment and a class session. Its authorization is already decided:
-          the role permits the action, the instructor assignment bounds its
-          reach (AD-40)
+Tests     218 backend + 113 web + 57 Flutter = 388 passing
+Next      Attendance, the first module that records something against a class
+          session. Everything it needs now exists: a frozen occurrence to point
+          at, and an authorization shape where the role permits the action and
+          the instructor assignment bounds its reach (AD-40)
+
+M4 TEACHING DELIVERY: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
+  Room, timetable slot and class session are built on all three sides. The web
+  console gets the coordinator's day and week, with conflict and unmarked
+  indicators and scheduling that previews before it writes. Flutter gets the
+  teacher's own schedule: what is waiting on them, today, then the fortnight
+  ahead, with one write, recording a class as taught.
+  Module numbering: this M4 is the delivery slice, not the blueprint registry's
+  M4 Admissions. The mapping is AD-44.
+  Attendance is NOT built. It is the next module, and nothing here pretends to
+  record who was present.
 
 M3 TEACHING OPERATIONS: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   Section, CourseOffering and instructor assignment are built on all three
@@ -18,8 +29,7 @@ M3 TEACHING OPERATIONS: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   taught to it, and who teaches each, with assignment in place. Flutter gets the
   teacher's own teaching and nothing else, derived server-side from the token
   subject. Attendance is M4 and is not built.
-  Still unbuilt inside M3: timetable, rooms and class sessions. Attendance needs
-  a session, which is the next thing M3 owes M4.
+  Timetable, rooms and class sessions landed in M4, which is what M3 owed.
 
 CURRICULUM: BACKEND COMPLETE / WEB COMPLETE / FLUTTER DEFERRED
   Flutter deferral is deliberate and recorded, not forgotten. Authoring is a
@@ -253,6 +263,63 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M4 — Teaching Delivery: room, timetable slot and class session
+
+Designed before any table, in `docs/blueprint/modules/m4-teaching-delivery.md`.
+
+**Four entities, not one.** The slot is a recurring intention and gets edited;
+the session is one occurrence and is a fact. One row for both would mean that
+correcting next week's timetable rewrote the record of last week's class. The
+room is a row rather than a string because two classes must not share it and a
+free-text name cannot be compared: `Room 204`, `204` and `LH-204` are three
+strings and one room (AD-45, AD-46).
+
+**A taught class does not move.** Editable while scheduled, immutable once
+completed, by trigger. Rescheduling moves the row in place and keeps where it
+came from, because no attendance can exist for a class that has not happened.
+After teaching, the same operation is refused rather than accepted and audited.
+
+**`completed` means the teaching occurred**, recorded by somebody, never
+inferred from the clock. A class on the timetable is not evidence that a class
+happened. Unmarked is derived from status and date, never stored: a fourth
+status would need a background job and would be wrong for as long as it lagged.
+
+**Conflicts are enforced in the database** (AD-48). One room and one teacher per
+hour, inside the term, against teaching that still expects to happen. The
+textbook answer is an exclusion constraint, which needs `btree_gist` and an
+ownership the migration role does not hold on managed PostgreSQL, so the trigger
+takes an advisory lock on the room and on the effective teacher before it looks
+for an overlap. Overlap is half-open, because back-to-back periods are how every
+timetable in the country is built.
+
+**Non-teaching days went to M2** (AD-47), following AD-39 exactly. Generating
+fifteen weeks without them puts classes on Diwali, which corrupts every later
+attendance report. Only the negative case is stored; the weekly pattern is
+already expressed by which days carry slots.
+
+**Authorization did not change** (AD-40 intact). `session.deliver` says a person
+may record teaching; M3's assignment says which classes that reaches, checked in
+one place. A teacher's permission is resolved against the session's own cohort
+scope, so faculty granted over one section cannot record teaching in another.
+`GET /v1/me/sessions` needs no permission at all, exactly as `/me/teaching`.
+
+**Web: the coordinator's day.** Day and week are both lists, not a seven-column
+grid: a wall cannot carry a room, a teacher and a state in every cell and stay
+readable. Scheduling previews first and reports every clash before writing,
+because generation is all or nothing and discovering a clash on the fortieth row
+is not an answer. The weekly pattern is edited from the course itself in the
+teaching workspace, since that is what it belongs to.
+
+**Flutter: the teacher's own schedule.** What is waiting on them first, then
+today, then the fortnight ahead. One write: I taught this class. No scheduling
+grid, no rooms, no college-wide timetable.
+
+**One pre-existing defect found and fixed** (AD-49): the driver parsed every
+DATE as a local-midnight `Date`, so `'2026-09-12'` read in India formatted back
+as `2026-09-11`. Academic year, term and every date the API had returned were
+one day early, invisibly, in any timezone east of UTC. Dates are now calendar
+strings end to end, and both clients do date arithmetic in UTC.
 
 ### M3 — Teaching Operations, slice two: CourseOffering and instructor assignment
 

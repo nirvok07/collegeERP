@@ -50,6 +50,20 @@ export const httpStatusFor = (code: FailureCode): number =>
     UNKNOWN: 500,
   })[code];
 
+/**
+ * Which database constraint a translated failure came from, when it came from a
+ * named one at all.
+ *
+ * A trigger raises a sentence an operator can act on and names no constraint; a
+ * unique index names the constraint and has no sentence. Telling the two apart
+ * is what lets a use case add a specific message to the second without
+ * discarding the first.
+ */
+export function violatedConstraint(e: unknown): string | null {
+  const cause = (e as { cause?: { constraint?: string } } | null)?.cause;
+  return cause?.constraint ?? null;
+}
+
 export class AppException extends Error {
   readonly code: FailureCode;
 

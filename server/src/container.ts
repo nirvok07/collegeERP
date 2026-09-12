@@ -51,6 +51,13 @@ import {
 } from './modules/teaching/infrastructure/repositories.ts';
 import type { OfferingDeps } from './modules/teaching/application/manage-offerings.ts';
 import {
+  PgNonTeachingDayRepository, PgRoomRepository, PgSessionRepository, PgSlotRepository,
+  PgTeachingReachReader,
+} from './modules/delivery/infrastructure/repositories.ts';
+import type { RoomDeps } from './modules/delivery/application/manage-rooms.ts';
+import type { TimetableDeps } from './modules/delivery/application/manage-timetable.ts';
+import type { SessionDeps } from './modules/delivery/application/manage-sessions.ts';
+import {
   PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
 } from './modules/curriculum/infrastructure/repositories.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
@@ -73,6 +80,9 @@ export interface Container {
   curriculum: CurriculumDeps;
   teaching: TeachingDeps;
   offerings: OfferingDeps;
+  rooms: RoomDeps;
+  timetable: TimetableDeps;
+  sessions: SessionDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -104,6 +114,11 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const departments = new PgDepartmentRepository();
   const sectionRepository = new PgSectionRepository();
   const offeringRepository = new PgOfferingRepository();
+  const termRepository = new PgTermRepository();
+  const roomRepository = new PgRoomRepository();
+  const nonTeachingDays = new PgNonTeachingDayRepository();
+  const slotRepository = new PgSlotRepository();
+  const sessionRepository = new PgSessionRepository();
 
   // Cloudinary only when configured; otherwise an in-memory adapter, so the
   // application never branches on which one it received.
@@ -158,7 +173,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     teaching: {
       uow, audit, ids, clock,
       years: new PgAcademicYearRepository(),
-      terms: new PgTermRepository(),
+      terms: termRepository,
       sections: sectionRepository,
       offerings: offeringRepository,
     },
@@ -167,6 +182,23 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       offerings: offeringRepository,
       instructors: new PgInstructorAssignmentRepository(),
       sections: sectionRepository,
+    },
+    // M4 reads M3 through its ports rather than keeping its own copy of who
+    // teaches what: there is one statement of that, and it lives in M3.
+    rooms: { uow, audit, ids, clock, rooms: roomRepository, days: nonTeachingDays },
+    timetable: {
+      uow, audit, ids, clock,
+      slots: slotRepository,
+      sessions: sessionRepository,
+      days: nonTeachingDays,
+      offerings: offeringRepository,
+      terms: termRepository,
+    },
+    sessions: {
+      uow, audit, ids, clock,
+      sessions: sessionRepository,
+      offerings: offeringRepository,
+      reach: new PgTeachingReachReader(),
     },
     close: async () => {
       if (!pool) await dbPool.end();
