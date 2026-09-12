@@ -114,7 +114,7 @@ Offline is a modifier on all five, not a sixth state: a persistent slim banner r
 
 Motion is part of the product, not decoration. It exists to explain hierarchy,
 state change, navigation, feedback and spatial relationship. Every animated value in
-the product comes from one file, `web/src/design/motion.css`, and no screen invents
+the product comes from one file, `clients/web/src/design/motion.css`, and no screen invents
 its own duration, curve or keyframe.
 
 ### Duration bands

@@ -2,9 +2,9 @@
 
 Multi-tenant college ERP serving a platform **Super Admin**, per-college **Admins**, **Teachers**
 and **Students** across many colleges. One backend, one database, one authorization model, and
-two first-class clients (AD-24):
+two first-class clients (AD-24, AD-54):
 
-- **Web** — React, Vite and TypeScript, in `web/`. The back office.
+- **Web** — React, Vite and TypeScript, in `clients/web/`. The back office.
 - **Mobile** — Flutter for Android and iOS, at the repository root. Students and faculty.
 - There is no Flutter Web.
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// The same design decisions as the web console, expressed natively.
 ///
-/// Values are shared with `web/src/design/tokens.css` so the two clients read as
+/// Values are shared with `clients/web/src/design/tokens.css` so the two clients read as
 /// one product: the same indigo, the same 4pt spacing scale, the same radii.
 /// What is deliberately not shared is layout, because a phone is not a narrow
 /// desktop.

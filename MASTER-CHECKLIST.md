@@ -159,7 +159,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 | 10.1 | Tokens: colour, type, spacing, radius, elevation | Without tokens every screen invents values and the product looks assembled by strangers | — | `docs/07-design-system.md` | No raw values in any screen spec | ✅ |
 | 10.2 | Semantic status colours fixed system-wide | A status shown green in one module and amber in another is worse than no colour | 10.1, 0.5 | Design system §7.2 | One mapping, used by every module | ✅ |
 | 10.3 | Component inventory | Reuse is real only if the component exists before the fifth module needs it | 10.1 | Design system §7.5 | Built once, with golden tests | ✅ specified |
-| 10.4 | Data-dense components for desktop | The current system is phone-oriented. Tables, filter rails and approval queues need specification | 9.1, 10.3 | `web/src/components` | Table, states, drawer, chip, toast built; filter rail, saved views and command palette pending | 🟡 |
+| 10.4 | Data-dense components for desktop | The current system is phone-oriented. Tables, filter rails and approval queues need specification | 9.1, 10.3 | `clients/web/src/components` | Table, states, drawer, chip, toast built; filter rail, saved views and command palette pending | 🟡 |
 | 10.5 | Motion policy | Decorative animation in an ERP slows down the people who use it all day | 10.1 | Design system §7.7 | Durations, curves, and reduced-motion collapse | ✅ |
 | 10.6 | Accessibility baseline | Retrofitting accessibility across twenty-four modules is not economically possible | 10.1 | Design system §7.8 | Contrast, keyboard, semantics, 200 percent text scaling | ✅ |
 

@@ -5,12 +5,24 @@ UPDATED   2026-09-12
 Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
-          React 19 / Vite / TypeScript, no component framework
+          React 19 / Vite / TypeScript, no component framework, in clients/web/
+          Flutter for Android and iOS at the repository root; no Flutter Web
 Tests     277 backend + 148 web + 81 Flutter = 506 passing
 Next      Internal assessment and marks, or the approvals capability that
           attendance corrections and timetable publication are both waiting on.
           Attendance percentage and eligibility are deliberately unbuilt: they
           need the counting rules, which belong with examinations
+
+CLIENT HARDENING: DONE, ONE ITEM PENDING OUTSIDE THE REPOSITORY
+  App identity is com.nirvok.collegeErp on Android and iOS, displayed as
+  College (requirement R2). React moved from web/ to clients/web/ (AD-54),
+  so Flutter no longer finds a web target: `flutter build web` now answers
+  "not configured for the web" where before it built a 151 MB bundle with
+  React's node_modules copied in.
+  PENDING, needs Firebase console access: register Android and iOS apps for
+  com.nirvok.collegeErp and re-run flutterfire configure. Until then the
+  Android build fails at the Google Services step, by design and with the
+  reason written at that line. Steps in docs/12-mobile-platform-config.md.
 
 M6 ATTENDANCE: BACKEND COMPLETE / WEB COMPLETE / FLUTTER COMPLETE
   A register per class session, a mark per student, and corrections. Two states,
@@ -126,7 +138,7 @@ transactions, which would have allowed exactly the orphaned tenant AD-20 exists
 to prevent. Audit writes initially opened their own transaction, so an action
 could commit while its audit record rolled back.
 
-### S2 — Super Admin console (`web/`)
+### S2 — Super Admin console (`clients/web/`)
 
 Sign in, see every college, add one, receive the invitation once. Verified against
 the running backend: sign-in, empty state, provisioning, duplicate refusal,
@@ -137,7 +149,7 @@ the administrator correctly refused at the platform endpoint.
 students and faculty. Taken under an instruction not to wait, after the question
 stood open across three sessions. Supersedes R3.
 
-**Design system implemented, not improvised.** `web/src/design/tokens.css` is
+**Design system implemented, not improvised.** `clients/web/src/design/tokens.css` is
 docs/07-design-system.md §7.2 to §7.7 expressed as custom properties: the same
 indigo primary, 4pt spacing, 8/12/16 radii, and motion durations. Light and dark
 both ship, dark under the system preference and an explicit override. Reduced
@@ -255,7 +267,7 @@ tables grant INSERT and SELECT only, and an UPDATE against them is refused;
 neither role has superuser or BYPASSRLS; PUBLIC holds nothing. The application
 then signs in, provisions a college, invites a person and lists people.
 
-### S3b — People screen and role-driven shell (`web/`)
+### S3b — People screen and role-driven shell (`clients/web/`)
 
 The M1 write surface now has an interface. Verified against the running backend,
 not only in tests: roles endpoint, invite with a role in one request, the list as
@@ -283,6 +295,31 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### Client hardening: canonical identity and the web directory collision
+
+**Identity.** Both platforms had drifted to the Flutter template's placeholder
+identifiers. Android and iOS now declare `com.nirvok.collegeErp`, and
+`MainActivity` moved to the matching Kotlin package, because the manifest names
+the activity relative to the namespace. Firebase was deliberately not touched:
+editing the package name inside the generated files would fake a registration
+that does not exist. The Android build therefore fails at Google Services until
+the new apps are registered, and says why at that line.
+
+**The collision was real, and was tested rather than assumed.** Flutter treats
+`<project>/web/` as its web target and the React app lived there. Run against
+the repository, `flutter build web` succeeded: it used React's `index.html` as
+its host page, copied the whole React directory into the output including
+`node_modules`, and pulled five web-only plugins into the dependency graph. After
+moving React to `clients/web/`, the same command refuses. Moving React rather
+than Flutter touched almost nothing, since the Vite and Vitest configuration is
+path-relative and nothing else referred to the path.
+
+**Two things caught in verification.** A parallel check changed the shared
+working directory, so three results briefly came from the wrong place and looked
+clean because they found nothing; they were re-run from the root. And a first
+reference sweep only read Markdown, JSON, TypeScript and YAML, so it missed a
+stale path in a Dart comment; a sweep over every tracked file type found it.
 
 ### M6 — Attendance, on M5's minimum roster
 
@@ -615,7 +652,7 @@ at a time instead of receiving a desktop-shaped tree.
 department-scoped roles only when departments exist, so there is never an empty
 picker, and roles whose only scope the tree cannot yet express stay hidden.
 
-### Motion system (`web/src/design/motion.css`, `motion.ts`)
+### Motion system (`clients/web/src/design/motion.css`, `motion.ts`)
 
 Every animated value in the product now comes from one file. Four duration bands
 chosen by interaction complexity, four easing curves, and eight presets covering

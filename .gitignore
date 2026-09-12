@@ -51,5 +51,5 @@ app.*.map.json
 server/node_modules/
 server/dist/
 server/.env
-web/node_modules/
-web/dist/
+clients/web/node_modules/
+clients/web/dist/

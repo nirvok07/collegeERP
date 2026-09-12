@@ -1054,3 +1054,34 @@ second permission: holding the permission institution-wide is what lets a coordi
 register for a teacher who cannot, and anything narrower must be teaching the course. A faculty
 member granted over section A therefore cannot reach section B whatever their assignments say,
 because the permission is evaluated against the class's own cohort.
+
+---
+
+**AD-54 — The React client lives in `clients/web/`; the repository has no Flutter Web**
+
+*Status.* Approved and active, 2026-09-13. Enforces AD-24 in the repository layout.
+
+*Problem.* The Flutter project is the repository root, and Flutter treats `<project>/web/` as its
+web target. The React console lived at exactly that path. This was tested, not assumed:
+`flutter build web` run against the repository **succeeded**. It used React's `index.html` as its
+host page, copied the whole React directory into the output, including 71 `node_modules` entries,
+for 151 MB, and pulled five web-only plugins into the dependency graph, one of which failed the
+WebAssembly check. The React sources were not modified, but the project was configured as a
+Flutter Web app that AD-24 had rejected, and the analyzer needed a `web/**` exclusion to stay
+quiet about it.
+
+*Decision.* Move the React client to `clients/web/`. Nothing else moves.
+
+*Why this direction.* The React move touched almost nothing: its Vite and Vitest configuration is
+path-relative, there is no CI, and neither the IDE configuration nor the server refers to the
+path. Moving Flutter instead would have relocated `android/`, `ios/`, `lib/`, `test/`, the
+pubspec and every Firebase output path, for the same result and far more risk. The asymmetry, a
+`clients/` directory holding only the web client while Flutter stays at the root, is accepted;
+moving Flutter to `clients/mobile/` later is available and unforced.
+
+*Rejected.* Keeping `web/` and excluding it from Flutter, which leaves Flutter believing the
+project targets the web. Adding a real Flutter Web scaffold beside React to satisfy the tooling,
+which creates the duplicate web client AD-24 forbids.
+
+*Consequence.* Flutter no longer finds a web target, the `web/**` analyzer exclusion is removed as
+unnecessary, and no directory named `web/` exists at the root.
