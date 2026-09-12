@@ -604,3 +604,30 @@ an academic calendar M2 does not own.
 sections, ancestry will be `section → program → department → campus`, which the existing resolver
 already walks once rows exist, and the Faculty role becomes grantable at section scope with no
 change to M1.
+
+---
+
+**AD-37 — A program belongs to one department; campus variants are separate programs**
+
+*Status.* Approved and active, 2026-09-12. Resolves OD-M2-1.
+
+*Reason.* Three approved artifacts already assume it: Blueprint 1's organisation tree places
+`Program` under `Department`, the data model gives `programs` a `department_id` and no campus
+column, and BR-14 states that department scope implies its programs. That last one decides it.
+A program with two departmental parents has no single ancestor, so scope containment becomes
+ambiguous and department-scoped authority stops resolving. This would not be a schema preference
+but a break in an authorization rule that is already live and tested.
+
+*Alternatives.* An institution-level program with delivery scoped per campus, rejected on the
+containment break above. A program with an optional campus column, rejected as the same
+ambiguity with a nullable field.
+
+*Impact.* A college running one program on two campuses keeps two program records with distinct
+codes. That matches how approvals and intake are actually granted, which is per campus. If a
+customer later needs those presented as one, the answer is a grouping entity above programs
+rather than re-parenting, because re-parenting is precisely the operation that would disturb
+student bindings and which this model exists to make rare.
+
+*Noted gap, not a blocker.* The scope resolver currently walks department ancestry only.
+Program-scope ancestry is unimplemented, so program-scoped roles cannot yet be granted. Nothing
+declares one today, and the fix is one branch in `ancestryOf` when a role needs it.

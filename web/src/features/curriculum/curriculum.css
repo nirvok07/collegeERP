@@ -1,0 +1,150 @@
+/* Three panes at desktop width; the hierarchy is the layout. */
+.curriculum {
+  display: grid;
+  grid-template-columns: 260px 260px minmax(0, 1fr);
+  gap: var(--space-base);
+  align-items: start;
+}
+
+.pane {
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+.pane__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-md) var(--space-base);
+  border-bottom: 1px solid var(--outline);
+}
+.pane__title {
+  font: var(--text-caption); text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--text-secondary); padding: var(--space-md) var(--space-base);
+}
+.pane__head .pane__title { padding: 0; }
+.pane__list { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto; }
+.pane__empty { padding: var(--space-base); color: var(--text-tertiary); font: var(--text-body); }
+.pane--detail { background: transparent; border: none; overflow: visible; }
+
+.program, .version {
+  display: flex; flex-direction: column; gap: 2px; width: 100%;
+  padding: var(--space-md) var(--space-base);
+  background: transparent; border: none; border-inline-start: 2px solid transparent;
+  text-align: start; cursor: pointer;
+  transition: background var(--dur-micro) var(--ease-sharp),
+              border-color var(--dur-micro) var(--ease-sharp);
+}
+.program:hover, .version:hover { background: var(--surface-hover); }
+.program--on, .version--on {
+  background: var(--primary-subtle); border-inline-start-color: var(--primary);
+}
+.program__name { font: var(--text-title); color: var(--text-primary); }
+.program__meta, .version__meta { font: var(--text-caption); color: var(--text-secondary); }
+
+.version { flex-direction: row; align-items: center; flex-wrap: wrap; gap: var(--space-sm); }
+.version__year { font: var(--text-title); color: var(--text-primary); }
+.version__rev {
+  margin-inline-start: 4px; padding: 0 4px; border-radius: 4px;
+  background: var(--surface-variant); color: var(--text-secondary); font: var(--text-caption);
+}
+.version__meta { flex-basis: 100%; }
+
+/* ---- Detail --------------------------------------------------------- */
+.detail { display: flex; flex-direction: column; gap: var(--space-base); }
+.detail__head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-base); flex-wrap: wrap;
+}
+.detail__crumbs { font: var(--text-caption); color: var(--text-secondary); }
+.detail__title { font: var(--text-headline); margin-top: 2px; }
+.detail__revision {
+  margin-inline-start: var(--space-sm); padding: 2px var(--space-sm);
+  border-radius: var(--radius-pill); background: var(--surface-variant);
+  color: var(--text-secondary); font: var(--text-caption);
+}
+.detail__facts {
+  display: flex; gap: var(--space-md); flex-wrap: wrap; align-items: center;
+  margin-top: var(--space-sm); font: var(--text-caption); color: var(--text-secondary);
+}
+.detail__actions { display: flex; gap: var(--space-md); }
+
+.terms { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-md); }
+.term {
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--radius-card); overflow: hidden;
+}
+.term__head {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md) var(--space-base);
+  background: var(--surface-variant); border-bottom: 1px solid var(--outline);
+}
+.term__title { font: var(--text-title); flex: 1; }
+.term__credits { font: var(--text-caption); color: var(--text-secondary); }
+.term__empty { padding: var(--space-base); color: var(--text-tertiary); font: var(--text-body); }
+
+.entries { list-style: none; margin: 0; padding: 0; }
+.entry {
+  display: flex; align-items: center; gap: var(--space-md);
+  padding: var(--space-md) var(--space-base); border-bottom: 1px solid var(--outline);
+  transition: background var(--dur-micro) var(--ease-sharp);
+}
+.entry:last-child { border-bottom: none; }
+.entry:hover { background: var(--surface-hover); }
+.entry__code {
+  padding: 1px var(--space-sm); border-radius: var(--radius-input);
+  background: var(--surface-variant); border: 1px solid var(--outline);
+  font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px;
+  color: var(--text-secondary); white-space: nowrap;
+}
+.entry__title { flex: 1; min-width: 0; font: var(--text-body); }
+.entry__credits { font: var(--text-label); color: var(--text-secondary); }
+
+/* ---- Course catalogue ------------------------------------------------ */
+.catalog {
+  max-height: 320px; overflow-y: auto;
+  border: 1px solid var(--outline); border-radius: var(--radius-input);
+}
+.catalog__row {
+  display: flex; align-items: center; gap: var(--space-md); width: 100%;
+  padding: var(--space-md) var(--space-base); background: transparent;
+  border: none; border-bottom: 1px solid var(--outline); text-align: start; cursor: pointer;
+  transition: background var(--dur-micro) var(--ease-sharp);
+}
+.catalog__row:last-child { border-bottom: none; }
+.catalog__row:hover:not(:disabled) { background: var(--surface-hover); }
+.catalog__row--on { background: var(--primary-subtle); }
+.catalog__row:disabled { opacity: 0.5; cursor: not-allowed; }
+.catalog__title { flex: 1; min-width: 0; font: var(--text-body); }
+.catalog__note { font: var(--text-caption); color: var(--text-tertiary); }
+.catalog__empty { padding: var(--space-base); color: var(--text-tertiary); font: var(--text-body); }
+.catalog__chosen { font: var(--text-body); display: flex; align-items: center; gap: var(--space-sm); }
+.rule { border: none; border-top: 1px solid var(--outline); margin: var(--space-sm) 0; }
+
+/* ---- Revision or amendment ------------------------------------------- */
+.choice__lead { font: var(--text-body); color: var(--text-secondary); }
+.choices { display: flex; flex-direction: column; gap: var(--space-md); }
+.choice {
+  display: flex; flex-direction: column; gap: var(--space-xs);
+  padding: var(--space-base); text-align: start; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--outline-strong);
+  border-radius: var(--radius-input);
+  transition: background var(--dur-micro) var(--ease-sharp),
+              border-color var(--dur-micro) var(--ease-sharp);
+}
+.choice:hover { background: var(--surface-hover); }
+.choice--on { border-color: var(--primary); background: var(--primary-subtle); }
+.choice__title { font: var(--text-title); color: var(--text-primary); }
+.choice__body { font: var(--text-body); color: var(--text-secondary); }
+
+/* Below 1100px the three panes stack. A curriculum is hierarchical, so the
+   order is preserved rather than reflowed into columns that lose the nesting. */
+@media (max-width: 1100px) {
+  .curriculum { grid-template-columns: minmax(0, 1fr); }
+  .pane__list { max-height: 240px; }
+  .detail__head { flex-direction: column; }
+  .detail__actions { width: 100%; }
+}
+@media (max-width: 720px) {
+  .entry { flex-wrap: wrap; }
+  .entry__title { flex-basis: 100%; order: 3; }
+}

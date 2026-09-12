@@ -6,16 +6,17 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     129 backend + 48 web + 24 Flutter = 201 passing
-Next      Curriculum web workspace, then M3 (which owns sections)
+Tests     129 backend + 68 web + 24 Flutter = 221 passing
+Next      M3 Teaching Operations, which owns sections (AD-36)
 
-CURRICULUM SPINE: BACKEND COMPLETE / WEB PENDING / FLUTTER DEFERRED
-  Deliberate and documented, not silently left behind. Curriculum authoring is
-  a hierarchical, low-frequency desktop workflow under AD-29, so the web
-  workspace is the next slice. Flutter gets curriculum READ only when there is
-  a reader who needs it: a student viewing their own requirements, which needs
-  M5 to own the student-to-version binding first. Building a mobile curriculum
-  browser before that reader exists would be a screen with no user.
+CURRICULUM: BACKEND COMPLETE / WEB COMPLETE / FLUTTER DEFERRED
+  Flutter deferral is deliberate and recorded, not forgotten. Authoring is a
+  hierarchical, low-frequency desktop workflow under AD-29. Flutter gets
+  curriculum READ when a reader needs it: a student viewing their own
+  requirements, which needs M5 to own the student-to-version binding first.
+  A mobile curriculum browser today would be a screen with no user. The read
+  endpoints are already shaped for it: terms come grouped and `editable` is
+  stated by the server rather than inferred, so mobile needs no new contract.
 
 PLATFORM RUNTIME VALIDATION: DEFERRED
   Android build, iOS build, Firebase platform config, notification
@@ -240,6 +241,33 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M2 — curriculum web workspace
+
+Three panes, because the question has three levels: which program, which
+regulation, what does it require. A flat table would make an administrator
+rebuild that hierarchy in their head on every visit.
+
+**Context is never inferred.** Department, program, regulation year, revision,
+status, term and credit totals appear at the level they apply to.
+
+**Read-only state is explained, not enforced by hiding buttons.** A published
+version states that students admitted under it follow exactly these
+requirements, so correcting it means a new version. Someone who cannot find the
+edit action will otherwise look for a way around it.
+
+**Revision and amendment are two distinct choices**, each saying what happens to
+existing students, because they look similar and behave oppositely. The screen
+never offers a generic "edit curriculum".
+
+**The catalogue is searchable, not a dropdown.** Setting credits while placing a
+course, with the hint that they apply to this regulation only, is where a user
+learns that a course is not its placement. A course already in the version shows
+disabled rather than failing on a constraint.
+
+**Publication is gated in the interface as well as the backend.** Empty terms
+are named and the publish button stays disabled, because publication cannot be
+undone.
 
 ### M2 — curriculum spine (programs, versions, courses)
 

@@ -55,6 +55,10 @@ export class ApiClient {
     return this.request<T>('POST', path, body);
   }
 
+  del<T>(path: string): Promise<ApiResult<T>> {
+    return this.request<T>('DELETE', path);
+  }
+
   private async request<T>(method: string, path: string, body?: unknown, isRetry = false): Promise<ApiResult<T>> {
     let token = this.options.getToken();
 

@@ -98,6 +98,7 @@ stated in [Decisions](11-decisions.md).
 |---|---|---|---|
 | A1 | The backend is a custom REST API behind an abstract contract | Assumed | [Decisions](11-decisions.md) D4, [API Contract](05-api-contract.md) |
 | A2 | The local store is Drift over SQLite | Assumed | [Decisions](11-decisions.md) D3, [Data Model](04-data-model.md) |
+| A9 | A program belongs to one department on one campus; campus variants are separate programs | Resolved, OD-M2-1 | [ADR](blueprint/adr.md) AD-37 |
 | A3 | Release one ships Core, Academics and Communication. Fees and payments follow in release two | Assumed | [Decisions](11-decisions.md) D12, [Roadmap](10-roadmap.md) |
 | A4 | English only in release one, with all strings externalized so languages can be added later | Assumed | [Product Overview](01-product-overview.md) 1.5 |
 | A5 | Light and dark themes both ship in release one | Assumed | [Decisions](11-decisions.md) D11 |
