@@ -368,6 +368,43 @@ export class PgOrgTreeReader implements OrgTreeReader {
       );
       return rows[0] ? [{ type: 'campus', refId: rows[0].campus_id }] : [];
     }
+
+    if (scopeType === 'program') {
+      const { rows } = await clientOf(tx).query(
+        `SELECT p.department_id, d.campus_id
+           FROM programs p JOIN departments d ON d.id = p.department_id
+          WHERE p.id = $1`,
+        [scopeRefId],
+      );
+      return rows[0]
+        ? [
+            { type: 'department', refId: rows[0].department_id },
+            { type: 'campus', refId: rows[0].campus_id },
+          ]
+        : [];
+    }
+
+    // The chain this module's own contract has promised since migration 001:
+    // a section yields [section, program, department, campus]. M3 now provides
+    // the rows; the decision stays here, so there is one authorization path.
+    if (scopeType === 'section') {
+      const { rows } = await clientOf(tx).query(
+        `SELECT s.program_id, p.department_id, d.campus_id
+           FROM sections s
+           JOIN programs p    ON p.id = s.program_id
+           JOIN departments d ON d.id = p.department_id
+          WHERE s.id = $1`,
+        [scopeRefId],
+      );
+      return rows[0]
+        ? [
+            { type: 'program', refId: rows[0].program_id },
+            { type: 'department', refId: rows[0].department_id },
+            { type: 'campus', refId: rows[0].campus_id },
+          ]
+        : [];
+    }
+
     return [];
   }
 }

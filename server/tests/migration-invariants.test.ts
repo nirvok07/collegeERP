@@ -67,6 +67,12 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // The one table with DELETE: a draft is edited by removing entries, and the
   // trigger confines deletion to drafts.
   curriculum_entries: 'DELETE+INSERT+SELECT+UPDATE',
+
+  // Academic calendar and teaching groups. No DELETE: a section is cancelled,
+  // never removed, because attendance and results reference it by identity.
+  academic_years: 'INSERT+SELECT+UPDATE',
+  terms: 'INSERT+SELECT+UPDATE',
+  sections: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

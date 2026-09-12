@@ -631,3 +631,44 @@ student bindings and which this model exists to make rare.
 *Noted gap, not a blocker.* The scope resolver currently walks department ancestry only.
 Program-scope ancestry is unimplemented, so program-scoped roles cannot yet be granted. Nothing
 declares one today, and the fix is one branch in `ancestryOf` when a role needs it.
+
+---
+
+**AD-38 — A Section is a cohort of students within a program for one term, not a course offering**
+
+*Status.* Approved and active, 2026-09-12. Implements AD-36.
+
+*Reason.* Three approved artifacts already said so. Blueprint 1's tree places `Section / Batch`
+under `Term`, annotated "the actual teaching group". Blueprint 2's entity list names both
+`Section` and `CourseOffering (course × term × section)` as separate things. And M1's scope
+contract has stated since migration 001 that a section target yields
+`[section, program, department, campus]`, a chain a course-shaped section could not produce,
+because a course has no department.
+
+*Alternatives.* Section as an offering of one course, rejected on all three counts above, and
+because a section studies eight courses in a term: that model would create eight sections where
+a college sees one, and a class teacher's authority would need granting eight times.
+
+*Impact.* `sections` carries program, academic year, term and label, and deliberately carries no
+course and no instructor. Those belong to CourseOffering in the next slice. Section identity is
+`(program, academic year, term number, label)`, frozen by trigger once the section is active,
+because attendance and results will reference it by identity and re-pointing it would move
+records between cohorts. Section ancestry is now implemented in `OrgTreeReader`, which is the
+point at which the Faculty role's long-declared section scope became grantable.
+
+---
+
+**AD-39 — The academic calendar belongs to M2, not M3**
+
+*Status.* Approved and active, 2026-09-12.
+
+*Reason.* A section needs a term and neither academic years nor terms existed. Blueprint 2
+assigns both to D2 Academic Structure, which is M2. Absorbing the calendar into M3 because M3
+needed it first would have put the institution's yearly cycle under teaching operations, where
+admissions, fees and examinations would then have to reach across a module boundary to read it.
+
+*Impact.* Migration 010 adds `academic_years` and `terms` under M2. M3 references a term and
+never defines one. Terminology is fixed: an **academic year** is the institution's yearly cycle
+named as the institution names it, a **term** is a numbered division inside it, and there is no
+third word. Exactly one academic year per institution is current, enforced by a partial unique
+index, because every downstream module asks for it and two would make the answer arbitrary.

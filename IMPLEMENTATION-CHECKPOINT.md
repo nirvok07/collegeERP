@@ -6,8 +6,17 @@ Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework
-Tests     129 backend + 68 web + 24 Flutter = 221 passing
-Next      M3 Teaching Operations, which owns sections (AD-36)
+Tests     152 backend + 68 web + 24 Flutter = 244 passing
+Next      M3 slice two: CourseOffering (course x section x term) and instructor
+          assignment, which unlocks both the web section workspace's instructor
+          column and the first genuine Flutter teaching surface
+
+M3 SECTION: BACKEND COMPLETE / WEB PENDING / FLUTTER DEFERRED
+  Flutter is deferred for one honest reason, not symmetry: a teacher's sections
+  are derived from instructor assignment, which lives on CourseOffering and does
+  not exist yet. A section list on mobile today would show an administrator's
+  view of every section in the college, which is not a mobile workflow. Flutter
+  lands with slice two, when there is a teacher to show it to.
 
 CURRICULUM: BACKEND COMPLETE / WEB COMPLETE / FLUTTER DEFERRED
   Flutter deferral is deliberate and recorded, not forgotten. Authoring is a
@@ -241,6 +250,36 @@ with nothing in it would be worse than omitting it.
 
 **Keyboard:** `/` focuses search, `i` invites, number keys switch sections,
 `Esc` closes a drawer.
+
+### M3 — Teaching Operations, slice one: Section
+
+Designed before any table, in `docs/blueprint/modules/m3-teaching-operations.md`.
+
+**A section is a cohort, not a course offering** (AD-38). Three approved
+artifacts already said so, and M1's scope contract decided it: a section yields
+`[section, program, department, campus]`, which a course-shaped section could
+not produce because a course has no department.
+
+**The academic calendar went to M2, not M3** (AD-39), even though M3 needed it
+first. Putting the institution's yearly cycle under teaching operations would
+make admissions, fees and examinations reach across a boundary to read it.
+
+**Section scope now resolves**, which was the point of the slice. It had been
+declarable and unresolvable since migration 001. `OrgTreeReader` gained section
+and program ancestry, so the Faculty role's long-declared section scope is
+finally grantable, and the authorization decision stayed in M1.
+
+**Identity freezes when teaching begins**, by trigger. Attendance and results
+will reference a section by identity, so re-pointing one would move records
+between cohorts. Terminal states are terminal for the same reason.
+
+**Three defects found and fixed while building**, all pre-existing:
+the error translator discarded trigger messages, so a trigger that said "term 9
+is beyond this program, which runs 8 terms" surfaced as "that value is not
+allowed"; the test reset used `TRUNCATE CASCADE`, which destroyed platform role
+templates through the institution foreign key and silently undid every
+migration that amends one; and migration 011's template update needed the
+`NO FORCE` pattern to run on managed PostgreSQL without BYPASSRLS.
 
 ### M2 — curriculum web workspace
 

@@ -44,6 +44,10 @@ import type { ManageDevicesDeps } from './modules/identity/application/manage-de
 import type { ProvisionInstitutionDeps } from './modules/institution/application/provision-institution.ts';
 import type { ManageOrgDeps } from './modules/institution/application/manage-org-units.ts';
 import type { CurriculumDeps } from './modules/curriculum/application/manage-curriculum.ts';
+import type { TeachingDeps } from './modules/teaching/application/manage-sections.ts';
+import {
+  PgAcademicYearRepository, PgSectionRepository, PgTermRepository,
+} from './modules/teaching/infrastructure/repositories.ts';
 import {
   PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
 } from './modules/curriculum/infrastructure/repositories.ts';
@@ -65,6 +69,7 @@ export interface Container {
   provisionInstitution: ProvisionInstitutionDeps;
   manageOrg: ManageOrgDeps;
   curriculum: CurriculumDeps;
+  teaching: TeachingDeps;
   institutions: PgInstitutionRepository;
   uow: PgUnitOfWork;
   close(): Promise<void>;
@@ -144,6 +149,12 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       programs: new PgProgramRepository(),
       courses: new PgCourseRepository(),
       curriculum: new PgCurriculumRepository(),
+    },
+    teaching: {
+      uow, audit, ids, clock,
+      years: new PgAcademicYearRepository(),
+      terms: new PgTermRepository(),
+      sections: new PgSectionRepository(),
     },
     close: async () => {
       if (!pool) await dbPool.end();

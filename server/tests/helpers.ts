@@ -1,7 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { loadConfig } from '../src/config/config.ts';
 import { buildContainer, type Container } from '../src/container.ts';
 import { buildServer } from '../src/infrastructure/http/server.ts';
@@ -22,26 +19,39 @@ export async function setupDatabase(): Promise<void> {
 }
 
 /**
- * Truncates between tests, using the migrator role since the application role
- * has no DELETE anywhere.
+ * Clears tenant data between tests.
  *
- * TRUNCATE ... CASCADE reaches role_definitions through its institution foreign
- * key, which removes the platform role templates as collateral, so the seed is
- * reapplied afterwards.
+ * Deliberately NOT `TRUNCATE ... CASCADE`: that reached platform role templates
+ * through the institution foreign key and destroyed them, so every later
+ * migration that amends a template silently lost its effect on the next reset.
+ * Deleting tenant-owned rows in dependency order leaves the platform catalogue
+ * exactly as the migration chain left it.
  */
 export async function resetData(): Promise<void> {
   const pool = createPool(MIGRATOR_URL);
   try {
-    await pool.query(`
-      TRUNCATE audit_events, login_attempts, refresh_tokens, invitation_tokens,
-               credentials, role_assignments, user_accounts, persons,
-               departments, campuses, institutions, platform_accounts
-      RESTART IDENTITY CASCADE`);
-    const seed = await readFile(
-      join(dirname(fileURLToPath(import.meta.url)), '../migrations/002_seed_platform_reference.sql'),
-      'utf8',
-    );
-    await pool.query(seed);
+    // Leaf to root. Most foreign keys are ON DELETE RESTRICT by design, so this
+    // order is the dependency graph rather than a convenience.
+    //
+    // Organisational units are removed before persons, because they carry
+    // `archived_by` and `published_by` references. Nulling those instead would
+    // be both unnecessary and, for a published curriculum version, correctly
+    // refused by its immutability trigger.
+    for (const table of [
+      'audit_events', 'login_attempts', 'refresh_tokens', 'invitation_tokens',
+      'devices', 'credentials', 'role_assignments',
+      'curriculum_entries', 'curriculum_versions', 'courses',
+      'sections', 'terms', 'academic_years',
+      'programs', 'departments', 'campuses',
+      'user_accounts', 'persons',
+    ]) {
+      await pool.query(`DELETE FROM ${table}`);
+    }
+
+    // Tenant-cloned roles only. Platform templates carry no tenant and stay.
+    await pool.query(`DELETE FROM role_definitions WHERE tenant_id IS NOT NULL`);
+    await pool.query(`DELETE FROM institutions`);
+    await pool.query(`DELETE FROM platform_accounts`);
   } finally {
     await pool.end();
   }

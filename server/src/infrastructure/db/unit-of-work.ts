@@ -42,12 +42,32 @@ export class PgUnitOfWork implements UnitOfWork {
   }
 }
 
-/** Postgres errors become AppException at the boundary; no pg type escapes infrastructure. */
+/**
+ * Postgres errors become AppException at the boundary; no pg type escapes
+ * infrastructure.
+ *
+ * A message we wrote ourselves is kept. A trigger that raises
+ * "Term 9 is beyond this program, which runs 8 terms" has said something more
+ * useful than any generic phrasing here, and discarding it would waste the one
+ * place that knew the specifics. Errors from table constraints carry a
+ * `constraint` name and get the generic message, because a constraint name is
+ * not something to show a user.
+ */
 function translate(e: unknown): unknown {
-  const code = (e as { code?: string } | null)?.code;
+  const error = e as { code?: string; constraint?: string; message?: string } | null;
+  const code = error?.code;
+  const fromTrigger = Boolean(error?.message) && !error?.constraint;
+
   if (code === '23505') return new AppException('CONFLICT', 'That record already exists.', e);
   if (code === '23503') return new AppException('VALIDATION_FAILED', 'A referenced record does not exist.', e);
-  if (code === '23514') return new AppException('VALIDATION_FAILED', 'That value is not allowed.', e);
+  if (code === '23514') {
+    return new AppException(
+      'VALIDATION_FAILED',
+      fromTrigger ? error!.message! : 'That value is not allowed.',
+      e,
+    );
+  }
+  if (code === '2BP01') return new AppException('CONFLICT', error!.message!, e);
   if (code === '42501') return new AppException('FORBIDDEN', 'Not permitted.', e);
   return e;
 }
