@@ -2,6 +2,56 @@
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
+## TRACER
+
+### SYSTEM STATUS
+- Foundation (S1): ✅
+- Identity & Authority (M1): ✅
+- Academic Structure and Curriculum (M2): ✅
+- Section, Offering, Instructor assignment (M3): ✅
+- Teaching Delivery (M4): ✅
+- Student Records (M5): ⚠️ minimum roster only; no admissions, no student accounts
+- Attendance (M6): ✅ corrections by permission; approval workflow ❌
+- Internal Assessment (M7): ✅ verify and correct by permission; approval workflow ❌
+- Offline Outbox slice 1, idempotency (AD-58): ✅
+- Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ 133 Flutter tests; Android replay 🔍 NEEDS VALIDATION (device unavailable)
+- Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config; FCM registration 🔍
+- Platform Administration: ⚠️ PARTIAL, S1/S2 provisioning and colleges list only
+- Approvals capability (P1): ❌ not specified
+- Student role and student experience: ❌
+- Examinations, Results (M10): 🚫 OD-1
+- iOS validation: 🚫 Xcode not installed
+- Backend push delivery: 🚫 Drift 6, tokens stored hash-only
+
+### CURRENT SLICE
+None in progress. AD-59 device replay ⏸️ POSTPONED until the phone is connected.
+
+### NEXT SLICE — SA-1 College Lifecycle
+Design: `docs/blueprint/capabilities/platform-administration.md` §5.
+- **Already built:** `POST/GET /v1/institutions` (platform guard), W0 one-transaction
+  provisioning, status column `trial/active/suspended/closed`, new sign-in refused when suspended
+  or closed, web colleges list and provision drawer.
+- **To build:** institution detail; suspend, reactivate, close with a required reason; suspension
+  enforced on refresh and per request; reissue the administrator invitation (old token invalid,
+  new one shown once); an audit event per transition; web detail screen with these actions.
+- **Not in this slice:** audit view (SA-2), platform roles and second factor (SA-3), plan and
+  seats (SA-4), impersonation (SA-5), data export for closed colleges.
+- **Dependencies:** M1 sessions and refresh, M2 institution record, audit writer.
+- **Validation:** server tests for each transition, refusals for college actors, suspended
+  refresh and request refused, reissue invalidates the old token, audit rows; web tests.
+- **Open decision:** OD-SA-1 below. Only the per-request enforcement depends on it.
+- **Blockers:** none, if the provisional OD-SA-1 answer is accepted.
+
+### OPEN DECISIONS (relevant)
+| ID | Question | Why it matters | Affects | Options | Status |
+|---|---|---|---|---|---|
+| OD-SA-1 | What does "suspended" mean for a college's users? | Decides whether live sessions end or turn read-only | SA-1 | Refused entirely; read-only | Open. Provisional: refused entirely, matching today's sign-in refusal |
+| OD-SA-2 | Retention and export for a closed college | Data protection duty | SA-1 close, later export | Fixed period; per contract | Open; close ships without export |
+| OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
+
+### BLOCKERS
+Phone not connected (AD-59 device replay, FCM). Xcode (iOS). Drift 6 (backend push). OD-1 (M10).
+
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
 durable encrypted queue (AD-59), implemented and unit-tested (`a4f9622`). Real-device
