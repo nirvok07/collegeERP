@@ -1281,3 +1281,59 @@ this decision.
 recoverably. The server has no mechanism for that: every secret at rest is a one-way hash
 (scrypt passwords, SHA-256 tokens). Storing TOTP secrets in plaintext is refused. OD-SA-5 decides
 the missing capability.
+
+---
+
+**AD-63 — Platform secret protection and sole-Owner break-glass recovery**
+
+*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-5. To be implemented in SA-3b.
+
+*Decision.*
+1. Secrets the server must read back are sealed with AES-256-GCM from Node's built-in crypto:
+   standard authenticated encryption, no custom cryptography. The key comes from a dedicated
+   configuration secret, separate from the JWT, cookie and other authentication secrets, and never
+   from the database. Each sealed value carries a key identifier so the key can be rotated.
+   Production refuses to start when the key is missing or invalid. Plaintext secrets, keys and
+   decrypted material are never logged.
+2. TOTP comes from a maintained library such as otplib, never a hand-written algorithm. TOTP
+   secrets are sealed at rest with (1), and no normal API returns them.
+3. When the only Owner loses their authenticator, an operator command resets it: audited,
+   invalidating the old secret, forcing re-enrolment. There is no general "disable MFA" switch and
+   no permanent MFA-off state.
+
+*Consequence.* The same sealing capability is the prerequisite for resolving Drift 6 (push tokens
+stored hash-only), though that is not part of SA-3b.
+
+---
+
+**AD-64 — Platform authority is an Owner or Support role assignment, resolved per request**
+
+*Status.* Approved and implemented, 2026-09-13 (SA-3a, migration 021).
+
+*Decision.* A platform role is an assignment with history, one active per account, in
+`platform_role_assignments`, because AD-1 forbids a role column. Code asks for a permission from
+the matrix in `identity/domain/platform-authority.ts`, never compares a role name:
+
+| Permission | Owner | Support |
+|---|---|---|
+| platform.colleges.read | ✓ | ✓ |
+| platform.colleges.manage | ✓ | |
+| platform.audit.read | ✓ | |
+| platform.accounts.read | ✓ | |
+| platform.accounts.manage | ✓ | |
+| platform.roles.manage | ✓ | |
+
+Status and role are read live on every platform request, so disabling an account or changing a
+role takes effect on the next request. W0 names the Owner as the only provisioning actor and the
+M1 matrix gives platform audit to the Owner, which is why Support holds read access to colleges
+only until SA-5 adds its impersonation permission.
+
+*Accounts.* Created by an Owner through the application, never by SQL. A new account is `invited`
+with no credential and cannot sign in until SA-3b issues its invitation together with
+authenticator enrolment, so no account is ever usable without a second factor after SA-3b.
+Existing accounts became Owners in migration 021. Bootstrapping the first Owner stays an operator
+action; the SA-3b break-glass command covers recovery.
+
+*Safety.* Nobody changes their own account. Every change takes one platform-wide advisory lock and
+re-reads the actor's authority inside it, and an Owner who is the only active one cannot be
+disabled or demoted. Two Owners racing to demote or disable each other leave exactly one.

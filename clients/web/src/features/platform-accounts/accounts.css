@@ -1,0 +1,5 @@
+/* SA-3a. Role choice as labelled radios, each saying what the role can do. */
+.role-choice { border: 0; padding: 0; margin: var(--space-base) 0 0; display: flex; flex-direction: column; gap: var(--space-sm); }
+.role-choice__option { display: flex; gap: var(--space-sm); align-items: flex-start; cursor: pointer; }
+.role-choice__option input { margin-top: 3px; }
+.role-history { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-sm); }

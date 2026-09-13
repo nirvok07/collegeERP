@@ -62,6 +62,15 @@ try {
       [randomUUID(), platform.email, hash],
     );
   }
+  // Operator bootstrap of an Owner (migration 021), idempotent on resume.
+  await pool.query(
+    `INSERT INTO platform_role_assignments (id, platform_account_id, role, reason)
+     SELECT $1, pa.id, 'owner', 'Device test bootstrap' FROM platform_accounts pa
+      WHERE pa.email = $2
+        AND NOT EXISTS (SELECT 1 FROM platform_role_assignments ra
+                         WHERE ra.platform_account_id = pa.id AND ra.ended_at IS NULL)`,
+    [randomUUID(), platform.email],
+  );
 
 } finally {
   await pool.end();

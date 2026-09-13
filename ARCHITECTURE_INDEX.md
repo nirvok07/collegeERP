@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-62) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R43) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-64) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R44) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -28,7 +28,7 @@ Firebase: FCM, Remote Config, Crashlytics only.
 
 - Tenant row-level security with FORCE; least-privilege `erp_app`; DELETE only on declared tables.
 - Invariants in triggers; PL/pgSQL variables prefixed `v_`.
-- Role grants permission, instructor assignment limits reach (AD-40).
+- Role grants permission, instructor assignment limits reach (AD-40). Platform: role assignment to permission matrix (AD-64).
 - Optimistic concurrency by `version` (AD-52) plus idempotency keys (AD-58).
 - Crossing tenant isolation only through narrow SECURITY DEFINER functions (migrations 005, 020).
 - Growing lists page by keyset cursor (AD-61); short lists stay capped by `limit`.
@@ -92,4 +92,6 @@ Firebase: FCM, Remote Config, Crashlytics only.
 | AD-59 | The mobile local store is Drift over SQLite3MultipleCiphers, keyed from the platform keystore | Active |
 | AD-60 | A suspended or closed college's users are refused entirely, at every request and at renewal | Active |
 | AD-61 | The platform reads only the events it caused, through one narrow definer function, newest first by keyset | Active |
-| AD-62 | The platform's second factor is a TOTP authenticator app | Decided; blocked on OD-SA-5 |
+| AD-62 | The platform's second factor is a TOTP authenticator app | Decided; SA-3b |
+| AD-63 | Platform secret protection (AES-256-GCM, dedicated key) and sole-Owner break-glass | Decided; SA-3b |
+| AD-64 | Platform authority is an Owner or Support role assignment, resolved per request | Active |

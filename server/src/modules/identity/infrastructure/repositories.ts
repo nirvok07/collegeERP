@@ -24,6 +24,10 @@ import type {
   RoleDefinitionRepository,
   BootstrapAdministrator,
 } from '../application/ports.ts';
+import type {
+  PlatformAccountSummary, PlatformAdminRepository, RoleHistoryEntry,
+} from '../application/manage-platform-accounts.ts';
+import type { PlatformRole } from '../domain/platform-authority.ts';
 import type { ActiveAssignment } from '../domain/authority.ts';
 import type { ScopeAncestry, ScopeType } from '../domain/scope.ts';
 
@@ -638,4 +642,102 @@ function toAccount(r: any): AccountRecord {
     status: r.status, mfaRequired: r.mfa_required, failedAttempts: r.failed_attempts,
     lockedUntil: r.locked_until, version: r.version,
   };
+}
+
+const ADMIN_SELECT = `
+  SELECT pa.id, pa.email, pa.full_name, pa.status, pa.last_login_at, pa.created_at, ra.role
+    FROM platform_accounts pa
+    LEFT JOIN platform_role_assignments ra
+      ON ra.platform_account_id = pa.id AND ra.ended_at IS NULL`;
+
+const toSummary = (r: any): PlatformAccountSummary => ({
+  id: r.id, email: r.email, fullName: r.full_name, status: r.status,
+  role: r.role ?? null, lastLoginAt: r.last_login_at ?? null, createdAt: r.created_at,
+});
+
+/** SA-3a. Platform accounts and their roles; no tenant, protected by app_role_only. */
+export class PgPlatformAdminRepository implements PlatformAdminRepository {
+  async list(tx: Tx): Promise<PlatformAccountSummary[]> {
+    const { rows } = await clientOf(tx).query(`${ADMIN_SELECT} ORDER BY pa.full_name, pa.email`);
+    return rows.map(toSummary);
+  }
+
+  async find(tx: Tx, id: string): Promise<PlatformAccountSummary | null> {
+    const { rows } = await clientOf(tx).query(`${ADMIN_SELECT} WHERE pa.id = $1`, [id]);
+    return rows[0] ? toSummary(rows[0]) : null;
+  }
+
+  async emailTaken(tx: Tx, email: string): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(`SELECT 1 FROM platform_accounts WHERE email = $1`, [email]);
+    return (rowCount ?? 0) > 0;
+  }
+
+  async history(tx: Tx, id: string): Promise<RoleHistoryEntry[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT role, granted_at, ended_at, reason FROM platform_role_assignments
+        WHERE platform_account_id = $1 ORDER BY granted_at DESC`,
+      [id],
+    );
+    return rows.map((r: any) => ({ role: r.role, grantedAt: r.granted_at, endedAt: r.ended_at, reason: r.reason }));
+  }
+
+  async create(tx: Tx, input: { id: string; email: string; fullName: string }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO platform_accounts (id, email, full_name, credential_hash, status)
+       VALUES ($1, $2, $3, NULL, 'invited')`,
+      [input.id, input.email, input.fullName],
+    );
+  }
+
+  async setStatus(tx: Tx, id: string, status: string): Promise<void> {
+    await clientOf(tx).query(
+      `UPDATE platform_accounts SET status = $2, updated_at = now(), version = version + 1 WHERE id = $1`,
+      [id, status],
+    );
+  }
+
+  async activeAssignment(tx: Tx, accountId: string) {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, role FROM platform_role_assignments WHERE platform_account_id = $1 AND ended_at IS NULL`,
+      [accountId],
+    );
+    return rows[0] ? { id: rows[0].id as string, role: rows[0].role as PlatformRole } : null;
+  }
+
+  async grant(
+    tx: Tx, input: { id: string; accountId: string; role: PlatformRole; grantedBy: string; reason: string },
+  ): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO platform_role_assignments (id, platform_account_id, role, granted_by, reason)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [input.id, input.accountId, input.role, input.grantedBy, input.reason],
+    );
+  }
+
+  async end(tx: Tx, assignmentId: string, by: string, at: Date): Promise<void> {
+    await clientOf(tx).query(
+      `UPDATE platform_role_assignments SET ended_at = $2, ended_by = $3 WHERE id = $1`,
+      [assignmentId, at, by],
+    );
+  }
+
+  /** One lock for every change to who holds platform authority. */
+  async lockOwnership(tx: Tx): Promise<void> {
+    await clientOf(tx).query(`SELECT pg_advisory_xact_lock(hashtextextended('platform_ownership', 0))`);
+  }
+
+  async countUsableOwners(tx: Tx): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT count(*)::int AS n
+         FROM platform_role_assignments ra
+         JOIN platform_accounts pa ON pa.id = ra.platform_account_id
+        WHERE ra.ended_at IS NULL AND ra.role = 'owner' AND pa.status = 'active'`,
+    );
+    return rows[0].n;
+  }
+
+  async authorityOf(tx: Tx, id: string) {
+    const { rows } = await clientOf(tx).query(`${ADMIN_SELECT} WHERE pa.id = $1`, [id]);
+    return rows[0] ? { status: rows[0].status, role: rows[0].role ?? null } : null;
+  }
 }

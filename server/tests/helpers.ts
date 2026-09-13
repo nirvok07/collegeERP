@@ -63,6 +63,8 @@ export async function resetData(): Promise<void> {
     // Tenant-cloned roles only. Platform templates carry no tenant and stay.
     await pool.query(`DELETE FROM role_definitions WHERE tenant_id IS NOT NULL`);
     await pool.query(`DELETE FROM institutions`);
+    // Role assignments reference platform accounts (migration 021).
+    await pool.query(`DELETE FROM platform_role_assignments`);
     await pool.query(`DELETE FROM platform_accounts`);
   } finally {
     await pool.end();
@@ -96,6 +98,7 @@ export async function buildTestApp() {
 export async function seedPlatformAccount(
   email = 'owner@nirvok.com',
   password = 'platform-pass-123',
+  role: 'owner' | 'support' = 'owner',
 ): Promise<{ id: string; email: string; password: string }> {
   const pool = createPool(MIGRATOR_URL);
   const id = randomUUID();
@@ -104,7 +107,14 @@ export async function seedPlatformAccount(
     await pool.query(
       `INSERT INTO platform_accounts (id, email, full_name, credential_hash, status)
        VALUES ($1,$2,$3,$4,'active')`,
-      [id, email, 'Platform Owner', hash],
+      [id, email, role === 'owner' ? 'Platform Owner' : 'Platform Support', hash],
+    );
+    // Operator bootstrap, as migration 021 documents: the role is granted with
+    // no granting account.
+    await pool.query(
+      `INSERT INTO platform_role_assignments (id, platform_account_id, role, reason)
+       VALUES ($1, $2, $3, 'Test bootstrap')`,
+      [randomUUID(), id, role],
     );
   } finally {
     await pool.end();

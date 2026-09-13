@@ -1,6 +1,6 @@
 # Platform Administration (Super Admin)
 
-Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019). **SA-2 implemented 2026-09-13** (AD-61, migration 020). SA-3 to SA-5 not built. Owner: M1 Identity &
+Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019). **SA-2 implemented 2026-09-13** (AD-61, migration 020). **SA-3a implemented 2026-09-13** (AD-64, migration 021). SA-3b, SA-4 and SA-5 not built. Owner: M1 Identity &
 Access (platform side) with M2 for the institution record (AD-20). Decisions cited, not restated.
 
 ## 1. What exists (S1, S2)
@@ -22,8 +22,7 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 |---|---|
 | Seat limit enforcement | `SEAT_LIMIT_REACHED` is defined and never raised |
 | Plan and seat changes after provisioning | No endpoint |
-| Platform roles: Owner and Support are distinct in the matrix | One actor type, all-powerful; the web grants `platform.tenant.manage` locally |
-| Platform account management, second factor | Accounts exist only by SQL insert; no MFA, although W0 requires one for sensitive roles |
+| Second factor for platform accounts | SA-3b (AD-62, AD-63); new accounts wait in `invited` until then |
 | Support impersonation W10 (AD-19) | Nothing built; needs the grant states and the Principal's approval |
 
 ## 3. Boundaries
@@ -70,13 +69,35 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 Visible: provisioning, lifecycle changes, invitation reissue, the bootstrap administrator's
 creation, and platform sign-in and sign-out. Not visible: anything a college's own users did.
 
+## 4c. SA-3a as built
+
+| Piece | Where |
+|---|---|
+| Owner and Support roles as assignments with history; one active per account | migration `021_platform_roles.sql` |
+| Permission matrix, written once | `identity/domain/platform-authority.ts` (AD-64) |
+| Guard: live status and role per request, permission not role name | `requirePlatformPermission` in `infrastructure/http/guards.ts` |
+| All platform routes now permission-checked; Support reads colleges only | institution routes, `/platform/audit` |
+| Accounts: list, detail, create (`invited`), disable, enable, change role | `GET/POST /v1/platform/accounts…`, `manage-platform-accounts.ts` |
+| No self-change; last active Owner protected; one advisory lock per change | same |
+| `/auth/me` returns the platform role and its permissions | `auth-routes.ts` |
+| Audit: `platform_account.created/disabled/enabled`, `platform_role.assigned/changed` | audit writer, visible in SA-2 |
+| Web: permission-driven platform navigation, Accounts section, read-only colleges for Support | `clients/web/src/features/platform-accounts/` |
+
+**Boundary to SA-3b.** SA-3a holds accounts, roles and permissions. SA-3b adds the sealing
+capability (AD-63), the platform invitation and password step, TOTP enrolment, the challenge at
+sign-in, Owner-mediated reset, and the operator break-glass command. `invited` accounts become
+usable only through that flow; existing Owners are required to enrol by it.
+
+**Bootstrap versus operation.** The first Owner is created by an operator (SQL today, the SA-3b
+command later). Every other account is created in the application.
+
 ## 5. Smallest safe slices
 
 1. ✅ **SA-1 Tenant lifecycle.** Institution detail; suspend, reactivate and close with a reason;
    enforce suspension on refresh and per request; reissue the administrator invitation; audit
    every transition. Web only.
 2. ✅ **SA-2 Platform audit view.** Read platform events, filtered by college and action.
-3. 🚫 **SA-3 Platform accounts** (second factor blocked on OD-SA-5; accounts and roles could ship first as SA-3a). Owner and Support roles, a second factor, and account creation by
+3. ⚠️ **SA-3 Platform accounts.** SA-3a ✅ accounts and roles. SA-3b ❌ sealing, TOTP, recovery (AD-63). Owner and Support roles, a second factor, and account creation by
    command rather than SQL.
 4. **SA-4 Seats and plan.** Change seat limit and plan; enforce the seat limit on activation.
 5. **SA-5 Support impersonation (AD-19).** After SA-3, since it needs the Support role.
@@ -88,5 +109,6 @@ creation, and platform sign-in and sign-out. Not visible: anything a college's o
 | ~~OD-SA-1~~ | Resolved as AD-60: refused entirely, at every request and at renewal |
 | OD-SA-2 | What "closed" means for data: retention period, and the college's export |
 | ~~OD-SA-3~~ | Resolved as AD-62: TOTP authenticator app |
-| OD-SA-5 | How the server stores a secret it must read back. Blocks SA-3's second factor; see PROJECT_STATE |
+| ~~OD-SA-5~~ | Resolved as AD-63: AES-256-GCM sealing with a dedicated key, otplib, operator break-glass |
+| OD-SA-6 | Owner succession: should the platform require a minimum number of active Owners (for example two) beyond "never zero"? |
 | OD-SA-4 | Seat limit counts which accounts: active staff, students, or both |

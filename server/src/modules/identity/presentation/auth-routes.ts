@@ -1,3 +1,4 @@
+import { platformPermissions } from '../domain/platform-authority.ts';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { Container } from '../../../container.ts';
@@ -186,12 +187,19 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     if (!req.actor) return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
 
     if (req.actor.actorType === 'platform') {
+      // SA-3a: permissions from the account's live role, never a fixed set.
+      const found = await c.platformAuthority.forAccount(req.actor.sub);
+      if (!found || found.status !== 'active') {
+        return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+      }
+      const permissions = [...platformPermissions(found.role)].sort();
       return sendOk(reply, {
         actor_type: 'platform',
         actor_id: req.actor.sub,
         tenant_id: null,
-        permissions: ['platform.tenant.manage'],
-        has_access: true,
+        platform_role: found.role,
+        permissions,
+        has_access: permissions.length > 0,
       });
     }
 

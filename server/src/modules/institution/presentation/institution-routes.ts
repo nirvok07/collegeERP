@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { Container } from '../../../container.ts';
 import { sendFailure, sendOk, sendResult } from '../../../infrastructure/http/server.ts';
-import { requirePermission, requirePlatformActor } from '../../../infrastructure/http/guards.ts';
+import { requirePermission, requirePlatformPermission } from '../../../infrastructure/http/guards.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
   archiveCampus, archiveDepartment, createCampus, createDepartment,
@@ -164,7 +164,7 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
    * in plaintext and never retrievable again.
    */
   app.post('/institutions', async (req, reply) => {
-    if (!requirePlatformActor(req, reply)) return reply;
+    if (!(await requirePlatformPermission(c, req, reply, 'platform.colleges.manage'))) return reply;
 
     const parsed = provision.safeParse(req.body);
     if (!parsed.success) {
@@ -219,7 +219,7 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
   });
 
   app.get('/institutions', async (req, reply) => {
-    if (!requirePlatformActor(req, reply)) return reply;
+    if (!(await requirePlatformPermission(c, req, reply, 'platform.colleges.read'))) return reply;
     const rows = await c.uow.run(null, (tx) => c.institutions.list(tx, 50));
     return sendOk(
       reply,
@@ -231,7 +231,7 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
 
   /* SA-1: one college, its lifecycle, and its administrator's invitation. */
   app.get('/institutions/:id', async (req, reply) => {
-    if (!requirePlatformActor(req, reply)) return reply;
+    if (!(await requirePlatformPermission(c, req, reply, 'platform.colleges.read'))) return reply;
     const id = (req.params as { id: string }).id;
     if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
     const result = await getInstitutionDetail(c.lifecycle, id);
@@ -241,7 +241,7 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
 
   for (const action of ['suspend', 'reactivate', 'close'] as const satisfies readonly LifecycleAction[]) {
     app.post(`/institutions/:id/${action}`, async (req, reply) => {
-      if (!requirePlatformActor(req, reply)) return reply;
+      if (!(await requirePlatformPermission(c, req, reply, 'platform.colleges.manage'))) return reply;
       const id = (req.params as { id: string }).id;
       if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
       const parsed = lifecycleBody.safeParse(req.body);
@@ -256,7 +256,7 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
   }
 
   app.post('/institutions/:id/administrator-invitation', async (req, reply) => {
-    if (!requirePlatformActor(req, reply)) return reply;
+    if (!(await requirePlatformPermission(c, req, reply, 'platform.colleges.manage'))) return reply;
     const id = (req.params as { id: string }).id;
     if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
     const result = await reissueInvitation(c.lifecycle, { id, platformAccountId: req.actor!.sub });
@@ -274,7 +274,7 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
    * a platform account caused; a college's own activity is not visible here.
    */
   app.get('/platform/audit', async (req, reply) => {
-    if (!requirePlatformActor(req, reply)) return reply;
+    if (!(await requirePlatformPermission(c, req, reply, 'platform.audit.read'))) return reply;
     const parsed = auditQuery.safeParse(req.query);
     if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
     const q = parsed.data;

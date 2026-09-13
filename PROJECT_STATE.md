@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ 133 Flutter tests; Android replay 🔍 NEEDS VALIDATION (device unavailable)
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config; FCM registration 🔍
-- Platform Administration: ⚠️ PARTIAL. S1/S2 provisioning ✅; SA-1 lifecycle ✅; SA-2 audit view ✅; SA-3 🚫 blocked on OD-SA-5; SA-4, SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ⚠️ (SA-3a accounts and roles ✅, migration 021 🔍 not applied; SA-3b TOTP ❌); SA-4, SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Student role and student experience: ❌
 - Examinations, Results (M10): 🚫 OD-1
@@ -24,32 +24,32 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-SA-3 🚫 BLOCKED before implementation, 2026-09-13: ARCHITECTURE CHANGE REQUIRED. The server
-has no way to store a recoverable secret, and TOTP (AD-62) needs one. Nothing was built.
-AD-59 device replay ⏸️ POSTPONED until the phone is connected.
+None in progress. SA-3a ✅ DONE: 359 server tests, 179 web tests, typechecks clean (commit recorded below).
+**Owner action:** apply migration `021_platform_roles.sql` to `college_erp_dev`. Until then the
+dev server's platform routes fail, because the role table does not exist there.
+SA-3 stays ⚠️ PARTIAL until SA-3b. AD-59 device replay ⏸️ POSTPONED.
 
-### NEXT SLICE — SA-3 Platform Accounts, Roles, Second Factor
-Design: `docs/blueprint/capabilities/platform-administration.md` §5.
-- **Why next:** platform accounts are the largest standing privilege, exist only by SQL insert,
-  have no second factor, and have one all-powerful role. SA-5 (impersonation) depends on the
-  Support role this slice introduces.
-- **Already built:** `platform_accounts`, platform sign-in with lockout and audit, platform guard.
-- **To build:** Owner and Support roles enforced server-side; account creation by command, not SQL;
-  a second factor at platform sign-in.
-- **Not in this slice:** impersonation (SA-5), seats and plan (SA-4), college-user MFA.
-- **Open decision:** OD-SA-5 blocks the second-factor part. Accounts and roles (SA-3a) do not depend on it.
+### NEXT SLICE — SA-3b Secret Sealing + TOTP
+Design: AD-62, AD-63; boundary in `docs/blueprint/capabilities/platform-administration.md` §4c.
+- **To build:** AES-256-GCM sealing with a dedicated key and key id; otplib; platform invitation
+  and password step for `invited` accounts; TOTP enrolment and verification; a staged sign-in
+  that issues no platform session before the second factor; Owner-mediated reset; operator
+  break-glass command; required enrolment for existing Owners.
+- **Not in this slice:** MFA for college roles, SA-4, SA-5, push-token redesign (Drift 6).
+- **Open decision:** OD-SA-6 (minimum Owners) does not block it.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
 |---|---|---|---|---|---|
 | OD-SA-1 | What does "suspended" mean for a college's users? | Live sessions end or turn read-only | SA-1 | — | ✅ Resolved as AD-60: refused entirely |
 | OD-SA-3 | Second factor for platform accounts | — | SA-3 | — | ✅ Resolved as AD-62: TOTP authenticator app |
-| OD-SA-5 | How the server stores a secret it must read back (TOTP enrolment secrets; later the push tokens of Drift 6) | TOTP cannot be verified from a hash, and plaintext is refused | SA-3 second factor; Drift 6 | Authenticated encryption (AES-256-GCM, Node crypto) with a dedicated key held outside the database, a key id per value for rotation, and refusal to start in production without the key; plus approval of a TOTP library dependency and a break-glass rule for a sole Owner | Open, blocks SA-3's second factor |
+| OD-SA-5 | How the server stores a secret it must read back | — | SA-3b | — | ✅ Resolved as AD-63 |
+| OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 
 ### BLOCKERS
-OD-SA-5 (server secret storage) blocks SA-3's second factor. Phone not connected (AD-59 device replay, FCM). Xcode (iOS). Drift 6 (backend push). OD-1 (M10).
+Phone not connected (AD-59 device replay, FCM). Xcode (iOS). Drift 6 (backend push). OD-1 (M10).
 
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
@@ -59,10 +59,10 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-62. AD-62 decided, implementation blocked on OD-SA-5. Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-64. AD-62 and AD-63 decided, implemented in SA-3b; AD-64 implemented. Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`020` applied on `college_erp_dev` (020 confirmed by the owner, 2026-09-13).
+Migrations `001`–`020` applied on `college_erp_dev`. `021` (platform roles) written and tested, **not applied**: the owner applies it.
 
 ## 4. Commits (newest first)
 ```
@@ -73,7 +73,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 347 backend, 174 web, 133 Flutter, all passing.
+Tests: 359 backend, 179 web, 133 Flutter, all passing.
 
 ## 5. Blockers
 - AD-59 device validation: the Android phone is not connected.

@@ -2,6 +2,9 @@
  * Composition root. The only place where infrastructure adapters meet
  * application ports. Nothing else constructs a repository or an adapter.
  */
+import type {
+  ManagePlatformAccountsDeps, PlatformAuthorityReader,
+} from './modules/identity/application/manage-platform-accounts.ts';
 import { TenantAccessGate } from './infrastructure/http/tenant-access.ts';
 import type { LifecycleDeps } from './modules/institution/application/manage-lifecycle.ts';
 import type { PlatformAuditDeps } from './modules/institution/application/platform-audit.ts';
@@ -31,6 +34,7 @@ import {
   PgRefreshTokenRepository,
   PgRoleAssignmentRepository,
   PgRoleDefinitionRepository,
+  PgPlatformAdminRepository,
 } from './modules/identity/infrastructure/repositories.ts';
 import {
   PgCampusRepository,
@@ -104,6 +108,8 @@ export interface Container {
   assessment: AssessmentDeps;
   institutions: PgInstitutionRepository;
   tenantAccess: TenantAccessGate;
+  platformAuthority: PlatformAuthorityReader;
+  managePlatformAccounts: ManagePlatformAccountsDeps;
   lifecycle: LifecycleDeps;
   platformAudit: PlatformAuditDeps;
   uow: PgUnitOfWork;
@@ -158,6 +164,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       : new InMemoryMediaStorage();
 
   const tenantAccess = new TenantAccessGate(uow, institutions);
+  const platformAdmin = new PgPlatformAdminRepository();
 
   const identityProvisioning: IdentityProvisioningDeps = {
     persons, accounts, assignments, roles, invitations, audit, ids, clock, tokens,
@@ -171,6 +178,10 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     uow,
     institutions,
     tenantAccess,
+    platformAuthority: {
+      forAccount: (id) => uow.run(null, (tx) => platformAdmin.authorityOf(tx, id)),
+    },
+    managePlatformAccounts: { uow, platformAdmin, audit, ids, clock },
     lifecycle: {
       uow, institutions, audit, ids, clock,
       identity: {

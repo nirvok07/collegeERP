@@ -28,7 +28,7 @@ const STATUS_TONE: Record<string, ChipTone> = {
   active: 'success', trial: 'info', suspended: 'warning', closed: 'neutral',
 };
 
-export function InstitutionsPage({ api }: { api: ApiClient }) {
+export function InstitutionsPage({ api, canManage = true }: { api: ApiClient; canManage?: boolean }) {
   const [rows, setRows] = useState<Institution[]>([]);
   const [status, setStatus] = useState<Status>('loading');
   const [failure, setFailure] = useState<ApiFailure | null>(null);
@@ -63,11 +63,11 @@ export function InstitutionsPage({ api }: { api: ApiClient }) {
       const typing = ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName);
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === '/') { e.preventDefault(); searchRef.current?.focus(); }
-      if (e.key === 'n') { e.preventDefault(); setProvisionOpen(true); }
+      if (e.key === 'n' && canManage) { e.preventDefault(); setProvisionOpen(true); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [canManage]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -95,7 +95,7 @@ export function InstitutionsPage({ api }: { api: ApiClient }) {
               value={query}
               onChange={(e) => setQuery(e.currentTarget.value)}
             />
-            <Button variant="primary" onClick={() => setProvisionOpen(true)}>Add college</Button>
+            {canManage && <Button variant="primary" onClick={() => setProvisionOpen(true)}>Add college</Button>}
           </div>
         </div>
 
@@ -111,7 +111,7 @@ export function InstitutionsPage({ api }: { api: ApiClient }) {
           <EmptyState
             title="No colleges yet"
             body="Add the first college and its administrator. They will be able to sign in as soon as they accept the invitation."
-            action={<Button variant="primary" onClick={() => setProvisionOpen(true)}>Add college</Button>}
+            action={canManage ? <Button variant="primary" onClick={() => setProvisionOpen(true)}>Add college</Button> : undefined}
           />
         ) : status !== 'loading' && filtered.length === 0 ? (
           <EmptyState
@@ -166,6 +166,7 @@ export function InstitutionsPage({ api }: { api: ApiClient }) {
 
       <InstitutionDrawer
         api={api}
+        canManage={canManage}
         id={selected}
         onClose={() => setSelected(null)}
         onChanged={() => void load('refresh')}

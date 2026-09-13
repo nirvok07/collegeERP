@@ -41,6 +41,11 @@ export const PLATFORM_ACTIONS: { value: string; label: string }[] = [
   { value: 'person.created', label: 'Administrator created' },
   { value: 'account.invited', label: 'Administrator invited' },
   { value: 'assignment.granted', label: 'Administrator role granted' },
+  { value: 'platform_account.created', label: 'Platform account created' },
+  { value: 'platform_account.disabled', label: 'Platform account disabled' },
+  { value: 'platform_account.enabled', label: 'Platform account enabled' },
+  { value: 'platform_role.assigned', label: 'Platform role assigned' },
+  { value: 'platform_role.changed', label: 'Platform role changed' },
   { value: 'auth.signed_in', label: 'Signed in' },
   { value: 'auth.signed_out', label: 'Signed out' },
 ];

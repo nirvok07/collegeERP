@@ -5,6 +5,7 @@ import { AuthSession, type Actor } from './lib/auth.ts';
 import { SignInPage } from './features/auth/SignInPage.tsx';
 import { InstitutionsPage } from './features/institutions/InstitutionsPage.tsx';
 import { AuditPage } from './features/platform-audit/AuditPage.tsx';
+import { AccountsPage } from './features/platform-accounts/AccountsPage.tsx';
 import { PeoplePage } from './features/people/PeoplePage.tsx';
 import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
 import { CurriculumPage } from './features/curriculum/CurriculumPage.tsx';
@@ -87,7 +88,6 @@ export function App() {
   // the interface reflects the same resolution the server enforces.
   useEffect(() => {
     if (phase !== 'signed-in' || !actor) return;
-    if (actor.actorType === 'platform') { setPermissions(new Set(['platform.tenant.manage'])); return; }
     void loadPermissions(api).then(setPermissions);
   }, [phase, actor, api]);
 
@@ -125,10 +125,30 @@ function sectionsFor(
   api: ApiClient,
 ): NavItem[] {
   if (actorType === 'platform') {
-    return [
-      { key: 'institutions', label: 'Colleges', render: () => <InstitutionsPage api={api} /> },
-      { key: 'audit', label: 'Audit', render: () => <AuditPage api={api} /> },
-    ];
+    // SA-3a: sections follow the platform role's permissions, read from the server.
+    const platform: NavItem[] = [];
+    if (permissions?.has('platform.colleges.read')) {
+      platform.push({
+        key: 'institutions', label: 'Colleges',
+        render: () => <InstitutionsPage api={api} canManage={permissions.has('platform.colleges.manage')} />,
+      });
+    }
+    if (permissions?.has('platform.audit.read')) {
+      platform.push({ key: 'audit', label: 'Audit', render: () => <AuditPage api={api} /> });
+    }
+    if (permissions?.has('platform.accounts.read')) {
+      platform.push({
+        key: 'accounts', label: 'Accounts',
+        render: () => (
+          <AccountsPage
+            api={api}
+            canManage={permissions.has('platform.accounts.manage')}
+            canAssignRoles={permissions.has('platform.roles.manage')}
+          />
+        ),
+      });
+    }
+    return platform;
   }
   const items: NavItem[] = [];
   if (permissions?.has('person.read')) {

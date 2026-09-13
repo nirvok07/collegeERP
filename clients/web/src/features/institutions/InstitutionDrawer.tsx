@@ -19,9 +19,10 @@ const TONE: Record<string, ChipTone> = { active: 'success', trial: 'info', suspe
  * The actions offered are the ones the server listed; the server checks again.
  */
 export function InstitutionDrawer({
-  api, id, onClose, onChanged, onInvitation,
+  api, id, canManage = true, onClose, onChanged, onInvitation,
 }: {
   api: ApiClient;
+  canManage?: boolean;
   id: string | null;
   onClose: () => void;
   onChanged: () => void;
@@ -92,7 +93,7 @@ export function InstitutionDrawer({
         subtitle={detail ? detail.code : 'Loading'}
         onClose={onClose}
         footer={
-          detail && detail.actions.length > 0 ? (
+          detail && canManage && detail.actions.length > 0 ? (
             <div className="drawer-actions">
               {detail.actions.map((action) => (
                 <Button
@@ -135,7 +136,7 @@ export function InstitutionDrawer({
                 <div><dt>Invitation</dt><dd>{invitationSummary(admin)}</dd></div>
               </dl>
             ) : <p className="page__sub">No administrator recorded.</p>}
-            {admin?.can_reissue && (
+            {admin?.can_reissue && canManage && (
               <Button variant="secondary" loading={reissuing} onClick={() => void reissue()}>
                 Issue a new invitation
               </Button>

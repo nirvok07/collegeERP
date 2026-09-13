@@ -3,6 +3,9 @@ import { fail } from '../../core/errors.ts';
 import { sendFailure } from './server.ts';
 import type { Container } from '../../container.ts';
 import type { Scope } from '../../modules/identity/domain/scope.ts';
+import {
+  platformPermissions, type PlatformPermission, type PlatformRole,
+} from '../../modules/identity/domain/platform-authority.ts';
 
 /** Platform actors only. Used by the tenant provisioning surface. */
 export function requirePlatformActor(req: FastifyRequest, reply: FastifyReply): boolean {
@@ -41,4 +44,36 @@ export async function requirePermission(
     return false;
   }
   return true;
+}
+
+export interface PlatformAuthority {
+  accountId: string;
+  role: PlatformRole | null;
+  permissions: Set<PlatformPermission>;
+}
+
+/**
+ * SA-3a. A platform account, active now, whose role grants the permission.
+ * Status and role are read live, so a disabled account or a changed role
+ * takes effect on the next request (AD-16). Returns the authority, or null
+ * after answering the request.
+ */
+export async function requirePlatformPermission(
+  container: Container,
+  req: FastifyRequest,
+  reply: FastifyReply,
+  permission: PlatformPermission,
+): Promise<PlatformAuthority | null> {
+  if (!requirePlatformActor(req, reply)) return null;
+  const found = await container.platformAuthority.forAccount(req.actor!.sub);
+  if (!found || found.status !== 'active') {
+    sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    return null;
+  }
+  const permissions = platformPermissions(found.role);
+  if (!permissions.has(permission)) {
+    sendFailure(reply, fail('FORBIDDEN', 'Your platform role does not allow this.'));
+    return null;
+  }
+  return { accountId: req.actor!.sub, role: found.role, permissions };
 }
