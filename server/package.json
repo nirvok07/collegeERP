@@ -13,7 +13,8 @@
     "db:bootstrap": "tsx src/infrastructure/db/bootstrap-cli.ts",
     "db:setup": "./scripts/setup-db.sh",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "seed:device-test": "tsx scripts/seed-device-test.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

@@ -34,9 +34,12 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 (checklist 7.4), student role and account issuance.
 
 ## 7. Next slice
-Verify outbox slice 2 on the Android phone: offline save → queued → reconnect → replayed, and a
-conflict shown. Needs a signed-in teacher with a class: seed a dedicated `device-test` college
-through the API, never by editing existing data.
+Verify outbox slice 2 on the Android phone: offline save → queued → reconnect → replayed, then a
+conflict (admin edits the same register while the phone is offline) shown as needing a person.
+Test data is ready: `npm run seed:device-test` created the `device-test` college (1 section,
+3 students, 2 classes on 2026-09-13, a lead teacher). Credentials: `server/.device-test.local.json`
+(git-ignored, owner-only; never print). Needs only the phone reconnected over USB and
+`adb reverse tcp:3000 tcp:3000`.
 
 ## 8. Inspect before continuing
 `docs/blueprint/capabilities/offline-outbox.md` §7, `lib/core/outbox/`, `lib/core/di/outbox_setup.dart`,
