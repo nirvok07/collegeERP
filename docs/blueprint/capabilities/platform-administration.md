@@ -76,7 +76,7 @@ creation, and platform sign-in and sign-out. Not visible: anything a college's o
    enforce suspension on refresh and per request; reissue the administrator invitation; audit
    every transition. Web only.
 2. ✅ **SA-2 Platform audit view.** Read platform events, filtered by college and action.
-3. **SA-3 Platform accounts.** Owner and Support roles, a second factor, and account creation by
+3. 🚫 **SA-3 Platform accounts** (second factor blocked on OD-SA-5; accounts and roles could ship first as SA-3a). Owner and Support roles, a second factor, and account creation by
    command rather than SQL.
 4. **SA-4 Seats and plan.** Change seat limit and plan; enforce the seat limit on activation.
 5. **SA-5 Support impersonation (AD-19).** After SA-3, since it needs the Support role.
@@ -87,5 +87,6 @@ creation, and platform sign-in and sign-out. Not visible: anything a college's o
 |---|---|
 | ~~OD-SA-1~~ | Resolved as AD-60: refused entirely, at every request and at renewal |
 | OD-SA-2 | What "closed" means for data: retention period, and the college's export |
-| OD-SA-3 | Second factor for platform accounts: TOTP, or email one-time code |
+| ~~OD-SA-3~~ | Resolved as AD-62: TOTP authenticator app |
+| OD-SA-5 | How the server stores a secret it must read back. Blocks SA-3's second factor; see PROJECT_STATE |
 | OD-SA-4 | Seat limit counts which accounts: active staff, students, or both |

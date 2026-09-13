@@ -1266,3 +1266,18 @@ existing lists stay capped by `limit`.
 *Also.* A partial index serves exactly this read. Payload keys that look sensitive are redacted on
 the server and dropped again in the web client, although no writer stores secrets today. Reading
 the trail is not itself audited: no policy asks for it.
+
+---
+
+**AD-62 — The platform's second factor is a TOTP authenticator app**
+
+*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-3. **Implementation blocked on OD-SA-5.**
+
+*Decision.* Platform accounts use RFC 6238 TOTP from an authenticator app, through a maintained
+library. No SMS, no email one-time codes, no custom cryptography, and no MFA for college roles in
+this decision.
+
+*Why it is blocked.* Verifying a TOTP code needs the enrolment secret itself, so it must be stored
+recoverably. The server has no mechanism for that: every secret at rest is a one-way hash
+(scrypt passwords, SHA-256 tokens). Storing TOTP secrets in plaintext is refused. OD-SA-5 decides
+the missing capability.

@@ -6,7 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-61) | `docs/blueprint/adr.md` |
+| Decisions (AD-1…AD-62) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R43) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
@@ -92,3 +92,4 @@ Firebase: FCM, Remote Config, Crashlytics only.
 | AD-59 | The mobile local store is Drift over SQLite3MultipleCiphers, keyed from the platform keystore | Active |
 | AD-60 | A suspended or closed college's users are refused entirely, at every request and at renewal | Active |
 | AD-61 | The platform reads only the events it caused, through one narrow definer function, newest first by keyset | Active |
+| AD-62 | The platform's second factor is a TOTP authenticator app | Decided; blocked on OD-SA-5 |

@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ 133 Flutter tests; Android replay 🔍 NEEDS VALIDATION (device unavailable)
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config; FCM registration 🔍
-- Platform Administration: ⚠️ PARTIAL. S1/S2 provisioning ✅; SA-1 lifecycle ✅; SA-2 audit view ✅ (migration 020 🔍 not yet applied to dev); SA-3…SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 provisioning ✅; SA-1 lifecycle ✅; SA-2 audit view ✅; SA-3 🚫 blocked on OD-SA-5; SA-4, SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Student role and student experience: ❌
 - Examinations, Results (M10): 🚫 OD-1
@@ -24,9 +24,8 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-2 ✅ DONE: 347 server tests, 174 web tests, typechecks clean (commit `5774b28`).
-**Action for the owner:** apply migration `020_platform_audit_read.sql` to `college_erp_dev`
-(`npm run migrate` in `server/`). Until then `GET /v1/platform/audit` fails on the dev database.
+SA-3 🚫 BLOCKED before implementation, 2026-09-13: ARCHITECTURE CHANGE REQUIRED. The server
+has no way to store a recoverable secret, and TOTP (AD-62) needs one. Nothing was built.
 AD-59 device replay ⏸️ POSTPONED until the phone is connected.
 
 ### NEXT SLICE — SA-3 Platform Accounts, Roles, Second Factor
@@ -38,18 +37,19 @@ Design: `docs/blueprint/capabilities/platform-administration.md` §5.
 - **To build:** Owner and Support roles enforced server-side; account creation by command, not SQL;
   a second factor at platform sign-in.
 - **Not in this slice:** impersonation (SA-5), seats and plan (SA-4), college-user MFA.
-- **Open decision:** OD-SA-3, which second factor. It blocks only the second-factor part.
+- **Open decision:** OD-SA-5 blocks the second-factor part. Accounts and roles (SA-3a) do not depend on it.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
 |---|---|---|---|---|---|
 | OD-SA-1 | What does "suspended" mean for a college's users? | Live sessions end or turn read-only | SA-1 | — | ✅ Resolved as AD-60: refused entirely |
-| OD-SA-3 | Second factor for platform accounts | The platform's largest privilege is password-only | SA-3 | TOTP app; email one-time code | Open, blocks SA-3's second-factor part |
+| OD-SA-3 | Second factor for platform accounts | — | SA-3 | — | ✅ Resolved as AD-62: TOTP authenticator app |
+| OD-SA-5 | How the server stores a secret it must read back (TOTP enrolment secrets; later the push tokens of Drift 6) | TOTP cannot be verified from a hash, and plaintext is refused | SA-3 second factor; Drift 6 | Authenticated encryption (AES-256-GCM, Node crypto) with a dedicated key held outside the database, a key id per value for rotation, and refusal to start in production without the key; plus approval of a TOTP library dependency and a break-glass rule for a sole Owner | Open, blocks SA-3's second factor |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 
 ### BLOCKERS
-Phone not connected (AD-59 device replay, FCM). Xcode (iOS). Drift 6 (backend push). OD-1 (M10).
+OD-SA-5 (server secret storage) blocks SA-3's second factor. Phone not connected (AD-59 device replay, FCM). Xcode (iOS). Drift 6 (backend push). OD-1 (M10).
 
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
@@ -59,10 +59,10 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-61, all Active; AD-59, AD-60 and AD-61 approved 2026-09-13. Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-62. AD-62 decided, implementation blocked on OD-SA-5. Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`019` applied on `college_erp_dev`; `020` (platform audit read) written and tested, **not applied to dev**: the owner applies it.
+Migrations `001`–`020` applied on `college_erp_dev` (020 confirmed by the owner, 2026-09-13).
 
 ## 4. Commits (newest first)
 ```
