@@ -102,6 +102,7 @@ than from a feature list.
 | R42 | The platform suspends, reactivates and closes a college with a recorded reason; a suspended or closed college's users lose access immediately, closing is final, and a lost administrator invitation is reissued without reviving the old link | Active | [ADR](blueprint/adr.md) AD-60, [Platform administration](blueprint/capabilities/platform-administration.md) |
 | R43 | The platform can review everything platform accounts did, across colleges, filtered by college, action and time, without seeing a college's own activity or any secret | Active | [ADR](blueprint/adr.md) AD-61, [Platform administration](blueprint/capabilities/platform-administration.md) |
 | R44 | Platform accounts are created and managed in the application by Owners, with explicit Owner and Support roles; Support holds no Owner power, nobody changes their own account, and the platform always keeps an active Owner | Active | [ADR](blueprint/adr.md) AD-64, [Platform administration](blueprint/capabilities/platform-administration.md) |
+| R45 | Every platform account signs in with a password and an authenticator code; no platform session exists without an enrolled authenticator, secrets are sealed at rest, and recovery forces re-enrolment and is audited | Active | [ADR](blueprint/adr.md) AD-62, AD-63 |
 
 ## Assumptions awaiting confirmation
 

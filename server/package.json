@@ -14,13 +14,15 @@
     "db:setup": "./scripts/setup-db.sh",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "seed:device-test": "tsx scripts/seed-device-test.ts"
+    "seed:device-test": "tsx scripts/seed-device-test.ts",
+    "platform:break-glass": "tsx scripts/platform-break-glass.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
     "@fastify/cors": "^11.3.0",
     "fastify": "^5.2.0",
     "jsonwebtoken": "^9.0.2",
+    "otplib": "13.5.0",
     "pg": "^8.13.1",
     "zod": "^3.24.1"
   },

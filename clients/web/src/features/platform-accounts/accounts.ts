@@ -4,7 +4,7 @@
  */
 export type PlatformRole = 'owner' | 'support';
 export type AccountStatus = 'invited' | 'active' | 'suspended' | 'deactivated';
-export type AccountAction = 'disable' | 'enable' | 'change_role';
+export type AccountAction = 'disable' | 'enable' | 'change_role' | 'reset_mfa' | 'reissue_invitation';
 
 export interface PlatformAccount {
   id: string;
@@ -15,6 +15,7 @@ export interface PlatformAccount {
   last_login_at: string | null;
   created_at: string;
   is_you: boolean;
+  mfa: 'enrolled' | 'enrolment_required';
 }
 
 export interface PlatformAccountDetail extends PlatformAccount {
@@ -80,3 +81,23 @@ export function formatWhen(iso: string | null): string {
   if (!iso) return 'Never';
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
+
+export const MFA_LABEL: Record<'enrolled' | 'enrolment_required', string> = {
+  enrolled: 'Set up',
+  enrolment_required: 'Not set up',
+};
+
+export const MFA_RESET_COPY = {
+  title: 'Reset their authenticator',
+  body: 'Their current authenticator stops working at once and they are signed out. At their next sign-in they must set up a new one. Two-step verification is never switched off.',
+  confirmLabel: 'Reset authenticator',
+};
+
+export interface IssuedInvitation {
+  token: string;
+  expires_at: string;
+}
+
+/** The link an invited person opens; the token is shown once. */
+export const invitationLink = (origin: string, token: string) =>
+  `${origin}/platform/enrol?token=${encodeURIComponent(token)}`;

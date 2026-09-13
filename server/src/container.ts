@@ -2,6 +2,9 @@
  * Composition root. The only place where infrastructure adapters meet
  * application ports. Nothing else constructs a repository or an adapter.
  */
+import { sealerFor } from './config/config.ts';
+import { OtplibTotp } from './infrastructure/crypto/totp.ts';
+import type { PlatformMfaDeps } from './modules/identity/application/platform-mfa.ts';
 import type {
   ManagePlatformAccountsDeps, PlatformAuthorityReader,
 } from './modules/identity/application/manage-platform-accounts.ts';
@@ -35,6 +38,7 @@ import {
   PgRoleAssignmentRepository,
   PgRoleDefinitionRepository,
   PgPlatformAdminRepository,
+  PgPlatformMfaRepository,
 } from './modules/identity/infrastructure/repositories.ts';
 import {
   PgCampusRepository,
@@ -110,6 +114,7 @@ export interface Container {
   tenantAccess: TenantAccessGate;
   platformAuthority: PlatformAuthorityReader;
   managePlatformAccounts: ManagePlatformAccountsDeps;
+  platformMfa: PlatformMfaDeps;
   lifecycle: LifecycleDeps;
   platformAudit: PlatformAuditDeps;
   uow: PgUnitOfWork;
@@ -165,6 +170,9 @@ export function buildContainer(config: Config, pool?: Pool): Container {
 
   const tenantAccess = new TenantAccessGate(uow, institutions);
   const platformAdmin = new PgPlatformAdminRepository();
+  const platformMfa = new PgPlatformMfaRepository();
+  const sealer = sealerFor(config);
+  const totp = new OtplibTotp();
 
   const identityProvisioning: IdentityProvisioningDeps = {
     persons, accounts, assignments, roles, invitations, audit, ids, clock, tokens,
@@ -181,7 +189,14 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     platformAuthority: {
       forAccount: (id) => uow.run(null, (tx) => platformAdmin.authorityOf(tx, id)),
     },
-    managePlatformAccounts: { uow, platformAdmin, audit, ids, clock },
+    managePlatformAccounts: {
+      uow, platformAdmin, mfa: platformMfa, tokens, audit, ids, clock,
+      invitationTtlHours: config.INVITATION_TTL_HOURS,
+    },
+    platformMfa: {
+      uow, mfa: platformMfa, platformAccounts, platformAdmin, refreshTokens, loginAttempts,
+      hasher, tokens, sealer, totp, audit, ids, clock, refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
+    },
     lifecycle: {
       uow, institutions, audit, ids, clock,
       identity: {
@@ -196,6 +211,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     authenticate: {
       uow, platformAccounts, accounts, credentials, refreshTokens, loginAttempts,
       audit, hasher, tokens, clock, ids, refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
+      platformMfa,
     },
     acceptInvitation: { uow, invitations, accounts, credentials, audit, hasher, tokens, clock, ids },
     refreshSession: {

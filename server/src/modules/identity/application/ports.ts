@@ -34,9 +34,11 @@ export interface PlatformAccountRecord {
   id: string;
   email: string;
   fullName: string;
-  status: 'active' | 'suspended' | 'deactivated';
+  status: 'invited' | 'active' | 'suspended' | 'deactivated';
   failedAttempts: number;
   lockedUntil: Date | null;
+  /** SA-3b: an authenticator is enrolled. No platform session exists without one. */
+  mfaEnrolled: boolean;
 }
 
 export interface PersonRepository {

@@ -8,12 +8,24 @@ import {
 import { fail } from '../../../core/errors.ts';
 import { authenticatePlatformUser, authenticateTenantUser } from '../application/authenticate.ts';
 import { acceptInvitation } from '../application/accept-invitation.ts';
+import {
+  acceptPlatformInvitation, beginTotpEnrolment, completePlatformSignIn, confirmTotpEnrolment,
+  type PlatformChallenge,
+} from '../application/platform-mfa.ts';
 import { endSession, refreshSession } from '../application/refresh-session.ts';
 import { registerDevice, revokeDevicesForAccount } from '../application/manage-devices.ts';
 
 const platformLogin = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+});
+
+const challengeBody = z.object({ challenge_token: z.string().min(10).max(200) });
+const codeBody = challengeBody.extend({ code: z.string().max(12) });
+const platformAccept = z.object({ token: z.string().min(10).max(200), password: z.string().min(1).max(200) });
+
+const stepJson = (s: PlatformChallenge) => ({
+  step: s.step, challenge_token: s.challengeToken, expires_at: s.expiresAt.toISOString(),
 });
 
 const tenantLogin = z.object({
@@ -46,10 +58,52 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
       password: parsed.data.password,
       ipHash: ipHashOf(req),
     });
+    // SA-3b: never tokens here, only the next step (AD-62).
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, stepJson(result.value));
+  });
+
+  app.post('/auth/platform/second-factor', async (req, reply) => {
+    const parsed = codeBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter the six-digit code.'));
+    const result = await completePlatformSignIn(c.platformMfa, {
+      challengeToken: parsed.data.challenge_token, code: parsed.data.code, ipHash: ipHashOf(req),
+    });
     if (result.ok) {
       reply.setCookie(REFRESH_COOKIE, result.value.tokens.refreshToken, refreshCookieOptions(c.config));
     }
     return sendResult(reply, mapTokens(result), 200, req.log.warn.bind(req.log));
+  });
+
+  app.post('/auth/platform/accept-invite', async (req, reply) => {
+    const parsed = platformAccept.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Provide the invitation and a new password.'));
+    const result = await acceptPlatformInvitation(c.platformMfa, { token: parsed.data.token, password: parsed.data.password });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, stepJson(result.value));
+  });
+
+  // The secret leaves the server here only, once per setup attempt.
+  app.post('/auth/platform/enrolment', async (req, reply) => {
+    const parsed = challengeBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'This setup has expired. Start again.'));
+    const result = await beginTotpEnrolment(c.platformMfa, { challengeToken: parsed.data.challenge_token });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, {
+      otpauth_uri: result.value.otpauthUri,
+      manual_key: result.value.manualKey,
+      expires_at: result.value.expiresAt.toISOString(),
+    });
+  });
+
+  app.post('/auth/platform/enrolment/confirm', async (req, reply) => {
+    const parsed = codeBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter the six-digit code.'));
+    const result = await confirmTotpEnrolment(c.platformMfa, {
+      challengeToken: parsed.data.challenge_token, code: parsed.data.code,
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, { enrolled: true });
   });
 
   app.post('/auth/login', async (req, reply) => {
@@ -189,7 +243,7 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     if (req.actor.actorType === 'platform') {
       // SA-3a: permissions from the account's live role, never a fixed set.
       const found = await c.platformAuthority.forAccount(req.actor.sub);
-      if (!found || found.status !== 'active') {
+      if (!found || found.status !== 'active' || !found.mfaEnrolled) {
         return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
       }
       const permissions = [...platformPermissions(found.role)].sort();
@@ -228,7 +282,7 @@ async function resolveTenantId(c: Container, code: string): Promise<string | nul
 }
 
 function mapTokens(
-  result: Awaited<ReturnType<typeof authenticatePlatformUser | typeof refreshSession>>,
+  result: Awaited<ReturnType<typeof completePlatformSignIn | typeof refreshSession>>,
 ) {
   if (!result.ok) return result;
   const { actor, tokens } = result.value;

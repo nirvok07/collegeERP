@@ -86,3 +86,17 @@ Verified before every store submission.
 - Certificate pins are current and a rotation window is open
 - Dependencies scanned for known advisories
 - Permissions requested are only those actually used, each with a clear purpose string
+
+## Platform accounts' second factor (SA-3b)
+
+- Every platform account signs in with a password and a code from an authenticator app (TOTP,
+  AD-62). A password alone yields a five-minute, single-use challenge, never a session.
+- TOTP secrets are sealed with AES-256-GCM under `SECRET_SEALING_KEY` (AD-63), a key held only in
+  configuration. Production refuses to start without it. Generate one with
+  `openssl rand -base64 32` and keep it with the other production secrets; losing it means every
+  platform account must re-enrol.
+- Wrong codes count toward the existing lockout. No code is accepted twice.
+- Recovery: an Owner resets another account's authenticator in the console, with a reason. A
+  sole Owner who loses theirs is recovered by `npm run platform:break-glass` on the server, which
+  forces re-enrolment. Both are audited; neither switches MFA off.
+

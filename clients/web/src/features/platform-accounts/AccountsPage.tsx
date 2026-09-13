@@ -3,7 +3,10 @@ import {
   Button, EmptyState, ErrorState, RefreshBar, SkeletonRows, StatusChip, useToast,
 } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
-import { ROLE_LABEL, STATUS_LABEL, STATUS_TONE, formatWhen, type PlatformAccount } from './accounts.ts';
+import {
+  MFA_LABEL, ROLE_LABEL, STATUS_LABEL, STATUS_TONE, formatWhen, type IssuedInvitation, type PlatformAccount,
+} from './accounts.ts';
+import { InviteLinkDrawer } from './InviteLinkDrawer.tsx';
 import { AccountDrawer } from './AccountDrawer.tsx';
 import { CreateAccountDrawer } from './CreateAccountDrawer.tsx';
 
@@ -22,6 +25,7 @@ export function AccountsPage({
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [issued, setIssued] = useState<{ name: string; invitation: IssuedInvitation } | null>(null);
   const toast = useToast();
 
   const load = useCallback(async (mode: 'initial' | 'refresh') => {
@@ -72,12 +76,13 @@ export function AccountsPage({
                 <th scope="col">Email</th>
                 <th scope="col">Role</th>
                 <th scope="col">Status</th>
+                <th scope="col">Authenticator</th>
                 <th scope="col">Last sign-in</th>
               </tr>
             </thead>
             <tbody>
               {status === 'loading'
-                ? <SkeletonRows rows={4} widths={['40%', '40%', '64px', '96px', '120px']} />
+                ? <SkeletonRows rows={4} widths={['36%', '36%', '64px', '96px', '80px', '120px']} />
                 : rows.map((row) => (
                     <tr key={row.id}>
                       <td className="table__primary">
@@ -89,6 +94,7 @@ export function AccountsPage({
                       <td className="table__secondary">{row.email}</td>
                       <td className="table__secondary">{row.role ? ROLE_LABEL[row.role] : 'No role'}</td>
                       <td><StatusChip tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</StatusChip></td>
+                      <td className="table__secondary">{MFA_LABEL[row.mfa]}</td>
                       <td className="table__secondary tabular">{formatWhen(row.last_login_at)}</td>
                     </tr>
                   ))}
@@ -101,9 +107,10 @@ export function AccountsPage({
         open={creating}
         api={api}
         onClose={() => setCreating(false)}
-        onCreated={(name) => {
+        onCreated={(name, invitation) => {
           setCreating(false);
-          toast(`${name} added. They can sign in once authenticator setup is available.`);
+          setIssued({ name, invitation });
+          toast(`${name} added. Send them the invitation link.`);
           void load('refresh');
         }}
       />
@@ -114,7 +121,9 @@ export function AccountsPage({
         canAssignRoles={canAssignRoles}
         onClose={() => setSelected(null)}
         onChanged={() => void load('refresh')}
+        onInvitation={(name, invitation) => setIssued({ name, invitation })}
       />
+      <InviteLinkDrawer name={issued?.name ?? ''} invitation={issued?.invitation ?? null} onClose={() => setIssued(null)} />
     </>
   );
 }

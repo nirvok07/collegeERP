@@ -30,7 +30,7 @@ describe('AuthSession', () => {
   it('signs in and holds the access token in memory only', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    const result = await auth.signIn('a@b.com', 'password-1');
+    const result = await auth.verifySecondFactor('challenge-token', '123456');
 
     expect(result.ok).toBe(true);
     expect(auth.accessToken()).toBeTruthy();
@@ -40,9 +40,18 @@ describe('AuthSession', () => {
     expect(sessionStorage.length).toBe(0);
   });
 
+  it('SA-3b: a password alone yields the next step and holds no token', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { data: { step: 'second_factor', challenge_token: 'challenge-token' } }));
+    const auth = new AuthSession('http://api.test');
+    const result = await auth.signIn('a@b.com', 'password-1');
+    expect(result).toEqual({ ok: true, step: 'second_factor', challenge: 'challenge-token' });
+    expect(auth.accessToken()).toBeNull();
+    expect(auth.currentActor()).toBeNull();
+  });
+
   it('sends credentials so the httpOnly refresh cookie travels', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
-    await new AuthSession('http://api.test').signIn('a@b.com', 'password-1');
+    await new AuthSession('http://api.test').verifySecondFactor('challenge-token', '123456');
     expect(fetchMock.mock.calls[0]![1]).toMatchObject({ credentials: 'include' });
   });
 
@@ -56,7 +65,7 @@ describe('AuthSession', () => {
   it('does NOT sign the user out when the network is down', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
 
     const events: string[] = [];
     auth.subscribe((e) => events.push(e.type));
@@ -72,7 +81,7 @@ describe('AuthSession', () => {
   it('does NOT sign the user out when the server returns 500', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
 
     const events: string[] = [];
     auth.subscribe((e) => events.push(e.type));
@@ -87,7 +96,7 @@ describe('AuthSession', () => {
   it('retries after a transient failure and recovers without user action', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
     const events: string[] = [];
     auth.subscribe((e) => events.push(e.type));
 
@@ -104,7 +113,7 @@ describe('AuthSession', () => {
   it('signs the user out only when the server refuses the renewal', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
     const events: Array<{ type: string }> = [];
     auth.subscribe((e) => events.push(e));
 
@@ -121,7 +130,7 @@ describe('AuthSession', () => {
   it('renews ahead of expiry so the user never meets an expired token', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody(120_000)));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     // Expiry is 120s away and the margin is 60s, so renewal fires around 60s.
@@ -133,7 +142,7 @@ describe('AuthSession', () => {
   it('collapses concurrent renewals into one request', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
     fetchMock.mockClear();
 
     await Promise.all([auth.renew(), auth.renew(), auth.renew(), auth.renew()]);
@@ -143,14 +152,14 @@ describe('AuthSession', () => {
   it('reports an expired token as absent so callers renew first', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody(-1_000)));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
     expect(auth.accessToken()).toBeNull();
   });
 
   it('clears local state on explicit sign out', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
     await auth.signOut();
     expect(auth.currentActor()).toBeNull();
     expect(auth.accessToken()).toBeNull();
@@ -159,7 +168,7 @@ describe('AuthSession', () => {
   it('still clears local state when the sign-out request itself fails', async () => {
     fetchMock.mockResolvedValue(jsonResponse(200, tokenBody()));
     const auth = new AuthSession('http://api.test');
-    await auth.signIn('a@b.com', 'password-1');
+    await auth.verifySecondFactor('challenge-token', '123456');
     fetchMock.mockRejectedValue(new TypeError('offline'));
     await auth.signOut();
     expect(auth.currentActor()).toBeNull();

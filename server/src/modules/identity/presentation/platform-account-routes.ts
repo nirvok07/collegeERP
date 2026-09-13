@@ -6,7 +6,8 @@ import { requirePlatformPermission } from '../../../infrastructure/http/guards.t
 import { fail } from '../../../core/errors.ts';
 import {
   changePlatformRole, createPlatformAccount, getPlatformAccount, listPlatformAccounts,
-  setPlatformAccountStatus, type PlatformAccountView,
+  reissuePlatformInvitation, resetPlatformMfa, setPlatformAccountStatus,
+  type IssuedInvitation, type PlatformAccountView,
 } from '../application/manage-platform-accounts.ts';
 
 const createBody = z.object({
@@ -21,11 +22,14 @@ const roleBody = z.object({
   reason: z.string().max(500),
 });
 
+const invitationJson = (i: IssuedInvitation) => ({ token: i.token, expires_at: i.expiresAt.toISOString() });
+
 function viewJson(v: PlatformAccountView) {
   const a = v.account;
   return {
     id: a.id, email: a.email, full_name: a.fullName, status: a.status, role: a.role,
     last_login_at: a.lastLoginAt, created_at: a.createdAt, is_you: v.isYou,
+    mfa: a.mfaEnrolled ? 'enrolled' : 'enrolment_required',
     actions: v.actions,
     role_history: v.history.map((h) => ({
       role: h.role, granted_at: h.grantedAt, ended_at: h.endedAt, reason: h.reason,
@@ -54,6 +58,7 @@ export async function registerPlatformAccountRoutes(app: FastifyInstance, c: Con
     return sendOk(reply, rows.map((a) => ({
       id: a.id, email: a.email, full_name: a.fullName, status: a.status, role: a.role,
       last_login_at: a.lastLoginAt, created_at: a.createdAt, is_you: a.id === who.accountId,
+      mfa: a.mfaEnrolled ? 'enrolled' : 'enrolment_required',
     })));
   });
 
@@ -75,7 +80,28 @@ export async function registerPlatformAccountRoutes(app: FastifyInstance, c: Con
       email: parsed.data.email, fullName: parsed.data.full_name, role: parsed.data.role,
     });
     if (!result.ok) return sendFailure(reply, result.error);
-    return sendOk(reply, viewJson(result.value), 201);
+    // The invitation token is in this response only.
+    return sendOk(reply, { ...viewJson(result.value.view), invitation: invitationJson(result.value.invitation) }, 201);
+  });
+
+  app.post('/platform/accounts/:id/invitation', async (req, reply) => {
+    const who = await requirePlatformPermission(c, req, reply, 'platform.accounts.manage');
+    if (!who) return reply;
+    if (!validId(idOf(req))) return sendFailure(reply, notFound);
+    const result = await reissuePlatformInvitation(c.managePlatformAccounts, { id: who.accountId, permissions: who.permissions }, { id: idOf(req) });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, { ...viewJson(result.value.view), invitation: invitationJson(result.value.invitation) }, 201);
+  });
+
+  app.post('/platform/accounts/:id/mfa/reset', async (req, reply) => {
+    const who = await requirePlatformPermission(c, req, reply, 'platform.accounts.manage');
+    if (!who) return reply;
+    if (!validId(idOf(req))) return sendFailure(reply, notFound);
+    const parsed = reasonBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    const result = await resetPlatformMfa(c.managePlatformAccounts, { id: who.accountId, permissions: who.permissions }, { id: idOf(req), reason: parsed.data.reason });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, viewJson(result.value));
   });
 
   for (const action of ['disable', 'enable'] as const) {

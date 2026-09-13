@@ -36,3 +36,17 @@ describe('dates', () => {
     expect(formatWhen(null)).toBe('Never');
   });
 });
+
+import { MFA_LABEL, MFA_RESET_COPY, invitationLink } from './accounts.ts';
+
+describe('the authenticator', () => {
+  it('shows whether it is set up, and says a reset never switches it off', () => {
+    expect(MFA_LABEL.enrolled).toBe('Set up');
+    expect(MFA_LABEL.enrolment_required).toBe('Not set up');
+    expect(MFA_RESET_COPY.body).toMatch(/never switched off/);
+  });
+
+  it('builds the invitation link to the setup page', () => {
+    expect(invitationLink('https://admin.example', 'abc/def')).toBe('https://admin.example/platform/enrol?token=abc%2Fdef');
+  });
+});

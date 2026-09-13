@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Banner, Button, Drawer, Field } from '../../components/index.tsx';
 import type { ApiClient } from '../../lib/api.ts';
-import { ROLES, ROLE_LABEL, ROLE_SUMMARY, validateNewAccount, type NewAccountForm } from './accounts.ts';
+import { ROLES, ROLE_LABEL, ROLE_SUMMARY, validateNewAccount, type IssuedInvitation, type NewAccountForm } from './accounts.ts';
 
 const EMPTY: NewAccountForm = { full_name: '', email: '', role: '' };
 
 /** Creates the account and its role; it cannot sign in until authenticator enrolment exists. */
 export function CreateAccountDrawer({
   open, api, onClose, onCreated,
-}: { open: boolean; api: ApiClient; onClose: () => void; onCreated: (name: string) => void }) {
+}: { open: boolean; api: ApiClient; onClose: () => void; onCreated: (name: string, invitation: IssuedInvitation) => void }) {
   const [form, setForm] = useState<NewAccountForm>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [failure, setFailure] = useState<string | null>(null);
@@ -23,7 +23,7 @@ export function CreateAccountDrawer({
     setErrors(found);
     if (Object.keys(found).length) return;
     setBusy(true);
-    const result = await api.post('/v1/platform/accounts', {
+    const result = await api.post<{ invitation: IssuedInvitation }>('/v1/platform/accounts', {
       full_name: form.full_name.trim(), email: form.email.trim(), role: form.role,
     });
     setBusy(false);
@@ -32,7 +32,7 @@ export function CreateAccountDrawer({
       setErrors(result.error.fieldErrors ?? {});
       return;
     }
-    onCreated(form.full_name.trim());
+    onCreated(form.full_name.trim(), result.value.invitation);
   }
 
   return (
@@ -48,8 +48,8 @@ export function CreateAccountDrawer({
       }
     >
       <Banner tone="info">
-        The account is created now and waits for enrolment. It cannot sign in until authenticator
-        setup is available, so no platform account ever works without a second factor.
+        You receive an invitation link to send them. With it they set a password and an
+        authenticator app; the account cannot sign in until both are done.
       </Banner>
       {failure && <Banner tone="error">{failure}</Banner>}
       <Field

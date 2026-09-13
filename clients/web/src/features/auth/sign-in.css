@@ -17,3 +17,13 @@
 .signin__title { font: var(--text-headline); }
 .signin__sub { font: var(--text-body); color: var(--text-secondary); }
 .signin__foot { font: var(--text-caption); color: var(--text-tertiary); text-align: center; margin-top: var(--space-sm); }
+
+/* SA-3b: the second step and authenticator setup share the card. */
+.signin__form { display: flex; flex-direction: column; gap: var(--space-sm); }
+.enrol { display: flex; flex-direction: column; gap: var(--space-md); }
+.enrol__title { font: var(--text-title); margin: 0; }
+.enrol__sub, .enrol__hint { font: var(--text-body); color: var(--text-secondary); margin: 0; }
+.enrol__qr { display: flex; justify-content: center; padding: var(--space-sm); background: #fff; border-radius: var(--radius-input, 8px); min-height: 224px; align-items: center; }
+.enrol__qr-placeholder { color: #6b7280; font: var(--text-body); }
+.enrol__manual summary { cursor: pointer; font: var(--text-body); color: var(--primary); }
+.enrol__key { display: block; margin-top: var(--space-sm); font-size: 1.05rem; letter-spacing: 0.08em; word-break: break-all; }

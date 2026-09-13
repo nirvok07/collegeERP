@@ -55,6 +55,8 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // SA-3a: accounts are created by the application (migration 021).
   platform_accounts: 'INSERT+SELECT+UPDATE',
   platform_role_assignments: 'INSERT+SELECT+UPDATE',
+  // SA-3b: single-use second-factor challenges (migration 022).
+  platform_auth_challenges: 'INSERT+SELECT+UPDATE',
 
   // Push registrations. No DELETE: revocation is a visible state, so a device
   // that was signed out of stays in the register.

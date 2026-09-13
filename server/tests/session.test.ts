@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import type { LightMyRequestResponse } from 'fastify';
 import {
   buildTestApp, resetData, seedPlatformAccount, setupDatabase, signInPlatform, MIGRATOR_URL, type TestApp,
+  platformSessionResponse,
 } from './helpers.ts';
 import { createPool } from '../src/infrastructure/db/pool.ts';
 
@@ -27,10 +28,7 @@ function cookieFrom(res: LightMyRequestResponse): string | undefined {
 
 async function signIn() {
   const account = await seedPlatformAccount();
-  const res = (await harness.app.inject({
-    method: 'POST', url: '/v1/auth/platform/login',
-    payload: { email: account.email, password: account.password },
-  })) as LightMyRequestResponse;
+  const res = await platformSessionResponse(harness.app, account.email, account.password);
   assert.equal(res.statusCode, 200);
   return { account, res, cookie: cookieFrom(res)!, body: res.json().data };
 }

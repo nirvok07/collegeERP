@@ -38,6 +38,17 @@ const RENEW_MARGIN_MS = 60_000;
 /** Backoff for transient failures. The session is kept throughout. */
 const RETRY_DELAYS_MS = [2_000, 5_000, 15_000, 30_000, 60_000];
 
+export interface SignInStep {
+  ok: true;
+  step: 'second_factor' | 'enrolment';
+  challenge: string;
+}
+
+interface RawStep {
+  step: 'second_factor' | 'enrolment';
+  challenge_token: string;
+}
+
 interface RawTokens {
   actor: { actor_type: 'platform' | 'person'; actor_id: string; full_name: string; tenant_id: string | null };
   access_token: string;
@@ -85,12 +96,47 @@ export class AuthSession {
     return this.renew();
   }
 
-  async signIn(email: string, password: string): Promise<{ ok: true } | { ok: false; failure: ApiFailure }> {
-    const response = await this.call('/v1/auth/platform/login', { email, password });
+  /**
+   * SA-3b. A correct password yields the next step, never a session: a code
+   * from the authenticator, or setting one up first (AD-62).
+   */
+  async signIn(email: string, password: string): Promise<SignInStep | { ok: false; failure: ApiFailure }> {
+    const response = await this.call<RawStep>('/v1/auth/platform/login', { email, password });
+    if (!response.ok) return { ok: false, failure: response.failure };
+    return { ok: true, step: response.data.step, challenge: response.data.challenge_token };
+  }
+
+  /** The only call that starts a platform session. */
+  async verifySecondFactor(challenge: string, code: string): Promise<{ ok: true } | { ok: false; failure: ApiFailure }> {
+    const response = await this.call('/v1/auth/platform/second-factor', { challenge_token: challenge, code });
     if (!response.ok) return { ok: false, failure: response.failure };
     this.adopt(response.data);
     this.emit({ type: 'signed-in', actor: this.actor! });
     return { ok: true };
+  }
+
+  async acceptPlatformInvite(token: string, password: string): Promise<SignInStep | { ok: false; failure: ApiFailure }> {
+    const response = await this.call<RawStep>('/v1/auth/platform/accept-invite', { token, password });
+    if (!response.ok) return { ok: false, failure: response.failure };
+    return { ok: true, step: response.data.step, challenge: response.data.challenge_token };
+  }
+
+  /** The secret arrives here once and is never stored by the client. */
+  async beginEnrolment(challenge: string): Promise<
+    { ok: true; uri: string; manualKey: string } | { ok: false; failure: ApiFailure }
+  > {
+    const response = await this.call<{ otpauth_uri: string; manual_key: string }>(
+      '/v1/auth/platform/enrolment', { challenge_token: challenge },
+    );
+    if (!response.ok) return { ok: false, failure: response.failure };
+    return { ok: true, uri: response.data.otpauth_uri, manualKey: response.data.manual_key };
+  }
+
+  async confirmEnrolment(challenge: string, code: string): Promise<{ ok: true } | { ok: false; failure: ApiFailure }> {
+    const response = await this.call<{ enrolled: true }>(
+      '/v1/auth/platform/enrolment/confirm', { challenge_token: challenge, code },
+    );
+    return response.ok ? { ok: true } : { ok: false, failure: response.failure };
   }
 
   async signOut(): Promise<void> {
@@ -173,11 +219,11 @@ export class AuthSession {
     this.renewTimer = null;
   }
 
-  private async call(
+  private async call<T = RawTokens>(
     path: string,
     body: unknown,
   ): Promise<
-    | { ok: true; data: RawTokens }
+    | { ok: true; data: T }
     | { ok: false; failure: ApiFailure; transient: boolean }
   > {
     let res: Response;
@@ -206,7 +252,7 @@ export class AuthSession {
       };
     }
 
-    let payload: { data?: RawTokens; error?: { code?: string; message?: string } };
+    let payload: { data?: T; error?: { code?: string; message?: string } };
     try {
       payload = await res.json();
     } catch {

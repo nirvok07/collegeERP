@@ -92,7 +92,8 @@ export async function refreshSession(
 
     if (found.platformAccountId) {
       const account = await deps.platformAccounts.findById(tx, found.platformAccountId);
-      if (!account || account.status !== 'active') return Err(fail('UNAUTHENTICATED', ENDED));
+      // SA-3b: no platform session outlives its authenticator (AD-62).
+      if (!account || account.status !== 'active' || !account.mfaEnrolled) return Err(fail('UNAUTHENTICATED', ENDED));
       actor = {
         actorType: 'platform', actorId: account.id, tenantId: null,
         accountId: null, fullName: account.fullName,

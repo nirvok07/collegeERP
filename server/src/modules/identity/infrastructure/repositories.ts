@@ -28,6 +28,9 @@ import type {
   PlatformAccountSummary, PlatformAdminRepository, RoleHistoryEntry,
 } from '../application/manage-platform-accounts.ts';
 import type { PlatformRole } from '../domain/platform-authority.ts';
+import type {
+  ChallengePurpose, PlatformCredentialState, PlatformMfaRepository,
+} from '../application/platform-mfa.ts';
 import type { ActiveAssignment } from '../domain/authority.ts';
 import type { ScopeAncestry, ScopeType } from '../domain/scope.ts';
 
@@ -211,7 +214,7 @@ export class PgCredentialRepository implements CredentialRepository {
 export class PgPlatformAccountRepository implements PlatformAccountRepository {
   async findByEmail(tx: Tx, email: string): Promise<PlatformAccountRecord | null> {
     const { rows } = await clientOf(tx).query(
-      `SELECT id, email, full_name, status, failed_attempts, locked_until
+      `SELECT id, email, full_name, status, failed_attempts, locked_until, totp_enrolled_at
          FROM platform_accounts WHERE email = $1`,
       [email],
     );
@@ -220,13 +223,14 @@ export class PgPlatformAccountRepository implements PlatformAccountRepository {
       ? {
           id: r.id, email: r.email, fullName: r.full_name, status: r.status,
           failedAttempts: r.failed_attempts, lockedUntil: r.locked_until,
+          mfaEnrolled: r.totp_enrolled_at !== null,
         }
       : null;
   }
 
   async findById(tx: Tx, id: string): Promise<PlatformAccountRecord | null> {
     const { rows } = await clientOf(tx).query(
-      `SELECT id, email, full_name, status, failed_attempts, locked_until
+      `SELECT id, email, full_name, status, failed_attempts, locked_until, totp_enrolled_at
          FROM platform_accounts WHERE id = $1`,
       [id],
     );
@@ -235,6 +239,7 @@ export class PgPlatformAccountRepository implements PlatformAccountRepository {
       ? {
           id: r.id, email: r.email, fullName: r.full_name, status: r.status,
           failedAttempts: r.failed_attempts, lockedUntil: r.locked_until,
+          mfaEnrolled: r.totp_enrolled_at !== null,
         }
       : null;
   }
@@ -645,7 +650,8 @@ function toAccount(r: any): AccountRecord {
 }
 
 const ADMIN_SELECT = `
-  SELECT pa.id, pa.email, pa.full_name, pa.status, pa.last_login_at, pa.created_at, ra.role
+  SELECT pa.id, pa.email, pa.full_name, pa.status, pa.last_login_at, pa.created_at, ra.role,
+         pa.totp_enrolled_at
     FROM platform_accounts pa
     LEFT JOIN platform_role_assignments ra
       ON ra.platform_account_id = pa.id AND ra.ended_at IS NULL`;
@@ -653,6 +659,7 @@ const ADMIN_SELECT = `
 const toSummary = (r: any): PlatformAccountSummary => ({
   id: r.id, email: r.email, fullName: r.full_name, status: r.status,
   role: r.role ?? null, lastLoginAt: r.last_login_at ?? null, createdAt: r.created_at,
+  mfaEnrolled: r.totp_enrolled_at !== null,
 });
 
 /** SA-3a. Platform accounts and their roles; no tenant, protected by app_role_only. */
@@ -738,6 +745,153 @@ export class PgPlatformAdminRepository implements PlatformAdminRepository {
 
   async authorityOf(tx: Tx, id: string) {
     const { rows } = await clientOf(tx).query(`${ADMIN_SELECT} WHERE pa.id = $1`, [id]);
-    return rows[0] ? { status: rows[0].status, role: rows[0].role ?? null } : null;
+    return rows[0]
+      ? { status: rows[0].status, role: rows[0].role ?? null, mfaEnrolled: rows[0].totp_enrolled_at !== null }
+      : null;
+  }
+
+  /** Owners who could reset another's authenticator in the console. */
+  async countEnrolledOwners(tx: Tx, excludingId: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT count(*)::int AS n
+         FROM platform_role_assignments ra
+         JOIN platform_accounts pa ON pa.id = ra.platform_account_id
+        WHERE ra.ended_at IS NULL AND ra.role = 'owner' AND pa.status = 'active'
+          AND pa.totp_enrolled_at IS NOT NULL AND pa.id <> $1`,
+      [excludingId],
+    );
+    return rows[0].n;
+  }
+}
+
+const MFA_STATE = `SELECT id, email, full_name, status, credential_hash IS NOT NULL AS has_credential,
+       totp_secret_sealed, totp_pending_sealed, totp_enrolled_at, totp_last_step,
+       failed_attempts, locked_until
+  FROM platform_accounts`;
+
+const toMfaState = (r: any): PlatformCredentialState => ({
+  id: r.id, email: r.email, fullName: r.full_name, status: r.status, hasCredential: r.has_credential,
+  totpSealed: r.totp_secret_sealed, pendingSealed: r.totp_pending_sealed, enrolledAt: r.totp_enrolled_at,
+  lastStep: r.totp_last_step === null ? null : Number(r.totp_last_step),
+  failedAttempts: r.failed_attempts, lockedUntil: r.locked_until,
+});
+
+/**
+ * SA-3b. Credential, sealed authenticator and challenges of platform accounts,
+ * and platform invitations on the one invitation table (migration 022). Rows
+ * are locked while read, so two requests cannot race one challenge.
+ */
+export class PgPlatformMfaRepository implements PlatformMfaRepository {
+  async state(tx: Tx, id: string) {
+    const { rows } = await clientOf(tx).query(`${MFA_STATE} WHERE id = $1 FOR UPDATE`, [id]);
+    return rows[0] ? toMfaState(rows[0]) : null;
+  }
+
+  async stateByEmail(tx: Tx, email: string) {
+    const { rows } = await clientOf(tx).query(`${MFA_STATE} WHERE email = $1 FOR UPDATE`, [email]);
+    return rows[0] ? toMfaState(rows[0]) : null;
+  }
+
+  async setCredential(tx: Tx, id: string, hash: string) {
+    await clientOf(tx).query(`UPDATE platform_accounts SET credential_hash = $2, updated_at = now() WHERE id = $1`, [id, hash]);
+  }
+
+  async setPending(tx: Tx, id: string, sealed: string | null) {
+    await clientOf(tx).query(`UPDATE platform_accounts SET totp_pending_sealed = $2, updated_at = now() WHERE id = $1`, [id, sealed]);
+  }
+
+  async completeEnrolment(tx: Tx, id: string, sealed: string, step: number) {
+    await clientOf(tx).query(
+      `UPDATE platform_accounts
+          SET totp_secret_sealed = $2, totp_pending_sealed = NULL, totp_enrolled_at = now(),
+              totp_last_step = $3,
+              status = CASE WHEN status = 'invited' THEN 'active' ELSE status END,
+              updated_at = now(), version = version + 1
+        WHERE id = $1`,
+      [id, sealed, step],
+    );
+  }
+
+  async recordStep(tx: Tx, id: string, step: number) {
+    await clientOf(tx).query(`UPDATE platform_accounts SET totp_last_step = $2 WHERE id = $1`, [id, step]);
+  }
+
+  async resetTotp(tx: Tx, id: string) {
+    await clientOf(tx).query(
+      `UPDATE platform_accounts
+          SET totp_secret_sealed = NULL, totp_pending_sealed = NULL, totp_enrolled_at = NULL,
+              totp_last_step = NULL, updated_at = now(), version = version + 1
+        WHERE id = $1`,
+      [id],
+    );
+  }
+
+  async createChallenge(tx: Tx, input: { id: string; accountId: string; purpose: ChallengePurpose; tokenHash: string; expiresAt: Date }) {
+    await clientOf(tx).query(
+      `INSERT INTO platform_auth_challenges (id, platform_account_id, purpose, token_hash, expires_at)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [input.id, input.accountId, input.purpose, input.tokenHash, input.expiresAt],
+    );
+  }
+
+  async findChallenge(tx: Tx, tokenHash: string) {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, platform_account_id, purpose, expires_at, consumed_at, attempts
+         FROM platform_auth_challenges WHERE token_hash = $1 FOR UPDATE`,
+      [tokenHash],
+    );
+    const r = rows[0];
+    return r
+      ? { id: r.id, accountId: r.platform_account_id, purpose: r.purpose, expiresAt: r.expires_at, consumedAt: r.consumed_at, attempts: r.attempts }
+      : null;
+  }
+
+  async consumeChallenge(tx: Tx, id: string, at: Date) {
+    await clientOf(tx).query(`UPDATE platform_auth_challenges SET consumed_at = $2 WHERE id = $1 AND consumed_at IS NULL`, [id, at]);
+  }
+
+  async failChallenge(tx: Tx, id: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `UPDATE platform_auth_challenges SET attempts = attempts + 1 WHERE id = $1 RETURNING attempts`, [id],
+    );
+    return rows[0].attempts;
+  }
+
+  async revokeChallenges(tx: Tx, accountId: string, at: Date) {
+    await clientOf(tx).query(
+      `UPDATE platform_auth_challenges SET consumed_at = $2 WHERE platform_account_id = $1 AND consumed_at IS NULL`,
+      [accountId, at],
+    );
+  }
+
+  async issueInvitation(tx: Tx, input: { id: string; accountId: string; tokenHash: string; expiresAt: Date }) {
+    await clientOf(tx).query(
+      `INSERT INTO invitation_tokens (id, tenant_id, account_id, platform_account_id, token_hash, expires_at)
+       VALUES ($1, NULL, NULL, $2, $3, $4)`,
+      [input.id, input.accountId, input.tokenHash, input.expiresAt],
+    );
+  }
+
+  async findInvitation(tx: Tx, tokenHash: string, at: Date) {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, platform_account_id FROM invitation_tokens
+        WHERE token_hash = $1 AND platform_account_id IS NOT NULL
+          AND consumed_at IS NULL AND revoked_at IS NULL AND expires_at > $2`,
+      [tokenHash, at],
+    );
+    return rows[0] ? { id: rows[0].id as string, accountId: rows[0].platform_account_id as string } : null;
+  }
+
+  async consumeInvitation(tx: Tx, id: string, at: Date) {
+    await clientOf(tx).query(`UPDATE invitation_tokens SET consumed_at = $2 WHERE id = $1`, [id, at]);
+  }
+
+  async revokeInvitations(tx: Tx, accountId: string, at: Date): Promise<number> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE invitation_tokens SET revoked_at = $2
+        WHERE platform_account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL`,
+      [accountId, at],
+    );
+    return rowCount ?? 0;
   }
 }

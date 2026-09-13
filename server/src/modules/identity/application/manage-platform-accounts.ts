@@ -8,14 +8,15 @@
  */
 import { Err, Ok, type Result } from '../../../core/result.ts';
 import { AppException, fail } from '../../../core/errors.ts';
-import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
+import type { AuditWriter, Clock, IdGenerator, TokenIssuer } from '../../../shared/application/ports.ts';
+import type { PlatformMfaRepository } from './platform-mfa.ts';
 import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import {
   isPlatformRole, platformPermissions, type PlatformPermission, type PlatformRole,
 } from '../domain/platform-authority.ts';
 
 export type PlatformAccountStatus = 'invited' | 'active' | 'suspended' | 'deactivated';
-export type AccountAction = 'disable' | 'enable' | 'change_role';
+export type AccountAction = 'disable' | 'enable' | 'change_role' | 'reset_mfa' | 'reissue_invitation';
 
 export interface PlatformAccountSummary {
   id: string;
@@ -25,6 +26,7 @@ export interface PlatformAccountSummary {
   role: PlatformRole | null;
   lastLoginAt: Date | null;
   createdAt: Date;
+  mfaEnrolled: boolean;
 }
 
 export interface RoleHistoryEntry {
@@ -46,17 +48,21 @@ export interface PlatformAdminRepository {
   end(tx: Tx, assignmentId: string, by: string, at: Date): Promise<void>;
   lockOwnership(tx: Tx): Promise<void>;
   countUsableOwners(tx: Tx): Promise<number>;
-  authorityOf(tx: Tx, id: string): Promise<{ status: PlatformAccountStatus; role: PlatformRole | null } | null>;
+  countEnrolledOwners(tx: Tx, excludingId: string): Promise<number>;
+  authorityOf(tx: Tx, id: string): Promise<{ status: PlatformAccountStatus; role: PlatformRole | null; mfaEnrolled: boolean } | null>;
 }
 
 /** Status and role of a platform account, read live per request (AD-16). */
 export interface PlatformAuthorityReader {
-  forAccount(id: string): Promise<{ status: PlatformAccountStatus; role: PlatformRole | null } | null>;
+  forAccount(id: string): Promise<{ status: PlatformAccountStatus; role: PlatformRole | null; mfaEnrolled: boolean } | null>;
 }
 
 export interface ManagePlatformAccountsDeps {
   uow: UnitOfWork;
   platformAdmin: PlatformAdminRepository;
+  mfa: PlatformMfaRepository;
+  tokens: TokenIssuer;
+  invitationTtlHours: number;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -105,6 +111,10 @@ async function viewOf(
       if (account.status === 'suspended') actions.push('enable');
     }
     if (viewer.permissions.has('platform.roles.manage') && !onlyOwner) actions.push('change_role');
+    if (viewer.permissions.has('platform.accounts.manage')) {
+      if (account.mfaEnrolled) actions.push('reset_mfa');
+      if (account.status === 'invited') actions.push('reissue_invitation');
+    }
   }
   return { account, history: await deps.platformAdmin.history(tx, id), actions, isYou };
 }
@@ -114,7 +124,8 @@ async function requireStillAllowed(
   deps: ManagePlatformAccountsDeps, tx: Tx, actorId: string, permission: PlatformPermission,
 ): Promise<Result<true>> {
   const authority = await deps.platformAdmin.authorityOf(tx, actorId);
-  if (!authority || authority.status !== 'active' || !platformPermissions(authority.role).has(permission)) {
+  if (!authority || authority.status !== 'active' || !authority.mfaEnrolled
+      || !platformPermissions(authority.role).has(permission)) {
     return Err(fail('FORBIDDEN', 'Your platform role does not allow this.'));
   }
   return Ok(true);
@@ -134,11 +145,33 @@ async function guarded<T>(fn: () => Promise<Result<T>>): Promise<Result<T>> {
   }
 }
 
+export interface IssuedInvitation {
+  token: string;
+  expiresAt: Date;
+}
+
+/** The invitation is the only way into a new account; its token is returned once. */
+async function issuePlatformInvitation(
+  deps: ManagePlatformAccountsDeps, tx: Tx, accountId: string, by: string, reissued: boolean,
+): Promise<IssuedInvitation> {
+  const at = deps.clock.now();
+  const revoked = await deps.mfa.revokeInvitations(tx, accountId, at);
+  const { token, hash } = deps.tokens.issueOpaqueToken();
+  const expiresAt = new Date(at.getTime() + deps.invitationTtlHours * 3_600_000);
+  await deps.mfa.issueInvitation(tx, { id: deps.ids.next(), accountId, tokenHash: hash, expiresAt });
+  await deps.audit.record({
+    correlationId: deps.ids.next(), tenantId: null, actorType: 'platform', actorId: by,
+    action: 'platform_account.invitation_issued', subjectType: 'platform_account', subjectId: accountId,
+    after: { expires_at: expiresAt.toISOString(), reissued, revoked_previous: revoked },
+  }, tx);
+  return { token, expiresAt };
+}
+
 export async function createPlatformAccount(
   deps: ManagePlatformAccountsDeps,
   viewer: Viewer,
   input: { email: string; fullName: string; role: string },
-): Promise<Result<PlatformAccountView>> {
+): Promise<Result<{ view: PlatformAccountView; invitation: IssuedInvitation }>> {
   const email = input.email.trim().toLowerCase();
   const fullName = input.fullName.trim();
   const fieldErrors: Record<string, string> = {};
@@ -175,7 +208,57 @@ export async function createPlatformAccount(
       action: 'platform_role.assigned', subjectType: 'platform_account', subjectId: id,
       after: { role },
     }, tx);
-    return Ok((await viewOf(deps, tx, id, viewer))!);
+    const invitation = await issuePlatformInvitation(deps, tx, id, viewer.id, false);
+    return Ok({ view: (await viewOf(deps, tx, id, viewer))!, invitation });
+  }));
+}
+
+export async function reissuePlatformInvitation(
+  deps: ManagePlatformAccountsDeps, viewer: Viewer, input: { id: string },
+): Promise<Result<{ view: PlatformAccountView; invitation: IssuedInvitation }>> {
+  return guarded(() => deps.uow.run(null, async (tx) => {
+    const allowed = await requireStillAllowed(deps, tx, viewer.id, 'platform.accounts.manage');
+    if (!allowed.ok) return allowed;
+    const target = await deps.platformAdmin.find(tx, input.id);
+    if (!target) return Err(fail('NOT_FOUND', 'That platform account was not found.'));
+    if (target.status !== 'invited') {
+      return Err(fail('CONFLICT', 'This account has already accepted its invitation.'));
+    }
+    const invitation = await issuePlatformInvitation(deps, tx, input.id, viewer.id, true);
+    return Ok({ view: (await viewOf(deps, tx, input.id, viewer))!, invitation });
+  }));
+}
+
+/**
+ * Owner-mediated reset (AD-63). The authenticator is cleared, every live
+ * challenge spent, and the account's sessions stop at their next request
+ * because a platform session needs an enrolled authenticator. The account
+ * enrols again at its next sign-in; nothing leaves MFA switched off.
+ */
+export async function resetPlatformMfa(
+  deps: ManagePlatformAccountsDeps, viewer: Viewer, input: { id: string; reason: string },
+): Promise<Result<PlatformAccountView>> {
+  const problem = reasonProblem(input.reason);
+  if (problem) return Err(problem);
+  if (input.id === viewer.id) return Err(fail('CONFLICT', SELF));
+  return guarded(() => deps.uow.run(null, async (tx) => {
+    await deps.platformAdmin.lockOwnership(tx);
+    const allowed = await requireStillAllowed(deps, tx, viewer.id, 'platform.accounts.manage');
+    if (!allowed.ok) return allowed;
+    const target = await deps.mfa.state(tx, input.id);
+    if (!target) return Err(fail('NOT_FOUND', 'That platform account was not found.'));
+    if (!target.totpSealed && !target.pendingSealed) {
+      return Err(fail('CONFLICT', 'This account has no authenticator to reset.'));
+    }
+    const at = deps.clock.now();
+    await deps.mfa.resetTotp(tx, input.id);
+    await deps.mfa.revokeChallenges(tx, input.id, at);
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: null, actorType: 'platform', actorId: viewer.id,
+      action: 'platform_account.mfa_reset', subjectType: 'platform_account', subjectId: input.id,
+      reason: input.reason.trim(),
+    }, tx);
+    return Ok((await viewOf(deps, tx, input.id, viewer))!);
   }));
 }
 

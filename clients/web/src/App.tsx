@@ -5,6 +5,8 @@ import { AuthSession, type Actor } from './lib/auth.ts';
 import { SignInPage } from './features/auth/SignInPage.tsx';
 import { InstitutionsPage } from './features/institutions/InstitutionsPage.tsx';
 import { AuditPage } from './features/platform-audit/AuditPage.tsx';
+import { PlatformInvitePage } from './features/auth/PlatformInvitePage.tsx';
+import { invitationTokenFrom } from './features/auth/mfa.ts';
 import { AccountsPage } from './features/platform-accounts/AccountsPage.tsx';
 import { PeoplePage } from './features/people/PeoplePage.tsx';
 import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
@@ -27,6 +29,8 @@ export function App() {
   const [degraded, setDegraded] = useState<ApiFailure | null>(null);
   const [permissions, setPermissions] = useState<Set<string> | null>(null);
   const restored = useRef(false);
+  // SA-3b: a platform invitation link opens its own setup page.
+  const [invite, setInvite] = useState(() => window.location.pathname === '/platform/enrol');
 
   const api = useMemo(
     () => new ApiClient({
@@ -108,6 +112,12 @@ export function App() {
           scopeLabel={actor.actorType === 'platform' ? 'Platform' : 'College'}
           onSignOut={signOut}
           items={sectionsFor(actor.actorType, permissions, api)}
+        />
+      ) : invite ? (
+        <PlatformInvitePage
+          auth={auth}
+          token={invitationTokenFrom(window.location.search)}
+          onDone={() => { window.history.replaceState(null, '', '/'); setInvite(false); }}
         />
       ) : (
         <SignInPage auth={auth} />

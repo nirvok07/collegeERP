@@ -46,6 +46,12 @@ export const PLATFORM_ACTIONS: { value: string; label: string }[] = [
   { value: 'platform_account.enabled', label: 'Platform account enabled' },
   { value: 'platform_role.assigned', label: 'Platform role assigned' },
   { value: 'platform_role.changed', label: 'Platform role changed' },
+  { value: 'platform_account.invitation_issued', label: 'Platform invitation issued' },
+  { value: 'platform_account.invitation_accepted', label: 'Platform invitation accepted' },
+  { value: 'platform_account.mfa_enrolment_started', label: 'Authenticator setup started' },
+  { value: 'platform_account.mfa_enrolled', label: 'Authenticator set up' },
+  { value: 'platform_account.mfa_reset', label: 'Authenticator reset by an Owner' },
+  { value: 'platform_account.mfa_break_glass_reset', label: 'Authenticator reset by operator (break-glass)' },
   { value: 'auth.signed_in', label: 'Signed in' },
   { value: 'auth.signed_out', label: 'Signed out' },
 ];

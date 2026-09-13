@@ -5,6 +5,7 @@
  * could disclose existence returns the same failure, and the credential
  * comparison runs even when the account is absent so timing does not disclose it.
  */
+import { issueChallenge, type PlatformChallenge, type PlatformMfaRepository } from './platform-mfa.ts';
 import { Err, Ok, type Result } from '../../../core/result.ts';
 import { fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator, PasswordHasher, TokenIssuer } from '../../../shared/application/ports.ts';
@@ -54,6 +55,8 @@ export interface AuthenticateDeps {
   clock: Clock;
   ids: IdGenerator;
   refreshTtlDays: number;
+  /** SA-3b: platform sign-in ends in a challenge, never a session. */
+  platformMfa: PlatformMfaRepository;
 }
 
 const hashIdentifier = (v: string) => createHash('sha256').update(v.toLowerCase()).digest('hex');
@@ -64,7 +67,7 @@ const DUMMY_HASH = 'scrypt$1$000000000000000000000000000000000000000000000000000
 export async function authenticatePlatformUser(
   deps: AuthenticateDeps,
   input: { email: string; password: string; ipHash?: string | null },
-): Promise<Result<{ actor: SignedInActor; tokens: AuthTokens }>> {
+): Promise<Result<PlatformChallenge>> {
   const at = deps.clock.now();
   return deps.uow.run(null, async (tx) => {
     const account = await deps.platformAccounts.findByEmail(tx, input.email);
@@ -84,7 +87,7 @@ export async function authenticatePlatformUser(
     }
 
     const state: AccountSecurityState = {
-      status: account.status === 'active' ? 'active' : 'suspended',
+      status: account.status === 'active' || account.status === 'invited' ? 'active' : 'suspended',
       failedAttempts: account.failedAttempts,
       lockedUntil: account.lockedUntil,
     };
@@ -119,35 +122,14 @@ export async function authenticatePlatformUser(
       return Err(fail('UNAUTHENTICATED', GENERIC_FAILURE));
     }
 
-    const cleared = afterSuccessfulSignIn(state);
-    await deps.platformAccounts.updateSecurityState(tx, account.id, {
-      failedAttempts: cleared.failedAttempts,
-      lockedUntil: cleared.lockedUntil,
-      status: account.status,
-    });
-    await deps.platformAccounts.recordSignIn(tx, account.id, at);
-    await deps.loginAttempts.record(tx, {
-      id: deps.ids.next(), tenantId: null, identifierHash: hashIdentifier(input.email),
-      accountId: account.id, outcome: 'success', failureReason: null, ipHash: input.ipHash ?? null,
-    });
-
-    const tokens = await issueTokens(deps, tx, {
-      sub: account.id, actorType: 'platform', tenantId: null, accountId: null,
-    }, { platformAccountId: account.id, accountId: null, tenantId: null }, at);
-
-    await deps.audit.record({
-      correlationId: deps.ids.next(), tenantId: null, actorType: 'platform', actorId: account.id,
-      action: 'auth.signed_in', subjectType: 'platform_account', subjectId: account.id,
-      ipHash: input.ipHash ?? null,
-    }, tx);
-
-    return Ok({
-      actor: {
-        actorType: 'platform' as const, actorId: account.id, tenantId: null,
-        accountId: null, fullName: account.fullName,
-      },
-      tokens,
-    });
+    // AD-62: a correct password alone never opens a platform session. The
+    // failure count is deliberately not cleared here: wrong codes count toward
+    // the same lockout, and only a completed sign-in clears it.
+    const mfaState = await deps.platformMfa.state(tx, account.id);
+    const purpose = mfaState?.enrolledAt ? 'second_factor' : 'enrolment';
+    return Ok(await issueChallenge(
+      { mfa: deps.platformMfa, tokens: deps.tokens, ids: deps.ids }, tx, account.id, purpose, at,
+    ));
   });
 }
 
@@ -229,8 +211,8 @@ export async function authenticateTenantUser(
   });
 }
 
-async function issueTokens(
-  deps: AuthenticateDeps,
+export async function issueTokens(
+  deps: Pick<AuthenticateDeps, 'tokens' | 'refreshTokens' | 'ids' | 'refreshTtlDays'>,
   tx: Parameters<Parameters<UnitOfWork['run']>[1]>[0],
   claims: { sub: string; actorType: 'platform' | 'person'; tenantId: string | null; accountId: string | null },
   owner: { platformAccountId: string | null; accountId: string | null; tenantId: string | null },

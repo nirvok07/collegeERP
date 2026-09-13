@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ 133 Flutter tests; Android replay 🔍 NEEDS VALIDATION (device unavailable)
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config; FCM registration 🔍
-- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ⚠️ (SA-3a accounts and roles ✅, migration 021 🔍 not applied; SA-3b TOTP ❌); SA-4, SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅ (3a roles, 3b TOTP; migrations 021, 022 🔍 not applied); SA-4, SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Student role and student experience: ❌
 - Examinations, Results (M10): 🚫 OD-1
@@ -24,19 +24,22 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-3a ✅ DONE: 359 server tests, 179 web tests, typechecks clean (commit `e16348d`).
-**Owner action:** apply migration `021_platform_roles.sql` to `college_erp_dev`. Until then the
-dev server's platform routes fail, because the role table does not exist there.
-SA-3 stays ⚠️ PARTIAL until SA-3b. AD-59 device replay ⏸️ POSTPONED.
+None in progress. SA-3 ✅ DONE (SA-3b commit recorded below): 383 server tests, 186 web tests, typechecks clean.
+**Owner actions before the dev console works:**
+1. Apply migrations `021_platform_roles.sql` and `022_platform_mfa.sql` (`npm run migrate` in `server/`).
+2. Add `SECRET_SEALING_KEY` to `server/.env` (`openssl rand -base64 32`). Without it, development
+   uses an announced insecure key; production refuses to start.
+3. Every existing platform account sets up an authenticator at its next sign-in.
+AD-59 device replay ⏸️ POSTPONED.
 
-### NEXT SLICE — SA-3b Secret Sealing + TOTP
-Design: AD-62, AD-63; boundary in `docs/blueprint/capabilities/platform-administration.md` §4c.
-- **To build:** AES-256-GCM sealing with a dedicated key and key id; otplib; platform invitation
-  and password step for `invited` accounts; TOTP enrolment and verification; a staged sign-in
-  that issues no platform session before the second factor; Owner-mediated reset; operator
-  break-glass command; required enrolment for existing Owners.
-- **Not in this slice:** MFA for college roles, SA-4, SA-5, push-token redesign (Drift 6).
-- **Open decision:** OD-SA-6 (minimum Owners) does not block it.
+### NEXT SLICE — SA-4 Seats and Plan
+Design: `docs/blueprint/capabilities/platform-administration.md` §5.
+- **Why next:** the seat limit is stored and never enforced (`SEAT_LIMIT_REACHED` is defined and
+  unused), and plan and seats cannot be changed after provisioning. It depends only on SA-1/SA-3,
+  both done. SA-5 (impersonation) needs a college-side approval flow (AD-19) and is larger.
+- **To build:** Owner changes plan and seat limit with a reason and audit; the seat limit enforced
+  where accounts become usable; the college detail shows seats used.
+- **Decision needed first:** OD-SA-4, which accounts count toward the seat limit.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
@@ -44,6 +47,7 @@ Design: AD-62, AD-63; boundary in `docs/blueprint/capabilities/platform-administ
 | OD-SA-1 | What does "suspended" mean for a college's users? | Live sessions end or turn read-only | SA-1 | — | ✅ Resolved as AD-60: refused entirely |
 | OD-SA-3 | Second factor for platform accounts | — | SA-3 | — | ✅ Resolved as AD-62: TOTP authenticator app |
 | OD-SA-5 | How the server stores a secret it must read back | — | SA-3b | — | ✅ Resolved as AD-63 |
+| OD-SA-4 | Which accounts count toward a college's seat limit | Decides what SA-4 enforces | SA-4 | Active staff only; staff and students; all active accounts | Open, blocks SA-4 |
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
@@ -59,10 +63,10 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-64. AD-62 and AD-63 decided, implemented in SA-3b; AD-64 implemented. Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-64, all implemented. AD-61 amended by SA-3b (break-glass events visible). Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`020` applied on `college_erp_dev`. `021` (platform roles) written and tested, **not applied**: the owner applies it.
+Migrations `001`–`020` applied on `college_erp_dev`. `021` (platform roles) and `022` (platform MFA) written and tested, **not applied**: the owner applies them.
 
 ## 4. Commits (newest first)
 ```
@@ -73,7 +77,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 359 backend, 179 web, 133 Flutter, all passing.
+Tests: 383 backend, 186 web, 133 Flutter, all passing.
 
 ## 5. Blockers
 - AD-59 device validation: the Android phone is not connected.

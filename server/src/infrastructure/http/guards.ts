@@ -66,7 +66,9 @@ export async function requirePlatformPermission(
 ): Promise<PlatformAuthority | null> {
   if (!requirePlatformActor(req, reply)) return null;
   const found = await container.platformAuthority.forAccount(req.actor!.sub);
-  if (!found || found.status !== 'active') {
+  // SA-3b: a platform account without an enrolled authenticator holds no
+  // session, including one issued before enrolment became mandatory.
+  if (!found || found.status !== 'active' || !found.mfaEnrolled) {
     sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
     return null;
   }

@@ -7,7 +7,7 @@ Pointers, not content. Read the linked file for the decision itself.
 | Topic | Source of truth |
 |---|---|
 | Decisions (AD-1…AD-64) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R44) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Requirements register (R1…R45) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -30,7 +30,8 @@ Firebase: FCM, Remote Config, Crashlytics only.
 - Invariants in triggers; PL/pgSQL variables prefixed `v_`.
 - Role grants permission, instructor assignment limits reach (AD-40). Platform: role assignment to permission matrix (AD-64).
 - Optimistic concurrency by `version` (AD-52) plus idempotency keys (AD-58).
-- Crossing tenant isolation only through narrow SECURITY DEFINER functions (migrations 005, 020).
+- Crossing tenant isolation only through narrow SECURITY DEFINER functions (migrations 005, 020, 022).
+- Secrets the server must read back are sealed with AES-256-GCM (AD-63); everything else is hashed.
 - Growing lists page by keyset cursor (AD-61); short lists stay capped by `limit`.
 - Correction rows apply changes; correction tables are INSERT and SELECT only.
 - Dates are calendar strings end to end (AD-49); rosters resolve as of the class date (AD-50).
@@ -92,6 +93,6 @@ Firebase: FCM, Remote Config, Crashlytics only.
 | AD-59 | The mobile local store is Drift over SQLite3MultipleCiphers, keyed from the platform keystore | Active |
 | AD-60 | A suspended or closed college's users are refused entirely, at every request and at renewal | Active |
 | AD-61 | The platform reads only the events it caused, through one narrow definer function, newest first by keyset | Active |
-| AD-62 | The platform's second factor is a TOTP authenticator app | Decided; SA-3b |
-| AD-63 | Platform secret protection (AES-256-GCM, dedicated key) and sole-Owner break-glass | Decided; SA-3b |
+| AD-62 | The platform's second factor is a TOTP authenticator app | Active |
+| AD-63 | Platform secret protection (AES-256-GCM, dedicated key) and sole-Owner break-glass | Active |
 | AD-64 | Platform authority is an Owner or Support role assignment, resolved per request | Active |

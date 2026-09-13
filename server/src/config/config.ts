@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import {
+  AesGcmSealer, parseRetiredKeys, parseSealingKey, type SecretSealer,
+} from '../infrastructure/crypto/secret-sealer.ts';
+import { createHash } from 'node:crypto';
 
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -21,6 +25,14 @@ const schema = z.object({
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:4173'),
   /** Signs the refresh cookie. Distinct from JWT_SECRET so they rotate independently. */
   COOKIE_SECRET: z.string().min(32),
+  /**
+   * AD-63. Seals secrets the server must read back (TOTP). 32 bytes, base64.
+   * Its own key: never the JWT or cookie secret, never in the database.
+   */
+  SECRET_SEALING_KEY: z.string().optional(),
+  SECRET_SEALING_KEY_ID: z.string().default('k1'),
+  /** Retired keys that may still open old values: `id:base64,id:base64`. */
+  SECRET_SEALING_RETIRED_KEYS: z.string().optional(),
 });
 
 export type Config = z.infer<typeof schema>;
@@ -44,5 +56,36 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (parsed.data.NODE_ENV === 'production' && !env.JWT_SECRET) {
     throw new Error('JWT_SECRET must be supplied explicitly in production');
   }
+  // AD-63: production never starts without a valid sealing key. Elsewhere an
+  // explicitly insecure development key is used and announced (see sealerFor).
+  if (parsed.data.NODE_ENV === 'production' && !parsed.data.SECRET_SEALING_KEY) {
+    throw new Error('SECRET_SEALING_KEY must be supplied in production');
+  }
+  if (parsed.data.SECRET_SEALING_KEY) {
+    parseSealingKey(parsed.data.SECRET_SEALING_KEY_ID, parsed.data.SECRET_SEALING_KEY, 'SECRET_SEALING_KEY');
+  }
+  parseRetiredKeys(parsed.data.SECRET_SEALING_RETIRED_KEYS);
   return parsed.data;
+}
+
+/** Key id of the development key. A value sealed under it never opens in production. */
+export const DEV_SEALING_KEY_ID = 'dev-insecure';
+
+/**
+ * The sealer for this configuration. Without a configured key, outside
+ * production only, a fixed and publicly known development key is used and a
+ * warning printed, so nobody mistakes it for protection.
+ */
+export function sealerFor(config: Config, warn: (m: string) => void = console.warn): SecretSealer {
+  const retired = parseRetiredKeys(config.SECRET_SEALING_RETIRED_KEYS);
+  if (config.SECRET_SEALING_KEY) {
+    return new AesGcmSealer(
+      parseSealingKey(config.SECRET_SEALING_KEY_ID, config.SECRET_SEALING_KEY, 'SECRET_SEALING_KEY'),
+      retired,
+    );
+  }
+  if (config.NODE_ENV === 'production') throw new Error('SECRET_SEALING_KEY must be supplied in production');
+  warn('SECRET_SEALING_KEY is not set: sealing with the insecure development key. Never use this in production.');
+  const devKey = createHash('sha256').update('college-erp development sealing key, not a secret').digest();
+  return new AesGcmSealer({ id: DEV_SEALING_KEY_ID, key: devKey }, retired);
 }

@@ -156,7 +156,7 @@ export function AuditPage({ api }: { api: ApiClient }) {
                             {summary && <div className="table__secondary">{summary}</div>}
                           </td>
                           <td className="table__secondary">{e.college?.name ?? <em>Platform</em>}</td>
-                          <td className="table__secondary">{e.actor?.name ?? e.actor?.email ?? 'Unknown'}</td>
+                          <td className="table__secondary">{e.actor?.name ?? e.actor?.email ?? 'Operator (system)'}</td>
                           <td className="table__secondary">{e.reason ?? '—'}</td>
                         </tr>
                         {expanded && (

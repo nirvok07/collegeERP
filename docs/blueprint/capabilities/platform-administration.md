@@ -1,6 +1,6 @@
 # Platform Administration (Super Admin)
 
-Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019). **SA-2 implemented 2026-09-13** (AD-61, migration 020). **SA-3a implemented 2026-09-13** (AD-64, migration 021). SA-3b, SA-4 and SA-5 not built. Owner: M1 Identity &
+Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019). **SA-2 implemented 2026-09-13** (AD-61, migration 020). **SA-3a and SA-3b implemented 2026-09-13** (AD-62 to AD-64, migrations 021 and 022). SA-4 and SA-5 not built. Owner: M1 Identity &
 Access (platform side) with M2 for the institution record (AD-20). Decisions cited, not restated.
 
 ## 1. What exists (S1, S2)
@@ -22,7 +22,6 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 |---|---|
 | Seat limit enforcement | `SEAT_LIMIT_REACHED` is defined and never raised |
 | Plan and seat changes after provisioning | No endpoint |
-| Second factor for platform accounts | SA-3b (AD-62, AD-63); new accounts wait in `invited` until then |
 | Support impersonation W10 (AD-19) | Nothing built; needs the grant states and the Principal's approval |
 
 ## 3. Boundaries
@@ -91,13 +90,27 @@ usable only through that flow; existing Owners are required to enrol by it.
 **Bootstrap versus operation.** The first Owner is created by an operator (SQL today, the SA-3b
 command later). Every other account is created in the application.
 
+## 4d. SA-3b as built
+
+| Piece | Where |
+|---|---|
+| AES-256-GCM sealing, key id, rotation-ready, fail closed | `infrastructure/crypto/secret-sealer.ts`, config `SECRET_SEALING_*` |
+| TOTP via otplib; parameters in one place | `infrastructure/crypto/totp.ts`, `domain/totp-policy.ts` |
+| Sealed secret, pending secret, enrolment time, last step; challenges table; platform invitations | migration `022_platform_mfa.sql` |
+| Two-step sign-in: password, then code; enrolment when none exists | `POST /v1/auth/platform/login`, `/second-factor`, `/enrolment`, `/enrolment/confirm` |
+| Invitation, password, authenticator for new accounts | `POST /v1/auth/platform/accept-invite`; invitation on account creation and `…/accounts/:id/invitation` |
+| No session without an enrolled authenticator | guard, refresh, `/auth/me` |
+| Owner reset of another account's authenticator | `POST /v1/platform/accounts/:id/mfa/reset` |
+| Sole-Owner break-glass | `npm run platform:break-glass`, `platform-mfa.ts` |
+| Web: two-step sign-in, enrolment with QR and manual key, invitation page, authenticator status and reset | `features/auth/`, `features/platform-accounts/` |
+
 ## 5. Smallest safe slices
 
 1. ✅ **SA-1 Tenant lifecycle.** Institution detail; suspend, reactivate and close with a reason;
    enforce suspension on refresh and per request; reissue the administrator invitation; audit
    every transition. Web only.
 2. ✅ **SA-2 Platform audit view.** Read platform events, filtered by college and action.
-3. ⚠️ **SA-3 Platform accounts.** SA-3a ✅ accounts and roles. SA-3b ❌ sealing, TOTP, recovery (AD-63). Owner and Support roles, a second factor, and account creation by
+3. ✅ **SA-3 Platform accounts.** SA-3a accounts and roles; SA-3b sealing, TOTP, recovery. Owner and Support roles, a second factor, and account creation by
    command rather than SQL.
 4. **SA-4 Seats and plan.** Change seat limit and plan; enforce the seat limit on activation.
 5. **SA-5 Support impersonation (AD-19).** After SA-3, since it needs the Support role.

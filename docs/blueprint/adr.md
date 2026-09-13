@@ -1271,7 +1271,7 @@ the trail is not itself audited: no policy asks for it.
 
 **AD-62 — The platform's second factor is a TOTP authenticator app**
 
-*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-3. **Implementation blocked on OD-SA-5.**
+*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-3. **Implemented 2026-09-13** (SA-3b, migration 022).
 
 *Decision.* Platform accounts use RFC 6238 TOTP from an authenticator app, through a maintained
 library. No SMS, no email one-time codes, no custom cryptography, and no MFA for college roles in
@@ -1286,7 +1286,7 @@ the missing capability.
 
 **AD-63 — Platform secret protection and sole-Owner break-glass recovery**
 
-*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-5. To be implemented in SA-3b.
+*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-5. **Implemented 2026-09-13** (SA-3b, migration 022).
 
 *Decision.*
 1. Secrets the server must read back are sealed with AES-256-GCM from Node's built-in crypto:
@@ -1337,3 +1337,39 @@ action; the SA-3b break-glass command covers recovery.
 *Safety.* Nobody changes their own account. Every change takes one platform-wide advisory lock and
 re-reads the actor's authority inside it, and an Owner who is the only active one cannot be
 disabled or demoted. Two Owners racing to demote or disable each other leave exactly one.
+
+---
+
+**AD-62 and AD-63 as implemented (SA-3b, 2026-09-13)**
+
+*Sealing.* `infrastructure/crypto/secret-sealer.ts`. Format `s1.<keyId>.<iv>.<tag>.<ciphertext>`,
+base64url fields, 12-byte IV, 16-byte tag. Authenticated data is `s1.<keyId>.<context>`, where the
+context names the purpose and the account (`platform_totp:<id>`), so a sealed value moved to
+another row does not open. Every failure is one `SealError` carrying no key, plaintext or
+ciphertext. Settings: `SECRET_SEALING_KEY` (32 bytes, base64), `SECRET_SEALING_KEY_ID` (default
+`k1`), `SECRET_SEALING_RETIRED_KEYS` (`id:base64,…`, open-only). Production refuses to start
+without a valid key; elsewhere a publicly known development key with id `dev-insecure` is used
+and announced, and production can never open what it sealed.
+
+*TOTP.* otplib 13.5 through `infrastructure/crypto/totp.ts`; parameters only in
+`identity/domain/totp-policy.ts`: SHA-1, six digits, thirty-second steps, one step of drift either
+way, and a code's step must be later than the last accepted one, so no code works twice.
+
+*Sign-in.* The password step returns a challenge, never tokens: `second_factor`, or `enrolment`
+for an account without an authenticator. Challenges are 256-bit opaque tokens stored as SHA-256
+hashes like every other authentication token, single use, five minutes (fifteen for enrolment),
+one live per account, five wrong codes each. Wrong codes count toward the existing account lockout
+and a correct password no longer clears it. The platform guard, session renewal and `/auth/me`
+all require an enrolled authenticator, so sessions from before enrolment was mandatory, or after
+a reset, stop on their next request.
+
+*Enrolment and recovery.* A new account's invitation uses the one invitation table
+(`platform_account_id`, no college). The secret is generated on the server, sealed as pending,
+returned once in the enrolment response, and becomes active only after a correct code. An Owner
+resets another account's authenticator with a reason; the operator command
+`npm run platform:break-glass` clears only a sole Owner's, needs an exact confirmation phrase,
+and is refused whenever another enrolled Owner exists. Both force re-enrolment; nothing switches
+MFA off.
+
+*Amends AD-61.* The platform audit read also returns system events whose subject is a platform
+account, so Owners see the break-glass reset. College events stay invisible.

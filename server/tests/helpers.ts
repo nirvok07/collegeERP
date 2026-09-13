@@ -5,6 +5,9 @@ import { buildServer } from '../src/infrastructure/http/server.ts';
 import { migrate } from '../src/infrastructure/db/migrate.ts';
 import { createPool } from '../src/infrastructure/db/pool.ts';
 import { ScryptPasswordHasher } from '../src/infrastructure/crypto/adapters.ts';
+import { generateSecret, generateSync } from 'otplib';
+import { sealerFor } from '../src/config/config.ts';
+import { totpContext } from '../src/modules/identity/domain/totp-policy.ts';
 import type { LightMyRequestResponse } from 'fastify';
 
 process.env.NODE_ENV = 'test';
@@ -64,6 +67,7 @@ export async function resetData(): Promise<void> {
     await pool.query(`DELETE FROM role_definitions WHERE tenant_id IS NOT NULL`);
     await pool.query(`DELETE FROM institutions`);
     // Role assignments reference platform accounts (migration 021).
+    await pool.query(`DELETE FROM platform_auth_challenges`);
     await pool.query(`DELETE FROM platform_role_assignments`);
     await pool.query(`DELETE FROM platform_accounts`);
   } finally {
@@ -78,6 +82,8 @@ export function testConfig() {
     DATABASE_URL: APP_URL,
     MIGRATION_DATABASE_URL: MIGRATOR_URL,
     JWT_SECRET: 'test-secret-value-long-enough-for-schema',
+    // AD-63: tests seal with a real key, never the development fallback.
+    SECRET_SEALING_KEY: Buffer.from('test-sealing-key-32-bytes-long!!').toString('base64'),
   } as NodeJS.ProcessEnv);
 }
 
@@ -99,6 +105,7 @@ export async function seedPlatformAccount(
   email = 'owner@nirvok.com',
   password = 'platform-pass-123',
   role: 'owner' | 'support' = 'owner',
+  options: { enrolled?: boolean } = {},
 ): Promise<{ id: string; email: string; password: string }> {
   const pool = createPool(MIGRATOR_URL);
   const id = randomUUID();
@@ -116,10 +123,51 @@ export async function seedPlatformAccount(
        VALUES ($1, $2, $3, 'Test bootstrap')`,
       [randomUUID(), id, role],
     );
+    // SA-3b: an enrolled authenticator unless a test asks for one without.
+    const secret = generateSecret();
+    platformTotpSecrets.set(email, secret);
+    if (options.enrolled !== false) {
+      await pool.query(
+        `UPDATE platform_accounts SET totp_secret_sealed = $2, totp_enrolled_at = now() WHERE id = $1`,
+        [id, sealerFor(testConfig()).seal(secret, totpContext(id))],
+      );
+    }
   } finally {
     await pool.end();
   }
   return { id, email, password };
+}
+
+/** Authenticator secrets of seeded platform accounts, by email. Tests only. */
+export const platformTotpSecrets = new Map<string, string>();
+
+/**
+ * The current code for a seeded account. The last accepted step is cleared
+ * first, because a real person never signs in twice within thirty seconds and
+ * tests do; replay protection itself is tested directly.
+ */
+export async function totpCodeFor(email: string): Promise<string> {
+  const pool = createPool(MIGRATOR_URL);
+  try {
+    await pool.query(`UPDATE platform_accounts SET totp_last_step = NULL WHERE email = $1`, [email]);
+  } finally {
+    await pool.end();
+  }
+  return generateSync({ secret: platformTotpSecrets.get(email)!, algorithm: 'sha1', digits: 6, period: 30 });
+}
+
+/** Both steps of platform sign-in; the raw response of the last one. */
+export async function platformSessionResponse(
+  app: TestApp['app'], email: string, password: string,
+): Promise<LightMyRequestResponse> {
+  const first = (await app.inject({
+    method: 'POST', url: '/v1/auth/platform/login', payload: { email, password },
+  })) as LightMyRequestResponse;
+  if (first.statusCode !== 200 || first.json().data.step !== 'second_factor') return first;
+  return (await app.inject({
+    method: 'POST', url: '/v1/auth/platform/second-factor',
+    payload: { challenge_token: first.json().data.challenge_token, code: await totpCodeFor(email) },
+  })) as LightMyRequestResponse;
 }
 
 export async function signInPlatform(
@@ -127,9 +175,7 @@ export async function signInPlatform(
   email: string,
   password: string,
 ): Promise<{ status: number; body: any }> {
-  const res = (await app.inject({
-    method: 'POST', url: '/v1/auth/platform/login', payload: { email, password },
-  })) as LightMyRequestResponse;
+  const res = await platformSessionResponse(app, email, password);
   return { status: res.statusCode, body: res.json() };
 }
 
