@@ -107,7 +107,11 @@ class _CollegesView extends StatelessWidget {
                   for (final college in state.colleges)
                     _CollegeTile(
                       college: college,
-                      onTap: () => _open(context, AdminRoutes.college, CollegeArgs(id: college.id)),
+                      onTap: () => _open(
+                        context,
+                        AdminRoutes.college,
+                        CollegeArgs(id: college.id, canManage: canManage),
+                      ),
                     ),
                 ],
               ),

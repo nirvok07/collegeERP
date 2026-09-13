@@ -3,7 +3,9 @@ import 'package:college_erp/admin/auth/platform_sign_in_cubit.dart';
 import 'package:college_erp/admin/auth/platform_sign_in_screen.dart' show formatManualKey;
 import 'package:college_erp/admin/colleges/college_models.dart';
 import 'package:college_erp/admin/colleges/colleges_api.dart';
+import 'package:college_erp/admin/colleges/colleges_cubits.dart';
 import 'package:college_erp/admin/colleges/colleges_screen.dart';
+import 'package:college_erp/admin/colleges/provisioned_screen.dart';
 import 'package:college_erp/admin/platform_authority.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
@@ -78,6 +80,12 @@ class _AuthApi implements AuthApi {
   Future<void> signOut(String refreshToken) async {}
   @override
   Future<Result<CollegeBrand>> lookupCollege(String code) async => const Err(Failure.unknown);
+  @override
+  Future<Result<void>> acceptInvitation({
+    required String institutionCode,
+    required String token,
+    required String password,
+  }) async => const Err(Failure.unknown);
 }
 
 class _Colleges implements CollegesRepository {
@@ -90,6 +98,16 @@ class _Colleges implements CollegesRepository {
   Future<Result<CollegeDetail>> detail(String id) async => const Err(Failure.unknown);
   @override
   Future<Result<ProvisionedCollege>> provision(ProvisionInput input) async => const Err(Failure.unknown);
+  @override
+  Future<Result<CollegeDetail>> changeLifecycle(
+    String id, {
+    required String action,
+    required int version,
+    required String reason,
+    String? confirmCode,
+  }) async => const Err(Failure.unknown);
+  @override
+  Future<Result<ProvisionedCollege>> reissueInvitation(String id) async => const Err(Failure.unknown);
 }
 
 const expired = Failure(code: FailureCode.unauthenticated, message: 'This sign-in has expired. Start again.');
@@ -212,6 +230,55 @@ void main() {
     });
   });
 
+  group('college lifecycle', () {
+    final detailJson = {
+      'id': 'c1', 'code': 'sunrise', 'name': 'Sunrise', 'status': 'trial', 'plan': 'standard',
+      'timezone': 'Asia/Kolkata', 'logo_url': null, 'brand_color': null, 'version': 3,
+      'actions': ['suspend', 'close'],
+      'seats': {'used': 1, 'limit': 10, 'remaining': 9, 'state': 'UNDER_LIMIT'},
+      'administrator': {
+        'full_name': 'Priya', 'email': 'p@s.edu', 'account_status': 'invited',
+        'invitation': {'state': 'pending', 'expires_at': '2026-09-20T10:00:00.000Z'}, 'can_reissue': true,
+      },
+    };
+
+    test('detail carries the version to pin to, the allowed actions and reissue', () {
+      final detail = CollegeDetail.fromJson(detailJson);
+      expect(detail.version, 3);
+      expect(detail.actions, ['suspend', 'close']);
+      expect(detail.administrator?.canReissue, isTrue);
+    });
+
+    test('an action is pinned to the version on screen; a refusal keeps the college shown', () async {
+      final repo = _Lifecycle(detailJson);
+      final cubit = CollegeDetailCubit(repo, 'c1');
+      await cubit.load();
+
+      repo.next = const Err(Failure(code: FailureCode.conflict, message: 'Somebody else changed this college.'));
+      final refused = await cubit.act('suspend', reason: 'payment pending');
+      expect(refused?.message, contains('Somebody else'));
+      expect(cubit.state.detail?.status, 'trial');
+      expect(repo.sent, (action: 'suspend', version: 3, reason: 'payment pending', code: null));
+
+      repo.next = Ok(CollegeDetail.fromJson({...detailJson, 'status': 'suspended', 'version': 4, 'actions': ['reactivate', 'close']}));
+      expect(await cubit.act('suspend', reason: 'payment pending'), isNull);
+      expect(cubit.state.detail?.status, 'suspended');
+      expect(cubit.state.detail?.actions, ['reactivate', 'close']);
+      await cubit.close();
+    });
+
+    test('the hand-over message has everything and says what it is for', () {
+      final message = ProvisionedScreen.handoverMessage(ProvisionedCollege(
+        id: 'c1', code: 'iit-doon', name: 'IIT Doon', invitationToken: 'tok-123',
+        invitationExpiresAt: DateTime.utc(2026, 9, 20, 10),
+      ));
+      expect(message, contains('IIT Doon'));
+      expect(message, contains('College code: iit-doon'));
+      expect(message, contains('Invitation code: tok-123'));
+      expect(message, contains('set your own password'));
+    });
+  });
+
   group('colleges screen', () {
     Future<void> pump(WidgetTester tester, Set<String> permissions) async {
       await tester.pumpWidget(MaterialApp(
@@ -236,4 +303,31 @@ void main() {
       expect(find.text('Add college'), findsNothing);
     });
   });
+}
+
+class _Lifecycle implements CollegesRepository {
+  _Lifecycle(this.json);
+  final Map<String, Object?> json;
+  Result<CollegeDetail> next = const Err(Failure.unknown);
+  ({String action, int version, String reason, String? code})? sent;
+
+  @override
+  Future<Result<List<CollegeSummary>>> list() async => const Ok([]);
+  @override
+  Future<Result<CollegeDetail>> detail(String id) async => Ok(CollegeDetail.fromJson(json));
+  @override
+  Future<Result<ProvisionedCollege>> provision(ProvisionInput input) async => const Err(Failure.unknown);
+  @override
+  Future<Result<CollegeDetail>> changeLifecycle(
+    String id, {
+    required String action,
+    required int version,
+    required String reason,
+    String? confirmCode,
+  }) async {
+    sent = (action: action, version: version, reason: reason, code: confirmCode);
+    return next;
+  }
+  @override
+  Future<Result<ProvisionedCollege>> reissueInvitation(String id) async => const Err(Failure.unknown);
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/error/failure.dart';
+import '../../core/error/result.dart';
 import '../../core/widgets/screen_state.dart';
 import 'college_models.dart';
 import 'colleges_api.dart';
@@ -65,6 +66,34 @@ class CollegeDetailCubit extends Cubit<CollegeDetailState> {
       err: (failure) => emit(CollegeDetailState(status: LoadStatus.failure, failure: failure)),
     );
   }
+
+  /// Suspend, reactivate or close, pinned to the version on screen. Returns
+  /// the refusal, or null once the screen shows the new state.
+  Future<Failure?> act(String action, {required String reason, String? confirmCode}) async {
+    final detail = state.detail;
+    if (detail == null) return null;
+    emit(CollegeDetailState(status: LoadStatus.refreshing, detail: detail));
+    final result = await _repository.changeLifecycle(
+      detail.id,
+      action: action,
+      version: detail.version,
+      reason: reason,
+      confirmCode: confirmCode,
+    );
+    if (isClosed) return null;
+    return result.when(
+      ok: (updated) {
+        emit(CollegeDetailState(status: LoadStatus.success, detail: updated));
+        return null;
+      },
+      err: (failure) {
+        emit(CollegeDetailState(status: LoadStatus.success, detail: detail));
+        return failure;
+      },
+    );
+  }
+
+  Future<Result<ProvisionedCollege>> reissue() => _repository.reissueInvitation(_id);
 }
 
 class ProvisionState {

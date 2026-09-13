@@ -6,6 +6,7 @@ import { SignInPage } from './features/auth/SignInPage.tsx';
 import { InstitutionsPage } from './features/institutions/InstitutionsPage.tsx';
 import { AuditPage } from './features/platform-audit/AuditPage.tsx';
 import { PlatformInvitePage } from './features/auth/PlatformInvitePage.tsx';
+import { CollegeInvitePage } from './features/auth/CollegeInvitePage.tsx';
 import { invitationTokenFrom } from './features/auth/mfa.ts';
 import { AccountsPage } from './features/platform-accounts/AccountsPage.tsx';
 import { PeoplePage } from './features/people/PeoplePage.tsx';
@@ -32,6 +33,8 @@ export function App() {
   const restored = useRef(false);
   // SA-3b: a platform invitation link opens its own setup page.
   const [invite, setInvite] = useState(() => window.location.pathname === '/platform/enrol');
+  // WEB-1: a college invitation link opens its own page too.
+  const [collegeInvite, setCollegeInvite] = useState(() => window.location.pathname === '/accept-invite');
 
   const api = useMemo(
     () => new ApiClient({
@@ -114,6 +117,11 @@ export function App() {
           onSignOut={signOut}
           items={sectionsFor(actor.actorType, permissions, api)}
         />
+      ) : collegeInvite ? (
+        <CollegeInvitePage
+          auth={auth}
+          onDone={() => { window.history.replaceState(null, '', '/'); setCollegeInvite(false); }}
+        />
       ) : invite ? (
         <PlatformInvitePage
           auth={auth}
@@ -121,7 +129,10 @@ export function App() {
           onDone={() => { window.history.replaceState(null, '', '/'); setInvite(false); }}
         />
       ) : (
-        <SignInPage auth={auth} />
+        <SignInPage
+          auth={auth}
+          onAcceptInvite={() => { window.history.pushState(null, '', '/accept-invite'); setCollegeInvite(true); }}
+        />
       )}
     </ToastHost>
   );

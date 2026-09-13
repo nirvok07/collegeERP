@@ -112,6 +112,9 @@ than from a feature list.
 | R52 | The super admin has a separate app with its own entry point; the platform is administered only from it (the web console's platform side retires once the app covers it) | Active | [ADR](blueprint/adr.md) AD-72, `lib/main_admin.dart` |
 | R53 | API calls are logged for development through Dio interceptors, never in production and never showing a secret | Active | [ADR](blueprint/adr.md) AD-73 |
 | R54 | The super admin account is the owner's real address, nirvokofficial@gmail.com; its login code comes from an authenticator app, not email | Active | [ADR](blueprint/adr.md) AD-74 |
+| R55 | The super admin can suspend, reactivate and close a college; colleges are never deleted | Active | [ADR](blueprint/adr.md) AD-75 |
+| R56 | A college can be set up by the super admin as a temporary administrator and handed over to its real administrator; nobody's password is ever generated or shared | Active | [ADR](blueprint/adr.md) AD-75 |
+| R57 | An invited person accepts the invitation and sets their own password on the web console or in the mobile app | Active | [ADR](blueprint/adr.md) AD-75 |
 
 ## Assumptions awaiting confirmation
 

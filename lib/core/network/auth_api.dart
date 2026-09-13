@@ -79,6 +79,26 @@ class AuthApi {
     return parseEnvelope(response.statusCode ?? 0, response.data, CollegeBrand.fromJson);
   }
 
+  /// A college invitation: the person sets their own password; nobody else,
+  /// the platform included, ever knows it.
+  Future<Result<void>> acceptInvitation({
+    required String institutionCode,
+    required String token,
+    required String password,
+  }) async {
+    Response<dynamic> response;
+    try {
+      response = await _dio.post<dynamic>('/v1/auth/accept-invite', data: {
+        'institution_code': institutionCode,
+        'token': token,
+        'password': password,
+      });
+    } on DioException {
+      return const Err(Failure.network);
+    }
+    return parseEnvelope(response.statusCode ?? 0, response.data, (_) {});
+  }
+
   Future<void> signOut(String refreshToken) async {
     try {
       await _dio.post<dynamic>('/v1/auth/logout', data: {'refresh_token': refreshToken});

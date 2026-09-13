@@ -2,6 +2,8 @@ import 'dart:developer';
 
 import 'package:dio/dio.dart';
 
+import 'api_log_interceptor.dart';
+
 // ANSI color codes for styling the output
 const String reset = '\x1B[0m';
 const String red = '\x1B[31m';
@@ -18,12 +20,12 @@ class CustomLogInterceptor extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     log('${green}REQUEST [${options.method}] $blue${options.baseUrl}$white${options.path}');
     if (options.headers['Authorization'] != null) {
-      log('${white}Token: ${options.headers['Authorization']}');
+      log('${white}Token: ***');
     }
     if (options.data is! FormData &&
         options.data != null &&
         options.data!.isNotEmpty) {
-      log('${green}Sending Data: $magenta${options.data}');
+      log('${green}Sending Data: $magenta${redact(options.data, codeIsSecret: options.path.contains('/auth/platform/'))}');
     }
     if (options.queryParameters.isNotEmpty) {
       log('${magenta}Sending Query: ${options.queryParameters}');
@@ -37,7 +39,10 @@ class CustomLogInterceptor extends Interceptor {
         name: 'RESPONSE [${response.statusCode}]');
     if (response.requestOptions.path != 'DisplayOnlineExam' ||
         response.requestOptions.path != 'FeeBackStudent') {
-      log('$magenta$response', name: 'Data');
+      log(
+        '$magenta${redact(response.data, codeIsSecret: response.requestOptions.path.contains('/auth/platform/'))}',
+        name: 'Data',
+      );
     }
     super.onResponse(response, handler);
   }

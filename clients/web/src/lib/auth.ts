@@ -121,6 +121,30 @@ export class AuthSession {
     return { ok: true, step: response.data.step, challenge: response.data.challenge_token };
   }
 
+  /**
+   * WEB-1: a college account signs in with its college's code. The same
+   * session rules as the platform: refresh cookie, access token in memory.
+   */
+  async signInCollege(
+    institutionCode: string, identifier: string, password: string,
+  ): Promise<{ ok: true } | { ok: false; failure: ApiFailure }> {
+    const response = await this.call('/v1/auth/login', { institution_code: institutionCode, identifier, password });
+    if (!response.ok) return { ok: false, failure: response.failure };
+    this.adopt(response.data);
+    this.emit({ type: 'signed-in', actor: this.actor! });
+    return { ok: true };
+  }
+
+  /** A college invitation: the person sets their own password; nobody else ever knows it. */
+  async acceptCollegeInvite(
+    institutionCode: string, token: string, password: string,
+  ): Promise<{ ok: true } | { ok: false; failure: ApiFailure }> {
+    const response = await this.call<{ account_id: string }>(
+      '/v1/auth/accept-invite', { institution_code: institutionCode, token, password },
+    );
+    return response.ok ? { ok: true } : { ok: false, failure: response.failure };
+  }
+
   /** The secret arrives here once and is never stored by the client. */
   async beginEnrolment(challenge: string): Promise<
     { ok: true; uri: string; manualKey: string } | { ok: false; failure: ApiFailure }

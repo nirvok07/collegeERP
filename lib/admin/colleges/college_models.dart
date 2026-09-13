@@ -42,8 +42,11 @@ class CollegeAdministrator {
     required this.accountStatus,
     required this.invitationState,
     required this.invitationExpiresAt,
+    this.canReissue = false,
   });
 
+  /// The server says whether a new invitation may be issued now.
+  final bool canReissue;
   final String fullName;
   final String? email;
   final String accountStatus;
@@ -72,7 +75,15 @@ class CollegeDetail {
     required this.logoUrl,
     required this.brandColor,
     required this.administrator,
+    this.version = 0,
+    this.actions = const [],
   });
+
+  /// Pins a lifecycle change to what is on screen (AD-12).
+  final int version;
+
+  /// The lifecycle actions the server allows now: suspend, reactivate, close.
+  final List<String> actions;
 
   final String id;
   final String code;
@@ -105,6 +116,8 @@ class CollegeDetail {
       seatLimit: (seats['limit'] as num).toInt(),
       logoUrl: map['logo_url'] as String?,
       brandColor: map['brand_color'] as String?,
+      version: (map['version'] as num?)?.toInt() ?? 0,
+      actions: ((map['actions'] as List?) ?? const []).map((e) => '$e').toList(),
       administrator: admin == null
           ? null
           : CollegeAdministrator(
@@ -113,6 +126,7 @@ class CollegeDetail {
               accountStatus: admin['account_status'] as String,
               invitationState: invitation?['state'] as String? ?? 'none',
               invitationExpiresAt: expires == null ? null : DateTime.parse(expires),
+              canReissue: admin['can_reissue'] as bool? ?? false,
             ),
     );
   }

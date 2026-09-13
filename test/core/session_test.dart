@@ -66,6 +66,13 @@ class _FakeAuthApi implements AuthApi {
 
   @override
   Future<Result<CollegeBrand>> lookupCollege(String code) async => const Err(Failure.unknown);
+
+  @override
+  Future<Result<void>> acceptInvitation({
+    required String institutionCode,
+    required String token,
+    required String password,
+  }) async => const Err(Failure.unknown);
 }
 
 void main() {

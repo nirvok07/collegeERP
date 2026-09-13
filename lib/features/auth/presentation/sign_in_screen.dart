@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../app/routes.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/session/college_brand.dart';
@@ -125,6 +126,16 @@ class _SignInScreenState extends State<SignInScreen> {
                           : const Text('Sign in'),
                     ),
                     const SizedBox(height: AppSpacing.md),
+                    OutlinedButton.icon(
+                      onPressed: state.submitting
+                          ? null
+                          : () => Navigator.of(context).pushNamed(
+                                Routes.acceptInvitation,
+                                arguments: AcceptInvitationArgs(college: widget.college),
+                              ),
+                      icon: const Icon(Icons.mark_email_read_outlined),
+                      label: const Text('I have an invitation'),
+                    ),
                     TextButton.icon(
                       onPressed: state.submitting ? null : widget.onChangeCollege,
                       icon: const Icon(Icons.swap_horiz_rounded),

@@ -9,6 +9,8 @@ import '../features/organisation/presentation/organisation_screen.dart';
 import '../features/people/presentation/people_screen.dart';
 import '../features/teaching/presentation/my_teaching_screen.dart';
 import 'account_screen.dart';
+import '../core/session/college_brand.dart';
+import '../features/auth/presentation/accept_invitation_screen.dart';
 
 /// Route names. No raw path string appears in a widget.
 abstract final class Routes {
@@ -23,6 +25,13 @@ abstract final class Routes {
   static const people = '/people';
   static const organisation = '/organisation';
   static const account = '/account';
+  static const acceptInvitation = '/accept-invitation';
+}
+
+/// ACC-1: the college chosen on the first screen, whose invitation this is.
+class AcceptInvitationArgs {
+  const AcceptInvitationArgs({required this.college});
+  final CollegeBrand college;
 }
 
 /// One typed argument class per route that needs arguments, never a raw map.
@@ -77,6 +86,10 @@ abstract final class AppRouter {
         return _page(settings, const OrganisationScreen());
       case Routes.account:
         return _page(settings, const AccountScreen());
+      case Routes.acceptInvitation:
+        final args = settings.arguments;
+        if (args is! AcceptInvitationArgs) return _unknown(settings);
+        return _page(settings, AcceptInvitationScreen(college: args.college));
       default:
         return _unknown(settings);
     }

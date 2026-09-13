@@ -22,16 +22,30 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Dev database on Supabase (ENV-2, AD-68): 🟡 tooling ✅ tested; 🚫 schema rebuild awaits the owner (destructive on an external service)
 - College branding + college-code-first app (BR-1, AD-70): ✅ server, ✅ web, ✅ Flutter, ✅ tests, ✅ APK builds; 🔍 on the phone
 - Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
-- Super admin app, flavor `admin` (SAM-1, AD-72): ✅ sign-in with authenticator, colleges list and detail, add college; ✅ tests; ✅ both APKs build; 🔍 on the phone; SAM-2/SAM-3 ❌
+- Super admin app, flavor `admin` (SAM-1, AD-72): ✅ sign-in with authenticator, colleges list and detail, add college; ✅ tests; ✅ both APKs build; 🔍 on the phone; SAM-2a ✅ suspend/reactivate/close/reissue; SAM-2b (plan, branding) and SAM-3 (audit, accounts) ❌
 - API logs via Dio interceptor (LOG-1, AD-73): ✅ debug only, secrets masked, tested
 - Real super admin account (OPS-2, AD-74): ✅ `nirvokofficial@gmail.com` Owner on local; `owner@nirvok.com` disabled; authenticator app kept
+- College sign-in and invitation acceptance (WEB-1 web, ACC-1 mobile, AD-75): ✅ code, ✅ tests, ✅ end-to-end handover test; 🔍 on the phone and in a browser
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): OPS-2 ✅ (`f9303c0`) — `npm run platform:create-owner` and `platform:disable-account`
+Just done (2026-09-14): the college flow, end to end (AD-75, R55–R57).
+- **SAM-2a:** the Super Admin app suspends, reactivates and closes a college (reason; close needs
+  the code typed; version-pinned), and reissues an administrator's invitation. The invitation
+  screen says who it is for, offers one message to copy, and warns it is not an authenticator key
+  (the owner had entered it into Google Authenticator).
+- **WEB-1:** the web console signs in college accounts by default and has `/accept-invite`; the
+  platform sign-in sits behind a link until AD-72 retires it.
+- **ACC-1:** the college app's sign-in has "I have an invitation".
+- **Proved end to end** (`server/tests/e2e-college-handover.test.ts`): create with the super admin
+  as temporary admin → accept → set up → invite the real admin → real admin accepts and revokes the
+  temporary one (who loses access) → suspend (sessions stop, lookup 404) → reactivate → close.
+- No deletion, by the owner's choice; handover via a temporary administrator; nothing emailed.
+
+Earlier today: OPS-2 ✅ (`f9303c0`) — `npm run platform:create-owner` and `platform:disable-account`
 (dev only, exact phrase, audited as the system). Used on local: Owner `nirvokofficial@gmail.com`
 created (authenticator set up at first sign-in), `owner@nirvok.com` disabled (AD-74).
 Before that: SAM-1 ✅ (`4474abd`) and LOG-1 ✅ (`ff0f91d`). ENV-2 🟡 still awaits the owner's rebuild.
@@ -77,16 +91,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — WEB-1: College Admin activation and sign-in on the web console
-- **Why next:** a college created from the super admin app (or the web) gets an administrator who
-  cannot accept the invitation or sign in anywhere: the web console only signs in platform
-  accounts and has no college accept-invitation page, and the phone app has neither. The College
-  pages already built (People, Organisation, College, Students…) are unreachable until then.
-- **To build:** web college sign-in (college code → email + password, `POST /v1/auth/login`) and
-  `/accept-invite?college=&token=` (the link the web already generates); no server change expected.
-- **Then:** SAM-2 (lifecycle, plan, branding, reissue in the admin app), then ST-1 below.
-
-### AFTER THAT — ST-1: student accounts and "My attendance" on mobile
+### NEXT SLICE — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
   screens (attendance %, fees, circulars) are student surfaces. Attendance data already exists
   (M6); only the student role, the account and a self-scoped read are missing. Fees (D1) and
@@ -96,7 +101,9 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - **Decided (AD-69):** College Admin onboards one person at a time (no bulk); a student activates
   with college code + enrolment number + a one-time code (hash-only, expiring, printable), then a
   password; each student account takes a seat. Teachers keep the email invitation.
-- **Needs first:** ENV-2 finished (the rebuild), so ST-1 is built and tried on Supabase.
+- **Not blocked:** trying it on Supabase after ENV-2 is preferred, but ST-1 does not depend on it.
+- **After ST-1:** SAM-2b (plan, seats, branding in the admin app), then SAM-3 (audit, accounts), then
+  the web platform console retires (AD-72).
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
@@ -151,7 +158,8 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 416 backend, 193 web, 169 Flutter, all passing.
+Tests: 417 backend, 195 web, 176 Flutter, all passing. One outbox test ("a write waits behind an
+earlier one…") failed once under full-suite load and passed alone three times and on rerun: timing-sensitive.
 
 ## 5. Blockers
 - iOS: Xcode not installed (Command Line Tools only).
@@ -210,8 +218,11 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
   `DisplayOnlineExam`/`FeeBackStudent` path check is always true.
 - `server/.env.example` has an uncommitted edit containing the real Supabase password; it must
   go back to the placeholder and never be committed.
-- A College Admin cannot sign in to the web console or accept an invitation in any UI (WEB-1).
-  The earlier credentials table listing "College admin → Web console" was wrong.
+- No email delivery anywhere: invitations are handed over by the super admin (AD-75).
+- A college account cannot be deactivated yet; after a handover the temporary administrator has no
+  access but still uses one seat (AD-65).
+- Local colleges IIT Doon and IIT Delhi (2026-09-14) have invited administrators who have not
+  accepted; their invitations can now be reissued from the Super Admin app.
 - The super admin app has no app lock; an unlocked phone holding an Owner session is platform
   access. Biometric lock recommended before production (AD-72). iOS flavors not configured.
 - The dev server on port 3000 was restarted from a Claude session; restart `npm run dev` in a

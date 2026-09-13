@@ -1589,3 +1589,31 @@ Extends AD-71 (OPS-2).
    and `platform:disable-account` (never the last active Owner). Both need an exact phrase, refuse in
    production, and are audited as the system with the operator named.
 3. They also give a fresh database (Supabase after its rebuild) its first Owner.
+
+---
+
+**AD-75 — No deletion of colleges; handover through a temporary administrator; invitations accepted on web and phone**
+
+*Status.* Decided by the owner, 2026-09-14. Built as SAM-2a, WEB-1 and ACC-1.
+
+*Decision.*
+1. **No deletion.** The platform suspends (reversible: everyone refused at once, nothing deleted),
+   reactivates, and closes (final, confirmed by typing the code, records kept). A college is never
+   deleted, so the audit trail stays complete (R20); OD-SA-2 still governs closed colleges' data.
+   The Super Admin app now offers all three, version-pinned and with a reason (SA-1 unchanged).
+2. **Handover.** No password is ever generated or known by anyone but its owner. To set a college up
+   before its real administrator takes over, the super admin names themselves as the first
+   administrator, accepts, sets the college up, invites the real administrator with the
+   `college_admin` role, and the real administrator revokes the temporary one (nobody revokes their
+   own authority, and the last administrator is protected: BR-8). A lost invitation is reissued from
+   the app; the old one stops working.
+3. **Accepting an invitation, in both clients.** The web console signs in college accounts by
+   default (college code, email, password) and has `/accept-invite?college=&token=`; the platform
+   sign-in stays behind a link until AD-72 retires it. The college app's sign-in has "I have an
+   invitation" (the college from the first screen, the invitation code, a new password).
+4. **Invitations are not emailed.** The super admin sends the college code and invitation code
+   themselves; the app offers one message to copy and says plainly that the invitation is not an
+   authenticator key.
+
+*Known gap.* A college account cannot be deactivated yet, so the temporary administrator keeps
+using one seat (AD-65) after handover, with no access.

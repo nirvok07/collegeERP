@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
 import '../error/failure.dart';
 import '../error/result.dart';
-import 'api_log_interceptor.dart';
+import 'dio_intercepter.dart';
 
 /// The single HTTP boundary.
 ///
@@ -12,19 +13,25 @@ import 'api_log_interceptor.dart';
 /// message that is shown verbatim rather than reworded here.
 class ApiClient {
   ApiClient({Dio? dio, required this._accessToken, required this._renew})
-    : _dio =
-          dio ??
-          withApiLogs(Dio(
-            BaseOptions(
-              baseUrl: AppConfig.current.apiBaseUrl,
-              connectTimeout: const Duration(seconds: 15),
-              receiveTimeout: const Duration(seconds: 30),
-              // Status codes are interpreted here, not thrown as exceptions, so
-              // every path returns a Result and none escapes as a raw DioException.
-              validateStatus: (_) => true,
-              contentType: 'application/json',
-            ),
-          ));
+    : _dio = dio ?? _createDio();
+
+  static Dio _createDio() {
+    final client = Dio(
+      BaseOptions(
+        baseUrl: AppConfig.current.apiBaseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
+        // Status codes are interpreted here, not thrown as exceptions, so
+        // every path returns a Result and none escapes as a raw DioException.
+        validateStatus: (_) => true,
+        contentType: 'application/json',
+      ),
+    );
+    if (kDebugMode && !AppConfig.current.isProduction) {
+      client.interceptors.add(CustomLogInterceptor());
+    }
+    return client;
+  }
 
   final Dio _dio;
   final Future<String?> Function() _accessToken;

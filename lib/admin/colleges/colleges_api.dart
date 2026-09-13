@@ -10,6 +10,18 @@ abstract interface class CollegesRepository {
 
   /// W0 (AD-20): the college and its first administrator, in one request.
   Future<Result<ProvisionedCollege>> provision(ProvisionInput input);
+
+  /// SA-1: suspend, reactivate or close, pinned to [version], with a reason.
+  Future<Result<CollegeDetail>> changeLifecycle(
+    String id, {
+    required String action,
+    required int version,
+    required String reason,
+    String? confirmCode,
+  });
+
+  /// A new invitation for the administrator; the previous one stops working.
+  Future<Result<ProvisionedCollege>> reissueInvitation(String id);
 }
 
 class CollegesApi implements CollegesRepository {
@@ -28,4 +40,26 @@ class CollegesApi implements CollegesRepository {
   @override
   Future<Result<ProvisionedCollege>> provision(ProvisionInput input) =>
       _client.post('/v1/institutions', input.toJson(), ProvisionedCollege.fromJson);
+
+  @override
+  Future<Result<CollegeDetail>> changeLifecycle(
+    String id, {
+    required String action,
+    required int version,
+    required String reason,
+    String? confirmCode,
+  }) => _client.post(
+    '/v1/institutions/${Uri.encodeComponent(id)}/$action',
+    {'version': version, 'reason': reason, 'confirm_code': ?confirmCode},
+    CollegeDetail.fromJson,
+  );
+
+  // The response carries the college's detail and the new invitation, which
+  // is exactly the shape of a provisioning result.
+  @override
+  Future<Result<ProvisionedCollege>> reissueInvitation(String id) => _client.post(
+    '/v1/institutions/${Uri.encodeComponent(id)}/administrator-invitation',
+    const <String, Object?>{},
+    ProvisionedCollege.fromJson,
+  );
 }
