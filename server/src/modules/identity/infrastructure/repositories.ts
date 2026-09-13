@@ -721,7 +721,7 @@ export class PgPlatformAdminRepository implements PlatformAdminRepository {
   }
 
   async grant(
-    tx: Tx, input: { id: string; accountId: string; role: PlatformRole; grantedBy: string; reason: string },
+    tx: Tx, input: { id: string; accountId: string; role: PlatformRole; grantedBy: string | null; reason: string },
   ): Promise<void> {
     await clientOf(tx).query(
       `INSERT INTO platform_role_assignments (id, platform_account_id, role, granted_by, reason)

@@ -1571,3 +1571,21 @@ access, refresh, invitation and challenge tokens, authenticator keys and push to
 wherever they sit in a body; on the platform sign-in endpoints `code` (the authenticator code) is
 masked too. A Dio passed in by a test is left alone. Dio's own `LogInterceptor` is not used, because
 it prints headers and bodies unredacted.
+
+---
+
+**AD-74 — The real Owner is nirvokofficial@gmail.com; operators may create an Owner and disable an account in development**
+
+*Status.* Decided by the owner, 2026-09-14: `owner@nirvok.com` is not a real address; the super admin
+account is `nirvokofficial@gmail.com`. The owner kept the authenticator app (AD-62) over emailed codes.
+Extends AD-71 (OPS-2).
+
+*Decision.*
+1. The second factor stays an authenticator app. No email code is sent anywhere: the server has
+   no email delivery, and an emailed code would make the Gmail inbox a key to the whole platform.
+2. Two more development-only operator commands, beside `platform:set-password`:
+   `platform:create-owner` (an active Owner with a policy-checked password from the environment,
+   granted by nobody as migration 021's operator bootstrap, authenticator set up at first sign-in)
+   and `platform:disable-account` (never the last active Owner). Both need an exact phrase, refuse in
+   production, and are audited as the system with the operator named.
+3. They also give a fresh database (Supabase after its rebuild) its first Owner.

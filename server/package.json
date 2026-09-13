@@ -17,7 +17,9 @@
     "seed:device-test": "tsx --env-file-if-exists=.env scripts/seed-device-test.ts",
     "platform:break-glass": "tsx --env-file-if-exists=.env scripts/platform-break-glass.ts",
     "db:supabase:rebuild": "tsx --env-file-if-exists=.env scripts/supabase-dev-rebuild.ts",
-    "platform:set-password": "tsx --env-file-if-exists=.env scripts/platform-set-password.ts"
+    "platform:set-password": "tsx --env-file-if-exists=.env scripts/platform-set-password.ts",
+    "platform:create-owner": "tsx --env-file-if-exists=.env scripts/platform-create-owner.ts",
+    "platform:disable-account": "tsx --env-file-if-exists=.env scripts/platform-disable-account.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

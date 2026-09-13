@@ -111,6 +111,7 @@ than from a feature list.
 | R51 | The app opens on the college code; the college's name, logo and colour then appear on sign-in and inside the app. The super admin and the College Admin can both set them | Active | [ADR](blueprint/adr.md) AD-70, migration 024 |
 | R52 | The super admin has a separate app with its own entry point; the platform is administered only from it (the web console's platform side retires once the app covers it) | Active | [ADR](blueprint/adr.md) AD-72, `lib/main_admin.dart` |
 | R53 | API calls are logged for development through Dio interceptors, never in production and never showing a secret | Active | [ADR](blueprint/adr.md) AD-73 |
+| R54 | The super admin account is the owner's real address, nirvokofficial@gmail.com; its login code comes from an authenticator app, not email | Active | [ADR](blueprint/adr.md) AD-74 |
 
 ## Assumptions awaiting confirmation
 

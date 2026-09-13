@@ -24,20 +24,25 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
 - Super admin app, flavor `admin` (SAM-1, AD-72): ✅ sign-in with authenticator, colleges list and detail, add college; ✅ tests; ✅ both APKs build; 🔍 on the phone; SAM-2/SAM-3 ❌
 - API logs via Dio interceptor (LOG-1, AD-73): ✅ debug only, secrets masked, tested
+- Real super admin account (OPS-2, AD-74): ✅ `nirvokofficial@gmail.com` Owner on local; `owner@nirvok.com` disabled; authenticator app kept
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): SAM-1 ✅ (`4474abd`) and LOG-1 ✅ (`ff0f91d`). ENV-2 🟡 still awaits the owner's rebuild.
+Just done (2026-09-14): OPS-2 ✅ — `npm run platform:create-owner` and `platform:disable-account`
+(dev only, exact phrase, audited as the system). Used on local: Owner `nirvokofficial@gmail.com`
+created (authenticator set up at first sign-in), `owner@nirvok.com` disabled (AD-74).
+Before that: SAM-1 ✅ (`4474abd`) and LOG-1 ✅ (`ff0f91d`). ENV-2 🟡 still awaits the owner's rebuild.
 - **SAM-1 (R52, AD-72):** `lib/main_admin.dart` + `lib/admin/`, Android flavor `admin`
   (`com.nirvok.collegeErp.admin`, "Super Admin", no Firebase). Platform sign-in (password → code,
   or authenticator setup by key), colleges list with totals, college detail (seats, administrator,
   branding), add college with a one-time invitation screen (code + token, copyable). Server
   unchanged. Web platform console kept until SAM-2/SAM-3 reach parity, then retired.
-- **LOG-1 (R53, AD-73):** `ApiLogInterceptor` on every client's own Dio, debug non-production only;
-  headers never printed; passwords, tokens, keys and platform auth codes masked.
+- **LOG-1 (R53, AD-73):** `CustomLogInterceptor` on `ApiClient`'s own Dio, debug
+  non-production only; authorization is masked and passwords, tokens, keys and platform auth
+  codes are redacted.
 
 Earlier, 2026-09-13: BR-1 ✅ (`817eb5e`) and OPS-1 ✅ (`5c98d42`). ENV-2 🟡 below still awaits the owner's rebuild.
 - **BR-1 (R51, AD-70, migration 024):** the app opens on the college code
@@ -145,7 +150,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 412 backend, 193 web, 169 Flutter, all passing.
+Tests: 416 backend, 193 web, 169 Flutter, all passing.
 
 ## 5. Blockers
 - iOS: Xcode not installed (Command Line Tools only).
@@ -192,8 +197,16 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
   visible. Accepted for development; to close before production.
 - A college logo is an https link until the storage port (Cloudinary) exists; the app falls back
   to initials when it fails to load.
-- `owner@nirvok.com` has a known password on local only; on Supabase it does not exist until an
-  Owner creates it in the console (or run OPS-1 there after it exists).
+- Platform accounts on local: Owner `nirvokofficial@gmail.com` (real, no authenticator yet);
+  `owner@nirvok.com` disabled; dev leftovers `o@n.com`, `owner+31650@nirvok.com`,
+  `owner+device-test@nirvok.dev` still active. Supabase has none until its rebuild, then
+  `platform:create-owner` gives it the same Owner.
+- Owner's working-tree change, not yet committed (2026-09-14): `ApiClient` logs through
+  `CustomLogInterceptor` (`dio_intercepter.dart`, coloured `dart:developer` output) instead of
+  `withApiLogs`; it masks the token and redacts bodies with the shared `redact` (AD-73 holds).
+  `AuthApi` and `PlatformAuthApi` still use `ApiLogInterceptor`. Left in it: `onError` prints the
+  raw response (only on transport failures, since every status is a response), and the
+  `DisplayOnlineExam`/`FeeBackStudent` path check is always true.
 - `server/.env.example` has an uncommitted edit containing the real Supabase password; it must
   go back to the placeholder and never be committed.
 - A College Admin cannot sign in to the web console or accept an invitation in any UI (WEB-1).

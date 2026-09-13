@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-73) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R53) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-74) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R54) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -117,3 +117,4 @@ shows its shape.
 | AD-71 | An operator may set a platform account's password, in development only | Active |
 | AD-72 | The super admin has its own Flutter app (flavor `admin`); the web platform console retires at parity | Active (SAM-1) |
 | AD-73 | API logs in development only, through one redacting Dio interceptor | Active |
+| AD-74 | Real Owner nirvokofficial@gmail.com; authenticator app kept; dev operator create-owner and disable | Active |

@@ -44,7 +44,7 @@ export interface PlatformAdminRepository {
   create(tx: Tx, input: { id: string; email: string; fullName: string }): Promise<void>;
   setStatus(tx: Tx, id: string, status: PlatformAccountStatus): Promise<void>;
   activeAssignment(tx: Tx, accountId: string): Promise<{ id: string; role: PlatformRole } | null>;
-  grant(tx: Tx, input: { id: string; accountId: string; role: PlatformRole; grantedBy: string; reason: string }): Promise<void>;
+  grant(tx: Tx, input: { id: string; accountId: string; role: PlatformRole; grantedBy: string | null; reason: string }): Promise<void>;
   end(tx: Tx, assignmentId: string, by: string, at: Date): Promise<void>;
   lockOwnership(tx: Tx): Promise<void>;
   countUsableOwners(tx: Tx): Promise<number>;
