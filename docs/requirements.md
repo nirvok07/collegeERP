@@ -116,6 +116,12 @@ than from a feature list.
 | R56 | A college can be set up by the super admin as a temporary administrator and handed over to its real administrator; nobody's password is ever generated or shared | Active | [ADR](blueprint/adr.md) AD-75 |
 | R57 | An invited person accepts the invitation and sets their own password on the web console or in the mobile app | Active | [ADR](blueprint/adr.md) AD-75 |
 | R58 | The College Admin appoints teachers and onboards students from the mobile app, as well as the web console | Active | [ADR](blueprint/adr.md) AD-76, `lib/features/onboarding/` |
+| R59 | Every time the app is opened while signed in, it asks for the fingerprint or face (biometric) before showing anything | Active, BIO-1 next | [PROJECT_STATE](../PROJECT_STATE.md) |
+| R60 | The dashboard shows no greeting and none of the user's own details (name, email) | Active, built (UX-2) | [ADR](blueprint/adr.md) AD-77 |
+| R61 | The user's own details are visible only in their Profile | Active, built (UX-2) | [ADR](blueprint/adr.md) AD-77 |
+| R62 | Classes can be created from the app | Open: which "classes" (a cohort section, or timetable sessions) is OD-MOB-2 | [PROJECT_STATE](../PROJECT_STATE.md) |
+| R63 | "Will all modules be on mobile too?" | Open question, OD-MOB-1 | [PROJECT_STATE](../PROJECT_STATE.md) |
+| R64 | The dashboard's app bar is a collapsing sliver app bar in the style of the prototype's attendance screen | Active, built (UX-2) | [ADR](blueprint/adr.md) AD-77, `assets/` |
 
 ## Assumptions awaiting confirmation
 

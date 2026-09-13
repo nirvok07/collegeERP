@@ -24,6 +24,7 @@ class RingChart extends StatelessWidget {
     this.size = 112,
     this.thickness = 12,
     this.center,
+    this.trackColor,
   });
 
   final List<RingSegment> segments;
@@ -32,9 +33,12 @@ class RingChart extends StatelessWidget {
   final double thickness;
   final Widget? center;
 
+  /// The unfilled ring; defaults to the theme's, overridden on dark panels.
+  final Color? trackColor;
+
   @override
   Widget build(BuildContext context) {
-    final track = Theme.of(context).colorScheme.surfaceContainerHigh;
+    final track = trackColor ?? Theme.of(context).colorScheme.surfaceContainerHigh;
     return Semantics(
       label: semanticLabel,
       child: ExcludeSemantics(

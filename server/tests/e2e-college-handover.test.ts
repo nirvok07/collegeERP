@@ -87,6 +87,9 @@ describe('a college from creation to closing', () => {
     const realLogin = await collegeLogin(REAL, 'real-strong-99');
     assert.equal(realLogin.statusCode, 200);
     const real = realLogin.json().data.access_token as string;
+    const me = (await call('GET', '/v1/auth/me', real)).json().data;
+    assert.equal(me.login_identifier, REAL, 'the Profile shows the email they sign in with');
+    assert.equal(me.full_name, 'Real Principal');
 
     // 6. The real administrator removes the temporary one, who loses access at once.
     const [tempRole] = await sql(

@@ -1634,3 +1634,17 @@ endpoints the web console uses; no server change. A teacher's invitation is hand
 copyable message (AD-75). Departments, programs and curriculum are still set up on the web.
 
 *Next.* A student's sign-in, by one-time activation code (AD-69), is ST-1.
+
+---
+
+**AD-77 — The dashboard carries the college and the day, never the person; the Profile carries the person**
+
+*Status.* Decided by the owner, 2026-09-14 (R60, R61, R64). Built as UX-2.
+
+*Decision.* The dashboard's header is a collapsing sliver app bar in the style of the prototype's
+attendance screen: a navy panel with the college's logo and name, the teaching-record ring with
+Taught / Not marked / Scheduled, an inner card with today, the next seven days and the person's
+courses, and a pill when classes wait to be marked. It collapses to the college's name. There is no
+greeting, name or email on the dashboard; a Profile action opens the person's own details (name,
+sign-in email, college, roles). `/v1/auth/me` now also returns the signed-in person's own
+`full_name` and `login_identifier`, and nobody else's.

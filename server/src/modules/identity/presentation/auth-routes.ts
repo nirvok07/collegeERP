@@ -269,10 +269,20 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     }
 
     const authority = await c.authority.authorityFor(req.actor.tenantId!, req.actor.sub);
+    // UX-2: who the person is, which only the app's Profile shows.
+    const tenantId = req.actor.tenantId!;
+    const personId = req.actor.sub;
+    const accountId = req.actor.accountId ?? null;
+    const who = await c.uow.run(tenantId, async (tx) => ({
+      person: await c.managePeople.persons.findById(tx, personId),
+      account: accountId ? await c.managePeople.accounts.findById(tx, accountId) : null,
+    }));
     return sendOk(reply, {
       actor_type: 'person',
       actor_id: req.actor.sub,
       tenant_id: req.actor.tenantId,
+      full_name: who.person?.fullName ?? null,
+      login_identifier: who.account?.loginIdentifier ?? null,
       permissions: [...c.authority.permissions(authority)].sort(),
       assignments: authority.assignments.map((a) => ({
         role_key: a.roleKey,

@@ -31,6 +31,11 @@ abstract final class AppColors {
   static const inkMuted = Color(0xFF64748B);
 
   static const errorSoft = Color(0xFFFDEEEE);
+
+  /// UX-2: the dashboard's header, after the prototype's attendance screen:
+  /// a deep navy panel with a slightly raised inner card.
+  static const navy = Color(0xFF1E2A3B);
+  static const navyRaised = Color(0xFF2B3A4F);
 }
 
 abstract final class AppSpacing {

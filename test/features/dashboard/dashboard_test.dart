@@ -4,6 +4,7 @@ import 'package:college_erp/core/session/authority.dart';
 import 'package:college_erp/core/widgets/screen_state.dart';
 import 'package:college_erp/features/dashboard/domain/dashboard_summary.dart';
 import 'package:college_erp/features/dashboard/presentation/dashboard_cubit.dart';
+import 'package:college_erp/core/session/college_brand.dart';
 import 'package:college_erp/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:college_erp/features/delivery/domain/class_session.dart';
 import 'package:college_erp/features/delivery/domain/delivery_repository.dart';
@@ -267,7 +268,11 @@ void main() {
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         MaterialApp(
-          home: DashboardScreen(authority: authority, name: 'Asha Menon', createCubit: () => cubit),
+          home: DashboardScreen(
+            authority: authority,
+            createCubit: () => cubit,
+            college: const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -293,9 +298,10 @@ void main() {
         cubit,
       );
 
-      expect(find.text('Asha Menon'), findsOneWidget);
-      expect(find.text('AM'), findsOneWidget);
-      expect(find.text('Waiting on you'), findsOneWidget);
+      expect(find.text('Sunrise College'), findsOneWidget, reason: 'the college, in the header');
+      expect(find.textContaining('Good '), findsNothing, reason: 'no greeting on the dashboard');
+      expect(find.byTooltip('Profile'), findsOneWidget, reason: 'personal details live in the Profile');
+      expect(find.text('1 class is waiting to be marked'), findsOneWidget);
       expect(find.text('Now'), findsOneWidget);
       expect(find.text('Compiler Design'), findsOneWidget);
       expect(find.text('Teaching record'), findsOneWidget);
