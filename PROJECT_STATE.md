@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ 133 Flutter tests; Android replay 🔍 NEEDS VALIDATION (device unavailable)
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config; FCM registration 🔍
-- Platform Administration: ⚠️ PARTIAL. S1/S2 provisioning ✅; SA-1 college lifecycle ✅; SA-2…SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 provisioning ✅; SA-1 lifecycle ✅; SA-2 audit view ✅ (migration 020 🔍 not yet applied to dev); SA-3…SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Student role and student experience: ❌
 - Examinations, Results (M10): 🚫 OD-1
@@ -24,25 +24,27 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-1 ✅ DONE: 340 server tests, 167 web tests, typecheck clean (commit `7c13554`).
+None in progress. SA-2 ✅ DONE: 353 server tests, 174 web tests, typechecks clean (commit recorded below).
+**Action for the owner:** apply migration `020_platform_audit_read.sql` to `college_erp_dev`
+(`npm run migrate` in `server/`). Until then `GET /v1/platform/audit` fails on the dev database.
 AD-59 device replay ⏸️ POSTPONED until the phone is connected.
 
-### NEXT SLICE — SA-2 Platform Audit View
+### NEXT SLICE — SA-3 Platform Accounts, Roles, Second Factor
 Design: `docs/blueprint/capabilities/platform-administration.md` §5.
-- **Already built:** append-only `audit_events` with `actor_type` platform and `tenant_id`; SA-1
-  writes `institution.*` and `invitation.reissued`; no audit read route exists.
-- **To build:** a platform-only, paginated read of platform events, filtered by college, action
-  and date; a web view in the platform console, linked from the college drawer.
-- **Not in this slice:** tenant-side audit views, sensitive-read auditing, exports, platform roles.
-- **Dependencies:** the audit table's RLS (platform reads need a deliberate, narrow path).
-- **Validation:** platform-only access, no tenant data beyond event metadata, pagination, filters.
-- **Open decision:** whether platform events may include events a college user caused (proposed: no).
-- **Blockers:** none.
+- **Why next:** platform accounts are the largest standing privilege, exist only by SQL insert,
+  have no second factor, and have one all-powerful role. SA-5 (impersonation) depends on the
+  Support role this slice introduces.
+- **Already built:** `platform_accounts`, platform sign-in with lockout and audit, platform guard.
+- **To build:** Owner and Support roles enforced server-side; account creation by command, not SQL;
+  a second factor at platform sign-in.
+- **Not in this slice:** impersonation (SA-5), seats and plan (SA-4), college-user MFA.
+- **Open decision:** OD-SA-3, which second factor. It blocks only the second-factor part.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
 |---|---|---|---|---|---|
 | OD-SA-1 | What does "suspended" mean for a college's users? | Live sessions end or turn read-only | SA-1 | — | ✅ Resolved as AD-60: refused entirely |
+| OD-SA-3 | Second factor for platform accounts | The platform's largest privilege is password-only | SA-3 | TOTP app; email one-time code | Open, blocks SA-3's second-factor part |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 
@@ -57,10 +59,10 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-60, all Active; AD-59 and AD-60 approved 2026-09-13. Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-61, all Active; AD-59, AD-60 and AD-61 approved 2026-09-13. Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`019` applied on `college_erp_dev`. `019` adds the college lifecycle trigger and invitation revocation.
+Migrations `001`–`019` applied on `college_erp_dev`; `020` (platform audit read) written and tested, **not applied to dev**: the owner applies it.
 
 ## 4. Commits (newest first)
 ```
@@ -71,7 +73,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 340 backend, 167 web, 133 Flutter, all passing.
+Tests: 353 backend, 174 web, 133 Flutter, all passing.
 
 ## 5. Blockers
 - AD-59 device validation: the Android phone is not connected.

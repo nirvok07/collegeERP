@@ -1,6 +1,6 @@
 # Platform Administration (Super Admin)
 
-Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019); SA-2 to SA-5 not built. Owner: M1 Identity &
+Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019). **SA-2 implemented 2026-09-13** (AD-61, migration 020). SA-3 to SA-5 not built. Owner: M1 Identity &
 Access (platform side) with M2 for the institution record (AD-20). Decisions cited, not restated.
 
 ## 1. What exists (S1, S2)
@@ -22,7 +22,6 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 |---|---|
 | Seat limit enforcement | `SEAT_LIMIT_REACHED` is defined and never raised |
 | Plan and seat changes after provisioning | No endpoint |
-| Platform audit view (matrix: Platform Owner, "V of platform events") | Zero audit read routes |
 | Platform roles: Owner and Support are distinct in the matrix | One actor type, all-powerful; the web grants `platform.tenant.manage` locally |
 | Platform account management, second factor | Accounts exist only by SQL insert; no MFA, although W0 requires one for sensitive roles |
 | Support impersonation W10 (AD-19) | Nothing built; needs the grant states and the Principal's approval |
@@ -58,12 +57,25 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 | Audit: `institution.suspended/reactivated/closed`, `invitation.reissued` (never the token) | audit writer, platform actor |
 | Web: college detail drawer, reason-confirmed actions, typed-code close, reissue | `clients/web/src/features/institutions/InstitutionDrawer.tsx` |
 
+## 4b. SA-2 as built
+
+| Piece | Where |
+|---|---|
+| Read of platform events only, across colleges and without one | `platform_audit_events` in migration `020_platform_audit_read.sql` |
+| Endpoint: college, action and time filters; keyset cursor; 50 default, 100 max | `GET /v1/platform/audit` |
+| Server-side redaction of sensitive-looking keys | `institution/application/platform-audit.ts` |
+| Partial index for the read | `audit_events_platform_at_idx` |
+| Web: Audit section in the platform console, filters, detail row, load more | `clients/web/src/features/platform-audit/` |
+
+Visible: provisioning, lifecycle changes, invitation reissue, the bootstrap administrator's
+creation, and platform sign-in and sign-out. Not visible: anything a college's own users did.
+
 ## 5. Smallest safe slices
 
 1. ✅ **SA-1 Tenant lifecycle.** Institution detail; suspend, reactivate and close with a reason;
    enforce suspension on refresh and per request; reissue the administrator invitation; audit
    every transition. Web only.
-2. **SA-2 Platform audit view.** Read platform events, filtered by college and action.
+2. ✅ **SA-2 Platform audit view.** Read platform events, filtered by college and action.
 3. **SA-3 Platform accounts.** Owner and Support roles, a second factor, and account creation by
    command rather than SQL.
 4. **SA-4 Seats and plan.** Change seat limit and plan; enforce the seat limit on activation.

@@ -4,6 +4,7 @@ import { ApiClient, type ApiFailure } from './lib/api.ts';
 import { AuthSession, type Actor } from './lib/auth.ts';
 import { SignInPage } from './features/auth/SignInPage.tsx';
 import { InstitutionsPage } from './features/institutions/InstitutionsPage.tsx';
+import { AuditPage } from './features/platform-audit/AuditPage.tsx';
 import { PeoplePage } from './features/people/PeoplePage.tsx';
 import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
 import { CurriculumPage } from './features/curriculum/CurriculumPage.tsx';
@@ -124,7 +125,10 @@ function sectionsFor(
   api: ApiClient,
 ): NavItem[] {
   if (actorType === 'platform') {
-    return [{ key: 'institutions', label: 'Colleges', render: () => <InstitutionsPage api={api} /> }];
+    return [
+      { key: 'institutions', label: 'Colleges', render: () => <InstitutionsPage api={api} /> },
+      { key: 'audit', label: 'Audit', render: () => <AuditPage api={api} /> },
+    ];
   }
   const items: NavItem[] = [];
   if (permissions?.has('person.read')) {

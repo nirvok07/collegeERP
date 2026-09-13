@@ -4,6 +4,9 @@ import type {
   CampusRecord, CampusRepository, DepartmentRecord, DepartmentRepository,
   InstitutionRecord, InstitutionRepository,
 } from '../application/ports.ts';
+import type {
+  PlatformAuditFilter, PlatformAuditReader, PlatformAuditRow,
+} from '../application/platform-audit.ts';
 
 const COLUMNS = `id, code, name, status, plan, seat_limit, timezone, version,
                  suspended_from, status_changed_at, created_at`;
@@ -190,4 +193,27 @@ function toInstitution(r: any): InstitutionRecord {
     suspendedFrom: r.suspended_from ?? null, statusChangedAt: r.status_changed_at ?? null,
     createdAt: r.created_at,
   };
+}
+
+/** SA-2. Reads through platform_audit_events (migration 020), never the table directly. */
+export class PgPlatformAuditReader implements PlatformAuditReader {
+  async list(tx: Tx, f: PlatformAuditFilter): Promise<PlatformAuditRow[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT * FROM platform_audit_events($1, $2, $3, $4, $5, $6, $7)`,
+      [f.tenantId, f.action, f.from, f.to, f.before?.at ?? null, f.before?.id ?? null, f.limit],
+    );
+    return rows.map((r: any) => ({
+      id: r.id,
+      at: r.at,
+      cursorAt: r.cursor_at,
+      correlationId: r.correlation_id,
+      college: r.tenant_id ? { id: r.tenant_id, code: r.college_code, name: r.college_name } : null,
+      actor: r.actor_id ? { id: r.actor_id, name: r.actor_name, email: r.actor_email } : null,
+      action: r.action,
+      subject: { type: r.subject_type, id: r.subject_id },
+      before: r.before_state,
+      after: r.after_state,
+      reason: r.reason,
+    }));
+  }
 }

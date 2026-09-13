@@ -4,6 +4,7 @@
  */
 import { TenantAccessGate } from './infrastructure/http/tenant-access.ts';
 import type { LifecycleDeps } from './modules/institution/application/manage-lifecycle.ts';
+import type { PlatformAuditDeps } from './modules/institution/application/platform-audit.ts';
 import type { Config } from './config/config.ts';
 import { createPool, type Pool } from './infrastructure/db/pool.ts';
 import { PgUnitOfWork } from './infrastructure/db/unit-of-work.ts';
@@ -35,6 +36,7 @@ import {
   PgCampusRepository,
   PgDepartmentRepository,
   PgInstitutionRepository,
+  PgPlatformAuditReader,
 } from './modules/institution/infrastructure/repositories.ts';
 import { AuthorityService } from './modules/identity/application/resolve-authority.ts';
 import type { Deps as IdentityProvisioningDeps } from './modules/identity/application/provision-initial-admin.ts';
@@ -103,6 +105,7 @@ export interface Container {
   institutions: PgInstitutionRepository;
   tenantAccess: TenantAccessGate;
   lifecycle: LifecycleDeps;
+  platformAudit: PlatformAuditDeps;
   uow: PgUnitOfWork;
   close(): Promise<void>;
 }
@@ -176,6 +179,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       },
       onStatusChanged: (id) => tenantAccess.invalidate(id),
     },
+    platformAudit: { uow, platformAudit: new PgPlatformAuditReader() },
     authority: new AuthorityService({ uow, assignments, orgTree, clock }),
     identityProvisioning,
     authenticate: {

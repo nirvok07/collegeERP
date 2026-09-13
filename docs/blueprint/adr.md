@@ -1241,3 +1241,28 @@ reason, is version-pinned, and is audited. Closing requires the college code typ
 *Consequences.* Status is cached per process for at most 15 seconds and cleared at once on a
 change made in that process. Queued mobile writes of a suspended college fail as refusals and
 wait for a person (AD-59). What closing means for data stays open as OD-SA-2.
+
+---
+
+**AD-61 — The platform reads only the events it caused, through one narrow definer function, newest first by keyset**
+
+*Status.* Approved and implemented, 2026-09-13 (SA-2, migration 020).
+
+*Problem.* `audit_events` is isolated per college by row-level security. Platform events are spread
+across every college, and some have no college at all (platform sign-in and sign-out). No query
+under the normal tenant context can see them together.
+
+*Decision.* `platform_audit_events(...)`, SECURITY DEFINER and read-only, following
+`auth_resolve_refresh_token` (migration 005). It returns only rows with `actor_type = 'platform'`.
+Events a college's users caused are never returned, so audit ownership is unchanged and matches
+the M1 matrix ("Platform Owner: V of platform events"). `ip_hash` is not returned. The platform
+guard admits platform accounts only; college users are told the endpoint does not exist.
+
+*Pagination.* Keyset on `(at, id)`, newest first, 50 by default, 100 at most, with an opaque
+cursor that carries the database's full-precision timestamp. Offset paging was rejected: events
+arriving while someone pages would shift pages. This is the API's first paginated list; the
+existing lists stay capped by `limit`.
+
+*Also.* A partial index serves exactly this read. Payload keys that look sensitive are redacted on
+the server and dropped again in the web client, although no writer stores secrets today. Reading
+the trail is not itself audited: no policy asks for it.

@@ -14,6 +14,7 @@ import {
   changeLifecycle, getInstitutionDetail, reissueInvitation, type InstitutionDetail,
 } from '../application/manage-lifecycle.ts';
 import type { LifecycleAction } from '../domain/lifecycle.ts';
+import { listPlatformAudit, MAX_PAGE } from '../application/platform-audit.ts';
 
 const provision = z.object({
   code: z.string().min(3).max(32),
@@ -35,6 +36,15 @@ const unitBody = z.object({
 const departmentBody = unitBody.extend({ campus_id: z.string().uuid() });
 const renameBody = z.object({ name: z.string().min(2).max(120) });
 const archiveBody = z.object({ reason: z.string().min(1).max(500) });
+const auditQuery = z.object({
+  college: z.string().uuid().optional(),
+  action: z.string().regex(/^[a-z_]+(\.[a-z_]+)*$/).max(80).optional(),
+  from: z.string().datetime({ offset: true }).optional(),
+  to: z.string().datetime({ offset: true }).optional(),
+  cursor: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(MAX_PAGE).optional(),
+});
+
 const lifecycleBody = z.object({
   version: z.number().int().positive(),
   reason: z.string().max(500),
@@ -256,6 +266,38 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
       institution: detailJson(result.value.detail),
       invitation: { token: result.value.token, expires_at: result.value.expiresAt.toISOString(), delivery: 'pending' },
     }, 201);
+  });
+
+
+  /*
+   * SA-2: platform events, newest first, keyset-paginated (AD-61). Only events
+   * a platform account caused; a college's own activity is not visible here.
+   */
+  app.get('/platform/audit', async (req, reply) => {
+    if (!requirePlatformActor(req, reply)) return reply;
+    const parsed = auditQuery.safeParse(req.query);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const q = parsed.data;
+    const result = await listPlatformAudit(c.platformAudit, {
+      tenantId: q.college ?? null, action: q.action ?? null,
+      from: q.from ?? null, to: q.to ?? null, cursor: q.cursor ?? null, limit: q.limit ?? null,
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, {
+      events: result.value.rows.map((r) => ({
+        id: r.id,
+        at: r.at.toISOString(),
+        correlation_id: r.correlationId,
+        college: r.college,
+        actor: r.actor,
+        action: r.action,
+        subject: r.subject,
+        before: r.before ?? null,
+        after: r.after ?? null,
+        reason: r.reason,
+      })),
+      next_cursor: result.value.nextCursor,
+    });
   });
 
 }

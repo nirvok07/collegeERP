@@ -45,12 +45,5 @@
   .table__primary { font: var(--text-title); }
 }
 
-/* SA-1: the college name opens its detail; a real button, styled as the row's primary text. */
-.row-link {
-  background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left;
-  cursor: pointer;
-}
-.row-link:hover { color: var(--primary); text-decoration: underline; }
-.row-link:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 2px; }
 .drawer-section { font: var(--text-label, inherit); margin: var(--space-lg) 0 var(--space-sm); }
 .drawer-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; justify-content: flex-end; }
