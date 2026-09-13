@@ -83,6 +83,9 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  # AD-72: two Android flavors. A plain `flutter run` still builds the college
+  # app; the super admin app is `--flavor admin -t lib/main_admin.dart`.
+  default-flavor: college
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

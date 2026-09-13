@@ -39,6 +39,23 @@ android {
         versionName = flutter.versionName
     }
 
+    // AD-72: two apps from one codebase. The college app keeps the canonical id
+    // (R2). The super admin app is its own install, with its own id and entry
+    // point (lib/main_admin.dart), and has no Firebase client: its variants
+    // skip the google-services and Crashlytics tasks, below.
+    flavorDimensions += "app"
+    productFlavors {
+        create("college") {
+            dimension = "app"
+            resValue("string", "app_name", "College")
+        }
+        create("admin") {
+            dimension = "app"
+            applicationIdSuffix = ".admin"
+            resValue("string", "app_name", "Super Admin")
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -56,4 +73,12 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+// AD-72: no Firebase client is registered for the super admin app, and it uses
+// no Firebase service, so its variants never run the Firebase build steps.
+tasks.configureEach {
+    if (name.contains("Admin") && (name.contains("GoogleServices") || name.contains("Crashlytics"))) {
+        enabled = false
+    }
 }

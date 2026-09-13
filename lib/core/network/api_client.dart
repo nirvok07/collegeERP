@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../config/app_config.dart';
 import '../error/failure.dart';
 import '../error/result.dart';
+import 'api_log_interceptor.dart';
 
 /// The single HTTP boundary.
 ///
@@ -13,7 +14,7 @@ class ApiClient {
   ApiClient({Dio? dio, required this._accessToken, required this._renew})
     : _dio =
           dio ??
-          Dio(
+          withApiLogs(Dio(
             BaseOptions(
               baseUrl: AppConfig.current.apiBaseUrl,
               connectTimeout: const Duration(seconds: 15),
@@ -23,7 +24,7 @@ class ApiClient {
               validateStatus: (_) => true,
               contentType: 'application/json',
             ),
-          );
+          ));
 
   final Dio _dio;
   final Future<String?> Function() _accessToken;

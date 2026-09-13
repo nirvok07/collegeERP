@@ -6,6 +6,7 @@ import '../error/result.dart';
 import '../session/college_brand.dart';
 import '../session/session_manager.dart';
 import 'api_client.dart';
+import 'api_log_interceptor.dart';
 
 class AuthSession {
   const AuthSession({
@@ -41,13 +42,13 @@ class AuthSession {
 class AuthApi {
   AuthApi([Dio? dio])
       : _dio = dio ??
-            Dio(BaseOptions(
+            withApiLogs(Dio(BaseOptions(
               baseUrl: AppConfig.current.apiBaseUrl,
               connectTimeout: const Duration(seconds: 15),
               receiveTimeout: const Duration(seconds: 30),
               validateStatus: (_) => true,
               contentType: 'application/json',
-            ));
+            )));
 
   final Dio _dio;
 

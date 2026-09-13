@@ -126,6 +126,14 @@ class SessionManager {
     );
   }
 
+  /// AD-72: the super admin app signs in through its own two steps (password,
+  /// then a code from the authenticator). The session that results is kept,
+  /// renewed and ended exactly like any other, through this manager.
+  Future<void> adoptSession(AuthSession session) async {
+    await _adopt(session);
+    _events.add(SignedIn(_actor!));
+  }
+
   Future<void> signOut() async {
     _renewTimer?.cancel();
     final token = await _store.readRefreshToken();
