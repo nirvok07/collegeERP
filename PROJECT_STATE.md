@@ -33,7 +33,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ONB-1 ✅ (AD-76, R58) — the college app's dashboard has "Onboarding" for the
+Just done (2026-09-14): ONB-1 ✅ (AD-76, R58; `09e79c2`) — the college app's dashboard has "Onboarding" for the
 College Admin: appoint a teacher (name, email, department, Faculty or Head of Department → one
 invitation message to copy) and onboard a student (name, enrolment number, program, admission date).
 Same endpoints as the web; no server change. A new college needs departments and programs first,
@@ -150,6 +150,7 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+09e79c2 Build ONB-1: the College Admin appoints teachers and onboards students from the phone
 0e19d41 Build the college handover flow: lifecycle in the Super Admin app, invitations accepted on web and phone
 f9303c0 Build OPS-2: operators create an Owner and disable an account in development
 4474abd Build SAM-1: a separate Super Admin app with its own entry point
