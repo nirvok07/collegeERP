@@ -1400,3 +1400,26 @@ account, so Owners see the break-glass reset. College events stay invisible.
 *Enforcement.* At the source of truth: a database trigger on `user_accounts` for inserts and for
 any change into a live status, under a per-college advisory lock, so concurrent invitations cannot
 both pass on a stale count and no application path can bypass it.
+
+---
+
+**AD-66 — Development runs on local PostgreSQL `college_erp_dev`; the npm scripts load `server/.env`**
+
+*Status.* Decided by the owner, 2026-09-13; resolves OD-ENV-1. Supersedes R30.
+
+*Decision.* Local PostgreSQL `college_erp_dev` is development's source of truth: local commands,
+migrations, the dev server and device validation all use it. Tests keep their own
+`college_erp_test`. Production stays environment-specific and unchanged, and the code stays
+provider-neutral PostgreSQL over `DATABASE_URL`; nothing is coupled to local PostgreSQL. Supabase
+remains a possible managed environment and is not the active development database; no migration
+was applied there.
+
+*Why.* R30 named Supabase, but its pooler was unreachable from development and every migration,
+test and device check already ran locally, while `server/.env` mixed both.
+
+*Configuration.* The server reads only its process environment, so the npm scripts that run it
+(`dev`, `start`, `migrate`, `db:bootstrap`, `seed:device-test`, `platform:break-glass`) load
+`server/.env` with Node's `--env-file-if-exists`; a missing file is tolerated, and `npm test` sets
+its own values. `server/.env` names the local database for both roles; the Supabase pooler address
+is kept there as `SUPABASE_POOLER_DATABASE_URL`, read by nothing. `server/.env.example` documents
+the shape with placeholders only.

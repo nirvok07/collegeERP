@@ -17,7 +17,8 @@ pg.types.setTypeParser(1082, (value) => value);
 
 /**
  * Standard PostgreSQL over DATABASE_URL. No vendor SDK, so the same code runs
- * against Supabase-hosted PostgreSQL in development and managed PostgreSQL in
+ * against local PostgreSQL in development (AD-66) and managed PostgreSQL, Supabase
+ * included, in
  * production; moving between them is a configuration change.
  */
 export function createPool(databaseUrl: string): pg.Pool {

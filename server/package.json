@@ -7,15 +7,15 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "tsx watch src/main.ts",
-    "start": "tsx src/main.ts",
-    "migrate": "tsx src/infrastructure/db/migrate.ts",
-    "db:bootstrap": "tsx src/infrastructure/db/bootstrap-cli.ts",
+    "dev": "tsx watch --env-file-if-exists=.env src/main.ts",
+    "start": "tsx --env-file-if-exists=.env src/main.ts",
+    "migrate": "tsx --env-file-if-exists=.env src/infrastructure/db/migrate.ts",
+    "db:bootstrap": "tsx --env-file-if-exists=.env src/infrastructure/db/bootstrap-cli.ts",
     "db:setup": "./scripts/setup-db.sh",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "seed:device-test": "tsx scripts/seed-device-test.ts",
-    "platform:break-glass": "tsx scripts/platform-break-glass.ts"
+    "seed:device-test": "tsx --env-file-if-exists=.env scripts/seed-device-test.ts",
+    "platform:break-glass": "tsx --env-file-if-exists=.env scripts/platform-break-glass.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",

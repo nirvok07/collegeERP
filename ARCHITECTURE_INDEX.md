@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-65) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R45) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-66) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R46) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -23,6 +23,13 @@ Server `server/`: Node 24, Fastify 5, `pg` without ORM, zod, node:test. Web `cli
 Vite, TypeScript, Vitest (AD-54). Mobile at repo root `lib/`: Flutter, Cubit, Dio, get_it,
 Navigator `onGenerateRoute`, Drift over SQLite3MultipleCiphers (AD-59). No Flutter Web.
 Firebase: FCM, Remote Config, Crashlytics only.
+
+## Development environment (AD-66)
+
+Local PostgreSQL `college_erp_dev` for development, `college_erp_test` for tests. `npm run db:setup`
+creates both; `npm run migrate` provisions roles and applies migrations. The npm scripts load
+`server/.env` (`--env-file-if-exists`); `server/.env.example` shows its shape. `npm test` sets its
+own configuration.
 
 ## Load-bearing patterns
 
@@ -97,3 +104,4 @@ Firebase: FCM, Remote Config, Crashlytics only.
 | AD-63 | Platform secret protection (AES-256-GCM, dedicated key) and sole-Owner break-glass | Active |
 | AD-64 | Platform authority is an Owner or Support role assignment, resolved per request | Active |
 | AD-65 | A seat is a live college account; a lowered limit blocks new accounts and disables none | Decided; SA-4a |
+| AD-66 | Development runs on local PostgreSQL `college_erp_dev`; the npm scripts load `server/.env` | Active |

@@ -160,7 +160,7 @@ takes no new seat because an invitation already holds one.
 - *Enforcement* (AD-65): a `BEFORE INSERT OR UPDATE OF status` trigger on `user_accounts`. When a
   row becomes live, it takes `pg_advisory_xact_lock(hashtextextended(tenant_id::text, <seed>))`,
   counts the college's live accounts and compares with `institutions.seat_limit`; at or above the
-  limit it raises a dedicated SQLSTATE that the unit of work maps to `SEAT_LIMIT_REACHED` (409)
+  limit it raises the dedicated SQLSTATE `ERS01`, which the unit of work maps to `SEAT_LIMIT_REACHED` (409)
   with the trigger's own sentence. It covers both paths, W0 included, any future path, and races.
 - *Plan and limit are independent.* Changing the plan never changes the limit; there is no pricing
   and no plan catalogue. The plan stays a label until a decision gives it meaning.
@@ -184,4 +184,4 @@ takes no new seat because an invitation already holds one.
 | ~~OD-SA-5~~ | Resolved as AD-63: AES-256-GCM sealing with a dedicated key, otplib, operator break-glass |
 | OD-SA-6 | Owner succession: should the platform require a minimum number of active Owners (for example two) beyond "never zero"? |
 | ~~OD-SA-4~~ | Resolved as AD-65: every live college account is a seat; lowering below use blocks new accounts and disables none |
-| OD-ENV-1 | Which database is development's source of truth: local `college_erp_dev` or Supabase (R30). See PROJECT_STATE §9 |
+| ~~OD-ENV-1~~ | Resolved as AD-66: local `college_erp_dev` is development's database |

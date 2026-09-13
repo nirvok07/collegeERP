@@ -28,7 +28,8 @@ None in progress. OD-SA-4 resolved as AD-65; SA-4a designed (`platform-administr
 commit `e3fce75`. `SECRET_SEALING_KEY` is configured in `server/.env` and held by the
 running dev server (no fallback); its value is recorded nowhere else.
 
-**STATUS: CONFIGURATION DECISION REQUIRED (OD-ENV-1) before SA-4a.** See §9.
+OD-ENV-1 ✅ resolved as AD-66: development uses local `college_erp_dev`. `npm run dev` and
+`npm run migrate` load `server/.env` themselves and both resolve to it; no manual overrides.
 
 ### NEXT SLICE — SA-4a Plan & Seat Limits with concurrency-safe enforcement
 Design: `docs/blueprint/capabilities/platform-administration.md` §6b, AD-65.
@@ -37,7 +38,7 @@ Design: `docs/blueprint/capabilities/platform-administration.md` §6b, AD-65.
   state on the college detail and list, web drawer and banner, tests for both account paths,
   concurrent invitations, lowering below use, and no automatic disabling.
 - **Not in this slice:** pricing, billing, plan catalogue, SA-5, student account issuance.
-- **Blocked by:** OD-ENV-1 only (which database development uses).
+- **Blocked by:** nothing.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
@@ -46,13 +47,13 @@ Design: `docs/blueprint/capabilities/platform-administration.md` §6b, AD-65.
 | OD-SA-3 | Second factor for platform accounts | — | SA-3 | — | ✅ Resolved as AD-62: TOTP authenticator app |
 | OD-SA-5 | How the server stores a secret it must read back | — | SA-3b | — | ✅ Resolved as AD-63 |
 | OD-SA-4 | What a seat is | — | SA-4 | — | ✅ Resolved as AD-65 |
-| OD-ENV-1 | Which database is development's source of truth | R30 says Supabase; everything actually runs on local `college_erp_dev`; `server/.env` mixes both | SA-4a and every dev command | Local `college_erp_dev` (update R30 and `.env`'s `DATABASE_URL`); or Supabase (owner applies 001–022 there, pooler reachable, dev commands load `.env`) | Open, blocks SA-4a |
+| OD-ENV-1 | Which database is development's source of truth | — | Development | — | ✅ Resolved as AD-66: local `college_erp_dev` |
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 
 ### BLOCKERS
-OD-ENV-1 (development database) blocks SA-4a. Xcode (iOS). Drift 6 (backend push delivery). OD-1 (M10).
+Xcode (iOS, deferred). Drift 6 (backend push delivery). OD-1 (M10).
 
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
@@ -62,7 +63,7 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-65. AD-65 (seats) decided, implemented in SA-4a. AD-61 amended by SA-3b. Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-66. AD-65 (seats) decided, implemented in SA-4a; AD-66 (development database) in force. Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
 Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner.
@@ -97,14 +98,8 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 `test/core/outbox/outbox_test.dart`, `docs/12-mobile-platform-config.md` device table.
 
 ## 9. Known inconsistencies and risks
-- OD-ENV-1. Evidence: R30 (Active) and `pool.ts` say development runs on Supabase; the checkpoint
-  note says the Supabase pooler was unreachable and local PostgreSQL stays active; config defaults,
-  `setup-db.sh`, tests, migrations 001–022 and the dev server all use local `college_erp_dev`.
-- `server/.env` is inconsistent: `DATABASE_URL` points at a remote Supabase pooler while
-  `MIGRATION_DATABASE_URL` and the running dev server use local `college_erp_dev`, and its
-  `JWT_SECRET` differs from the dev default in use. Loading the whole file would move the app to
-  another database, so only `SECRET_SEALING_KEY` is passed. The owner should decide which database
-  `DATABASE_URL` is meant to name.
+- Resolved (AD-66): `server/.env` now names local `college_erp_dev` for both roles; the Supabase
+  pooler address is kept as `SUPABASE_POOLER_DATABASE_URL` and read by nothing.
 - After reconnecting, the outbox honours its backoff (up to 10 minutes) until the teacher taps
   "Send now", because the app has no connectivity listener. Observed on device; by design today.
 - Firebase console test sends need the owner's console access; not yet done.
