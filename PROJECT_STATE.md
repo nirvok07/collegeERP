@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ unit tests, ✅ Android real-device replay and conflict, 2026-09-13
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config, FCM registration and revocation (2026-09-13); push delivery 🔍 console, 🚫 backend (Drift 6)
-- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (migration 023 🔍 not applied); SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (023 run by the owner on Supabase, untracked; local still at 022); SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Mobile dashboard + light theme (MUX-1, AD-67): ✅ code, ✅ tests, ✅ APK builds; 🔍 visual check on the phone
 - Dev database on Supabase (ENV-2, AD-68): 🟡 tooling ✅ tested; 🚫 schema rebuild awaits the owner (destructive on an external service)
@@ -46,8 +46,8 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - Charts are native (`lib/core/widgets/charts.dart`), with screen-reader labels; no new package.
 - Schedule, courses, people, organisation and account are pushed routes, each shown only with its
   permission. The offline banner moved to `MaterialApp.builder` so it shows over every route.
-- No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`), and
-  **owner action** still open: apply migration `023_seat_limits.sql` (`npm run migrate`).
+- No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
+  ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
 ### NEXT SLICE — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
@@ -89,7 +89,11 @@ Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabiliti
 AD-1…AD-66, all in force. AD-65 implemented by SA-4a (migration 023 pending application). Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner. `023` (seat limits) written and tested, **not applied**: the owner applies it.
+Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner. `023` (seat limits): run by the owner on Supabase by hand (its trigger is there, verified
+2026-09-13); **not** on local `college_erp_dev` (`schema_migrations` ends at 022, no trigger).
+Local only matters if development returns there (`npm run migrate` with the `LOCAL_*` values).
+Supabase's `SUPABASE_DB_URL` password ends in an unencoded `@`: psql cannot parse it, the rebuild's
+URL parser reads it correctly (tested).
 Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023` by
 `npm run db:supabase:rebuild`; no data of anybody's there (3 seeded role definitions).
 

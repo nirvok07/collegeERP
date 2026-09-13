@@ -32,6 +32,14 @@ describe('supabaseUrls', () => {
     assert.deepEqual(credentialsOf(urls.migrator), { role: 'erp_migrator', password: 'mig-secret' });
   });
 
+  it('reads a password ending in an unencoded @, as Supabase dashboards produce', () => {
+    // `postgres:secret@@db…`: the userinfo ends at the last @, so the first one
+    // belongs to the password. psql cannot parse this form; the URL parser can.
+    const urls = supabaseUrls('postgresql://postgres:secret@@db.abcref.supabase.co:5432/postgres', POOLER, 'm');
+    assert.equal(credentialsOf(urls.admin).password, 'secret@');
+    assert.match(urls.admin, /:secret%40@aws-0/);
+  });
+
   it('generates a migrator password when none is given', () => {
     const { password } = credentialsOf(supabaseUrls(DIRECT, POOLER).migrator);
     assert.match(password, /^[0-9a-f]{48}$/);
