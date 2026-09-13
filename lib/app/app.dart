@@ -57,16 +57,23 @@ class _CollegeAppState extends State<CollegeApp> {
     _rememberedInstitution = await locator<SessionStore>().readInstitutionCode();
     final restored = await _session.restore();
     if (!mounted) return;
+    // Offline at launch: the stored session is intact and renewal is retrying.
+    // Waiting is right; the sign-in screen would be an auto-logout by another
+    // name (AD-25). SessionRecovered or SignedOut decides what comes next.
+    if (!restored && _session.renewalPending) return;
     setState(() => _phase = restored ? _Phase.signedIn : _Phase.signedOut);
-    if (restored) {
-      unawaited(_loadAuthority());
-      FirebaseServices.instance.identify(_session.actor?.id);
-      // A restored session emits no sign-in event, so the outbox is resumed here.
-      if (locator.isRegistered<OutboxReplayer>()) unawaited(locator<OutboxReplayer>().resume());
-      // Registered after the session exists, because the call is authenticated
-      // and the backend ties the device to the account that owns it.
-      unawaited(locator<DeviceRegistration>().register());
-    }
+    if (restored) _enterRestoredSession();
+  }
+
+  /// What a restored session needs, whether it came back at launch or later.
+  void _enterRestoredSession() {
+    unawaited(_loadAuthority());
+    FirebaseServices.instance.identify(_session.actor?.id);
+    // A restored session emits no sign-in event, so the outbox is resumed here.
+    if (locator.isRegistered<OutboxReplayer>()) unawaited(locator<OutboxReplayer>().resume());
+    // Registered after the session exists, because the call is authenticated
+    // and the backend ties the device to the account that owns it.
+    unawaited(locator<DeviceRegistration>().register());
   }
 
   /// Which surfaces exist is decided by what the server says this person may
@@ -110,6 +117,11 @@ class _CollegeAppState extends State<CollegeApp> {
           _degradedMessage = event.failure.message;
         case SessionRecovered():
           _degradedMessage = null;
+          // A launch that waited for the network continues into the session.
+          if (_phase == _Phase.restoring) {
+            _phase = _Phase.signedIn;
+            _enterRestoredSession();
+          }
       }
     });
   }
@@ -125,7 +137,7 @@ class _CollegeAppState extends State<CollegeApp> {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       home: switch (_phase) {
-        _Phase.restoring => const _RestoringScreen(),
+        _Phase.restoring => _RestoringScreen(offlineMessage: _degradedMessage),
         _Phase.signedOut => SignInScreen(rememberedInstitution: _rememberedInstitution),
         _Phase.signedIn => _HomeShell(
           degradedMessage: _degradedMessage,
@@ -141,13 +153,38 @@ class _CollegeAppState extends State<CollegeApp> {
 enum _Phase { restoring, signedOut, signedIn }
 
 class _RestoringScreen extends StatelessWidget {
-  const _RestoringScreen();
+  const _RestoringScreen({this.offlineMessage});
+
+  /// Set when the launch is waiting for the network rather than the server.
+  final String? offlineMessage;
 
   @override
   Widget build(BuildContext context) {
     // Quiet rather than a spinner: on most launches this is visible for a few
     // hundred milliseconds and a spinner would flash.
-    return const Scaffold(body: SizedBox.shrink());
+    if (offlineMessage == null) return const Scaffold(body: SizedBox.shrink());
+    final theme = Theme.of(context);
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.cloud_off_rounded, size: 40, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(height: 16),
+              Text('Waiting for a connection', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Text(
+                'You are still signed in. This continues on its own when the server can be reached.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

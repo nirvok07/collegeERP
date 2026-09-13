@@ -14,8 +14,8 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Attendance (M6): ✅ corrections by permission; approval workflow ❌
 - Internal Assessment (M7): ✅ verify and correct by permission; approval workflow ❌
 - Offline Outbox slice 1, idempotency (AD-58): ✅
-- Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ 133 Flutter tests; Android replay 🔍 NEEDS VALIDATION (device unavailable)
-- Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config; FCM registration 🔍
+- Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ unit tests, ✅ Android real-device replay and conflict, 2026-09-13
+- Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config, FCM registration and revocation (2026-09-13); push delivery 🔍 console, 🚫 backend (Drift 6)
 - Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅ (3a roles, 3b TOTP; migrations 021, 022 🔍 not applied); SA-4, SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Student role and student experience: ❌
@@ -24,13 +24,19 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-3 ✅ DONE (SA-3b commit `f18867a`): 383 server tests, 186 web tests, typechecks clean.
-**Owner actions before the dev console works:**
-1. Apply migrations `021_platform_roles.sql` and `022_platform_mfa.sql` (`npm run migrate` in `server/`).
-2. Add `SECRET_SEALING_KEY` to `server/.env` (`openssl rand -base64 32`). Without it, development
-   uses an announced insecure key; production refuses to start.
-3. Every existing platform account sets up an authenticator at its next sign-in.
-AD-59 device replay ⏸️ POSTPONED.
+None in progress. Real-device validation ✅ done, 2026-09-13 (commit recorded below). Evidence in
+`docs/12-mobile-platform-config.md` §Device validation.
+- AD-59 on Android: offline save queued (no false success), survived force-stop and relaunch,
+  replayed after reconnect exactly once (one register, one `attendance.marked`, idempotency 200),
+  removed locally only after acknowledgement. A stale write was refused (idempotency 409), nothing
+  overwritten, shown as needs attention, discarded by a person. Sign-out warned before deleting it.
+- FCM on Android: token registered after sign-in, stored as a SHA-256 hash only, never logged or
+  audited, tied to the right person; re-registration updated the same row; sign-out revoked it;
+  sign-in registered a fresh row.
+- Found and fixed on the device: an offline cold start showed the sign-in screen (Flutter shell);
+  mobile sign-out did not revoke the device (server logout). Both have tests.
+- Offline was simulated app-only by removing the USB port forward. The phone's radios must never
+  be switched off: its connection is the laptop's internet.
 
 ### NEXT SLICE — SA-4 Seats and Plan
 Design: `docs/blueprint/capabilities/platform-administration.md` §5.
@@ -53,7 +59,7 @@ Design: `docs/blueprint/capabilities/platform-administration.md` §5.
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 
 ### BLOCKERS
-Phone not connected (AD-59 device replay, FCM). Xcode (iOS). Drift 6 (backend push). OD-1 (M10).
+Xcode (iOS). Drift 6 (backend push delivery: tokens stored hash-only). OD-1 (M10). OD-SA-4 (blocks SA-4).
 
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
@@ -66,7 +72,7 @@ Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabiliti
 AD-1…AD-64, all implemented. AD-61 amended by SA-3b (break-glass events visible). Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`020` applied on `college_erp_dev`. `021` (platform roles) and `022` (platform MFA) written and tested, **not applied**: the owner applies them.
+Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner.
 
 ## 4. Commits (newest first)
 ```
@@ -80,7 +86,6 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 Tests: 383 backend, 186 web, 133 Flutter, all passing.
 
 ## 5. Blockers
-- AD-59 device validation: the Android phone is not connected.
 - iOS: Xcode not installed (Command Line Tools only).
 - Push delivery from the backend: tokens stored hash-only (Drift 6). Console send only.
 - M10 examinations/results: OD-1.
@@ -99,6 +104,9 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 `test/core/outbox/outbox_test.dart`, `docs/12-mobile-platform-config.md` device table.
 
 ## 9. Known inconsistencies and risks
+- After reconnecting, the outbox honours its backoff (up to 10 minutes) until the teacher taps
+  "Send now", because the app has no connectivity listener. Observed on device; by design today.
+- Firebase console test sends need the owner's console access; not yet done.
 - `IMPLEMENTATION-CHECKPOINT.md` calls S2 "Super Admin console — COMPLETE". It covers sign-in and
   provisioning only; tenant lifecycle, audit view, platform roles and impersonation are missing.
 - The seat limit is stored and never enforced (SA-4).

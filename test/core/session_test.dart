@@ -69,6 +69,26 @@ void main() {
 
   tearDown(() => session.dispose());
 
+  test('a launch while offline keeps the session and reports the renewal as pending', () async {
+    store.token = 'stored-refresh-token';
+    api.response = const Err(Failure.network);
+    expect(await session.restore(), isFalse);
+    expect(session.renewalPending, isTrue, reason: 'the shell waits instead of asking for a password');
+    expect(store.token, 'stored-refresh-token', reason: 'nothing is cleared while offline');
+
+    api.response = Ok(_FakeAuthApi.session());
+    expect(await session.renew(), isTrue);
+    expect(session.renewalPending, isFalse);
+    expect(session.actor?.id, 'p1');
+  });
+
+  test('a refused renewal at launch is not pending: that session really ended', () async {
+    store.token = 'stored-refresh-token';
+    api.response = const Err(Failure.sessionEnded);
+    expect(await session.restore(), isFalse);
+    expect(session.renewalPending, isFalse);
+  });
+
   test('signing in keeps the access token in memory and the refresh token in storage', () async {
     final result = await session.signIn(
       institutionCode: 'sunrise', identifier: 'asha@sunrise.edu', password: 'pw',

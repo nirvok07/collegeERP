@@ -84,7 +84,7 @@ crash rather than to every lost response.
 
 ## 7. Slice two: the durable queue
 
-Status: **implemented 2026-09-13 (AD-59), unit-tested, device verification pending.** Code in
+Status: **implemented 2026-09-13 (AD-59), unit-tested, verified on an Android phone the same day** (evidence in docs/12). Code in
 `lib/core/outbox/`. Three deliberate deviations from the design below:
 
 - **No roster cache (§7.2).** The minimum-data rule wins: only queued writes are stored. A sheet

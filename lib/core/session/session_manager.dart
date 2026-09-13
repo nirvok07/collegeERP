@@ -86,6 +86,11 @@ class SessionManager {
 
   Actor? get actor => _actor;
 
+  /// A renewal failed for a transient reason and a retry is scheduled. The
+  /// session is intact; only the network is missing (AD-25). A launch in this
+  /// state must wait, never ask for a password.
+  bool get renewalPending => _retryIndex > 0 && (_renewTimer?.isActive ?? false);
+
   /// Null when absent or expiring, which tells callers to renew first.
   String? get accessToken {
     final expiry = _expiresAt;

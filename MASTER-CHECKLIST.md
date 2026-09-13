@@ -582,6 +582,8 @@ before the enterprise brief and the blueprint written after it. Not silently res
   then, push delivery can only be tested from the Firebase console.
 - **Drift 5 progress, 2026-09-13.** Slice two, the durable encrypted queue, is implemented (AD-59).
   It stays open until an offline, queue, reconnect, replay cycle is verified on a device.
+- **Drift 5 closed, 2026-09-13.** That cycle, plus restart survival and a refused stale write, was verified
+  on an Android phone (docs/12). Offline reads remain the pull side of the sync engine, not this drift.
 - **Approval required.** Yes.
 
 ### Also noted, not drift but gaps created by the scope change

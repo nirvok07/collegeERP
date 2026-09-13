@@ -61,11 +61,21 @@ Debug build on a physical Android 14 phone over USB, API reached with
 | Firebase initialisation | VERIFIED | `FirebaseApp initialization successful`, no Dart-side fallback message |
 | Crashlytics initialisation | VERIFIED | `Initializing Firebase Crashlytics for com.nirvok.collegeErp`. Collection is off in debug by design, so crash delivery is NOT VERIFIED |
 | Remote Config | VERIFIED | A fetch was activated; no "using defaults" message |
-| FCM registration | NOT VERIFIED | Runs only after a successful sign-in; needs a dev account on the phone |
-| Push token hashed, never audited | VERIFIED in code and backend tests | Not yet observed on a device row |
-| FCM delivery | NOT VERIFIED | Needs a registered token and a send |
+| FCM registration | VERIFIED | After teacher sign-in: one Android device row for Test Teacher, `device.registered` audited |
+| Push token hashed, never audited | VERIFIED on device | 64-hex SHA-256 only; audit payload `{platform, appVersion}`; no token in phone logs |
+| Re-registration on the same phone | VERIFIED | Same row, `last_seen_at` updated, no new row |
+| Sign-out revokes the device | VERIFIED after fix | `revoked_reason = signed_out`, `device.revoked` audited; next sign-in registers a fresh row |
+| FCM delivery, Firebase console | NOT VERIFIED | Needs the owner to send a test message from the console |
+| FCM delivery, backend | BLOCKED | Tokens are stored hash-only (Drift 6); the backend cannot address a device |
 | iOS, any check | BLOCKED | Xcode is not installed; only Command Line Tools are active |
-| Offline outbox (AD-59) replay | BLOCKED at step 1 | No Android device connected on 2026-09-13; seed data ready |
+| Offline outbox (AD-59) save while offline | VERIFIED | App-only offline (USB forward removed): "Saved on this phone", server had no record |
+| Outbox survives force-stop and relaunch | VERIFIED | Pending item shown after relaunch and a fresh sign-in; file encrypted, no plaintext keys |
+| Outbox replay after reconnect | VERIFIED | One register v1, three correct records, one `attendance.marked`, idempotency row 200 |
+| Local item removed only after acknowledgement | VERIFIED | "Everything has been sent" only after the server row existed |
+| Stale write refused, not overwritten | VERIFIED | Idempotency row 409; other client's mark kept; "needs your attention" shown |
+| Conflict resolved by a person | VERIFIED | Discard with confirmation; server unchanged |
+| Sign-out with unsent work | VERIFIED | "Changes not sent yet" dialog: stay signed in, or delete and sign out |
+| Offline cold start keeps the session | VERIFIED after fix | "Waiting for a connection", then continued into the session on reconnect |
 
 ## 12.3 What only the device-validation phase can confirm
 

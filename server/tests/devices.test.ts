@@ -148,6 +148,28 @@ describe('device registration', () => {
     } finally { await pool.end(); }
   });
 
+  it('signing out with the refresh token alone, as the mobile app does, still revokes the device', async () => {
+    // Found on a real phone: the app clears its access token before telling the
+    // server, so the logout carries no bearer. The device must still be revoked.
+    const user = await signedInUser();
+    await register(user.token, { platform: 'android', push_token: PUSH_TOKEN });
+
+    const out = await harness.app.inject({
+      method: 'POST', url: '/v1/auth/logout',
+      payload: { refresh_token: user.refreshToken },
+    });
+    assert.equal(out.statusCode, 200);
+
+    const pool = createPool(MIGRATOR_URL);
+    try {
+      const { rows } = await pool.query(`SELECT revoked_at, revoked_reason FROM devices`);
+      assert.ok(rows[0].revoked_at);
+      assert.equal(rows[0].revoked_reason, 'signed_out');
+      const audit = await pool.query(`SELECT count(*)::int AS n FROM audit_events WHERE action = 'device.revoked'`);
+      assert.equal(audit.rows[0].n, 1);
+    } finally { await pool.end(); }
+  });
+
   it('an unauthenticated caller cannot register a device', async () => {
     const res = await harness.app.inject({
       method: 'POST', url: '/v1/devices',

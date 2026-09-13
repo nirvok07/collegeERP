@@ -151,14 +151,18 @@ export async function refreshSession(
 export async function endSession(
   deps: RefreshSessionDeps,
   input: { refreshToken: string },
-): Promise<Result<{ ended: boolean }>> {
+): Promise<Result<{
+  ended: boolean;
+  /** The college account the session belonged to, so its devices can be revoked. */
+  account: { tenantId: string; accountId: string; personId: string } | null;
+}>> {
   const presentedHash = deps.tokens.hashOpaqueToken(input.refreshToken);
   const found = await deps.uow.run(null, (tx) => deps.refreshTokens.resolve(tx, presentedHash));
   // Signing out an unknown token still succeeds: the caller wanted to be signed
   // out, and saying "no such session" would leak whether one existed.
-  if (!found) return Ok({ ended: true });
+  if (!found) return Ok({ ended: true, account: null });
 
-  await deps.uow.run(found.tenantId, async (tx) => {
+  const account = await deps.uow.run(found.tenantId, async (tx) => {
     await deps.refreshTokens.revokeFamily(tx, found.familyId, 'signed_out');
     await deps.audit.record(
       {
@@ -172,6 +176,9 @@ export async function endSession(
       },
       tx,
     );
+    if (!found.accountId || !found.tenantId) return null;
+    const owner = await deps.accounts.findById(tx, found.accountId);
+    return owner ? { tenantId: found.tenantId, accountId: found.accountId, personId: owner.personId } : null;
   });
-  return Ok({ ended: true });
+  return Ok({ ended: true, account });
 }

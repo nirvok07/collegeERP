@@ -219,6 +219,7 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     const presented =
       req.cookies[REFRESH_COOKIE] ?? (req.body as { refresh_token?: string } | undefined)?.refresh_token;
 
+    let revoked = false;
     if (req.actor?.actorType === 'person' && req.actor.tenantId && req.actor.accountId) {
       await revokeDevicesForAccount(c.manageDevices, {
         tenantId: req.actor.tenantId,
@@ -226,9 +227,19 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
         personId: req.actor.sub,
         reason: 'signed_out',
       });
+      revoked = true;
     }
 
-    if (presented) await endSession(c.refreshSession, { refreshToken: presented });
+    if (presented) {
+      const ended = await endSession(c.refreshSession, { refreshToken: presented });
+      // The mobile app signs out with its refresh token alone, after its access
+      // token is already gone. That token names the account, so its devices are
+      // revoked here too (docs/08): a signed-out phone receives nothing.
+      const owner = ended.ok ? ended.value.account : null;
+      if (!revoked && owner) {
+        await revokeDevicesForAccount(c.manageDevices, { ...owner, reason: 'signed_out' });
+      }
+    }
     reply.clearCookie(REFRESH_COOKIE, refreshCookieOptions(c.config));
     return sendOk(reply, { signed_out: true });
   });
