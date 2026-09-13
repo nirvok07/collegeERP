@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-67) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R48) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-69) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R50) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -24,12 +24,14 @@ Vite, TypeScript, Vitest (AD-54). Mobile at repo root `lib/`: Flutter, Cubit, Di
 Navigator `onGenerateRoute`, Drift over SQLite3MultipleCiphers (AD-59). No Flutter Web.
 Firebase: FCM, Remote Config, Crashlytics only.
 
-## Development environment (AD-66)
+## Development environment (AD-68, AD-66)
 
-Local PostgreSQL `college_erp_dev` for development, `college_erp_test` for tests. `npm run db:setup`
-creates both; `npm run migrate` provisions roles and applies migrations. The npm scripts load
-`server/.env` (`--env-file-if-exists`); `server/.env.example` shows its shape. `npm test` sets its
-own configuration.
+Supabase PostgreSQL for development and app testing, as plain PostgreSQL through its session pooler;
+the Node API is unchanged and production runs it on our own PostgreSQL. `npm run db:supabase:rebuild`
+(guarded, owner-run) builds the Supabase schema from the migrations and switches `server/.env`,
+keeping local values as `LOCAL_*`. Local `college_erp_test` for `npm test`, which sets its own
+configuration. The npm scripts load `server/.env` (`--env-file-if-exists`); `server/.env.example`
+shows its shape.
 
 ## Load-bearing patterns
 
@@ -104,5 +106,7 @@ own configuration.
 | AD-63 | Platform secret protection (AES-256-GCM, dedicated key) and sole-Owner break-glass | Active |
 | AD-64 | Platform authority is an Owner or Support role assignment, resolved per request | Active |
 | AD-65 | A seat is a live college account; a lowered limit blocks new accounts and disables none | Active (migration 023 pending) |
-| AD-66 | Development runs on local PostgreSQL `college_erp_dev`; the npm scripts load `server/.env` | Active |
+| AD-66 | Development runs on local PostgreSQL `college_erp_dev`; the npm scripts load `server/.env` | Database superseded by AD-68 |
 | AD-67 | Mobile home is a dashboard, not bottom navigation; light theme only for now | Active |
+| AD-68 | Development and app testing on Supabase PostgreSQL; production on our own Node and PostgreSQL | Active (rebuild awaits owner) |
+| AD-69 | Onboarding one person at a time; students activate with enrolment number and a one-time code | Active |

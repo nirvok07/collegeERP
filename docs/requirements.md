@@ -103,9 +103,11 @@ than from a feature list.
 | R43 | The platform can review everything platform accounts did, across colleges, filtered by college, action and time, without seeing a college's own activity or any secret | Active | [ADR](blueprint/adr.md) AD-61, [Platform administration](blueprint/capabilities/platform-administration.md) |
 | R44 | Platform accounts are created and managed in the application by Owners, with explicit Owner and Support roles; Support holds no Owner power, nobody changes their own account, and the platform always keeps an active Owner | Active | [ADR](blueprint/adr.md) AD-64, [Platform administration](blueprint/capabilities/platform-administration.md) |
 | R45 | Every platform account signs in with a password and an authenticator code; no platform session exists without an enrolled authenticator, secrets are sealed at rest, and recovery forces re-enrolment and is audited | Active | [ADR](blueprint/adr.md) AD-62, AD-63 |
-| R46 | Development runs against local PostgreSQL `college_erp_dev` over `DATABASE_URL`, with no vendor SDK; the npm scripts load `server/.env`, and production is a configuration change | Active | [ADR](blueprint/adr.md) AD-66 |
+| R46 | Development runs against local PostgreSQL `college_erp_dev` over `DATABASE_URL`, with no vendor SDK; the npm scripts load `server/.env`, and production is a configuration change | Superseded by R49 | [ADR](blueprint/adr.md) AD-66 |
 | R47 | A college's seat limit is enforced by the database: one seat per live college account, on every path and under concurrency; a lowered limit disables nobody and refuses new accounts | Active | [ADR](blueprint/adr.md) AD-65 |
 | R48 | The mobile app follows the prototype images in `assets/`: a white theme only for now, no bottom navigation, and a dashboard home with real charts from which every surface is opened | Active | [ADR](blueprint/adr.md) AD-67, `lib/features/dashboard/` |
+| R49 | Development and app testing run against Supabase-hosted PostgreSQL through the Node API, with no Supabase SDK; production runs the same Node server on our own PostgreSQL | Active | [ADR](blueprint/adr.md) AD-68 |
+| R50 | The super admin creates each college with its College Admin; the College Admin onboards teachers and students one at a time; a student activates with enrolment number and a one-time code, and every student account takes a seat | Active | [ADR](blueprint/adr.md) AD-69 |
 
 ## Assumptions awaiting confirmation
 

@@ -19,13 +19,27 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (migration 023 🔍 not applied); SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Mobile dashboard + light theme (MUX-1, AD-67): ✅ code, ✅ tests, ✅ APK builds; 🔍 visual check on the phone
+- Dev database on Supabase (ENV-2, AD-68): 🟡 tooling ✅ tested; 🚫 schema rebuild awaits the owner (destructive on an external service)
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. MUX-1 ✅ DONE (R48, AD-67, commit `649a45b`): the mobile home is a dashboard in the prototype's
+ENV-2 🟡 — Supabase as the development and app-testing database (R49, AD-68). Node API unchanged;
+production stays on our own Node + PostgreSQL; `npm test` stays on local `college_erp_test`.
+- Found 2026-09-13: Supabase reachable through its pooler; its `public` schema is untracked (no
+  `schema_migrations`, 022's table missing), 39 empty tables plus 3 seeded role definitions.
+  Backup of that data and inventory: session scratchpad `supabase-backup-2026-09-13/`.
+- Built: `npm run db:supabase:rebuild -- --confirm "REBUILD <ref>"`
+  (`server/scripts/supabase-dev-rebuild.ts`, helpers `src/infrastructure/db/supabase-dev.ts`).
+  Refuses in production, without the phrase, or if any table holds non-seed data; clears public,
+  provisions roles, migrates, checks the app role connects, rewrites `server/.env` (`LOCAL_*` kept).
+- **Owner action:** run the rebuild (Claude Code's auto mode refused the drop on an external
+  database). Then `npm run dev`, move `.device-test.local.json` aside, `npm run seed:device-test`.
+- Until then `server/.env` still points at local `college_erp_dev`.
+
+Previous: MUX-1 ✅ DONE (R48, AD-67, commit `649a45b`): the mobile home is a dashboard in the prototype's
 style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - `lib/features/dashboard/`: greeting, headline numbers, the class now and next, a "waiting on you"
   card for unmarked classes, a four-week teaching-record ring, a week-ahead bar chart, courses.
@@ -42,7 +56,10 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   circulars (no module) come later. Drift 6 stays ready and unblocked.
 - **To build:** the student's account linked to the M5 student; `GET /me/attendance` summarised
   per subject; the prototype's attendance screen and a student dashboard.
-- **Needs first:** OD-ST-1.
+- **Decided (AD-69):** College Admin onboards one person at a time (no bulk); a student activates
+  with college code + enrolment number + a one-time code (hash-only, expiring, printable), then a
+  password; each student account takes a seat. Teachers keep the email invitation.
+- **Needs first:** ENV-2 finished (the rebuild), so ST-1 is built and tried on Supabase.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
@@ -51,14 +68,15 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-SA-3 | Second factor for platform accounts | — | SA-3 | — | ✅ Resolved as AD-62: TOTP authenticator app |
 | OD-SA-5 | How the server stores a secret it must read back | — | SA-3b | — | ✅ Resolved as AD-63 |
 | OD-SA-4 | What a seat is | — | SA-4 | — | ✅ Resolved as AD-65 |
-| OD-ENV-1 | Which database is development's source of truth | — | Development | — | ✅ Resolved as AD-66: local `college_erp_dev` |
+| OD-ENV-1 | Which database is development's source of truth | — | Development | — | ✅ AD-66 (local), superseded by AD-68: Supabase for dev and app testing |
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
-| OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | Admin invites per student; bulk issue from the roster; self-claim by roll number and code | Open, blocks ST-1 |
+| OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |
 
 ### BLOCKERS
-Xcode (iOS, deferred). Drift 6 (backend push delivery). OD-1 (M10).
+Supabase schema rebuild (owner runs or approves it; ENV-2). Xcode (iOS, deferred). Drift 6
+(backend push delivery). OD-1 (M10).
 
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
@@ -72,6 +90,8 @@ AD-1…AD-66, all in force. AD-65 implemented by SA-4a (migration 023 pending ap
 
 ## 3. Database
 Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner. `023` (seat limits) written and tested, **not applied**: the owner applies it.
+Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023` by
+`npm run db:supabase:rebuild`; no data of anybody's there (3 seeded role definitions).
 
 ## 4. Commits (newest first)
 ```
@@ -105,8 +125,11 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 `test/core/outbox/outbox_test.dart`, `docs/12-mobile-platform-config.md` device table.
 
 ## 9. Known inconsistencies and risks
-- Resolved (AD-66): `server/.env` now names local `college_erp_dev` for both roles; the Supabase
-  pooler address is kept as `SUPABASE_POOLER_DATABASE_URL` and read by nothing.
+- `server/.env` still names local `college_erp_dev` for both roles until the Supabase rebuild runs
+  and rewrites it (AD-68); `SUPABASE_POOLER_DATABASE_URL` (erp_app) and `SUPABASE_DB_URL` (postgres)
+  are its inputs. The direct `db.<ref>.supabase.co` host does not resolve from here; the pooler does.
+- On Supabase, no platform Owner exists after the rebuild. `seed:device-test` creates one
+  (`owner+device-test@…`, credentials in `.device-test.local.json`); there is no first-Owner CLI.
 - After reconnecting, the outbox honours its backoff (up to 10 minutes) until the teacher taps
   "Send now", because the app has no connectivity listener. Observed on device; by design today.
 - Firebase console test sends need the owner's console access; not yet done.

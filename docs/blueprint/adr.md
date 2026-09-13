@@ -1405,7 +1405,8 @@ both pass on a stale count and no application path can bypass it.
 
 **AD-66 — Development runs on local PostgreSQL `college_erp_dev`; the npm scripts load `server/.env`**
 
-*Status.* Decided by the owner, 2026-09-13; resolves OD-ENV-1. Supersedes R30.
+*Status.* Decided by the owner, 2026-09-13; resolves OD-ENV-1. Supersedes R30. Its choice of
+database for development is superseded by AD-68; the configuration mechanism stands.
 
 *Decision.* Local PostgreSQL `college_erp_dev` is development's source of truth: local commands,
 migrations, the dev server and device validation all use it. Tests keep their own
@@ -1444,3 +1445,47 @@ without storing it (AD-7). Charts are native `CustomPaint`/widgets; no charting 
 
 *Not in scope.* The prototype's student screens (own attendance %, fees due, circulars) need a
 student role, M5 beyond the minimum, fees (D1) and a communication module; none exists yet.
+
+---
+
+**AD-68 — Development and app testing run on Supabase PostgreSQL; production runs our own Node and PostgreSQL**
+
+*Status.* Decided by the owner, 2026-09-13. Supersedes AD-66's choice of database for development
+(its configuration mechanism stands) and R46.
+
+*Decision.* Supabase is the database for development and app testing, used only as standard
+PostgreSQL through its session pooler (port 5432, user `<role>.<project-ref>`). The Node API,
+authentication, sessions, permissions, row-level security and the migration chain are unchanged:
+no Supabase SDK, Auth, PostgREST, Storage or Edge Functions, and migration 006 keeps the data-API
+roles revoked. Production runs the same Node server on PostgreSQL we operate; moving is a
+configuration change.
+
+*Automated tests.* `npm test` keeps its own local `college_erp_test`: it recreates data freely and
+must depend on neither a network nor shared data. Assumption; the owner may overrule.
+
+*Rebuild.* The Supabase schema found on 2026-09-13 was untracked: no `schema_migrations`, 022's
+table missing, 39 empty tables and 3 seeded role definitions. `npm run db:supabase:rebuild --
+--confirm "REBUILD <project-ref>"` drops and rebuilds it from the migrations and switches
+`server/.env`, keeping the local values as `LOCAL_*`. It refuses in production, without the exact
+phrase, and whenever any table holds data beyond what the migrations seed. Destructive against an
+external service, so the owner runs or approves it.
+
+---
+
+**AD-69 — Onboarding: one person at a time; a student activates with enrolment number and a one-time code**
+
+*Status.* Decided by the owner, 2026-09-13; resolves OD-ST-1.
+
+*Decision.*
+1. The platform (super admin) creates each college with its first College Admin (W0, built).
+2. The College Admin onboards teachers and students one at a time, through a single form each. No
+   bulk import.
+3. Teachers keep the existing path: a people invitation by email, then a role grant.
+4. A student's account is issued by the College Admin from the student's record. The server issues
+   a one-time activation code, shown once and printable, stored hash-only, expiring. The student
+   activates with college code, enrolment number and code, and sets a password; afterwards they
+   sign in with college code, enrolment number and password. No email is required.
+5. A student account is a live college account and takes a seat (AD-65, unchanged).
+
+*For ST-1's design.* Code lifetime and attempt limits; reissue revokes the previous code; the
+student role grants only self-scoped reads.
