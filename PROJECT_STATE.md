@@ -31,7 +31,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): OPS-2 ✅ — `npm run platform:create-owner` and `platform:disable-account`
+Just done (2026-09-14): OPS-2 ✅ (`f9303c0`) — `npm run platform:create-owner` and `platform:disable-account`
 (dev only, exact phrase, audited as the system). Used on local: Owner `nirvokofficial@gmail.com`
 created (authenticator set up at first sign-in), `owner@nirvok.com` disabled (AD-74).
 Before that: SAM-1 ✅ (`4474abd`) and LOG-1 ✅ (`ff0f91d`). ENV-2 🟡 still awaits the owner's rebuild.
@@ -136,6 +136,7 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+f9303c0 Build OPS-2: operators create an Owner and disable an account in development
 4474abd Build SAM-1: a separate Super Admin app with its own entry point
 ff0f91d Build LOG-1: API logs through one redacting Dio interceptor
 817eb5e Build BR-1: the app opens on the college code and wears the college's brand
