@@ -24,7 +24,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-4a ✅ DONE (commit recorded below): 396 server tests, 189 web tests, typechecks clean.
+None in progress. SA-4a ✅ DONE (commit `05a34d3`): 396 server tests, 189 web tests, typechecks clean.
 **Owner action:** apply migration `023_seat_limits.sql` to `college_erp_dev` (`npm run migrate` in
 `server/`). Until then nothing refuses a seat on the dev database; tests apply it and prove it.
 - One live college account is one seat (AD-65), refused in PostgreSQL on every path: W0's first
