@@ -28,7 +28,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-13): BR-1 ✅ and OPS-1 ✅. ENV-2 🟡 below still awaits the owner's rebuild.
+Just done (2026-09-13): BR-1 ✅ (`817eb5e`) and OPS-1 ✅ (`5c98d42`). ENV-2 🟡 below still awaits the owner's rebuild.
 - **BR-1 (R51, AD-70, migration 024):** the app opens on the college code
   (`lib/features/auth/presentation/college_code_screen.dart`); `GET /v1/public/colleges/:code`
   returns name, logo URL and colour, one identical 404 for unknown/suspended/closed; sign-in and the
@@ -111,6 +111,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+817eb5e Build BR-1: the app opens on the college code and wears the college's brand
+5c98d42 Build OPS-1: a dev-only command to set a platform account's password
 5772603 Prepare ENV-2: Supabase for development, onboarding decided (AD-68, AD-69)
 649a45b Build MUX-1: a dashboard home in place of bottom navigation, light theme only
 05a34d3 Build SA-4a: plan and seat limits with a database-enforced seat check
