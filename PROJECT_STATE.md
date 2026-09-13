@@ -25,7 +25,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 
 ### CURRENT SLICE
 None in progress. OD-SA-4 resolved as AD-65; SA-4a designed (`platform-administration.md` §6b);
-commit recorded below. `SECRET_SEALING_KEY` is configured in `server/.env` and held by the
+commit `e3fce75`. `SECRET_SEALING_KEY` is configured in `server/.env` and held by the
 running dev server (no fallback); its value is recorded nowhere else.
 
 **STATUS: CONFIGURATION DECISION REQUIRED (OD-ENV-1) before SA-4a.** See §9.
