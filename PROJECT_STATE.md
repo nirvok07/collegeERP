@@ -35,7 +35,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): BIO-1 ✅ (AD-78, R59). Both apps ask for the phone's fingerprint, face or
+Just done (2026-09-14): BIO-1 ✅ (AD-78, R59; `1de03b6`). Both apps ask for the phone's fingerprint, face or
 screen lock when opened on a saved session and on every return from the background (not right
 after typing the password); `lib/core/security/`. `local_auth` 3.0.2; `MainActivity` is a
 `FlutterFragmentActivity`; `USE_BIOMETRIC` declared.
@@ -166,6 +166,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+1de03b6 Build BIO-1: the phone's own lock guards every open of a signed-in app
+47ace6c Build UX-2: a collapsing navy dashboard header, and a Profile for the person
 09e79c2 Build ONB-1: the College Admin appoints teachers and onboards students from the phone
 0e19d41 Build the college handover flow: lifecycle in the Super Admin app, invitations accepted on web and phone
 f9303c0 Build OPS-2: operators create an Owner and disable an account in development
