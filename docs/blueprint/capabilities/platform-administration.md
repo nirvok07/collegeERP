@@ -115,6 +115,38 @@ command later). Every other account is created in the application.
 4. **SA-4 Seats and plan.** Change seat limit and plan; enforce the seat limit on activation.
 5. **SA-5 Support impersonation (AD-19).** After SA-3, since it needs the Support role.
 
+## 6a. OD-SA-4 analysis: what a seat is (2026-09-13, awaiting the owner)
+
+**Evidence in the repository.**
+- `institutions.seat_limit` (default 500) and `plan` are set at provisioning and read nowhere else.
+  `SEAT_LIMIT_REACHED` exists and is never raised.
+- A login is a `user_accounts` row. The database already defines a *live* account as `invited`,
+  `active`, `locked` or `suspended`, and allows one live account per person
+  (`user_accounts_one_live_per_person_uq`). `deactivated` and `archived` are not live.
+- Roles are assignments on the person; they grant nothing on their own and never add a login.
+- Who can hold an account today: staff and students through `POST /v1/people`. Students admitted
+  through M5 get no account, and no path gives them one. Guardians, applicants and external
+  persons cannot log in at all; the types exist only in the schema.
+- Platform accounts are a separate table with no college.
+- College account status changes only from invited to active today; there is no college-side
+  suspend or deactivate yet, so nothing currently frees a seat.
+
+**Recommended policy (smallest consistent with the schema).**
+1. One seat per live college account: `invited`, `active`, `locked`, `suspended`. Deactivated and
+   archived accounts free their seat.
+2. One person counts once, however many roles they hold; assignments never count.
+3. Invited counts, so invitations cannot run ahead of the limit.
+4. Platform accounts never count.
+5. Checked when a live account is created (people invitation, W0's first administrator) and on any
+   future return of an account to a live status. Refused with `SEAT_LIMIT_REACHED`.
+
+**Decisions only the owner can make.**
+- **Person types.** Count every live account (staff and students alike), or staff only. Today the
+  difference is nil, because no admitted student has a login; it matters when student logins arrive.
+- **Lowering the limit below current use.** Either refuse the change, or allow it and block only
+  new accounts until use falls below it. Existing accounts are never disabled automatically under
+  either option.
+
 ## 6. Open decisions
 
 | Id | Question |
@@ -124,4 +156,4 @@ command later). Every other account is created in the application.
 | ~~OD-SA-3~~ | Resolved as AD-62: TOTP authenticator app |
 | ~~OD-SA-5~~ | Resolved as AD-63: AES-256-GCM sealing with a dedicated key, otplib, operator break-glass |
 | OD-SA-6 | Owner succession: should the platform require a minimum number of active Owners (for example two) beyond "never zero"? |
-| OD-SA-4 | Seat limit counts which accounts: active staff, students, or both |
+| OD-SA-4 | What a seat is. Analysis and recommendation in §6a; two choices remain for the owner: person types, and lowering below use |

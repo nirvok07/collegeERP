@@ -24,19 +24,13 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. Real-device validation ✅ done, 2026-09-13 (commit `a9685ee`). Evidence in
-`docs/12-mobile-platform-config.md` §Device validation.
-- AD-59 on Android: offline save queued (no false success), survived force-stop and relaunch,
-  replayed after reconnect exactly once (one register, one `attendance.marked`, idempotency 200),
-  removed locally only after acknowledgement. A stale write was refused (idempotency 409), nothing
-  overwritten, shown as needs attention, discarded by a person. Sign-out warned before deleting it.
-- FCM on Android: token registered after sign-in, stored as a SHA-256 hash only, never logged or
-  audited, tied to the right person; re-registration updated the same row; sign-out revoked it;
-  sign-in registered a fresh row.
-- Found and fixed on the device: an offline cold start showed the sign-in screen (Flutter shell);
-  mobile sign-out did not revoke the device (server logout). Both have tests.
-- Offline was simulated app-only by removing the USB port forward. The phone's radios must never
-  be switched off: its connection is the laptop's internet.
+None in progress. SA-4 readiness done, 2026-09-13 (commit recorded below): OD-SA-4 analysed,
+recommendation in `docs/blueprint/capabilities/platform-administration.md` §6a, awaiting the owner.
+- `SECRET_SEALING_KEY` configured in `server/.env` (git-ignored; value never recorded). The dev
+  server on port 3000 runs with it and without the insecure development fallback.
+- The server does not read `server/.env` itself; the dev server is started with only
+  `SECRET_SEALING_KEY` passed from it (see §9 on why the rest of `.env` is not loaded).
+- Real-device validation of AD-59 and FCM registration ✅ (`a9685ee`).
 
 ### NEXT SLICE — SA-4 Seats and Plan
 Design: `docs/blueprint/capabilities/platform-administration.md` §5.
@@ -53,7 +47,7 @@ Design: `docs/blueprint/capabilities/platform-administration.md` §5.
 | OD-SA-1 | What does "suspended" mean for a college's users? | Live sessions end or turn read-only | SA-1 | — | ✅ Resolved as AD-60: refused entirely |
 | OD-SA-3 | Second factor for platform accounts | — | SA-3 | — | ✅ Resolved as AD-62: TOTP authenticator app |
 | OD-SA-5 | How the server stores a secret it must read back | — | SA-3b | — | ✅ Resolved as AD-63 |
-| OD-SA-4 | Which accounts count toward a college's seat limit | Decides what SA-4 enforces | SA-4 | Active staff only; staff and students; all active accounts | Open, blocks SA-4 |
+| OD-SA-4 | What a seat is | Decides what SA-4 enforces | SA-4 | Recommended: one seat per live college account; owner chooses person types and the lowering-below-use rule (platform-administration.md §6a) | Open, blocks SA-4 |
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
@@ -104,6 +98,11 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 `test/core/outbox/outbox_test.dart`, `docs/12-mobile-platform-config.md` device table.
 
 ## 9. Known inconsistencies and risks
+- `server/.env` is inconsistent: `DATABASE_URL` points at a remote Supabase pooler while
+  `MIGRATION_DATABASE_URL` and the running dev server use local `college_erp_dev`, and its
+  `JWT_SECRET` differs from the dev default in use. Loading the whole file would move the app to
+  another database, so only `SECRET_SEALING_KEY` is passed. The owner should decide which database
+  `DATABASE_URL` is meant to name.
 - After reconnecting, the outbox honours its backoff (up to 10 minutes) until the teacher taps
   "Send now", because the app has no connectivity listener. Observed on device; by design today.
 - Firebase console test sends need the owner's console access; not yet done.
