@@ -25,7 +25,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. MUX-1 ✅ DONE (R48, AD-67): the mobile home is a dashboard in the prototype's
+None in progress. MUX-1 ✅ DONE (R48, AD-67, commit `649a45b`): the mobile home is a dashboard in the prototype's
 style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - `lib/features/dashboard/`: greeting, headline numbers, the class now and next, a "waiting on you"
   card for unmarked classes, a four-week teaching-record ring, a week-ahead bar chart, courses.
@@ -75,6 +75,8 @@ Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner. `
 
 ## 4. Commits (newest first)
 ```
+649a45b Build MUX-1: a dashboard home in place of bottom navigation, light theme only
+05a34d3 Build SA-4a: plan and seat limits with a database-enforced seat check
 7b1842f Design the durable outbox and propose the encrypted local store
 71765a1 Register com.nirvok.collegeErp in Firebase and validate on a real phone
 052e0eb Record outbox slice one in the checkpoint and requirement R40
