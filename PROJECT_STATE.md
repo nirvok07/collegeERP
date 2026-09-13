@@ -24,7 +24,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-4 readiness done, 2026-09-13 (commit recorded below): OD-SA-4 analysed,
+None in progress. SA-4 readiness done, 2026-09-13 (commit `da136ac`): OD-SA-4 analysed,
 recommendation in `docs/blueprint/capabilities/platform-administration.md` §6a, awaiting the owner.
 - `SECRET_SEALING_KEY` configured in `server/.env` (git-ignored; value never recorded). The dev
   server on port 3000 runs with it and without the insecure development fallback.
