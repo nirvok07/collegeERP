@@ -26,7 +26,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-ENV-2 🟡 — Supabase as the development and app-testing database (R49, AD-68). Node API unchanged;
+ENV-2 🟡 — Supabase as the development and app-testing database (R49, AD-68; tooling `5772603`). Node API unchanged;
 production stays on our own Node + PostgreSQL; `npm test` stays on local `college_erp_test`.
 - Found 2026-09-13: Supabase reachable through its pooler; its `public` schema is untracked (no
   `schema_migrations`, 022's table missing), 39 empty tables plus 3 seeded role definitions.
@@ -95,6 +95,7 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+5772603 Prepare ENV-2: Supabase for development, onboarding decided (AD-68, AD-69)
 649a45b Build MUX-1: a dashboard home in place of bottom navigation, light theme only
 05a34d3 Build SA-4a: plan and seat limits with a database-enforced seat check
 7b1842f Design the durable outbox and propose the encrypted local store
@@ -104,7 +105,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 396 backend, 189 web, 148 Flutter, all passing.
+Tests: 403 backend, 189 web, 148 Flutter, all passing.
 
 ## 5. Blockers
 - iOS: Xcode not installed (Command Line Tools only).
