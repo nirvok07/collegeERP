@@ -37,7 +37,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-1 ✅ (AD-79; R65, R66). The owner found the College Admin's dashboard
+Just done (2026-09-14): ADM-1 ✅ (AD-79; R65, R66; `a74d340`). The owner found the College Admin's dashboard
 was a teacher's, and no way to change a password.
 - Server: `GET /v1/college/overview` (counts under RLS, `institution.read`;
   `modules/institution/infrastructure/overview.ts`) and `POST /v1/auth/password`
@@ -195,6 +195,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+a74d340 Build ADM-1: the College Admin's own dashboard, and change password (AD-79)
+838c839 Finish ENV-2: development runs on Supabase; the rebuild survives the pooler's delay
 1de03b6 Build BIO-1: the phone's own lock guards every open of a signed-in app
 47ace6c Build UX-2: a collapsing navy dashboard header, and a Profile for the person
 09e79c2 Build ONB-1: the College Admin appoints teachers and onboards students from the phone
