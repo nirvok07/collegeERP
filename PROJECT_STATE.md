@@ -30,7 +30,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): SAM-1 ✅ and LOG-1 ✅. ENV-2 🟡 still awaits the owner's rebuild.
+Just done (2026-09-14): SAM-1 ✅ (`4474abd`) and LOG-1 ✅ (`ff0f91d`). ENV-2 🟡 still awaits the owner's rebuild.
 - **SAM-1 (R52, AD-72):** `lib/main_admin.dart` + `lib/admin/`, Android flavor `admin`
   (`com.nirvok.collegeErp.admin`, "Super Admin", no Firebase). Platform sign-in (password → code,
   or authenticator setup by key), colleges list with totals, college detail (seats, administrator,
@@ -131,6 +131,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+4474abd Build SAM-1: a separate Super Admin app with its own entry point
+ff0f91d Build LOG-1: API logs through one redacting Dio interceptor
 817eb5e Build BR-1: the app opens on the college code and wears the college's brand
 5c98d42 Build OPS-1: a dev-only command to set a platform account's password
 5772603 Prepare ENV-2: Supabase for development, onboarding decided (AD-68, AD-69)
