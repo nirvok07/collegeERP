@@ -24,7 +24,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. Real-device validation ✅ done, 2026-09-13 (commit recorded below). Evidence in
+None in progress. Real-device validation ✅ done, 2026-09-13 (commit `a9685ee`). Evidence in
 `docs/12-mobile-platform-config.md` §Device validation.
 - AD-59 on Android: offline save queued (no false success), survived force-stop and relaunch,
   replayed after reconnect exactly once (one register, one `attendance.marked`, idempotency 200),
