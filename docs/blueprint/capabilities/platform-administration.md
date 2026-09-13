@@ -115,7 +115,7 @@ command later). Every other account is created in the application.
 4. **SA-4 Seats and plan.** Change seat limit and plan; enforce the seat limit on activation.
 5. **SA-5 Support impersonation (AD-19).** After SA-3, since it needs the Support role.
 
-## 6a. OD-SA-4 analysis: what a seat is (2026-09-13, awaiting the owner)
+## 6a. OD-SA-4 analysis: what a seat is (2026-09-13; resolved by the owner as AD-65)
 
 **Evidence in the repository.**
 - `institutions.seat_limit` (default 500) and `plan` are set at provisioning and read nowhere else.
@@ -147,6 +147,33 @@ command later). Every other account is created in the application.
   new accounts until use falls below it. Existing accounts are never disabled automatically under
   either option.
 
+## 6b. SA-4a readiness: plan, seat limit, enforcement (design, not built)
+
+**What exists.** `institutions.plan` is free text, default `standard`, with no enum and no effect
+anywhere. `seat_limit` is a positive integer, default 500. Both are set only at provisioning.
+College accounts are created on exactly two paths, both through `PgAccountRepository.create`:
+W0's first administrator (`provision-initial-admin.ts`) and a people invitation
+(`manage-people.ts`). The only other status change is invited to active on acceptance, which
+takes no new seat because an invitation already holds one.
+
+**Design.**
+- *Enforcement* (AD-65): a `BEFORE INSERT OR UPDATE OF status` trigger on `user_accounts`. When a
+  row becomes live, it takes `pg_advisory_xact_lock(hashtextextended(tenant_id::text, <seed>))`,
+  counts the college's live accounts and compares with `institutions.seat_limit`; at or above the
+  limit it raises a dedicated SQLSTATE that the unit of work maps to `SEAT_LIMIT_REACHED` (409)
+  with the trigger's own sentence. It covers both paths, W0 included, any future path, and races.
+- *Plan and limit are independent.* Changing the plan never changes the limit; there is no pricing
+  and no plan catalogue. The plan stays a label until a decision gives it meaning.
+- *Change.* `POST /v1/institutions/:id/plan` with `plan`, `seat_limit` (at least 1), `version`
+  and a reason; `platform.colleges.manage` (Owner); version-pinned on `institutions.version`;
+  audited as `institution.plan_changed` with before and after.
+- *Usage and state.* The college detail gains `seats_used` and a state: under limit, at limit
+  (new accounts refused), over limit (refused, and more accounts than the limit).
+- *Web.* Seats used against the limit on the college list and detail, an over-limit banner, and a
+  reason-confirmed change drawer. College screens already show the server's refusal message.
+- *Clients.* Flutter maps `SEAT_LIMIT_REACHED` already and creates no accounts; no change.
+- *Migration.* One (`023`), created in SA-4a: the trigger, its function and the error mapping.
+
 ## 6. Open decisions
 
 | Id | Question |
@@ -156,4 +183,5 @@ command later). Every other account is created in the application.
 | ~~OD-SA-3~~ | Resolved as AD-62: TOTP authenticator app |
 | ~~OD-SA-5~~ | Resolved as AD-63: AES-256-GCM sealing with a dedicated key, otplib, operator break-glass |
 | OD-SA-6 | Owner succession: should the platform require a minimum number of active Owners (for example two) beyond "never zero"? |
-| OD-SA-4 | What a seat is. Analysis and recommendation in §6a; two choices remain for the owner: person types, and lowering below use |
+| ~~OD-SA-4~~ | Resolved as AD-65: every live college account is a seat; lowering below use blocks new accounts and disables none |
+| OD-ENV-1 | Which database is development's source of truth: local `college_erp_dev` or Supabase (R30). See PROJECT_STATE §9 |

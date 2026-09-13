@@ -24,22 +24,20 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-4 readiness done, 2026-09-13 (commit `da136ac`): OD-SA-4 analysed,
-recommendation in `docs/blueprint/capabilities/platform-administration.md` §6a, awaiting the owner.
-- `SECRET_SEALING_KEY` configured in `server/.env` (git-ignored; value never recorded). The dev
-  server on port 3000 runs with it and without the insecure development fallback.
-- The server does not read `server/.env` itself; the dev server is started with only
-  `SECRET_SEALING_KEY` passed from it (see §9 on why the rest of `.env` is not loaded).
-- Real-device validation of AD-59 and FCM registration ✅ (`a9685ee`).
+None in progress. OD-SA-4 resolved as AD-65; SA-4a designed (`platform-administration.md` §6b);
+commit recorded below. `SECRET_SEALING_KEY` is configured in `server/.env` and held by the
+running dev server (no fallback); its value is recorded nowhere else.
 
-### NEXT SLICE — SA-4 Seats and Plan
-Design: `docs/blueprint/capabilities/platform-administration.md` §5.
-- **Why next:** the seat limit is stored and never enforced (`SEAT_LIMIT_REACHED` is defined and
-  unused), and plan and seats cannot be changed after provisioning. It depends only on SA-1/SA-3,
-  both done. SA-5 (impersonation) needs a college-side approval flow (AD-19) and is larger.
-- **To build:** Owner changes plan and seat limit with a reason and audit; the seat limit enforced
-  where accounts become usable; the college detail shows seats used.
-- **Decision needed first:** OD-SA-4, which accounts count toward the seat limit.
+**STATUS: CONFIGURATION DECISION REQUIRED (OD-ENV-1) before SA-4a.** See §9.
+
+### NEXT SLICE — SA-4a Plan & Seat Limits with concurrency-safe enforcement
+Design: `docs/blueprint/capabilities/platform-administration.md` §6b, AD-65.
+- **To build:** migration 023 (seat trigger, per-college advisory lock, dedicated error), plan and
+  seat-limit change endpoint (Owner, version-pinned, reason, audited), seats used and over-limit
+  state on the college detail and list, web drawer and banner, tests for both account paths,
+  concurrent invitations, lowering below use, and no automatic disabling.
+- **Not in this slice:** pricing, billing, plan catalogue, SA-5, student account issuance.
+- **Blocked by:** OD-ENV-1 only (which database development uses).
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
@@ -47,13 +45,14 @@ Design: `docs/blueprint/capabilities/platform-administration.md` §5.
 | OD-SA-1 | What does "suspended" mean for a college's users? | Live sessions end or turn read-only | SA-1 | — | ✅ Resolved as AD-60: refused entirely |
 | OD-SA-3 | Second factor for platform accounts | — | SA-3 | — | ✅ Resolved as AD-62: TOTP authenticator app |
 | OD-SA-5 | How the server stores a secret it must read back | — | SA-3b | — | ✅ Resolved as AD-63 |
-| OD-SA-4 | What a seat is | Decides what SA-4 enforces | SA-4 | Recommended: one seat per live college account; owner chooses person types and the lowering-below-use rule (platform-administration.md §6a) | Open, blocks SA-4 |
+| OD-SA-4 | What a seat is | — | SA-4 | — | ✅ Resolved as AD-65 |
+| OD-ENV-1 | Which database is development's source of truth | R30 says Supabase; everything actually runs on local `college_erp_dev`; `server/.env` mixes both | SA-4a and every dev command | Local `college_erp_dev` (update R30 and `.env`'s `DATABASE_URL`); or Supabase (owner applies 001–022 there, pooler reachable, dev commands load `.env`) | Open, blocks SA-4a |
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 
 ### BLOCKERS
-Xcode (iOS). Drift 6 (backend push delivery: tokens stored hash-only). OD-1 (M10). OD-SA-4 (blocks SA-4).
+OD-ENV-1 (development database) blocks SA-4a. Xcode (iOS). Drift 6 (backend push delivery). OD-1 (M10).
 
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
@@ -63,7 +62,7 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-64, all implemented. AD-61 amended by SA-3b (break-glass events visible). Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-65. AD-65 (seats) decided, implemented in SA-4a. AD-61 amended by SA-3b. Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
 Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner.
@@ -98,6 +97,9 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 `test/core/outbox/outbox_test.dart`, `docs/12-mobile-platform-config.md` device table.
 
 ## 9. Known inconsistencies and risks
+- OD-ENV-1. Evidence: R30 (Active) and `pool.ts` say development runs on Supabase; the checkpoint
+  note says the Supabase pooler was unreachable and local PostgreSQL stays active; config defaults,
+  `setup-db.sh`, tests, migrations 001–022 and the dev server all use local `college_erp_dev`.
 - `server/.env` is inconsistent: `DATABASE_URL` points at a remote Supabase pooler while
   `MIGRATION_DATABASE_URL` and the running dev server use local `college_erp_dev`, and its
   `JWT_SECRET` differs from the dev default in use. Loading the whole file would move the app to

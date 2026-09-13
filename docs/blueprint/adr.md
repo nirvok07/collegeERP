@@ -1373,3 +1373,30 @@ MFA off.
 
 *Amends AD-61.* The platform audit read also returns system events whose subject is a platform
 account, so Owners see the break-glass reset. College events stay invisible.
+
+---
+
+**AD-65 — A seat is a live college account; a lowered limit blocks new accounts and disables none**
+
+*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-4. To be implemented in SA-4a.
+
+*Decision.*
+1. One live college account is one seat. Live means `invited`, `active`, `locked` or `suspended`,
+   the definition the database already uses for one account per person. Deactivated and archived
+   accounts hold no seat.
+2. One person counts once, however many roles or assignments they hold. Roles and assignments
+   never count.
+3. Platform accounts never count.
+4. The rule names no person type. Any person who can hold a live college account counts, so
+   student logins, when they arrive, count automatically; guardians, applicants and external
+   people count only if they can actually hold a live account.
+5. The limit may be lowered below current use. Existing accounts stay as they are: nothing is
+   suspended, deactivated, deleted or revoked because of a lower limit. While use is at or above
+   the limit, every path that would create a live account is refused, invitations included and
+   the first college administrator included.
+6. Plan and seat-limit changes are audited with actor, college, old and new values and reason,
+   and the over-limit state is shown to platform administrators.
+
+*Enforcement.* At the source of truth: a database trigger on `user_accounts` for inserts and for
+any change into a live status, under a per-college advisory lock, so concurrent invitations cannot
+both pass on a stale count and no application path can bypass it.

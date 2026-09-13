@@ -6,7 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-64) | `docs/blueprint/adr.md` |
+| Decisions (AD-1…AD-65) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R45) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
@@ -96,3 +96,4 @@ Firebase: FCM, Remote Config, Crashlytics only.
 | AD-62 | The platform's second factor is a TOTP authenticator app | Active |
 | AD-63 | Platform secret protection (AES-256-GCM, dedicated key) and sole-Owner break-glass | Active |
 | AD-64 | Platform authority is an Owner or Support role assignment, resolved per request | Active |
+| AD-65 | A seat is a live college account; a lowered limit blocks new accounts and disables none | Decided; SA-4a |
