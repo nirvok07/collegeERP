@@ -1617,3 +1617,20 @@ Extends AD-71 (OPS-2).
 
 *Known gap.* A college account cannot be deactivated yet, so the temporary administrator keeps
 using one seat (AD-65) after handover, with no access.
+
+---
+
+**AD-76 — The College Admin onboards teachers and students from the phone too**
+
+*Status.* Decided by the owner, 2026-09-14. Amends AD-32 ("mobile reads; the desktop console
+writes") for onboarding only. Built as ONB-1.
+
+*Decision.* The college app's dashboard has an Onboarding shortcut for whoever may invite
+(`account.manage` with `role.assign`) or admit (`student.manage`); each action is present only
+with its permission and the server checks again. "Appoint a teacher" invites a staff person with
+the Faculty role, or Head of Department, in one department (the role's own allowed scope);
+"Onboard a student" admits the person and the student record into a program. Both call the
+endpoints the web console uses; no server change. A teacher's invitation is handed over as one
+copyable message (AD-75). Departments, programs and curriculum are still set up on the web.
+
+*Next.* A student's sign-in, by one-time activation code (AD-69), is ST-1.

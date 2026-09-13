@@ -11,6 +11,11 @@ import '../features/teaching/presentation/my_teaching_screen.dart';
 import 'account_screen.dart';
 import '../core/session/college_brand.dart';
 import '../features/auth/presentation/accept_invitation_screen.dart';
+import '../features/onboarding/domain/onboarding.dart';
+import '../features/onboarding/presentation/admit_student_screen.dart';
+import '../features/onboarding/presentation/appoint_teacher_screen.dart';
+import '../features/onboarding/presentation/onboarding_screen.dart';
+import '../features/onboarding/presentation/teacher_invited_screen.dart';
 
 /// Route names. No raw path string appears in a widget.
 abstract final class Routes {
@@ -26,6 +31,28 @@ abstract final class Routes {
   static const organisation = '/organisation';
   static const account = '/account';
   static const acceptInvitation = '/accept-invitation';
+
+  // ONB-1: the College Admin's onboarding (AD-76).
+  static const onboarding = '/onboarding';
+  static const appointTeacher = '/onboarding/teacher';
+  static const admitStudent = '/onboarding/student';
+  static const teacherInvited = '/onboarding/teacher/invited';
+}
+
+/// What the dashboard knows when it opens onboarding: what this person may do,
+/// and the college, for the invitation message.
+class OnboardingArgs {
+  const OnboardingArgs({required this.canAppoint, required this.canAdmit, this.college});
+  final bool canAppoint;
+  final bool canAdmit;
+  final CollegeBrand? college;
+}
+
+class TeacherInvitedArgs {
+  const TeacherInvitedArgs({required this.teacher, required this.name, this.college});
+  final AppointedTeacher teacher;
+  final String name;
+  final CollegeBrand? college;
 }
 
 /// ACC-1: the college chosen on the first screen, whose invitation this is.
@@ -90,6 +117,22 @@ abstract final class AppRouter {
         final args = settings.arguments;
         if (args is! AcceptInvitationArgs) return _unknown(settings);
         return _page(settings, AcceptInvitationScreen(college: args.college));
+      case Routes.onboarding:
+        final args = settings.arguments;
+        if (args is! OnboardingArgs) return _unknown(settings);
+        return _page(settings, OnboardingScreen(args: args));
+      case Routes.appointTeacher:
+        final args = settings.arguments;
+        if (args is! OnboardingArgs) return _unknown(settings);
+        return _page(settings, AppointTeacherScreen(args: args));
+      case Routes.admitStudent:
+        final args = settings.arguments;
+        if (args is! OnboardingArgs) return _unknown(settings);
+        return _page(settings, AdmitStudentScreen(args: args));
+      case Routes.teacherInvited:
+        final args = settings.arguments;
+        if (args is! TeacherInvitedArgs) return _unknown(settings);
+        return _page(settings, TeacherInvitedScreen(args: args));
       default:
         return _unknown(settings);
     }

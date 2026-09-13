@@ -71,8 +71,8 @@ class _DashboardView extends StatelessWidget {
 
   /// Opens a surface, then re-reads on return: marking a class or taking a
   /// register there changes what this screen should say.
-  Future<void> _open(BuildContext context, String route, {bool refresh = true}) async {
-    await Navigator.of(context).pushNamed(route);
+  Future<void> _open(BuildContext context, String route, {bool refresh = true, Object? arguments}) async {
+    await Navigator.of(context).pushNamed(route, arguments: arguments);
     if (refresh && context.mounted) await context.read<DashboardCubit>().load(refresh: true);
   }
 
@@ -109,7 +109,11 @@ class _DashboardView extends StatelessWidget {
                     if (state.failure != null) _InlineError(message: state.failure!.message),
                     if (_schedule) const PendingWritesBar(),
                     if (_schedule) _StatsStrip(summary: summary),
-                    _Shortcuts(authority: authority, open: (r, refresh) => _open(context, r, refresh: refresh)),
+                    _Shortcuts(
+                      authority: authority,
+                      college: college,
+                      open: (r, refresh, args) => _open(context, r, refresh: refresh, arguments: args),
+                    ),
                     if (_schedule && summary.needsMarking.isNotEmpty)
                       _WaitingCard(
                         sessions: summary.needsMarking,
@@ -348,24 +352,37 @@ class _Stat extends StatelessWidget {
 /* --------------------------------------------------------------- shortcuts */
 
 class _Shortcut {
-  const _Shortcut(this.label, this.icon, this.color, this.route, {this.refresh = true});
+  const _Shortcut(this.label, this.icon, this.color, this.route, {this.refresh = true, this.arguments});
   final String label;
   final IconData icon;
   final Color color;
   final String route;
   final bool refresh;
+  final Object? arguments;
 }
 
 /// Every surface this person can open, where the bottom navigation used to be.
 class _Shortcuts extends StatelessWidget {
-  const _Shortcuts({required this.authority, required this.open});
+  const _Shortcuts({required this.authority, required this.open, this.college});
 
   final Authority authority;
-  final void Function(String route, bool refresh) open;
+  final CollegeBrand? college;
+  final void Function(String route, bool refresh, Object? arguments) open;
 
   @override
   Widget build(BuildContext context) {
+    final canAppoint = authority.can('account.manage') && authority.can('role.assign');
+    final canAdmit = authority.can('student.manage');
     final items = [
+      // ONB-1: first, because it is the College Admin's most frequent job.
+      if (canAppoint || canAdmit)
+        _Shortcut(
+          'Onboarding',
+          Icons.person_add_alt_1_rounded,
+          AppColors.success,
+          Routes.onboarding,
+          arguments: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
+        ),
       if (authority.can('session.read'))
         const _Shortcut('Schedule', Icons.event_rounded, AppColors.primary, Routes.schedule),
       if (authority.can('offering.read'))
@@ -394,7 +411,7 @@ class _Shortcuts extends StatelessWidget {
             Expanded(
               child: InkWell(
                 borderRadius: BorderRadius.circular(AppRadius.card),
-                onTap: () => open(item.route, item.refresh),
+                onTap: () => open(item.route, item.refresh, item.arguments),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   child: Column(

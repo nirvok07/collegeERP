@@ -17,6 +17,7 @@ import '../../features/attendance/data/attendance_api.dart';
 import '../../features/attendance/domain/attendance_repository.dart';
 import '../../features/delivery/data/delivery_api.dart';
 import '../../features/delivery/domain/delivery_repository.dart';
+import '../../features/onboarding/data/onboarding_api.dart';
 
 final locator = GetIt.instance;
 
@@ -48,5 +49,6 @@ void configureDependencies() {
     ..registerLazySingleton<DeliveryRepository>(() => DeliveryApi(locator<ApiClient>()))
     ..registerLazySingleton<AttendanceRepository>(() => AttendanceApi(locator<ApiClient>()))
     ..registerLazySingleton(() => AuthorityApi(locator<ApiClient>()))
-    ..registerLazySingleton<AssessmentRepository>(() => AssessmentApi(locator<ApiClient>()));
+    ..registerLazySingleton<AssessmentRepository>(() => AssessmentApi(locator<ApiClient>()))
+    ..registerLazySingleton<OnboardingRepository>(() => OnboardingApi(locator<ApiClient>()));
 }

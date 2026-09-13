@@ -115,6 +115,7 @@ than from a feature list.
 | R55 | The super admin can suspend, reactivate and close a college; colleges are never deleted | Active | [ADR](blueprint/adr.md) AD-75 |
 | R56 | A college can be set up by the super admin as a temporary administrator and handed over to its real administrator; nobody's password is ever generated or shared | Active | [ADR](blueprint/adr.md) AD-75 |
 | R57 | An invited person accepts the invitation and sets their own password on the web console or in the mobile app | Active | [ADR](blueprint/adr.md) AD-75 |
+| R58 | The College Admin appoints teachers and onboards students from the mobile app, as well as the web console | Active | [ADR](blueprint/adr.md) AD-76, `lib/features/onboarding/` |
 
 ## Assumptions awaiting confirmation
 

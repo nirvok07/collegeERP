@@ -26,13 +26,20 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - API logs via Dio interceptor (LOG-1, AD-73): ✅ debug only, secrets masked, tested
 - Real super admin account (OPS-2, AD-74): ✅ `nirvokofficial@gmail.com` Owner on local; `owner@nirvok.com` disabled; authenticator app kept
 - College sign-in and invitation acceptance (WEB-1 web, ACC-1 mobile, AD-75): ✅ code, ✅ tests, ✅ end-to-end handover test; 🔍 on the phone and in a browser
+- College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): the college flow, end to end (AD-75, R55–R57; `0e19d41`).
+Just done (2026-09-14): ONB-1 ✅ (AD-76, R58) — the college app's dashboard has "Onboarding" for the
+College Admin: appoint a teacher (name, email, department, Faculty or Head of Department → one
+invitation message to copy) and onboard a student (name, enrolment number, program, admission date).
+Same endpoints as the web; no server change. A new college needs departments and programs first,
+still added on the web; the forms say so.
+
+Before that, the college flow, end to end (AD-75, R55–R57; `0e19d41`).
 - **SAM-2a:** the Super Admin app suspends, reactivates and closes a college (reason; close needs
   the code typed; version-pinned), and reissues an administrator's invitation. The invitation
   screen says who it is for, offers one message to copy, and warns it is not an authenticator key
@@ -159,7 +166,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 417 backend, 195 web, 176 Flutter, all passing. One outbox test ("a write waits behind an
+Tests: 417 backend, 195 web, 184 Flutter, all passing. One outbox test ("a write waits behind an
 earlier one…") failed once under full-suite load and passed alone three times and on rerun: timing-sensitive.
 
 ## 5. Blockers
@@ -221,6 +228,8 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 - `server/.env.example` has an uncommitted edit containing the real Supabase password; it must
   go back to the placeholder and never be committed.
 - No email delivery anywhere: invitations are handed over by the super admin (AD-75).
+- Departments, programs and curriculum can only be created on the web console; a fresh college
+  (IIT Doon, IIT Delhi) has none, so phone onboarding shows "No departments/programs yet" until then.
 - A college account cannot be deactivated yet; after a handover the temporary administrator has no
   access but still uses one seat (AD-65).
 - Local colleges IIT Doon and IIT Delhi (2026-09-14) have invited administrators who have not

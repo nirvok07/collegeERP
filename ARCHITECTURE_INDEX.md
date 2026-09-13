@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-75) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R57) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-76) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R58) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -119,3 +119,4 @@ shows its shape.
 | AD-73 | API logs in development only, through one redacting Dio interceptor | Active |
 | AD-74 | Real Owner nirvokofficial@gmail.com; authenticator app kept; dev operator create-owner and disable | Active |
 | AD-75 | No college deletion; handover through a temporary administrator; invitations accepted on web and phone | Active |
+| AD-76 | College Admin onboards teachers and students from the phone too (amends AD-32 for onboarding) | Active |

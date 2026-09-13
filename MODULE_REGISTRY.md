@@ -14,6 +14,7 @@ Implementation numbers are a delivery stream mapped to blueprint modules (AD-44)
 | — | Capability: offline outbox | Slice 1 idempotency (AD-58); slice 2 durable queue (AD-59), Android-verified 2026-09-13 | ✅ | not used | ✅ | `capabilities/offline-outbox.md` |
 | — | Platform administration | Provisioning (S1/S2), lifecycle (SA-1), audit view (SA-2), accounts, roles and TOTP (SA-3), plan and seats (SA-4a), dev operator password (OPS-1); SA-5 missing; super admin app SAM-1 (sign-in, colleges, add college; AD-72) and SAM-2a (suspend, reactivate, close, reissue; AD-75) | ⚠️ | ⚠️ | ⚠️ admin app | `capabilities/platform-administration.md` |
 | — | Mobile dashboard (MUX-1) | Home dashboard replacing bottom nav, light theme only, native charts (AD-67) | none | none | ✅ | `docs/blueprint/adr.md` AD-67 |
+| — | College Admin onboarding (ONB-1) | Appoint a teacher (Faculty/HoD in a department, invitation to share) and admit a student into a program, on the phone (AD-76) | existing | existing | ✅ | `docs/blueprint/adr.md` AD-76 |
 | — | College branding (BR-1) | Public lookup by code; logo URL and colour set by the platform and the College Admin; college-code-first app (AD-70) | ✅ | ✅ | ✅ | `docs/blueprint/adr.md` AD-70 |
 | M10 | Examinations/results | Not started | — | — | — | Blocked on OD-1 |
 
