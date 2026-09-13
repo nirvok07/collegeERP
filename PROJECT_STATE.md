@@ -24,7 +24,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-3 ✅ DONE (SA-3b commit recorded below): 383 server tests, 186 web tests, typechecks clean.
+None in progress. SA-3 ✅ DONE (SA-3b commit `f18867a`): 383 server tests, 186 web tests, typechecks clean.
 **Owner actions before the dev console works:**
 1. Apply migrations `021_platform_roles.sql` and `022_platform_mfa.sql` (`npm run migrate` in `server/`).
 2. Add `SECRET_SEALING_KEY` to `server/.env` (`openssl rand -base64 32`). Without it, development
