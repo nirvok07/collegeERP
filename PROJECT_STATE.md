@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ 133 Flutter tests; Android replay 🔍 NEEDS VALIDATION (device unavailable)
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config; FCM registration 🔍
-- Platform Administration: ⚠️ PARTIAL, S1/S2 provisioning and colleges list only
+- Platform Administration: ⚠️ PARTIAL. S1/S2 provisioning ✅; SA-1 college lifecycle ✅; SA-2…SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Student role and student experience: ❌
 - Examinations, Results (M10): 🚫 OD-1
@@ -24,29 +24,26 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. AD-59 device replay ⏸️ POSTPONED until the phone is connected.
+None in progress. SA-1 ✅ DONE: 340 server tests, 167 web tests, typecheck clean (commit below).
+AD-59 device replay ⏸️ POSTPONED until the phone is connected.
 
-### NEXT SLICE — SA-1 College Lifecycle
+### NEXT SLICE — SA-2 Platform Audit View
 Design: `docs/blueprint/capabilities/platform-administration.md` §5.
-- **Already built:** `POST/GET /v1/institutions` (platform guard), W0 one-transaction
-  provisioning, status column `trial/active/suspended/closed`, new sign-in refused when suspended
-  or closed, web colleges list and provision drawer.
-- **To build:** institution detail; suspend, reactivate, close with a required reason; suspension
-  enforced on refresh and per request; reissue the administrator invitation (old token invalid,
-  new one shown once); an audit event per transition; web detail screen with these actions.
-- **Not in this slice:** audit view (SA-2), platform roles and second factor (SA-3), plan and
-  seats (SA-4), impersonation (SA-5), data export for closed colleges.
-- **Dependencies:** M1 sessions and refresh, M2 institution record, audit writer.
-- **Validation:** server tests for each transition, refusals for college actors, suspended
-  refresh and request refused, reissue invalidates the old token, audit rows; web tests.
-- **Open decision:** OD-SA-1 below. Only the per-request enforcement depends on it.
-- **Blockers:** none, if the provisional OD-SA-1 answer is accepted.
+- **Already built:** append-only `audit_events` with `actor_type` platform and `tenant_id`; SA-1
+  writes `institution.*` and `invitation.reissued`; no audit read route exists.
+- **To build:** a platform-only, paginated read of platform events, filtered by college, action
+  and date; a web view in the platform console, linked from the college drawer.
+- **Not in this slice:** tenant-side audit views, sensitive-read auditing, exports, platform roles.
+- **Dependencies:** the audit table's RLS (platform reads need a deliberate, narrow path).
+- **Validation:** platform-only access, no tenant data beyond event metadata, pagination, filters.
+- **Open decision:** whether platform events may include events a college user caused (proposed: no).
+- **Blockers:** none.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
 |---|---|---|---|---|---|
-| OD-SA-1 | What does "suspended" mean for a college's users? | Decides whether live sessions end or turn read-only | SA-1 | Refused entirely; read-only | Open. Provisional: refused entirely, matching today's sign-in refusal |
-| OD-SA-2 | Retention and export for a closed college | Data protection duty | SA-1 close, later export | Fixed period; per contract | Open; close ships without export |
+| OD-SA-1 | What does "suspended" mean for a college's users? | Live sessions end or turn read-only | SA-1 | — | ✅ Resolved as AD-60: refused entirely |
+| OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 
 ### BLOCKERS
@@ -60,10 +57,10 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-59, all Active; AD-59 approved 2026-09-13. Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-60, all Active; AD-59 and AD-60 approved 2026-09-13. Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`018` applied on `college_erp_dev`. No migration in the outbox slice 2.
+Migrations `001`–`019` applied on `college_erp_dev`. `019` adds the college lifecycle trigger and invitation revocation.
 
 ## 4. Commits (newest first)
 ```
@@ -74,7 +71,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 327 backend, 161 web, 133 Flutter, all passing.
+Tests: 340 backend, 167 web, 133 Flutter, all passing.
 
 ## 5. Blockers
 - AD-59 device validation: the Android phone is not connected.
@@ -98,9 +95,8 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 ## 9. Known inconsistencies and risks
 - `IMPLEMENTATION-CHECKPOINT.md` calls S2 "Super Admin console — COMPLETE". It covers sign-in and
   provisioning only; tenant lifecycle, audit view, platform roles and impersonation are missing.
-- No endpoint reissues an administrator invitation; the device-test seed rotates it in SQL.
-- A suspended or closed college refuses new sign-ins, but existing sessions keep working.
-- The seat limit is stored and never enforced.
+- The seat limit is stored and never enforced (SA-4).
+- College status is cached up to 15 s per server process; another process lags by at most that.
 - Outbox deviations from its §7 design, recorded there: no roster cache (§7.2), so a register
   cannot be opened for the first time offline; no coalescing, since every queued write was
   already attempted online; transport failures retry indefinitely at 10 minutes, only 5xx parks.

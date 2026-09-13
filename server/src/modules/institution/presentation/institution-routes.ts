@@ -10,6 +10,10 @@ import {
 } from '../application/manage-org-units.ts';
 import { fail } from '../../../core/errors.ts';
 import { provisionInstitution } from '../application/provision-institution.ts';
+import {
+  changeLifecycle, getInstitutionDetail, reissueInvitation, type InstitutionDetail,
+} from '../application/manage-lifecycle.ts';
+import type { LifecycleAction } from '../domain/lifecycle.ts';
 
 const provision = z.object({
   code: z.string().min(3).max(32),
@@ -31,6 +35,32 @@ const unitBody = z.object({
 const departmentBody = unitBody.extend({ campus_id: z.string().uuid() });
 const renameBody = z.object({ name: z.string().min(2).max(120) });
 const archiveBody = z.object({ reason: z.string().min(1).max(500) });
+const lifecycleBody = z.object({
+  version: z.number().int().positive(),
+  reason: z.string().max(500),
+  confirm_code: z.string().max(64).optional(),
+});
+
+/** The platform's view of a college: its record and its first administrator, nothing operational. */
+function detailJson(d: InstitutionDetail) {
+  const i = d.institution;
+  return {
+    id: i.id, code: i.code, name: i.name, status: i.status, suspended_from: i.suspendedFrom ?? null,
+    plan: i.plan, seat_limit: i.seatLimit, timezone: i.timezone, version: i.version,
+    created_at: i.createdAt ?? null, status_changed_at: i.statusChangedAt ?? null,
+    actions: d.actions,
+    administrator: d.administrator && {
+      full_name: d.administrator.fullName,
+      email: d.administrator.email,
+      account_status: d.administrator.accountStatus,
+      invitation: {
+        state: d.administrator.invitation.state,
+        expires_at: d.administrator.invitation.expiresAt?.toISOString() ?? null,
+      },
+      can_reissue: d.administrator.canReissue,
+    },
+  };
+}
 
 export async function registerInstitutionRoutes(app: FastifyInstance, c: Container) {
   const orgActor = (req: { actor?: { sub: string; tenantId: string | null } }): OrgActor => ({
@@ -188,4 +218,44 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
       })),
     );
   });
+
+  /* SA-1: one college, its lifecycle, and its administrator's invitation. */
+  app.get('/institutions/:id', async (req, reply) => {
+    if (!requirePlatformActor(req, reply)) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
+    const result = await getInstitutionDetail(c.lifecycle, id);
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, detailJson(result.value));
+  });
+
+  for (const action of ['suspend', 'reactivate', 'close'] as const satisfies readonly LifecycleAction[]) {
+    app.post(`/institutions/:id/${action}`, async (req, reply) => {
+      if (!requirePlatformActor(req, reply)) return reply;
+      const id = (req.params as { id: string }).id;
+      if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
+      const parsed = lifecycleBody.safeParse(req.body);
+      if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+      const result = await changeLifecycle(c.lifecycle, {
+        id, action, version: parsed.data.version, reason: parsed.data.reason,
+        confirmCode: parsed.data.confirm_code, platformAccountId: req.actor!.sub,
+      });
+      if (!result.ok) return sendFailure(reply, result.error);
+      return sendOk(reply, detailJson(result.value));
+    });
+  }
+
+  app.post('/institutions/:id/administrator-invitation', async (req, reply) => {
+    if (!requirePlatformActor(req, reply)) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
+    const result = await reissueInvitation(c.lifecycle, { id, platformAccountId: req.actor!.sub });
+    if (!result.ok) return sendFailure(reply, result.error);
+    // The token is in this response only, as at provisioning.
+    return sendOk(reply, {
+      institution: detailJson(result.value.detail),
+      invitation: { token: result.value.token, expires_at: result.value.expiresAt.toISOString(), delivery: 'pending' },
+    }, 201);
+  });
+
 }

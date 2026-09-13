@@ -9,6 +9,10 @@ export interface InstitutionRecord {
   seatLimit: number;
   timezone: string;
   version: number;
+  /** Set only while suspended: the status reactivation returns to (migration 019). */
+  suspendedFrom?: 'trial' | 'active' | null;
+  statusChangedAt?: Date | null;
+  createdAt?: Date;
 }
 
 export interface InstitutionRepository {
@@ -16,6 +20,8 @@ export interface InstitutionRepository {
   findByCode(tx: Tx, code: string): Promise<InstitutionRecord | null>;
   findById(tx: Tx, id: string): Promise<InstitutionRecord | null>;
   list(tx: Tx, limit: number): Promise<InstitutionRecord[]>;
+  /** Pinned to a version; null when somebody changed it first. The trigger rules on legality. */
+  setStatus(tx: Tx, id: string, version: number, status: InstitutionRecord['status']): Promise<InstitutionRecord | null>;
 }
 
 export interface CampusRecord {

@@ -1,6 +1,6 @@
-# Platform Administration (Super Admin) — readiness checkpoint
+# Platform Administration (Super Admin)
 
-Analysis only, 2026-09-13. Nothing here is implemented by this document. Owner: M1 Identity &
+Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019); SA-2 to SA-5 not built. Owner: M1 Identity &
 Access (platform side) with M2 for the institution record (AD-20). Decisions cited, not restated.
 
 ## 1. What exists (S1, S2)
@@ -20,9 +20,6 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 
 | Gap | Evidence |
 |---|---|
-| Reissue an administrator invitation (W0 "Correction") | No endpoint. The device-test seed had to rotate a token in the database |
-| Institution detail and lifecycle: suspend, reactivate, close, with a reason | Status column only; no transition, no audit action |
-| Suspension of **existing** sessions | Only new sign-ins are refused; refresh and live tokens are not checked |
 | Seat limit enforcement | `SEAT_LIMIT_REACHED` is defined and never raised |
 | Plan and seat changes after provisioning | No endpoint |
 | Platform audit view (matrix: Platform Owner, "V of platform events") | Zero audit read routes |
@@ -48,9 +45,22 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 - No platform endpoint may bypass row-level security to read tenant tables.
 - Invitation reissue must invalidate the previous token, and show the new one once.
 
+## 4a. SA-1 as built
+
+| Piece | Where |
+|---|---|
+| Detail: record, lifecycle, allowed actions, administrator invitation state | `GET /v1/institutions/:id` |
+| Suspend, reactivate, close; reason required; version-pinned; close confirmed by code | `POST /v1/institutions/:id/{suspend,reactivate,close}` |
+| Transitions and "closed is final" enforced by trigger | migration `019_college_lifecycle.sql` |
+| Access rule, written once | `institution/domain/lifecycle.ts` `accessDenial` |
+| Applied at every request and at renewal | `infrastructure/http/tenant-access.ts`, request hook, `refresh-session.ts` |
+| Invitation reissue through M1's capability; previous link revoked (`revoked_at`) | `POST /v1/institutions/:id/administrator-invitation`, `identity/application/reissue-invitation.ts` |
+| Audit: `institution.suspended/reactivated/closed`, `invitation.reissued` (never the token) | audit writer, platform actor |
+| Web: college detail drawer, reason-confirmed actions, typed-code close, reissue | `clients/web/src/features/institutions/InstitutionDrawer.tsx` |
+
 ## 5. Smallest safe slices
 
-1. **SA-1 Tenant lifecycle.** Institution detail; suspend, reactivate and close with a reason;
+1. ✅ **SA-1 Tenant lifecycle.** Institution detail; suspend, reactivate and close with a reason;
    enforce suspension on refresh and per request; reissue the administrator invitation; audit
    every transition. Web only.
 2. **SA-2 Platform audit view.** Read platform events, filtered by college and action.
@@ -63,7 +73,7 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 
 | Id | Question |
 |---|---|
-| OD-SA-1 | What "suspended" means for users: refused entirely, or read-only |
+| ~~OD-SA-1~~ | Resolved as AD-60: refused entirely, at every request and at renewal |
 | OD-SA-2 | What "closed" means for data: retention period, and the college's export |
 | OD-SA-3 | Second factor for platform accounts: TOTP, or email one-time code |
 | OD-SA-4 | Seat limit counts which accounts: active staff, students, or both |

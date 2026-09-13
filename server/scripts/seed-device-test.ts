@@ -3,11 +3,11 @@
  * Flutter app on a real phone, so no existing data is touched.
  *
  * Everything goes through the public API except the platform account, which
- * has no API by design; it is inserted exactly as tests/helpers.ts does.
+ * has no API yet (SA-3); it is inserted exactly as tests/helpers.ts does.
  * Passwords are random and written only to server/.device-test.local.json
  * (git-ignored, owner-only). Nothing secret is printed.
  */
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from '../src/config/config.ts';
@@ -50,7 +50,6 @@ const teacher = { email: `teacher@${CODE}.dev`, password: secret() };
 // Resumable: a run that stopped part-way leaves this script's own test owner
 // and college behind. Only those rows are touched, and only here.
 const pool = createPool(config.MIGRATION_DATABASE_URL ?? config.DATABASE_URL);
-let inviteToken: string | undefined;
 try {
   const hash = await new ScryptPasswordHasher().hash(platform.password);
   const existing = await pool.query('SELECT id FROM platform_accounts WHERE email = $1', [platform.email]);
@@ -64,29 +63,20 @@ try {
     );
   }
 
-  const college = await pool.query('SELECT id FROM institutions WHERE code = $1', [CODE]);
-  if (college.rowCount) {
-    // The admin's invitation was never accepted, and its token was only ever
-    // returned once. Give that same invitation a fresh token.
-    inviteToken = randomBytes(24).toString('base64url');
-    const reissued = await pool.query(
-      `UPDATE invitation_tokens SET token_hash = $2, expires_at = now() + interval '1 day'
-        WHERE tenant_id = $1 AND consumed_at IS NULL`,
-      [college.rows[0].id, createHash('sha256').update(inviteToken).digest('hex')],
-    );
-    if (reissued.rowCount !== 1) throw new Error('device-test exists but has no single pending invitation; not resuming.');
-  }
 } finally {
   await pool.end();
 }
 
 const owner = (await call('POST', '/v1/auth/platform/login', platform)).access_token;
-if (!inviteToken) {
-  const provisioned = await call('POST', '/v1/institutions', {
-    code: CODE, name: 'Device Test College', admin: { full_name: 'Device Test Admin', email: admin.email },
-  }, owner);
-  inviteToken = provisioned.invitation.token as string;
-}
+// A run that stopped before the administrator accepted is resumed with the
+// official reissue endpoint (SA-1), never by rewriting a token in SQL.
+const existing = ((await call('GET', '/v1/institutions', undefined, owner)) as { id: string; code: string }[])
+  .find((i) => i.code === CODE);
+const inviteToken: string = existing
+  ? (await call('POST', `/v1/institutions/${existing.id}/administrator-invitation`, {}, owner)).invitation.token
+  : (await call('POST', '/v1/institutions', {
+      code: CODE, name: 'Device Test College', admin: { full_name: 'Device Test Admin', email: admin.email },
+    }, owner)).invitation.token;
 await call('POST', '/v1/auth/accept-invite', {
   institution_code: CODE, token: inviteToken, password: admin.password,
 });

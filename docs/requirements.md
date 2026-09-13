@@ -99,6 +99,7 @@ than from a feature list.
 | R39 | The department sets the assessment plan and verifies and corrects submitted marks; the teacher enters and submits. A submitted sheet is corrected with a reason, never reopened | Active | [ADR](blueprint/adr.md) AD-57 |
 | R40 | A teacher's field write is safe to send twice. A resend of a write whose response was lost gets its first outcome back, and is never applied twice or refused as someone else's change | Active | [ADR](blueprint/adr.md) AD-58, [Outbox](blueprint/capabilities/offline-outbox.md) |
 | R41 | A teacher's six field writes survive no network, an app restart and a crash: they are kept encrypted on the phone, sent in order when the server is reachable, and never discarded or overwritten without a person deciding | Active | [ADR](blueprint/adr.md) AD-59, [Outbox](blueprint/capabilities/offline-outbox.md) §7 |
+| R42 | The platform suspends, reactivates and closes a college with a recorded reason; a suspended or closed college's users lose access immediately, closing is final, and a lost administrator invitation is reissued without reviving the old link | Active | [ADR](blueprint/adr.md) AD-60, [Platform administration](blueprint/capabilities/platform-administration.md) |
 
 ## Assumptions awaiting confirmation
 

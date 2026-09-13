@@ -2,6 +2,8 @@
  * Composition root. The only place where infrastructure adapters meet
  * application ports. Nothing else constructs a repository or an adapter.
  */
+import { TenantAccessGate } from './infrastructure/http/tenant-access.ts';
+import type { LifecycleDeps } from './modules/institution/application/manage-lifecycle.ts';
 import type { Config } from './config/config.ts';
 import { createPool, type Pool } from './infrastructure/db/pool.ts';
 import { PgUnitOfWork } from './infrastructure/db/unit-of-work.ts';
@@ -99,6 +101,8 @@ export interface Container {
   attendance: AttendanceDeps;
   assessment: AssessmentDeps;
   institutions: PgInstitutionRepository;
+  tenantAccess: TenantAccessGate;
+  lifecycle: LifecycleDeps;
   uow: PgUnitOfWork;
   close(): Promise<void>;
 }
@@ -150,6 +154,8 @@ export function buildContainer(config: Config, pool?: Pool): Container {
         })
       : new InMemoryMediaStorage();
 
+  const tenantAccess = new TenantAccessGate(uow, institutions);
+
   const identityProvisioning: IdentityProvisioningDeps = {
     persons, accounts, assignments, roles, invitations, audit, ids, clock, tokens,
     invitationTtlHours: config.INVITATION_TTL_HOURS,
@@ -161,6 +167,15 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     media,
     uow,
     institutions,
+    tenantAccess,
+    lifecycle: {
+      uow, institutions, audit, ids, clock,
+      identity: {
+        accounts, invitations, audit, ids, clock, tokens,
+        invitationTtlHours: config.INVITATION_TTL_HOURS,
+      },
+      onStatusChanged: (id) => tenantAccess.invalidate(id),
+    },
     authority: new AuthorityService({ uow, assignments, orgTree, clock }),
     identityProvisioning,
     authenticate: {
@@ -170,7 +185,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     acceptInvitation: { uow, invitations, accounts, credentials, audit, hasher, tokens, clock, ids },
     refreshSession: {
       uow, refreshTokens, accounts, platformAccounts, audit, tokens, clock, ids,
-      refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
+      refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS, tenantAccess,
     },
     managePeople: {
       uow, persons, accounts, assignments, roles, invitations, audit, ids, clock, tokens,

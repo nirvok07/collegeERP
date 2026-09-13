@@ -105,11 +105,19 @@ export async function buildServer(container: Container): Promise<FastifyInstance
    * Identity only. A valid token proves who the caller is and nothing about what
    * they may do: authority is resolved per request, per AD-16.
    */
-  app.addHook('onRequest', async (req) => {
+  app.addHook('onRequest', async (req, reply) => {
     const header = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) return;
     const claims = container.authenticate.tokens.verifyAccessToken(header.slice(7));
-    if (claims) req.actor = claims;
+    if (!claims) return;
+    // AD-60: a suspended or closed college's sessions stop here, on every
+    // request, not only at the next sign-in. Platform actors carry no college
+    // and are never affected. Signing out stays possible.
+    if (claims.actorType === 'person' && claims.tenantId && req.url !== '/v1/auth/logout') {
+      const denial = await container.tenantAccess.denialFor(claims.tenantId);
+      if (denial) return sendFailure(reply, denial);
+    }
+    req.actor = claims;
   });
 
   // After the request hook has established who is asking, and before any

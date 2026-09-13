@@ -1217,3 +1217,27 @@ SQLCipher build.
 
 *Adds.* `drift` and `sqlite3` as dependencies; `drift_dev` and `build_runner` for development only.
 See docs/blueprint/capabilities/offline-outbox.md §7.
+
+---
+
+**AD-60 — A suspended or closed college's users are refused entirely, at every request and at renewal**
+
+*Status.* Approved and implemented, 2026-09-13. Resolves OD-SA-1.
+
+*Decision.* Suspension and closure refuse a college's users outright; there is no read-only mode.
+The rule is one function in the institution domain (`accessDenial`). It is applied at the two
+boundaries every session passes: the bearer-token request hook, and session renewal, which carries
+no bearer token. Platform actors carry no college and are never affected. Signing out stays
+possible. Reactivation restores existing sessions; nothing is revoked.
+
+*Why.* M1 W2 already names "tenant suspended" as a sign-in failure, and sign-in already refused
+suspended and closed colleges. Nothing in the architecture describes read-only access, and
+checking only at sign-in let a suspended college keep working until tokens lapsed.
+
+*Lifecycle.* Enforced by trigger (migration 019): trial or active to suspended; suspended back to
+the status it was suspended from; anything to closed; closed is final. Every transition needs a
+reason, is version-pinned, and is audited. Closing requires the college code typed back.
+
+*Consequences.* Status is cached per process for at most 15 seconds and cleared at once on a
+change made in that process. Queued mobile writes of a suspended college fail as refusals and
+wait for a person (AD-59). What closing means for data stays open as OD-SA-2.

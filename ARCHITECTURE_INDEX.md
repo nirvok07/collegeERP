@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-59) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R41) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-60) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R42) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -88,3 +88,4 @@ Firebase: FCM, Remote Config, Crashlytics only.
 | AD-56 | A mark records what happened, not what it is worth | Active |
 | AD-58 | Field writes are made replay-safe by an idempotency key, layered over version pinning | Active |
 | AD-59 | The mobile local store is Drift over SQLite3MultipleCiphers, keyed from the platform keystore | Active |
+| AD-60 | A suspended or closed college's users are refused entirely, at every request and at renewal | Active |

@@ -6,6 +6,7 @@ import {
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import { ProvisionDrawer, type ProvisionedInstitution } from './ProvisionDrawer.tsx';
 import { InvitationDrawer } from './InvitationDrawer.tsx';
+import { InstitutionDrawer } from './InstitutionDrawer.tsx';
 import './institutions.css';
 
 interface Institution {
@@ -34,6 +35,8 @@ export function InstitutionsPage({ api }: { api: ApiClient }) {
   const [query, setQuery] = useState('');
   const [provisionOpen, setProvisionOpen] = useState(false);
   const [invitation, setInvitation] = useState<ProvisionedInstitution | null>(null);
+  const [invitationTitle, setInvitationTitle] = useState<string | undefined>(undefined);
+  const [selected, setSelected] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
 
@@ -132,7 +135,11 @@ export function InstitutionsPage({ api }: { api: ApiClient }) {
                   ? <SkeletonRows rows={5} widths={['60%', '40%', '56px', '40px']} />
                   : filtered.map((row) => (
                       <tr key={row.id}>
-                        <td className="table__primary">{row.name}</td>
+                        <td className="table__primary">
+                          <button type="button" className="row-link" onClick={() => setSelected(row.id)}>
+                            {row.name}
+                          </button>
+                        </td>
                         <td className="table__secondary"><code>{row.code}</code></td>
                         <td>
                           <StatusChip tone={STATUS_TONE[row.status] ?? 'neutral'}>{row.status}</StatusChip>
@@ -150,13 +157,26 @@ export function InstitutionsPage({ api }: { api: ApiClient }) {
         onClose={() => setProvisionOpen(false)}
         onProvisioned={(result) => {
           setProvisionOpen(false);
+          setInvitationTitle(undefined);
           setInvitation(result);
           toast(`${result.institution.name} created`);
           void load('refresh');
         }}
       />
 
-      <InvitationDrawer result={invitation} onClose={() => setInvitation(null)} />
+      <InstitutionDrawer
+        api={api}
+        id={selected}
+        onClose={() => setSelected(null)}
+        onChanged={() => void load('refresh')}
+        onInvitation={(issued) => {
+          setInvitationTitle(`New invitation for ${issued.institution.name}`);
+          setInvitation(issued);
+          toast('New invitation issued. The previous link no longer works.');
+        }}
+      />
+
+      <InvitationDrawer result={invitation} title={invitationTitle} onClose={() => setInvitation(null)} />
     </>
   );
 }

@@ -17,7 +17,7 @@
  * retries instead of signing the user out.
  */
 import { Err, Ok, type Result } from '../../../core/result.ts';
-import { fail } from '../../../core/errors.ts';
+import { fail, type Failure } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator, TokenIssuer } from '../../../shared/application/ports.ts';
 import type { UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
@@ -35,6 +35,8 @@ export interface RefreshSessionDeps {
   clock: Clock;
   ids: IdGenerator;
   refreshTtlDays: number;
+  /** AD-60: whether the account's college may be used. The rule lives in the institution domain. */
+  tenantAccess: { denialFor(tenantId: string): Promise<Failure | null> };
 }
 
 const ENDED = 'Your session has ended. Please sign in again.';
@@ -78,6 +80,12 @@ export async function refreshSession(
 
   if (found.revokedAt) return Err(fail('UNAUTHENTICATED', ENDED));
   if (found.expiresAt.getTime() <= at.getTime()) return Err(fail('UNAUTHENTICATED', ENDED));
+  // A suspended college's session is not renewed, so it cannot outlive its
+  // access token (AD-60). Platform sessions carry no college.
+  if (found.accountId && found.tenantId) {
+    const denial = await deps.tenantAccess.denialFor(found.tenantId);
+    if (denial) return Err(denial);
+  }
 
   return deps.uow.run(found.tenantId, async (tx) => {
     let actor: SignedInActor;

@@ -61,6 +61,7 @@ export interface AccountRepository {
   ): Promise<void>;
   markActivated(tx: Tx, id: string, at: Date): Promise<void>;
   recordSignIn(tx: Tx, id: string, at: Date): Promise<void>;
+  findBootstrapAdministrator(tx: Tx): Promise<BootstrapAdministrator | null>;
 }
 
 export interface CredentialRepository {
@@ -175,6 +176,21 @@ export interface InvitationRepository {
     at: Date,
   ): Promise<{ id: string; accountId: string; tenantId: string } | null>;
   consume(tx: Tx, id: string, at: Date): Promise<void>;
+  /** Revokes every unused invitation of an account; returns how many. */
+  revokeOutstanding(tx: Tx, accountId: string, at: Date): Promise<number>;
+  latestFor(
+    tx: Tx,
+    accountId: string,
+  ): Promise<{ expiresAt: Date; consumedAt: Date | null; revokedAt: Date | null } | null>;
+}
+
+/** The person W0 made the college's first administrator, however they are doing now. */
+export interface BootstrapAdministrator {
+  accountId: string;
+  personId: string;
+  fullName: string;
+  email: string | null;
+  accountStatus: string;
 }
 
 export interface RefreshTokenRecord {

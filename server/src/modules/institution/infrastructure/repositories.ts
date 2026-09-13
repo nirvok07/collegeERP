@@ -5,7 +5,8 @@ import type {
   InstitutionRecord, InstitutionRepository,
 } from '../application/ports.ts';
 
-const COLUMNS = `id, code, name, status, plan, seat_limit, timezone, version`;
+const COLUMNS = `id, code, name, status, plan, seat_limit, timezone, version,
+                 suspended_from, status_changed_at, created_at`;
 
 export class PgInstitutionRepository implements InstitutionRepository {
   async create(tx: Tx, input: Omit<InstitutionRecord, 'version'>): Promise<InstitutionRecord> {
@@ -32,6 +33,17 @@ export class PgInstitutionRepository implements InstitutionRepository {
       `SELECT ${COLUMNS} FROM institutions ORDER BY created_at DESC LIMIT $1`, [limit],
     );
     return rows.map(toInstitution);
+  }
+
+  async setStatus(
+    tx: Tx, id: string, version: number, status: InstitutionRecord['status'],
+  ): Promise<InstitutionRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `UPDATE institutions SET status = $3, version = version + 1, updated_at = now()
+        WHERE id = $1 AND version = $2 RETURNING ${COLUMNS}`,
+      [id, version, status],
+    );
+    return rows[0] ? toInstitution(rows[0]) : null;
   }
 }
 
@@ -175,5 +187,7 @@ function toInstitution(r: any): InstitutionRecord {
   return {
     id: r.id, code: r.code, name: r.name, status: r.status, plan: r.plan,
     seatLimit: r.seat_limit, timezone: r.timezone, version: r.version,
+    suspendedFrom: r.suspended_from ?? null, statusChangedAt: r.status_changed_at ?? null,
+    createdAt: r.created_at,
   };
 }

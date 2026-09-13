@@ -8,8 +8,8 @@ import type { ProvisionedInstitution } from './ProvisionDrawer.tsx';
  * letting an operator close it and discover the loss later.
  */
 export function InvitationDrawer({
-  result, onClose,
-}: { result: ProvisionedInstitution | null; onClose: () => void }) {
+  result, onClose, title,
+}: { result: ProvisionedInstitution | null; onClose: () => void; title?: string }) {
   const [copied, setCopied] = useState(false);
 
   if (!result) return null;
@@ -29,7 +29,7 @@ export function InvitationDrawer({
   return (
     <Drawer
       open
-      title={`${result.institution.name} is ready`}
+      title={title ?? `${result.institution.name} is ready`}
       subtitle="Send this invitation to the administrator."
       onClose={onClose}
       footer={<Button variant="primary" onClick={onClose}>Done</Button>}

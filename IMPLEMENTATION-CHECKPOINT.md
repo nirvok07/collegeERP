@@ -7,7 +7,7 @@ Slices    S1 backend foundation — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework, in clients/web/
           Flutter for Android and iOS at the repository root; no Flutter Web
-Tests     327 backend + 161 web + 133 Flutter = 621 passing
+Tests     340 backend + 167 web + 133 Flutter = 640 passing
 State     Current compact state: PROJECT_STATE.md. This file is slice history.
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER

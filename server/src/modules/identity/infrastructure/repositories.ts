@@ -22,6 +22,7 @@ import type {
   RoleAssignmentRepository,
   RoleDefinitionRecord,
   RoleDefinitionRepository,
+  BootstrapAdministrator,
 } from '../application/ports.ts';
 import type { ActiveAssignment } from '../domain/authority.ts';
 import type { ScopeAncestry, ScopeType } from '../domain/scope.ts';
@@ -166,6 +167,24 @@ export class PgAccountRepository implements AccountRepository {
 
   async recordSignIn(tx: Tx, id: string, at: Date): Promise<void> {
     await clientOf(tx).query(`UPDATE user_accounts SET last_login_at = $2 WHERE id = $1`, [id, at]);
+  }
+
+  /** The first administrator W0 created, read under the college's own row-level security. */
+  async findBootstrapAdministrator(tx: Tx): Promise<BootstrapAdministrator | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT ua.id AS account_id, p.id AS person_id, p.full_name, p.primary_email, ua.status
+         FROM role_assignments ra
+         JOIN persons p ON p.id = ra.person_id
+         JOIN user_accounts ua ON ua.person_id = p.id
+        WHERE ra.source = 'bootstrap'
+        ORDER BY ra.granted_at ASC, ua.created_at ASC
+        LIMIT 1`,
+    );
+    const r = rows[0];
+    return r
+      ? { accountId: r.account_id, personId: r.person_id, fullName: r.full_name,
+          email: r.primary_email, accountStatus: r.status }
+      : null;
   }
 }
 
@@ -424,7 +443,7 @@ export class PgInvitationRepository implements InvitationRepository {
   async findValidByHash(tx: Tx, tokenHash: string, at: Date) {
     const { rows } = await clientOf(tx).query(
       `SELECT id, account_id, tenant_id FROM invitation_tokens
-        WHERE token_hash = $1 AND consumed_at IS NULL AND expires_at > $2`,
+        WHERE token_hash = $1 AND consumed_at IS NULL AND revoked_at IS NULL AND expires_at > $2`,
       [tokenHash, at],
     );
     const r = rows[0];
@@ -433,6 +452,25 @@ export class PgInvitationRepository implements InvitationRepository {
 
   async consume(tx: Tx, id: string, at: Date): Promise<void> {
     await clientOf(tx).query(`UPDATE invitation_tokens SET consumed_at = $2 WHERE id = $1`, [id, at]);
+  }
+
+  async revokeOutstanding(tx: Tx, accountId: string, at: Date): Promise<number> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE invitation_tokens SET revoked_at = $2
+        WHERE account_id = $1 AND consumed_at IS NULL AND revoked_at IS NULL`,
+      [accountId, at],
+    );
+    return rowCount ?? 0;
+  }
+
+  async latestFor(tx: Tx, accountId: string) {
+    const { rows } = await clientOf(tx).query(
+      `SELECT expires_at, consumed_at, revoked_at FROM invitation_tokens
+        WHERE account_id = $1 ORDER BY created_at DESC LIMIT 1`,
+      [accountId],
+    );
+    const r = rows[0];
+    return r ? { expiresAt: r.expires_at, consumedAt: r.consumed_at, revokedAt: r.revoked_at } : null;
   }
 }
 
