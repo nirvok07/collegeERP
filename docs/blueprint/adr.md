@@ -1423,3 +1423,24 @@ test and device check already ran locally, while `server/.env` mixed both.
 its own values. `server/.env` names the local database for both roles; the Supabase pooler address
 is kept there as `SUPABASE_POOLER_DATABASE_URL`, read by nothing. `server/.env.example` documents
 the shape with placeholders only.
+
+---
+
+**AD-67 — Mobile home is a dashboard, not bottom navigation; the app ships light only for now**
+
+*Status.* Decided by the owner, 2026-09-13, from the prototype images in `assets/`. Overrides D11
+and assumption A5 for mobile, for now.
+
+*Decision.* The Flutter app opens on a dashboard: greeting, headline numbers, the class now and
+next, classes waiting to be marked, a four-week teaching-record ring, a week-ahead bar chart and the
+person's courses. Every other surface (schedule, courses, people, organisation, account) is pushed
+from it through `AppRouter`; there is no bottom navigation. The app runs the light theme only:
+a white page with neutral cool-grey panels. `AppTheme.dark()` still builds and is simply not wired.
+
+*Unchanged.* Authority: a dashboard section or shortcut exists only when the server grants the
+permission behind it, exactly as tabs did (AD-18). No new endpoint: the dashboard reads
+`/me/sessions` (28 days back, 7 ahead) and `/me/teaching`, and derives every number on the device
+without storing it (AD-7). Charts are native `CustomPaint`/widgets; no charting package.
+
+*Not in scope.* The prototype's student screens (own attendance %, fees due, circulars) need a
+student role, M5 beyond the minimum, fees (D1) and a communication module; none exists yet.

@@ -20,6 +20,19 @@ abstract final class AppColors {
   static const errorDark = Color(0xFFF87171);
   static const info = Color(0xFF0284C7);
   static const infoDark = Color(0xFF38BDF8);
+
+  /// The light ground and its layers (AD-67): a white page, cool-grey panels
+  /// and hairline borders, so sections separate by tone rather than shadow.
+  static const ground = Color(0xFFFFFFFF);
+  static const panel = Color(0xFFF6F7FB);
+  static const panelStrong = Color(0xFFECEFF5);
+  static const line = Color(0xFFE5E8EF);
+  static const ink = Color(0xFF0F172A);
+  static const inkMuted = Color(0xFF64748B);
+
+  /// A primary tint for the one card that leads a screen.
+  static const primarySoft = Color(0xFFEEF0FE);
+  static const errorSoft = Color(0xFFFDEEEE);
 }
 
 abstract final class AppSpacing {
@@ -36,6 +49,9 @@ abstract final class AppRadius {
   static const input = 8.0;
   static const card = 12.0;
   static const sheet = 16.0;
+
+  /// Dashboard panels, one step rounder than a list card.
+  static const panel = 18.0;
   static const pill = 999.0;
 }
 

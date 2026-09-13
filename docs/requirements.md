@@ -105,6 +105,7 @@ than from a feature list.
 | R45 | Every platform account signs in with a password and an authenticator code; no platform session exists without an enrolled authenticator, secrets are sealed at rest, and recovery forces re-enrolment and is audited | Active | [ADR](blueprint/adr.md) AD-62, AD-63 |
 | R46 | Development runs against local PostgreSQL `college_erp_dev` over `DATABASE_URL`, with no vendor SDK; the npm scripts load `server/.env`, and production is a configuration change | Active | [ADR](blueprint/adr.md) AD-66 |
 | R47 | A college's seat limit is enforced by the database: one seat per live college account, on every path and under concurrency; a lowered limit disables nobody and refuses new accounts | Active | [ADR](blueprint/adr.md) AD-65 |
+| R48 | The mobile app follows the prototype images in `assets/`: a white theme only for now, no bottom navigation, and a dashboard home with real charts from which every surface is opened | Active | [ADR](blueprint/adr.md) AD-67, `lib/features/dashboard/` |
 
 ## Assumptions awaiting confirmation
 
@@ -118,7 +119,7 @@ stated in [Decisions](11-decisions.md).
 | A9 | A program belongs to one department on one campus; campus variants are separate programs | Resolved, OD-M2-1 | [ADR](blueprint/adr.md) AD-37 |
 | A3 | Release one ships Core, Academics and Communication. Fees and payments follow in release two | Assumed | [Decisions](11-decisions.md) D12, [Roadmap](10-roadmap.md) |
 | A4 | English only in release one, with all strings externalized so languages can be added later | Assumed | [Product Overview](01-product-overview.md) 1.5 |
-| A5 | Light and dark themes both ship in release one | Assumed | [Decisions](11-decisions.md) D11 |
+| A5 | Light and dark themes both ship in release one | Overruled for mobile, for now (AD-67): light only | [Decisions](11-decisions.md) D11 |
 | A6 | Scale target of 20,000 students per tenant, 500 tenants, 20,000 peak concurrent at maturity | Resolved, derived not asserted | [Blueprint 4](blueprint/04-nfr-and-deployment.md) §4.1-4.3 |
 | A7 | Shared PostgreSQL with row-level tenant isolation, partitioned, India region | Resolved | [ADR](blueprint/adr.md) AD-22 |
 | A8 | Identity is per tenant. A person administering three colleges holds three logins | Open, OD-M1-5, recommendation carried | [M1](blueprint/modules/m1-identity-and-access.md) §22 |

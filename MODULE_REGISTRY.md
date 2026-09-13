@@ -13,6 +13,7 @@ Implementation numbers are a delivery stream mapped to blueprint modules (AD-44)
 | M7 | M9 Internal Assessment | Plan, mark sheet, verify, correct | ✅ | ✅ | ✅ | `modules/m7-internal-assessment.md` |
 | — | Capability: offline outbox | Slice 1 idempotency (AD-58); slice 2 durable queue (AD-59), Android-verified 2026-09-13 | ✅ | not used | ✅ | `capabilities/offline-outbox.md` |
 | — | Platform administration | Provisioning (S1/S2), lifecycle (SA-1), audit view (SA-2), accounts, roles and TOTP (SA-3), plan and seats (SA-4a); SA-5 missing | ⚠️ | ⚠️ | none | `capabilities/platform-administration.md` |
+| — | Mobile dashboard (MUX-1) | Home dashboard replacing bottom nav, light theme only, native charts (AD-67) | none | none | ✅ | `docs/blueprint/adr.md` AD-67 |
 | M10 | Examinations/results | Not started | — | — | — | Blocked on OD-1 |
 
 Code locations: server `server/src/modules/{assessment, attendance, curriculum, delivery, enrolment, identity, institution, teaching}`; web

@@ -4,12 +4,25 @@ import '../core/design/tokens.dart';
 import '../features/assessment/presentation/course_assessments_screen.dart';
 import '../features/assessment/presentation/mark_sheet_screen.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
+import '../features/delivery/presentation/my_schedule_screen.dart';
+import '../features/organisation/presentation/organisation_screen.dart';
+import '../features/people/presentation/people_screen.dart';
+import '../features/teaching/presentation/my_teaching_screen.dart';
+import 'account_screen.dart';
 
 /// Route names. No raw path string appears in a widget.
 abstract final class Routes {
   static const attendance = '/attendance';
   static const courseAssessments = '/assessments';
   static const markSheet = '/assessments/sheet';
+
+  // The dashboard's destinations, which the bottom navigation used to hold.
+  // Only offered when the person has authority; the server enforces it anyway.
+  static const schedule = '/schedule';
+  static const teaching = '/teaching';
+  static const people = '/people';
+  static const organisation = '/organisation';
+  static const account = '/account';
 }
 
 /// One typed argument class per route that needs arguments, never a raw map.
@@ -54,6 +67,16 @@ abstract final class AppRouter {
         final args = settings.arguments;
         if (args is! MarkSheetArgs) return _unknown(settings);
         return _page(settings, MarkSheetScreen(componentId: args.componentId));
+      case Routes.schedule:
+        return _page(settings, const MyScheduleScreen());
+      case Routes.teaching:
+        return _page(settings, const MyTeachingScreen());
+      case Routes.people:
+        return _page(settings, const PeopleScreen());
+      case Routes.organisation:
+        return _page(settings, const OrganisationScreen());
+      case Routes.account:
+        return _page(settings, const AccountScreen());
       default:
         return _unknown(settings);
     }

@@ -3,25 +3,49 @@ import 'package:flutter/material.dart';
 
 import 'tokens.dart';
 
-/// Light and dark both ship, as on web. A student checks a timetable at night.
+/// The app ships the light theme only for now (AD-67). [dark] is kept building
+/// so that turning it back on is one line in `app.dart`, not a redesign.
 abstract final class AppTheme {
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
-    final scheme = ColorScheme.fromSeed(
+    final seeded = ColorScheme.fromSeed(
       seedColor: AppColors.primary,
       brightness: brightness,
       primary: isDark ? AppColors.primaryDark : AppColors.primary,
       onPrimary: isDark ? AppColors.onPrimaryDark : AppColors.onPrimary,
       error: isDark ? AppColors.errorDark : AppColors.error,
     );
+    // Light is a white page with neutral cool-grey layers, not the seed's
+    // lavender tints: colour is kept for meaning (design system 7.1).
+    final scheme = isDark
+        ? seeded
+        : seeded.copyWith(
+            surface: AppColors.ground,
+            onSurface: AppColors.ink,
+            onSurfaceVariant: AppColors.inkMuted,
+            outlineVariant: AppColors.line,
+            surfaceContainerLowest: AppColors.ground,
+            surfaceContainerLow: AppColors.panel,
+            surfaceContainer: AppColors.panel,
+            surfaceContainerHigh: AppColors.panelStrong,
+            surfaceContainerHighest: AppColors.panelStrong,
+          );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
+      cardTheme: CardThemeData(
+        color: scheme.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.panel),
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
+      ),
       // Motion is defined once here rather than per route, so every push in the
       // app moves identically on both platforms.
       pageTransitionsTheme: const PageTransitionsTheme(builders: {

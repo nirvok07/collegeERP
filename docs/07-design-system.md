@@ -16,8 +16,10 @@ what just happened. Everything below is a token or a component. No screen invent
 
 ## 7.2 Colour
 
-Defined once in `core/design/app_colors.dart`, consumed through `Theme`. Both light and dark
-themes ship in release one, because a student checks a timetable at night.
+Defined once in `core/design/tokens.dart`, consumed through `Theme`. Both themes are defined;
+mobile currently ships light only (AD-67): a white page, cool-grey panels (`AppColors.panel`),
+hairline borders (`AppColors.line`) and 18px panel radius. The dark column below still describes
+`AppTheme.dark()` for when it is re-enabled.
 
 | Role | Light | Dark | Use |
 |---|---|---|---|

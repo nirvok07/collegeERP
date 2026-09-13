@@ -18,29 +18,31 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config, FCM registration and revocation (2026-09-13); push delivery 🔍 console, 🚫 backend (Drift 6)
 - Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (migration 023 🔍 not applied); SA-5 ❌
 - Approvals capability (P1): ❌ not specified
-- Student role and student experience: ❌
+- Mobile dashboard + light theme (MUX-1, AD-67): ✅ code, ✅ tests, ✅ APK builds; 🔍 visual check on the phone
+- Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-4a ✅ DONE (commit `05a34d3`): 396 server tests, 189 web tests, typechecks clean.
-**Owner action:** apply migration `023_seat_limits.sql` to `college_erp_dev` (`npm run migrate` in
-`server/`). Until then nothing refuses a seat on the dev database; tests apply it and prove it.
-- One live college account is one seat (AD-65), refused in PostgreSQL on every path: W0's first
-  administrator, people invitations, any move back into a live status, and direct database writes.
-- Two simultaneous invitations for the last seat: exactly one succeeds (tested).
-- Lowering below use: allowed, `OVER_LIMIT`, nobody disabled, new accounts refused (tested).
-- Flutter unchanged (it already maps `SEAT_LIMIT_REACHED` and creates no accounts).
+None in progress. MUX-1 ✅ DONE (R48, AD-67): the mobile home is a dashboard in the prototype's
+style (`assets/*.jpeg`); bottom navigation removed; light theme only.
+- `lib/features/dashboard/`: greeting, headline numbers, the class now and next, a "waiting on you"
+  card for unmarked classes, a four-week teaching-record ring, a week-ahead bar chart, courses.
+- Charts are native (`lib/core/widgets/charts.dart`), with screen-reader labels; no new package.
+- Schedule, courses, people, organisation and account are pushed routes, each shown only with its
+  permission. The offline banner moved to `MaterialApp.builder` so it shows over every route.
+- No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`), and
+  **owner action** still open: apply migration `023_seat_limits.sql` (`npm run migrate`).
 
-### NEXT SLICE — Drift 6: sealed push tokens for backend delivery
-- **Why next:** its only prerequisite, a way to store a secret the server can read back (AD-63), now
-  exists. Push delivery is the last blocked part of a capability already verified on a device.
-  SA-5 needs a college-side approval flow (AD-19) and nothing depends on it yet.
-- **To build:** seal the FCM token beside its lookup hash; a server-side sender; delivery verified
-  on the Android phone.
-- **Needs first:** a decision on the FCM server credential (a Firebase service account) and where
-  it lives.
+### NEXT SLICE — ST-1: student accounts and "My attendance" on mobile
+- **Why next:** the owner asked to complete the app from the prototype, and all three prototype
+  screens (attendance %, fees, circulars) are student surfaces. Attendance data already exists
+  (M6); only the student role, the account and a self-scoped read are missing. Fees (D1) and
+  circulars (no module) come later. Drift 6 stays ready and unblocked.
+- **To build:** the student's account linked to the M5 student; `GET /me/attendance` summarised
+  per subject; the prototype's attendance screen and a student dashboard.
+- **Needs first:** OD-ST-1.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
@@ -53,6 +55,7 @@ None in progress. SA-4a ✅ DONE (commit `05a34d3`): 396 server tests, 189 web t
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
+| OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | Admin invites per student; bulk issue from the roster; self-claim by roll number and code | Open, blocks ST-1 |
 
 ### BLOCKERS
 Xcode (iOS, deferred). Drift 6 (backend push delivery). OD-1 (M10).
@@ -79,7 +82,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 396 backend, 189 web, 135 Flutter, all passing.
+Tests: 396 backend, 189 web, 148 Flutter, all passing.
 
 ## 5. Blockers
 - iOS: Xcode not installed (Command Line Tools only).
@@ -116,5 +119,8 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 - Queued writes of a person whose session expired stay dormant, encrypted, until they sign in
   again; another person on the device can neither see nor send them.
 - `google-services.json` still lists the retired `com.example.college_erp` client.
+- The dashboard's "now / up next" reads the device clock at load; it updates on pull-to-refresh
+  or on returning from another screen, not on a timer.
+- `AppTheme.dark()` builds but is not wired (AD-67); re-enable with `darkTheme:` in `app.dart`.
 - The dev server on port 3000 was restarted from a Claude session; restart `npm run dev` in a
   terminal to own it.
