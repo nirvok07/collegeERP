@@ -7,6 +7,7 @@ import {
 const detail = (over: Partial<InstitutionDetail> = {}): InstitutionDetail => ({
   id: 'i1', code: 'test-college', name: 'Test College', status: 'trial', suspended_from: null,
   plan: 'standard', seat_limit: 500, timezone: 'Asia/Kolkata', version: 1,
+  logo_url: null, brand_color: null,
   created_at: '2026-09-01T10:00:00.000Z', status_changed_at: null, actions: ['suspend', 'close'],
   seats: { used: 3, limit: 10, remaining: 7, state: 'UNDER_LIMIT' },
   administrator: {

@@ -13,6 +13,10 @@ export interface InstitutionRecord {
   suspendedFrom?: 'trial' | 'active' | null;
   statusChangedAt?: Date | null;
   createdAt?: Date;
+  /** AD-70: shown before sign-in. An https URL until uploads exist. */
+  logoUrl?: string | null;
+  /** AD-70: '#RRGGBB'; the app decides whether it is legible as an accent. */
+  brandColor?: string | null;
 }
 
 export interface InstitutionRepository {
@@ -24,6 +28,13 @@ export interface InstitutionRepository {
   setStatus(tx: Tx, id: string, version: number, status: InstitutionRecord['status']): Promise<InstitutionRecord | null>;
   /** SA-4a. Pinned to a version; null when somebody changed the college first. */
   setPlan(tx: Tx, id: string, version: number, plan: string, seatLimit: number): Promise<InstitutionRecord | null>;
+  /** AD-70. Pinned to a version; null when somebody changed the college first. */
+  setBranding(
+    tx: Tx,
+    id: string,
+    version: number,
+    branding: { name: string; logoUrl: string | null; brandColor: string | null },
+  ): Promise<InstitutionRecord | null>;
 }
 
 export interface CampusRecord {

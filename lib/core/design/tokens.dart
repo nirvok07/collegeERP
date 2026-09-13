@@ -30,8 +30,6 @@ abstract final class AppColors {
   static const ink = Color(0xFF0F172A);
   static const inkMuted = Color(0xFF64748B);
 
-  /// A primary tint for the one card that leads a screen.
-  static const primarySoft = Color(0xFFEEF0FE);
   static const errorSoft = Color(0xFFFDEEEE);
 }
 

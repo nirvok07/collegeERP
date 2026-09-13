@@ -108,6 +108,7 @@ than from a feature list.
 | R48 | The mobile app follows the prototype images in `assets/`: a white theme only for now, no bottom navigation, and a dashboard home with real charts from which every surface is opened | Active | [ADR](blueprint/adr.md) AD-67, `lib/features/dashboard/` |
 | R49 | Development and app testing run against Supabase-hosted PostgreSQL through the Node API, with no Supabase SDK; production runs the same Node server on our own PostgreSQL | Active | [ADR](blueprint/adr.md) AD-68 |
 | R50 | The super admin creates each college with its College Admin; the College Admin onboards teachers and students one at a time; a student activates with enrolment number and a one-time code, and every student account takes a seat | Active | [ADR](blueprint/adr.md) AD-69 |
+| R51 | The app opens on the college code; the college's name, logo and colour then appear on sign-in and inside the app. The super admin and the College Admin can both set them | Active | [ADR](blueprint/adr.md) AD-70, migration 024 |
 
 ## Assumptions awaiting confirmation
 

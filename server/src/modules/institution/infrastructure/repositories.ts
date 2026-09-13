@@ -9,16 +9,31 @@ import type {
 } from '../application/platform-audit.ts';
 
 const COLUMNS = `id, code, name, status, plan, seat_limit, timezone, version,
-                 suspended_from, status_changed_at, created_at`;
+                 suspended_from, status_changed_at, created_at, logo_url, brand_color`;
 
 export class PgInstitutionRepository implements InstitutionRepository {
   async create(tx: Tx, input: Omit<InstitutionRecord, 'version'>): Promise<InstitutionRecord> {
     const { rows } = await clientOf(tx).query(
-      `INSERT INTO institutions (id, code, name, status, plan, seat_limit, timezone)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING ${COLUMNS}`,
-      [input.id, input.code, input.name, input.status, input.plan, input.seatLimit, input.timezone],
+      `INSERT INTO institutions (id, code, name, status, plan, seat_limit, timezone, logo_url, brand_color)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING ${COLUMNS}`,
+      [
+        input.id, input.code, input.name, input.status, input.plan, input.seatLimit, input.timezone,
+        input.logoUrl ?? null, input.brandColor ?? null,
+      ],
     );
     return toInstitution(rows[0]);
+  }
+
+  async setBranding(
+    tx: Tx, id: string, version: number,
+    branding: { name: string; logoUrl: string | null; brandColor: string | null },
+  ): Promise<InstitutionRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `UPDATE institutions SET name = $3, logo_url = $4, brand_color = $5, version = version + 1, updated_at = now()
+        WHERE id = $1 AND version = $2 RETURNING ${COLUMNS}`,
+      [id, version, branding.name, branding.logoUrl, branding.brandColor],
+    );
+    return rows[0] ? toInstitution(rows[0]) : null;
   }
 
   async findByCode(tx: Tx, code: string): Promise<InstitutionRecord | null> {
@@ -203,6 +218,7 @@ function toInstitution(r: any): InstitutionRecord {
     seatLimit: r.seat_limit, timezone: r.timezone, version: r.version,
     suspendedFrom: r.suspended_from ?? null, statusChangedAt: r.status_changed_at ?? null,
     createdAt: r.created_at,
+    logoUrl: r.logo_url ?? null, brandColor: r.brand_color ?? null,
   };
 }
 

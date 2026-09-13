@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Banner, Button, Drawer, Field } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
+import { BrandingFields } from './BrandingFields.tsx';
+import { brandingFormError } from './branding.ts';
 
 export interface ProvisionedInstitution {
   institution: { id: string; code: string; name: string; status: string; seat_limit: number };
@@ -29,6 +31,8 @@ export function ProvisionDrawer({
   const [codeEdited, setCodeEdited] = useState(false);
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [brandColor, setBrandColor] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
 
@@ -36,7 +40,7 @@ export function ProvisionDrawer({
 
   function reset() {
     setName(''); setCode(''); setCodeEdited(false);
-    setAdminName(''); setAdminEmail(''); setFailure(null);
+    setAdminName(''); setAdminEmail(''); setLogoUrl(''); setBrandColor(''); setFailure(null);
   }
 
   async function submit(e: FormEvent) {
@@ -47,6 +51,8 @@ export function ProvisionDrawer({
     const result = await api.post<ProvisionedInstitution>('/v1/institutions', {
       code: effectiveCode,
       name: name.trim(),
+      logo_url: logoUrl.trim() || null,
+      brand_color: brandColor.trim().toUpperCase() || null,
       admin: { full_name: adminName.trim(), email: adminEmail.trim().toLowerCase() },
     });
     setSubmitting(false);
@@ -56,7 +62,8 @@ export function ProvisionDrawer({
     reset();
   }
 
-  const ready = name.trim().length > 1 && effectiveCode.length > 2 && adminName.trim().length > 1 && adminEmail.includes('@');
+  const ready = name.trim().length > 1 && effectiveCode.length > 2 && adminName.trim().length > 1 && adminEmail.includes('@')
+    && brandingFormError({ name, logoUrl, brandColor }, false) === null;
 
   return (
     <Drawer
@@ -87,6 +94,12 @@ export function ProvisionDrawer({
           hint="Used in sign-in links. Lowercase letters, numbers and hyphens."
           onChange={(e) => { setCodeEdited(true); setCode(e.currentTarget.value.toLowerCase()); }}
           error={failure?.fieldErrors?.code}
+        />
+        <BrandingFields
+          showName={false}
+          form={{ name, logoUrl, brandColor }}
+          onChange={(next) => { setLogoUrl(next.logoUrl); setBrandColor(next.brandColor); }}
+          errors={failure?.fieldErrors}
         />
 
         <hr style={{ border: 'none', borderTop: '1px solid var(--outline)', margin: 'var(--space-sm) 0' }} />

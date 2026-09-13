@@ -15,6 +15,9 @@ export interface InstitutionDetail {
   seat_limit: number;
   timezone: string;
   version: number;
+  /** AD-70. */
+  logo_url: string | null;
+  brand_color: string | null;
   created_at: string | null;
   status_changed_at: string | null;
   actions: LifecycleAction[];

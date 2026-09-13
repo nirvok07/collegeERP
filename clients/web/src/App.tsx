@@ -10,6 +10,7 @@ import { invitationTokenFrom } from './features/auth/mfa.ts';
 import { AccountsPage } from './features/platform-accounts/AccountsPage.tsx';
 import { PeoplePage } from './features/people/PeoplePage.tsx';
 import { OrganisationPage } from './features/organisation/OrganisationPage.tsx';
+import { CollegePage } from './features/college/CollegePage.tsx';
 import { CurriculumPage } from './features/curriculum/CurriculumPage.tsx';
 import { TeachingPage } from './features/teaching/TeachingPage.tsx';
 import { DeliveryPage } from './features/delivery/DeliveryPage.tsx';
@@ -180,6 +181,15 @@ function sectionsFor(
       render: () => (
         <CurriculumPage api={api} canManage={permissions.has('department.manage')} />
       ),
+    });
+  }
+  // AD-70: how the college appears in the app. Read by whoever may read the
+  // college's record; changed only with institution.manage.
+  if (permissions?.has('institution.read')) {
+    items.push({
+      key: 'college',
+      label: 'College',
+      render: () => <CollegePage api={api} canManage={permissions.has('institution.manage')} />,
     });
   }
   // Teaching has its own gate: a head of department reads sections and staffs

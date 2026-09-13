@@ -3,41 +3,42 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
+import '../../../core/session/college_brand.dart';
 import '../../../core/session/session_manager.dart';
+import '../../../core/widgets/college_logo.dart';
 import 'sign_in_cubit.dart';
 
-/// Sign in, mobile-first. One scrollable column that survives the keyboard,
-/// large touch targets, and the institution code remembered between launches.
+/// Sign in to the college chosen on the first screen (AD-70). Mobile-first: one
+/// scrollable column that survives the keyboard, large touch targets, and the
+/// college's own name and logo at the top.
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key, this.rememberedInstitution});
+  const SignInScreen({super.key, required this.college, required this.onChangeCollege});
 
-  final String? rememberedInstitution;
+  final CollegeBrand college;
+  final VoidCallback onChangeCollege;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  late final _institution = TextEditingController(text: widget.rememberedInstitution ?? '');
   final _identifier = TextEditingController();
   final _password = TextEditingController();
-  final _identifierFocus = FocusNode();
   final _passwordFocus = FocusNode();
   bool _obscure = true;
 
   @override
   void dispose() {
-    _institution.dispose();
     _identifier.dispose();
     _password.dispose();
-    _identifierFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return BlocProvider(
       create: (_) => SignInCubit(locator<SessionManager>()),
@@ -46,6 +47,13 @@ class _SignInScreenState extends State<SignInScreen> {
           child: BlocBuilder<SignInCubit, SignInState>(
             builder: (context, state) {
               final fieldErrors = state.failure?.fieldErrors ?? const {};
+              // A problem with the college itself has no field on this screen,
+              // so it is shown in the banner rather than lost.
+              final bannerMessage = state.failure != null &&
+                      !fieldErrors.containsKey('identifier') &&
+                      !fieldErrors.containsKey('password')
+                  ? state.failure!.message
+                  : null;
               return SingleChildScrollView(
                 // The keyboard must never hide the field being typed into.
                 padding: EdgeInsets.only(
@@ -57,55 +65,27 @@ class _SignInScreenState extends State<SignInScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: scheme.primary,
-                        borderRadius: BorderRadius.circular(AppRadius.card),
-                      ),
-                      child: Text(
-                        'C',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.onPrimary,
-                        ),
-                      ),
-                    ),
+                    Align(alignment: Alignment.centerLeft, child: CollegeLogo(college: widget.college, size: 64)),
                     const SizedBox(height: AppSpacing.lg),
-                    Text('College', style: Theme.of(context).textTheme.headlineMedium),
+                    Text(
+                      widget.college.name,
+                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                    ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Sign in to your college',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: scheme.onSurfaceVariant),
+                      'Sign in to continue',
+                      style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: AppSpacing.xl),
 
-                    if (state.failure != null && fieldErrors.isEmpty)
+                    if (bannerMessage != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.base),
-                        child: _Banner(message: state.failure!.message),
+                        child: _Banner(message: bannerMessage),
                       ),
-
-                    TextField(
-                      controller: _institution,
-                      textInputAction: TextInputAction.next,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: 'College code',
-                        hintText: 'sunrise-college',
-                        errorText: fieldErrors['institution_code'],
-                      ),
-                      onSubmitted: (_) => _identifierFocus.requestFocus(),
-                    ),
-                    const SizedBox(height: AppSpacing.base),
 
                     TextField(
                       controller: _identifier,
-                      focusNode: _identifierFocus,
                       textInputAction: TextInputAction.next,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
@@ -144,6 +124,12 @@ class _SignInScreenState extends State<SignInScreen> {
                             )
                           : const Text('Sign in'),
                     ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextButton.icon(
+                      onPressed: state.submitting ? null : widget.onChangeCollege,
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      label: const Text('Not your college? Change it'),
+                    ),
                   ],
                 ),
               );
@@ -157,7 +143,7 @@ class _SignInScreenState extends State<SignInScreen> {
   void _submit(BuildContext context) {
     FocusScope.of(context).unfocus();
     context.read<SignInCubit>().submit(
-          institutionCode: _institution.text,
+          institutionCode: widget.college.code,
           identifier: _identifier.text,
           password: _password.text,
         );

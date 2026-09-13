@@ -1,6 +1,7 @@
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/network/auth_api.dart';
+import 'package:college_erp/core/session/college_brand.dart';
 import 'package:college_erp/core/session/session_manager.dart';
 import 'package:college_erp/core/session/session_store.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -22,6 +23,14 @@ class _FakeStore implements SessionStore {
   Future<void> writeInstitutionCode(String code) async => institution = code;
   @override
   Future<void> clear() async => token = null;
+
+  CollegeBrand? college;
+  @override
+  Future<CollegeBrand?> readCollege() async => college;
+  @override
+  Future<void> writeCollege(CollegeBrand value) async => college = value;
+  @override
+  Future<void> clearCollege() async => college = null;
 }
 
 class _FakeAuthApi implements AuthApi {
@@ -54,6 +63,9 @@ class _FakeAuthApi implements AuthApi {
 
   @override
   Future<void> signOut(String refreshToken) async => signOutCalls += 1;
+
+  @override
+  Future<Result<CollegeBrand>> lookupCollege(String code) async => const Err(Failure.unknown);
 }
 
 void main() {

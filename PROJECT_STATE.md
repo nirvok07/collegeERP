@@ -16,16 +16,28 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ unit tests, ✅ Android real-device replay and conflict, 2026-09-13
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config, FCM registration and revocation (2026-09-13); push delivery 🔍 console, 🚫 backend (Drift 6)
-- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (023 run by the owner on Supabase, untracked; local still at 022); SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (023 on Supabase by hand, untracked; local at 024); SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Mobile dashboard + light theme (MUX-1, AD-67): ✅ code, ✅ tests, ✅ APK builds; 🔍 visual check on the phone
 - Dev database on Supabase (ENV-2, AD-68): 🟡 tooling ✅ tested; 🚫 schema rebuild awaits the owner (destructive on an external service)
+- College branding + college-code-first app (BR-1, AD-70): ✅ server, ✅ web, ✅ Flutter, ✅ tests, ✅ APK builds; 🔍 on the phone
+- Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-13): BR-1 ✅ and OPS-1 ✅. ENV-2 🟡 below still awaits the owner's rebuild.
+- **BR-1 (R51, AD-70, migration 024):** the app opens on the college code
+  (`lib/features/auth/presentation/college_code_screen.dart`); `GET /v1/public/colleges/:code`
+  returns name, logo URL and colour, one identical 404 for unknown/suspended/closed; sign-in and the
+  dashboard show the college's logo and name; its colour becomes the accent only at 4.5:1 with
+  white. Set by the platform (provisioning, college drawer "Branding") and the College Admin (web
+  "College" page, `/v1/college/profile`), version-pinned, audited `institution.branding_changed`.
+- **OPS-1 (AD-71):** `npm run platform:set-password` (dev only, policy-checked, audited, password
+  from the environment, authenticator untouched). Used for `owner@nirvok.com` on local.
+
 ENV-2 🟡 — Supabase as the development and app-testing database (R49, AD-68; tooling `5772603`). Node API unchanged;
 production stays on our own Node + PostgreSQL; `npm test` stays on local `college_erp_test`.
 - Found 2026-09-13: Supabase reachable through its pooler; its `public` schema is untracked (no
@@ -89,9 +101,9 @@ Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabiliti
 AD-1…AD-66, all in force. AD-65 implemented by SA-4a (migration 023 pending application). Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner. `023` (seat limits): run by the owner on Supabase by hand (its trigger is there, verified
-2026-09-13); **not** on local `college_erp_dev` (`schema_migrations` ends at 022, no trigger).
-Local only matters if development returns there (`npm run migrate` with the `LOCAL_*` values).
+Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner. Local `college_erp_dev`: `001`–`024` applied; 023 and 024 by `npm run migrate` on 2026-09-13.
+Supabase: 023 was run there by hand (untracked, trigger verified); the rebuild applies `001`–`024`
+tracked.
 Supabase's `SUPABASE_DB_URL` password ends in an unencoded `@`: psql cannot parse it, the rebuild's
 URL parser reads it correctly (tested).
 Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023` by
@@ -109,7 +121,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 403 backend, 189 web, 148 Flutter, all passing.
+Tests: 412 backend, 193 web, 156 Flutter, all passing.
 
 ## 5. Blockers
 - iOS: Xcode not installed (Command Line Tools only).
@@ -152,5 +164,13 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 - The dashboard's "now / up next" reads the device clock at load; it updates on pull-to-refresh
   or on returning from another screen, not on a timer.
 - `AppTheme.dark()` builds but is not wired (AD-67); re-enable with `darkTheme:` in `app.dart`.
+- No request rate limiting anywhere in the API; the public college lookup (AD-70) makes that
+  visible. Accepted for development; to close before production.
+- A college logo is an https link until the storage port (Cloudinary) exists; the app falls back
+  to initials when it fails to load.
+- `owner@nirvok.com` has a known password on local only; on Supabase it does not exist until an
+  Owner creates it in the console (or run OPS-1 there after it exists).
+- `server/.env.example` has an uncommitted edit containing the real Supabase password; it must
+  go back to the placeholder and never be committed.
 - The dev server on port 3000 was restarted from a Claude session; restart `npm run dev` in a
   terminal to own it.

@@ -15,6 +15,8 @@ import {
 } from '../application/manage-lifecycle.ts';
 import type { LifecycleAction } from '../domain/lifecycle.ts';
 import { listPlatformAudit, MAX_PAGE } from '../application/platform-audit.ts';
+import { changeBranding, lookupPublicBrand } from '../application/branding.ts';
+import type { InstitutionRecord } from '../application/ports.ts';
 
 const provision = z.object({
   code: z.string().min(3).max(32),
@@ -22,6 +24,8 @@ const provision = z.object({
   plan: z.string().optional(),
   seat_limit: z.number().int().positive().optional(),
   timezone: z.string().optional(),
+  logo_url: z.string().max(500).nullable().optional(),
+  brand_color: z.string().max(7).nullable().optional(),
   admin: z.object({
     full_name: z.string().min(2).max(200),
     email: z.string().email(),
@@ -52,6 +56,20 @@ const planBody = z.object({
   seat_limit: z.number().int().optional(),
 });
 
+/* AD-70: the same body from the platform and from the College Admin. */
+const brandingBody = z.object({
+  version: z.number().int().positive(),
+  name: z.string().max(200),
+  logo_url: z.string().max(500).nullable(),
+  brand_color: z.string().max(7).nullable(),
+});
+
+/** What a College Admin sees of their own college's record. */
+const profileJson = (i: InstitutionRecord) => ({
+  code: i.code, name: i.name, status: i.status, version: i.version,
+  logo_url: i.logoUrl ?? null, brand_color: i.brandColor ?? null,
+});
+
 const lifecycleBody = z.object({
   version: z.number().int().positive(),
   reason: z.string().max(500),
@@ -64,6 +82,7 @@ function detailJson(d: InstitutionDetail) {
   return {
     id: i.id, code: i.code, name: i.name, status: i.status, suspended_from: i.suspendedFrom ?? null,
     plan: i.plan, seat_limit: i.seatLimit, timezone: i.timezone, version: i.version,
+    logo_url: i.logoUrl ?? null, brand_color: i.brandColor ?? null,
     created_at: i.createdAt ?? null, status_changed_at: i.statusChangedAt ?? null,
     actions: d.actions,
     seats: d.seats,
@@ -190,6 +209,8 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
       plan: parsed.data.plan,
       seatLimit: parsed.data.seat_limit,
       timezone: parsed.data.timezone,
+      logoUrl: parsed.data.logo_url ?? null,
+      brandColor: parsed.data.brand_color ?? null,
       admin: {
         fullName: parsed.data.admin.full_name,
         email: parsed.data.admin.email,
@@ -292,6 +313,60 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
     }, 201);
   });
 
+
+  /*
+   * AD-70: a college's name, logo and colour, read by its code before anybody
+   * signs in. Public by design and says nothing about unusable colleges.
+   */
+  app.get('/public/colleges/:code', async (req, reply) => {
+    const result = await lookupPublicBrand(c.lifecycle, (req.params as { code: string }).code);
+    if (!result.ok) return sendFailure(reply, result.error);
+    const brand = result.value;
+    reply.header('cache-control', 'public, max-age=300');
+    return sendOk(reply, {
+      code: brand.code, name: brand.name, logo_url: brand.logoUrl, brand_color: brand.brandColor,
+    });
+  });
+
+  app.post('/institutions/:id/branding', async (req, reply) => {
+    const who = await requirePlatformPermission(c, req, reply, 'platform.colleges.manage');
+    if (!who) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
+    const parsed = brandingBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const changed = await changeBranding(c.lifecycle, {
+      institutionId: id, version: parsed.data.version, name: parsed.data.name,
+      logoUrl: parsed.data.logo_url, brandColor: parsed.data.brand_color,
+      actor: { type: 'platform', id: who.accountId },
+    });
+    if (!changed.ok) return sendFailure(reply, changed.error);
+    const detail = await getInstitutionDetail(c.lifecycle, id);
+    if (!detail.ok) return sendFailure(reply, detail.error);
+    return sendOk(reply, detailJson(detail.value));
+  });
+
+  /* The College Admin's own college. Never an id from the client: the token's tenant. */
+  app.get('/college/profile', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'institution.read', institutionScope()))) return reply;
+    const tenantId = req.actor!.tenantId!;
+    const college = await c.uow.run(tenantId, (tx) => c.institutions.findById(tx, tenantId));
+    if (!college) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
+    return sendOk(reply, profileJson(college));
+  });
+
+  app.post('/college/profile', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'institution.manage', institutionScope()))) return reply;
+    const parsed = brandingBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const changed = await changeBranding(c.lifecycle, {
+      institutionId: req.actor!.tenantId!, version: parsed.data.version, name: parsed.data.name,
+      logoUrl: parsed.data.logo_url, brandColor: parsed.data.brand_color,
+      actor: { type: 'person', id: req.actor!.sub },
+    });
+    if (!changed.ok) return sendFailure(reply, changed.error);
+    return sendOk(reply, profileJson(changed.value));
+  });
 
   /*
    * SA-2: platform events, newest first, keyset-paginated (AD-61). Only events

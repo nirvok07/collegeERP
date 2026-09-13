@@ -6,6 +6,8 @@ import '../../../app/routes.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
+import '../../../core/session/college_brand.dart';
+import '../../../core/widgets/college_logo.dart';
 import '../../../core/session/session_manager.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/pending_writes_bar.dart';
@@ -25,9 +27,12 @@ import 'dashboard_cubit.dart';
 /// the server's answer about this person's authority: a section they cannot
 /// use is absent, not disabled.
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, required this.authority, this.createCubit, this.name});
+  const DashboardScreen({super.key, required this.authority, this.createCubit, this.name, this.college});
 
   final Authority authority;
+
+  /// The college this phone is for (AD-70), shown above the greeting.
+  final CollegeBrand? college;
 
   /// Tests supply their own cubit; the app builds one from the locator.
   final DashboardCubit Function()? createCubit;
@@ -48,16 +53,18 @@ class DashboardScreen extends StatelessWidget {
       child: _DashboardView(
         authority: authority,
         name: name ?? locator<SessionManager>().actor?.fullName ?? '',
+        college: college,
       ),
     );
   }
 }
 
 class _DashboardView extends StatelessWidget {
-  const _DashboardView({required this.authority, required this.name});
+  const _DashboardView({required this.authority, required this.name, this.college});
 
   final Authority authority;
   final String name;
+  final CollegeBrand? college;
 
   bool get _schedule => authority.can('session.read');
   bool get _teaching => authority.can('offering.read');
@@ -91,6 +98,7 @@ class _DashboardView extends StatelessWidget {
                     AppSpacing.xxl,
                   ),
                   children: _stagger(context, [
+                    if (college != null) _CollegeBar(college: college!),
                     _Header(
                       name: name,
                       courses: summary.courses,
@@ -159,6 +167,37 @@ class _DashboardView extends StatelessWidget {
 }
 
 /* ------------------------------------------------------------------ header */
+
+/// Whose app this is: the college's logo and name, above the greeting.
+class _CollegeBar extends StatelessWidget {
+  const _CollegeBar({required this.college});
+  final CollegeBrand college;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Row(
+        children: [
+          CollegeLogo(college: college, size: 28),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              college.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _Header extends StatelessWidget {
   const _Header({required this.name, required this.courses, required this.onAccount});
@@ -519,7 +558,8 @@ class _TodayClasses extends StatelessWidget {
     return Column(
       children: [
         Material(
-          color: AppColors.primarySoft,
+          // A tint of whatever the accent is, the college's own included.
+          color: Color.alphaBlend(scheme.primary.withValues(alpha: 0.08), scheme.surface),
           borderRadius: BorderRadius.circular(AppRadius.panel),
           child: InkWell(
             borderRadius: BorderRadius.circular(AppRadius.panel),

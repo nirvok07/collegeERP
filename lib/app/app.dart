@@ -17,6 +17,9 @@ import '../core/session/session_manager.dart';
 import '../core/session/session_store.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
+import '../core/network/auth_api.dart';
+import '../core/session/college_brand.dart';
+import '../features/auth/presentation/college_code_screen.dart';
 
 class CollegeApp extends StatefulWidget {
   const CollegeApp({super.key});
@@ -35,6 +38,9 @@ class _CollegeAppState extends State<CollegeApp> {
   Authority? _authority;
   Failure? _authorityFailure;
 
+  /// The college this phone is for (AD-70); null until the first screen is answered.
+  CollegeBrand? _college;
+
   @override
   void initState() {
     super.initState();
@@ -52,6 +58,8 @@ class _CollegeAppState extends State<CollegeApp> {
   /// app has been closed.
   Future<void> _restore() async {
     _rememberedInstitution = await locator<SessionStore>().readInstitutionCode();
+    _college = await locator<SessionStore>().readCollege();
+    unawaited(_refreshCollege());
     final restored = await _session.restore();
     if (!mounted) return;
     // Offline at launch: the stored session is intact and renewal is retrying.
@@ -60,6 +68,34 @@ class _CollegeAppState extends State<CollegeApp> {
     if (!restored && _session.renewalPending) return;
     setState(() => _phase = restored ? _Phase.signedIn : _Phase.signedOut);
     if (restored) _enterRestoredSession();
+  }
+
+  /// Picks up a new name, logo or colour at launch. Any failure keeps what the
+  /// phone remembers: offline it is still right, and a college that has been
+  /// closed is refused at sign-in with its own message.
+  Future<void> _refreshCollege() async {
+    final code = _college?.code ?? _rememberedInstitution;
+    if (code == null) return;
+    final result = await locator<AuthApi>().lookupCollege(code);
+    if (!mounted) return;
+    final fresh = result.valueOrNull;
+    if (fresh == null) return;
+    await locator<SessionStore>().writeCollege(fresh);
+    if (mounted) setState(() => _college = fresh);
+  }
+
+  Future<void> _chooseCollege(CollegeBrand college) async {
+    await locator<SessionStore>().writeCollege(college);
+    if (!mounted) return;
+    setState(() {
+      _college = college;
+      _rememberedInstitution = college.code;
+    });
+  }
+
+  Future<void> _forgetCollege() async {
+    await locator<SessionStore>().clearCollege();
+    if (mounted) setState(() => _college = null);
   }
 
   /// What a restored session needs, whether it came back at launch or later.
@@ -131,8 +167,9 @@ class _CollegeAppState extends State<CollegeApp> {
       // Flutter's own Navigator with a central generator, per the client
       // architecture. The shell stays in `home`; pushes go through this.
       onGenerateRoute: AppRouter.onGenerateRoute,
-      // Light only for now (AD-67); AppTheme.dark() still builds.
-      theme: AppTheme.light(),
+      // Light only for now (AD-67); AppTheme.dark() still builds. The college's
+      // colour is the accent when it is legible (AD-70).
+      theme: AppTheme.light(accent: legibleAccent(_college?.brandColor)),
       themeMode: ThemeMode.light,
       // Above every route, because without tabs most screens are pushed and
       // the notice must stay visible wherever the person is.
@@ -150,8 +187,16 @@ class _CollegeAppState extends State<CollegeApp> {
       },
       home: switch (_phase) {
         _Phase.restoring => _RestoringScreen(offlineMessage: _degradedMessage),
-        _Phase.signedOut => SignInScreen(rememberedInstitution: _rememberedInstitution),
+        // The college code comes first; everything after wears the college.
+        _Phase.signedOut => _college == null
+            ? CollegeCodeScreen(
+                initialCode: _rememberedInstitution,
+                lookup: locator<AuthApi>().lookupCollege,
+                onFound: _chooseCollege,
+              )
+            : SignInScreen(college: _college!, onChangeCollege: _forgetCollege),
         _Phase.signedIn => _HomeShell(
+          college: _college,
           authority: _authority,
           authorityFailure: _authorityFailure,
           onRetryAuthority: _loadAuthority,
@@ -206,11 +251,13 @@ class _RestoringScreen extends StatelessWidget {
 /// for is absent, not disabled.
 class _HomeShell extends StatelessWidget {
   const _HomeShell({
+    required this.college,
     required this.authority,
     required this.authorityFailure,
     required this.onRetryAuthority,
   });
 
+  final CollegeBrand? college;
   final Authority? authority;
   final Failure? authorityFailure;
   final Future<void> Function() onRetryAuthority;
@@ -234,7 +281,7 @@ class _HomeShell extends StatelessWidget {
       // anything yet. A designed state, not an error (AD-18).
       return const _NoAccessScreen();
     }
-    return DashboardScreen(authority: authority);
+    return DashboardScreen(authority: authority, college: college);
   }
 }
 

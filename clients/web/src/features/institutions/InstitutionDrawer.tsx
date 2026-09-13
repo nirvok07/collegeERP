@@ -4,6 +4,8 @@ import {
 } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import type { ProvisionedInstitution } from './ProvisionDrawer.tsx';
+import { BrandingFields } from './BrandingFields.tsx';
+import { brandingFormError, brandingFormOf, brandingPayload, type BrandingForm } from './branding.ts';
 import {
   ACTION_COPY, SEAT_STATE_LABEL, SEAT_STATE_TONE, confirmCodeMatches, formatWhen, invitationSummary,
   planFormError, projectedSeatState, reactivationNote, seatWarning,
@@ -36,6 +38,9 @@ export function InstitutionDrawer({
   const [planForm, setPlanForm] = useState<PlanForm>({ plan: '', seatLimit: '' });
   const [typedCode, setTypedCode] = useState('');
   const [reissuing, setReissuing] = useState(false);
+  const [branding, setBranding] = useState<BrandingForm | null>(null);
+  const [brandingFailure, setBrandingFailure] = useState<ApiFailure | null>(null);
+  const [savingBranding, setSavingBranding] = useState(false);
 
   const load = useCallback(async (target: string) => {
     setFailure(null);
@@ -84,6 +89,22 @@ export function InstitutionDrawer({
     return null;
   }
 
+  /** AD-70. Version-pinned like every other change here. */
+  async function saveBranding() {
+    if (!detail || !branding) return;
+    const problem = brandingFormError(branding);
+    if (problem) { setBrandingFailure({ code: 'VALIDATION_FAILED', message: problem }); return; }
+    setSavingBranding(true);
+    const result = await api.post<InstitutionDetail>(`/v1/institutions/${detail.id}/branding`, {
+      version: detail.version, ...brandingPayload(branding),
+    });
+    setSavingBranding(false);
+    if (!result.ok) { setBrandingFailure(result.error); return; }
+    setDetail(result.value);
+    setBranding(null);
+    onChanged();
+  }
+
   async function reissue() {
     if (!detail) return;
     setReissuing(true);
@@ -121,6 +142,14 @@ export function InstitutionDrawer({
                   onClick={() => { setPlanForm({ plan: detail.plan, seatLimit: String(detail.seat_limit) }); setPlanOpen(true); }}
                 >
                   Plan and seats
+                </Button>
+              )}
+              {detail.status !== 'closed' && (
+                <Button
+                  variant="secondary"
+                  onClick={() => { setBrandingFailure(null); setBranding(brandingFormOf(detail)); }}
+                >
+                  Branding
                 </Button>
               )}
               {detail.actions.map((action) => (
@@ -162,6 +191,22 @@ export function InstitutionDrawer({
                 </dd>
               </div>
               <div><dt>Time zone</dt><dd>{detail.timezone}</dd></div>
+              <div>
+                <dt>Logo</dt>
+                <dd>
+                  {detail.logo_url
+                    ? <img src={detail.logo_url} alt={`${detail.name} logo`} width={32} height={32} style={{ objectFit: 'contain', borderRadius: 8 }} />
+                    : 'None, the app shows initials'}
+                </dd>
+              </div>
+              <div>
+                <dt>Brand colour</dt>
+                <dd className="tabular">
+                  {detail.brand_color
+                    ? <><span aria-hidden="true" style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 999, background: detail.brand_color, marginRight: 6 }} />{detail.brand_color}</>
+                    : 'None, the app uses its own'}
+                </dd>
+              </div>
             </dl>
 
             <h3 className="drawer-section">Administrator</h3>
@@ -237,6 +282,23 @@ export function InstitutionDrawer({
         onClose={() => setPlanOpen(false)}
         onConfirm={savePlan}
       />
+      <Drawer
+        open={branding !== null}
+        title="Branding"
+        subtitle={detail?.name}
+        onClose={() => setBranding(null)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setBranding(null)} disabled={savingBranding}>Cancel</Button>
+            <Button variant="primary" loading={savingBranding} onClick={() => void saveBranding()}>Save</Button>
+          </>
+        }
+      >
+        {brandingFailure && <Banner tone="error">{brandingFailure.message}</Banner>}
+        {branding && (
+          <BrandingFields form={branding} onChange={setBranding} errors={brandingFailure?.fieldErrors} />
+        )}
+      </Drawer>
     </>
   );
 }

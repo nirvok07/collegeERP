@@ -6,15 +6,16 @@ import 'tokens.dart';
 /// The app ships the light theme only for now (AD-67). [dark] is kept building
 /// so that turning it back on is one line in `app.dart`, not a redesign.
 abstract final class AppTheme {
-  static ThemeData light() => _build(Brightness.light);
+  /// [accent] is a college's colour (AD-70), already checked by [legibleAccent].
+  static ThemeData light({Color? accent}) => _build(Brightness.light, accent: accent);
   static ThemeData dark() => _build(Brightness.dark);
 
-  static ThemeData _build(Brightness brightness) {
+  static ThemeData _build(Brightness brightness, {Color? accent}) {
     final isDark = brightness == Brightness.dark;
     final seeded = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+      seedColor: accent ?? AppColors.primary,
       brightness: brightness,
-      primary: isDark ? AppColors.primaryDark : AppColors.primary,
+      primary: isDark ? AppColors.primaryDark : (accent ?? AppColors.primary),
       onPrimary: isDark ? AppColors.onPrimaryDark : AppColors.onPrimary,
       error: isDark ? AppColors.errorDark : AppColors.error,
     );
@@ -107,6 +108,16 @@ abstract final class AppTheme {
       dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1, thickness: 1),
     );
   }
+}
+
+/// A college's colour as the app's accent, only when white text on it keeps
+/// 4.5:1 contrast (WCAG AA for body text, which buttons carry); otherwise null,
+/// and the product's own indigo stays. A brand never costs legibility.
+Color? legibleAccent(String? hex) {
+  if (hex == null || !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(hex)) return null;
+  final color = Color(0xFF000000 | int.parse(hex.substring(1), radix: 16));
+  final contrastWithWhite = 1.05 / (color.computeLuminance() + 0.05);
+  return contrastWithWhite >= 4.5 ? color : null;
 }
 
 /// Entering pages rise and fade, the native counterpart of the web `.m-rise`

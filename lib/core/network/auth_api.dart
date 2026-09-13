@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../config/app_config.dart';
 import '../error/failure.dart';
 import '../error/result.dart';
+import '../session/college_brand.dart';
 import '../session/session_manager.dart';
 import 'api_client.dart';
 
@@ -65,6 +66,17 @@ class AuthApi {
   /// the backend accepts either transport against the same rotation rules.
   Future<Result<AuthSession>> refresh(String refreshToken) =>
       _call('/v1/auth/refresh', {'refresh_token': refreshToken});
+
+  /// AD-70: the college behind a code, before anybody signs in.
+  Future<Result<CollegeBrand>> lookupCollege(String code) async {
+    Response<dynamic> response;
+    try {
+      response = await _dio.get<dynamic>('/v1/public/colleges/${Uri.encodeComponent(code)}');
+    } on DioException {
+      return const Err(Failure.network);
+    }
+    return parseEnvelope(response.statusCode ?? 0, response.data, CollegeBrand.fromJson);
+  }
 
   Future<void> signOut(String refreshToken) async {
     try {

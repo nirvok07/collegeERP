@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'college_brand.dart';
 
 /// Persists the refresh token in platform secure storage.
 ///
@@ -50,6 +54,32 @@ class SessionStore {
   Future<void> writeInstitutionCode(String code) async {
     try {
       await _storage.write(key: _institutionKey, value: code);
+    } catch (_) {}
+  }
+
+  static const _collegeKey = 'college_erp.college';
+
+  /// The college chosen on the first screen (AD-70). Survives sign-out, as the
+  /// code always did: the device belongs to one college's person.
+  Future<CollegeBrand?> readCollege() async {
+    try {
+      final raw = await _storage.read(key: _collegeKey);
+      return raw == null ? null : CollegeBrand.fromJson(jsonDecode(raw));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> writeCollege(CollegeBrand college) async {
+    try {
+      await _storage.write(key: _collegeKey, value: jsonEncode(college.toJson()));
+      await _storage.write(key: _institutionKey, value: college.code);
+    } catch (_) {}
+  }
+
+  Future<void> clearCollege() async {
+    try {
+      await _storage.delete(key: _collegeKey);
     } catch (_) {}
   }
 

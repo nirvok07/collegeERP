@@ -17,6 +17,7 @@ import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type { CampusRepository, InstitutionRecord, InstitutionRepository } from './ports.ts';
+import { normaliseBranding } from '../domain/branding.ts';
 import {
   provisionInitialAdmin,
   type Deps as IdentityProvisioningDeps,
@@ -28,6 +29,9 @@ export interface ProvisionInstitutionInput {
   plan?: string;
   seatLimit?: number;
   timezone?: string;
+  /** AD-70, optional at provisioning; the College Admin can set them later. */
+  logoUrl?: string | null;
+  brandColor?: string | null;
   admin: { fullName: string; email: string; phone?: string | null };
   actingPlatformAccountId: string;
 }
@@ -71,6 +75,11 @@ export async function provisionInstitution(
     );
   }
 
+  const branding = normaliseBranding({ name: input.name, logoUrl: input.logoUrl, brandColor: input.brandColor });
+  if (!branding.ok) {
+    return Err(fail('VALIDATION_FAILED', 'Check the highlighted fields.', { fieldErrors: branding.fieldErrors }));
+  }
+
   const institutionId = deps.ids.next();
   const correlationId = deps.ids.next();
   const now = deps.clock.now();
@@ -93,6 +102,8 @@ export async function provisionInstitution(
         plan: input.plan ?? 'standard',
         seatLimit: input.seatLimit ?? 500,
         timezone: input.timezone ?? 'Asia/Kolkata',
+        logoUrl: branding.value.logoUrl,
+        brandColor: branding.value.brandColor,
       });
 
       // AD-2: one implicit default campus, so campus scope is real from day one

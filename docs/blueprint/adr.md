@@ -1489,3 +1489,44 @@ external service, so the owner runs or approves it.
 
 *For ST-1's design.* Code lifetime and attempt limits; reissue revokes the previous code; the
 student role grants only self-scoped reads.
+
+---
+
+**AD-70 — The app starts with the college code; the college's name, logo and colour dress everything after it**
+
+*Status.* Decided by the owner, 2026-09-13. Built as BR-1 (migration 024).
+
+*Decision.*
+1. First launch shows only a college code field. `GET /v1/public/colleges/:code`, unauthenticated,
+   returns the college's code, name, logo URL and colour. Unknown, malformed, suspended and closed
+   codes all get one identical 404, so the endpoint says nothing about a college nobody can use.
+   The app remembers the college, refreshes it at each launch, and "Not your college? Change it"
+   on the sign-in screen forgets it.
+2. Branding is three fields of the institution: the existing name, `logo_url` (https only, at most
+   500 characters; a link until the storage port exists, after which uploads keep the column's
+   meaning) and `brand_color` (`#RRGGBB`, stored upper-case). Checked in the domain and by database
+   constraints.
+3. The platform sets them at provisioning and on the college's page (`POST
+   /institutions/:id/branding`, `platform.colleges.manage`); the College Admin changes them on the
+   College page (`GET`/`POST /college/profile`, `institution.read`/`institution.manage`), always for
+   the session's own college, never an id from the client. Version-pinned; audited as
+   `institution.branding_changed` with before and after.
+4. The app uses the colour as its accent only when white text on it keeps 4.5:1 contrast;
+   otherwise the product's indigo stays.
+
+*Risk accepted for now.* The API has no request rate limiting anywhere, so active colleges' names
+can be found by guessing codes. A college's name is public information; rate limiting is a
+platform-wide gap to close before production.
+
+---
+
+**AD-71 — An operator may set a platform account's password, in development only**
+
+*Status.* Decided 2026-09-13 at the owner's request (a known login for `owner@nirvok.com`). OPS-1.
+
+*Decision.* `PLATFORM_PASSWORD=… npm run platform:set-password -- --email … --reason … --operator …
+--confirm "SET PASSWORD <email>"` sets an active platform account's password. The password
+policy applies; the password is read from the environment, never an argument; the act is audited
+as the system with the operator named; the authenticator is untouched, so a password alone still
+opens no platform session (AD-62). The command refuses when `NODE_ENV=production`: there, a lost
+password is an Owner reissuing the invitation (SA-3a). It creates no accounts.

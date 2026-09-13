@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-69) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R50) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-71) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R51) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -44,6 +44,7 @@ shows its shape.
 - Growing lists page by keyset cursor (AD-61); short lists stay capped by `limit`.
 - Correction rows apply changes; correction tables are INSERT and SELECT only.
 - Dates are calendar strings end to end (AD-49); rosters resolve as of the class date (AD-50).
+- An unauthenticated read answers identically for unknown and unusable subjects (AD-70, like sign-in).
 
 ## ADR index
 
@@ -110,3 +111,5 @@ shows its shape.
 | AD-67 | Mobile home is a dashboard, not bottom navigation; light theme only for now | Active |
 | AD-68 | Development and app testing on Supabase PostgreSQL; production on our own Node and PostgreSQL | Active (rebuild awaits owner) |
 | AD-69 | Onboarding one person at a time; students activate with enrolment number and a one-time code | Active |
+| AD-70 | College code first; the college's name, logo and colour dress the app; public lookup answers alike for unusable colleges | Active |
+| AD-71 | An operator may set a platform account's password, in development only | Active |
