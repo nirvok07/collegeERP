@@ -24,7 +24,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-3a ✅ DONE: 359 server tests, 179 web tests, typechecks clean (commit recorded below).
+None in progress. SA-3a ✅ DONE: 359 server tests, 179 web tests, typechecks clean (commit `e16348d`).
 **Owner action:** apply migration `021_platform_roles.sql` to `college_erp_dev`. Until then the
 dev server's platform routes fail, because the role table does not exist there.
 SA-3 stays ⚠️ PARTIAL until SA-3b. AD-59 device replay ⏸️ POSTPONED.
