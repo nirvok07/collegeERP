@@ -10,6 +10,7 @@ Pointers, not content. Read the linked file for the decision itself.
 | Requirements register (R1…R41) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
+| Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
 | Offline model | `docs/03-offline-first.md` |
 | Security rules | `docs/08-security.md` |
 | Mobile platform, Firebase, device evidence | `docs/12-mobile-platform-config.md` |

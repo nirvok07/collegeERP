@@ -11,7 +11,8 @@ Implementation numbers are a delivery stream mapped to blueprint modules (AD-44)
 | M5 | M5 Student Records | Minimum only: student, membership, enrolment | ✅ | ✅ | none | `modules/m5-m6-attendance.md` |
 | M6 | M7 Attendance | Sheet, record, correction | ✅ | ✅ | ✅ | `modules/m5-m6-attendance.md` |
 | M7 | M9 Internal Assessment | Plan, mark sheet, verify, correct | ✅ | ✅ | ✅ | `modules/m7-internal-assessment.md` |
-| — | Capability: offline outbox | Slice 1 idempotency (AD-58); slice 2 durable queue (AD-59) | ✅ | not used | ✅ | `capabilities/offline-outbox.md` |
+| — | Capability: offline outbox | Slice 1 idempotency (AD-58); slice 2 durable queue (AD-59), device validation blocked | ✅ | not used | ✅ | `capabilities/offline-outbox.md` |
+| — | Platform administration | Provisioning and colleges list only (S1/S2); SA-1…SA-5 missing | 🟡 | 🟡 | none | `capabilities/platform-administration.md` |
 | M10 | Examinations/results | Not started | — | — | — | Blocked on OD-1 |
 
 Code locations: server `server/src/modules/{assessment, attendance, curriculum, delivery, enrolment, identity, institution, teaching}`; web

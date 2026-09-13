@@ -65,6 +65,7 @@ Debug build on a physical Android 14 phone over USB, API reached with
 | Push token hashed, never audited | VERIFIED in code and backend tests | Not yet observed on a device row |
 | FCM delivery | NOT VERIFIED | Needs a registered token and a send |
 | iOS, any check | BLOCKED | Xcode is not installed; only Command Line Tools are active |
+| Offline outbox (AD-59) replay | BLOCKED at step 1 | No Android device connected on 2026-09-13; seed data ready |
 
 ## 12.3 What only the device-validation phase can confirm
 
