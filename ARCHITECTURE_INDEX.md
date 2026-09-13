@@ -7,7 +7,7 @@ Pointers, not content. Read the linked file for the decision itself.
 | Topic | Source of truth |
 |---|---|
 | Decisions (AD-1…AD-66) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R46) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Requirements register (R1…R47) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -103,5 +103,5 @@ own configuration.
 | AD-62 | The platform's second factor is a TOTP authenticator app | Active |
 | AD-63 | Platform secret protection (AES-256-GCM, dedicated key) and sole-Owner break-glass | Active |
 | AD-64 | Platform authority is an Owner or Support role assignment, resolved per request | Active |
-| AD-65 | A seat is a live college account; a lowered limit blocks new accounts and disables none | Decided; SA-4a |
+| AD-65 | A seat is a live college account; a lowered limit blocks new accounts and disables none | Active (migration 023 pending) |
 | AD-66 | Development runs on local PostgreSQL `college_erp_dev`; the npm scripts load `server/.env` | Active |

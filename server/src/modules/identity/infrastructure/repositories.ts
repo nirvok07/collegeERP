@@ -28,6 +28,7 @@ import type {
   PlatformAccountSummary, PlatformAdminRepository, RoleHistoryEntry,
 } from '../application/manage-platform-accounts.ts';
 import type { PlatformRole } from '../domain/platform-authority.ts';
+import { LIVE_ACCOUNT_STATUSES } from '../domain/seats.ts';
 import type {
   ChallengePurpose, PlatformCredentialState, PlatformMfaRepository,
 } from '../application/platform-mfa.ts';
@@ -174,6 +175,14 @@ export class PgAccountRepository implements AccountRepository {
 
   async recordSignIn(tx: Tx, id: string, at: Date): Promise<void> {
     await clientOf(tx).query(`UPDATE user_accounts SET last_login_at = $2 WHERE id = $1`, [id, at]);
+  }
+
+  async countLive(tx: Tx, tenantId: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT count(*)::int AS n FROM user_accounts WHERE tenant_id = $1 AND status = ANY($2::text[])`,
+      [tenantId, [...LIVE_ACCOUNT_STATUSES]],
+    );
+    return rows[0].n;
   }
 
   /** The first administrator W0 created, read under the college's own row-level security. */

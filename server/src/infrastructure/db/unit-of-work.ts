@@ -83,6 +83,11 @@ function translate(e: unknown): unknown {
     );
   }
   if (code === '2BP01') return new AppException('CONFLICT', error!.message!, e);
+  // AD-65: the seat trigger (migration 023). Its sentence names the limit and
+  // what to do about it.
+  if (code === 'ERS01') {
+    return new AppException('SEAT_LIMIT_REACHED', error?.message ?? 'This college has no seat left.', e);
+  }
   if (code === '42501') return new AppException('FORBIDDEN', 'Not permitted.', e);
   return e;
 }

@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ unit tests, ✅ Android real-device replay and conflict, 2026-09-13
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config, FCM registration and revocation (2026-09-13); push delivery 🔍 console, 🚫 backend (Drift 6)
-- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅ (3a roles, 3b TOTP; migrations 021, 022 🔍 not applied); SA-4, SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (migration 023 🔍 not applied); SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Student role and student experience: ❌
 - Examinations, Results (M10): 🚫 OD-1
@@ -24,21 +24,23 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. OD-SA-4 resolved as AD-65; SA-4a designed (`platform-administration.md` §6b);
-commit `e3fce75`. `SECRET_SEALING_KEY` is configured in `server/.env` and held by the
-running dev server (no fallback); its value is recorded nowhere else.
+None in progress. SA-4a ✅ DONE (commit recorded below): 396 server tests, 189 web tests, typechecks clean.
+**Owner action:** apply migration `023_seat_limits.sql` to `college_erp_dev` (`npm run migrate` in
+`server/`). Until then nothing refuses a seat on the dev database; tests apply it and prove it.
+- One live college account is one seat (AD-65), refused in PostgreSQL on every path: W0's first
+  administrator, people invitations, any move back into a live status, and direct database writes.
+- Two simultaneous invitations for the last seat: exactly one succeeds (tested).
+- Lowering below use: allowed, `OVER_LIMIT`, nobody disabled, new accounts refused (tested).
+- Flutter unchanged (it already maps `SEAT_LIMIT_REACHED` and creates no accounts).
 
-OD-ENV-1 ✅ resolved as AD-66 (commit `418af81`): development uses local `college_erp_dev`. `npm run dev` and
-`npm run migrate` load `server/.env` themselves and both resolve to it; no manual overrides.
-
-### NEXT SLICE — SA-4a Plan & Seat Limits with concurrency-safe enforcement
-Design: `docs/blueprint/capabilities/platform-administration.md` §6b, AD-65.
-- **To build:** migration 023 (seat trigger, per-college advisory lock, dedicated error), plan and
-  seat-limit change endpoint (Owner, version-pinned, reason, audited), seats used and over-limit
-  state on the college detail and list, web drawer and banner, tests for both account paths,
-  concurrent invitations, lowering below use, and no automatic disabling.
-- **Not in this slice:** pricing, billing, plan catalogue, SA-5, student account issuance.
-- **Blocked by:** nothing.
+### NEXT SLICE — Drift 6: sealed push tokens for backend delivery
+- **Why next:** its only prerequisite, a way to store a secret the server can read back (AD-63), now
+  exists. Push delivery is the last blocked part of a capability already verified on a device.
+  SA-5 needs a college-side approval flow (AD-19) and nothing depends on it yet.
+- **To build:** seal the FCM token beside its lookup hash; a server-side sender; delivery verified
+  on the Android phone.
+- **Needs first:** a decision on the FCM server credential (a Firebase service account) and where
+  it lives.
 
 ### OPEN DECISIONS (relevant)
 | ID | Question | Why it matters | Affects | Options | Status |
@@ -63,10 +65,10 @@ after an adb restart). Test data is seeded and verified over the API.
 Platform administration: S1/S2 provisioning only; see `docs/blueprint/capabilities/platform-administration.md`.
 
 ## 2. Decisions
-AD-1…AD-66. AD-65 (seats) decided, implemented in SA-4a; AD-66 (development database) in force. Index: `ARCHITECTURE_INDEX.md`.
+AD-1…AD-66, all in force. AD-65 implemented by SA-4a (migration 023 pending application). Index: `ARCHITECTURE_INDEX.md`.
 
 ## 3. Database
-Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner.
+Migrations `001`–`022` applied on `college_erp_dev`, confirmed by the owner. `023` (seat limits) written and tested, **not applied**: the owner applies it.
 
 ## 4. Commits (newest first)
 ```
@@ -77,7 +79,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 383 backend, 186 web, 133 Flutter, all passing.
+Tests: 396 backend, 189 web, 135 Flutter, all passing.
 
 ## 5. Blockers
 - iOS: Xcode not installed (Command Line Tools only).

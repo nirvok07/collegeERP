@@ -1378,7 +1378,7 @@ account, so Owners see the break-glass reset. College events stay invisible.
 
 **AD-65 — A seat is a live college account; a lowered limit blocks new accounts and disables none**
 
-*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-4. To be implemented in SA-4a.
+*Status.* Decided by the owner, 2026-09-13; resolves OD-SA-4. **Implemented 2026-09-13** (SA-4a, migration 023, not yet applied).
 
 *Decision.*
 1. One live college account is one seat. Live means `invited`, `active`, `locked` or `suspended`,

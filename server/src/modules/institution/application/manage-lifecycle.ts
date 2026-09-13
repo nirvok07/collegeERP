@@ -14,6 +14,7 @@ import {
   reissueAdministratorInvitation, type ReissueInvitationDeps,
 } from '../../identity/application/reissue-invitation.ts';
 import { availableActions, targetOf, type LifecycleAction } from '../domain/lifecycle.ts';
+import { seatUsage, type SeatUsage } from '../../identity/domain/seats.ts';
 
 export interface LifecycleDeps {
   uow: UnitOfWork;
@@ -31,6 +32,8 @@ export type InvitationState = 'pending' | 'expired' | 'accepted' | 'revoked' | '
 export interface InstitutionDetail {
   institution: InstitutionRecord;
   actions: LifecycleAction[];
+  /** AD-65. Informational: the database is what refuses a seat. */
+  seats: SeatUsage;
   administrator: (BootstrapAdministrator & {
     invitation: { state: InvitationState; expiresAt: Date | null };
     canReissue: boolean;
@@ -81,8 +84,74 @@ async function detailOf(
   return {
     institution,
     actions: availableActions(institution.status, institution.suspendedFrom ?? null),
+    seats: seatUsage(await deps.identity.accounts.countLive(tx, institution.id), institution.seatLimit),
     administrator,
   };
+}
+
+/**
+ * SA-4a: the college's plan and seat limit, Owner only. The plan is a label
+ * with no price and no effect; the limit is independent of it. A limit below
+ * current use is allowed and disables nobody (AD-65): the seat trigger then
+ * refuses new live accounts until use falls under it.
+ */
+export async function changePlan(
+  deps: LifecycleDeps,
+  input: {
+    id: string;
+    version: number;
+    reason: string;
+    plan?: string;
+    seatLimit?: number;
+    platformAccountId: string;
+  },
+): Promise<Result<InstitutionDetail>> {
+  const reason = input.reason.trim();
+  if (reason.length < 3) {
+    return Err(fail('VALIDATION_FAILED', 'Say why, in a few words.', { fieldErrors: { reason: 'Required' } }));
+  }
+  const plan = input.plan?.trim();
+  if (plan !== undefined && !/^[\p{L}\p{N} _.-]{1,40}$/u.test(plan)) {
+    return Err(fail('VALIDATION_FAILED', 'A plan is a short label: letters, numbers, spaces, dots, hyphens.', {
+      fieldErrors: { plan: 'Invalid plan' },
+    }));
+  }
+  if (input.seatLimit !== undefined && (!Number.isInteger(input.seatLimit) || input.seatLimit < 1 || input.seatLimit > 1_000_000)) {
+    return Err(fail('VALIDATION_FAILED', 'The seat limit is a whole number of at least 1.', {
+      fieldErrors: { seat_limit: 'Invalid limit' },
+    }));
+  }
+  try {
+    return await deps.uow.run(input.id, async (tx) => {
+      const current = await deps.institutions.findById(tx, input.id);
+      if (!current) return Err(fail('NOT_FOUND', 'That college was not found.'));
+      if (current.status === 'closed') return Err(fail('CONFLICT', 'A closed college cannot be changed.'));
+      const nextPlan = plan ?? current.plan;
+      const nextLimit = input.seatLimit ?? current.seatLimit;
+      if (nextPlan === current.plan && nextLimit === current.seatLimit) {
+        return Err(fail('VALIDATION_FAILED', 'Nothing changed.'));
+      }
+      const updated = await deps.institutions.setPlan(tx, input.id, input.version, nextPlan, nextLimit);
+      if (!updated) return Err(fail('CONFLICT', 'Somebody else changed this college. Reload and try again.'));
+      const detail = await detailOf(deps, tx, updated);
+      await deps.audit.record({
+        correlationId: deps.ids.next(),
+        tenantId: input.id,
+        actorType: 'platform',
+        actorId: input.platformAccountId,
+        action: 'institution.plan_changed',
+        subjectType: 'institution',
+        subjectId: input.id,
+        before: { plan: current.plan, seat_limit: current.seatLimit },
+        after: { plan: updated.plan, seat_limit: updated.seatLimit, seats_used: detail.seats.used, seat_state: detail.seats.state },
+        reason,
+      }, tx);
+      return Ok(detail);
+    });
+  } catch (e) {
+    if (e instanceof AppException) return Err(fail(e.code, e.message));
+    throw e;
+  }
 }
 
 /** An invitation is pointless to a college nobody may use. */

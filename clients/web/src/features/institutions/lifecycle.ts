@@ -18,6 +18,7 @@ export interface InstitutionDetail {
   created_at: string | null;
   status_changed_at: string | null;
   actions: LifecycleAction[];
+  seats: SeatUsage;
   administrator: {
     full_name: string;
     email: string | null;
@@ -90,4 +91,59 @@ export const confirmCodeMatches = (typed: string, code: string) => typed.trim().
 export function formatWhen(iso: string | null): string {
   if (!iso) return 'Not recorded';
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+}
+
+/* ---- SA-4a: seats (AD-65) ------------------------------------------------ */
+
+export type SeatState = 'UNDER_LIMIT' | 'AT_LIMIT' | 'OVER_LIMIT';
+
+export interface SeatUsage {
+  used: number;
+  limit: number;
+  remaining: number;
+  state: SeatState;
+}
+
+export const SEAT_STATE_LABEL: Record<SeatState, string> = {
+  UNDER_LIMIT: 'Within limit',
+  AT_LIMIT: 'At limit',
+  OVER_LIMIT: 'Over limit',
+};
+
+export const SEAT_STATE_TONE: Record<SeatState, 'success' | 'warning' | 'error'> = {
+  UNDER_LIMIT: 'success',
+  AT_LIMIT: 'warning',
+  OVER_LIMIT: 'error',
+};
+
+/** Mirrors the server's rule for a preview only; the database decides. */
+export function projectedSeatState(used: number, limit: number): SeatState {
+  return used < limit ? 'UNDER_LIMIT' : used === limit ? 'AT_LIMIT' : 'OVER_LIMIT';
+}
+
+/** Said to the platform administrator, in words, when new accounts are refused. */
+export function seatWarning(seats: SeatUsage): string | null {
+  if (seats.state === 'AT_LIMIT') {
+    return `All ${seats.limit} seats are in use. The college cannot invite anyone until a seat is freed or the limit is raised.`;
+  }
+  if (seats.state === 'OVER_LIMIT') {
+    return `${seats.used} accounts hold seats against a limit of ${seats.limit}. Nobody has been signed out, but the college cannot invite anyone until use falls below the limit.`;
+  }
+  return null;
+}
+
+export interface PlanForm {
+  plan: string;
+  seatLimit: string;
+}
+
+/** Guidance before sending; the server checks the same and more. */
+export function planFormError(form: PlanForm, current: { plan: string; seat_limit: number }): string | null {
+  const plan = form.plan.trim();
+  if (!/^[\p{L}\p{N} _.-]{1,40}$/u.test(plan)) return 'The plan is a short label: letters, numbers, spaces, dots, hyphens.';
+  if (!/^\d+$/.test(form.seatLimit.trim())) return 'The seat limit is a whole number.';
+  const limit = Number(form.seatLimit.trim());
+  if (limit < 1 || limit > 1_000_000) return 'The seat limit is at least 1.';
+  if (plan === current.plan && limit === current.seat_limit) return 'Nothing has changed.';
+  return null;
 }

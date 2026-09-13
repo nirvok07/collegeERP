@@ -104,6 +104,7 @@ than from a feature list.
 | R44 | Platform accounts are created and managed in the application by Owners, with explicit Owner and Support roles; Support holds no Owner power, nobody changes their own account, and the platform always keeps an active Owner | Active | [ADR](blueprint/adr.md) AD-64, [Platform administration](blueprint/capabilities/platform-administration.md) |
 | R45 | Every platform account signs in with a password and an authenticator code; no platform session exists without an enrolled authenticator, secrets are sealed at rest, and recovery forces re-enrolment and is audited | Active | [ADR](blueprint/adr.md) AD-62, AD-63 |
 | R46 | Development runs against local PostgreSQL `college_erp_dev` over `DATABASE_URL`, with no vendor SDK; the npm scripts load `server/.env`, and production is a configuration change | Active | [ADR](blueprint/adr.md) AD-66 |
+| R47 | A college's seat limit is enforced by the database: one seat per live college account, on every path and under concurrency; a lowered limit disables nobody and refuses new accounts | Active | [ADR](blueprint/adr.md) AD-65 |
 
 ## Assumptions awaiting confirmation
 

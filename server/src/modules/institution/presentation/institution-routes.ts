@@ -11,7 +11,7 @@ import {
 import { fail } from '../../../core/errors.ts';
 import { provisionInstitution } from '../application/provision-institution.ts';
 import {
-  changeLifecycle, getInstitutionDetail, reissueInvitation, type InstitutionDetail,
+  changeLifecycle, changePlan, getInstitutionDetail, reissueInvitation, type InstitutionDetail,
 } from '../application/manage-lifecycle.ts';
 import type { LifecycleAction } from '../domain/lifecycle.ts';
 import { listPlatformAudit, MAX_PAGE } from '../application/platform-audit.ts';
@@ -45,6 +45,13 @@ const auditQuery = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_PAGE).optional(),
 });
 
+const planBody = z.object({
+  version: z.number().int().positive(),
+  reason: z.string().max(500),
+  plan: z.string().max(40).optional(),
+  seat_limit: z.number().int().optional(),
+});
+
 const lifecycleBody = z.object({
   version: z.number().int().positive(),
   reason: z.string().max(500),
@@ -59,6 +66,7 @@ function detailJson(d: InstitutionDetail) {
     plan: i.plan, seat_limit: i.seatLimit, timezone: i.timezone, version: i.version,
     created_at: i.createdAt ?? null, status_changed_at: i.statusChangedAt ?? null,
     actions: d.actions,
+    seats: d.seats,
     administrator: d.administrator && {
       full_name: d.administrator.fullName,
       email: d.administrator.email,
@@ -254,6 +262,22 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
       return sendOk(reply, detailJson(result.value));
     });
   }
+
+  /* SA-4a: plan and seat limit, Owner only (AD-65). */
+  app.post('/institutions/:id/plan', async (req, reply) => {
+    const who = await requirePlatformPermission(c, req, reply, 'platform.colleges.manage');
+    if (!who) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
+    const parsed = planBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const result = await changePlan(c.lifecycle, {
+      id, version: parsed.data.version, reason: parsed.data.reason,
+      plan: parsed.data.plan, seatLimit: parsed.data.seat_limit, platformAccountId: who.accountId,
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, detailJson(result.value));
+  });
 
   app.post('/institutions/:id/administrator-invitation', async (req, reply) => {
     if (!(await requirePlatformPermission(c, req, reply, 'platform.colleges.manage'))) return reply;

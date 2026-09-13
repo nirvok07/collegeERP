@@ -1,6 +1,6 @@
 # Platform Administration (Super Admin)
 
-Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019). **SA-2 implemented 2026-09-13** (AD-61, migration 020). **SA-3a and SA-3b implemented 2026-09-13** (AD-62 to AD-64, migrations 021 and 022). SA-4 and SA-5 not built. Owner: M1 Identity &
+Readiness analysis 2026-09-13. **SA-1 implemented 2026-09-13** (AD-60, migration 019). **SA-2 implemented 2026-09-13** (AD-61, migration 020). **SA-3a and SA-3b implemented 2026-09-13** (AD-62 to AD-64, migrations 021 and 022). **SA-4a implemented 2026-09-13** (AD-65, migration 023, not yet applied). SA-5 not built. Owner: M1 Identity &
 Access (platform side) with M2 for the institution record (AD-20). Decisions cited, not restated.
 
 ## 1. What exists (S1, S2)
@@ -20,8 +20,6 @@ Access (platform side) with M2 for the institution record (AD-20). Decisions cit
 
 | Gap | Evidence |
 |---|---|
-| Seat limit enforcement | `SEAT_LIMIT_REACHED` is defined and never raised |
-| Plan and seat changes after provisioning | No endpoint |
 | Support impersonation W10 (AD-19) | Nothing built; needs the grant states and the Principal's approval |
 
 ## 3. Boundaries
@@ -112,7 +110,7 @@ command later). Every other account is created in the application.
 2. ✅ **SA-2 Platform audit view.** Read platform events, filtered by college and action.
 3. ✅ **SA-3 Platform accounts.** SA-3a accounts and roles; SA-3b sealing, TOTP, recovery. Owner and Support roles, a second factor, and account creation by
    command rather than SQL.
-4. **SA-4 Seats and plan.** Change seat limit and plan; enforce the seat limit on activation.
+4. ✅ **SA-4 Seats and plan** (SA-4a). Change seat limit and plan; the database enforces the limit.
 5. **SA-5 Support impersonation (AD-19).** After SA-3, since it needs the Support role.
 
 ## 6a. OD-SA-4 analysis: what a seat is (2026-09-13; resolved by the owner as AD-65)
@@ -147,7 +145,7 @@ command later). Every other account is created in the application.
   new accounts until use falls below it. Existing accounts are never disabled automatically under
   either option.
 
-## 6b. SA-4a readiness: plan, seat limit, enforcement (design, not built)
+## 6b. SA-4a: plan, seat limit, enforcement (built 2026-09-13)
 
 **What exists.** `institutions.plan` is free text, default `standard`, with no enum and no effect
 anywhere. `seat_limit` is a positive integer, default 500. Both are set only at provisioning.
@@ -173,6 +171,20 @@ takes no new seat because an invitation already holds one.
   reason-confirmed change drawer. College screens already show the server's refusal message.
 - *Clients.* Flutter maps `SEAT_LIMIT_REACHED` already and creates no accounts; no change.
 - *Migration.* One (`023`), created in SA-4a: the trigger, its function and the error mapping.
+
+### SA-4a as built
+
+| Piece | Where |
+|---|---|
+| Seat trigger: live insert or move into live, per-college advisory lock (seed 2), SECURITY DEFINER, SQLSTATE `ERS01` | migration `023_seat_limits.sql` (**not applied**) |
+| `ERS01` to `SEAT_LIMIT_REACHED` (409) with the trigger's sentence | `infrastructure/db/unit-of-work.ts` |
+| Live statuses and seat usage, written once for the application | `identity/domain/seats.ts`; `countLive` on the account repository |
+| Plan and limit change: Owner, reason, version-pinned, audited `institution.plan_changed` | `POST /v1/institutions/:id/plan`, `manage-lifecycle.ts` `changePlan` |
+| College detail `seats`: used, limit, remaining, `UNDER_LIMIT`/`AT_LIMIT`/`OVER_LIMIT` | `GET /v1/institutions/:id` |
+| Web: seats and state in the college drawer, at/over-limit banner, Owner-only plan dialog with a preview | `clients/web/src/features/institutions/` |
+
+Until migration 023 is applied to `college_erp_dev`, the dev server shows usage and changes plans,
+but nothing refuses a seat there; the test database applies it and proves the enforcement.
 
 ## 6. Open decisions
 

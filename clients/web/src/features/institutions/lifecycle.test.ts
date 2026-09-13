@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ACTION_COPY, confirmCodeMatches, invitationSummary, reactivationNote, type InstitutionDetail,
+  ACTION_COPY, confirmCodeMatches, invitationSummary, planFormError, projectedSeatState,
+  reactivationNote, seatWarning, type InstitutionDetail,
 } from './lifecycle.ts';
 
 const detail = (over: Partial<InstitutionDetail> = {}): InstitutionDetail => ({
   id: 'i1', code: 'test-college', name: 'Test College', status: 'trial', suspended_from: null,
   plan: 'standard', seat_limit: 500, timezone: 'Asia/Kolkata', version: 1,
   created_at: '2026-09-01T10:00:00.000Z', status_changed_at: null, actions: ['suspend', 'close'],
+  seats: { used: 3, limit: 10, remaining: 7, state: 'UNDER_LIMIT' },
   administrator: {
     full_name: 'Priya Sharma', email: 'priya@testcollege.edu', account_status: 'invited',
     invitation: { state: 'pending', expires_at: '2026-09-20T10:00:00.000Z' }, can_reissue: true,
@@ -54,5 +56,28 @@ describe('closing confirmation', () => {
   it('matches the college code, ignoring case and surrounding space', () => {
     expect(confirmCodeMatches(' Test-College ', 'test-college')).toBe(true);
     expect(confirmCodeMatches('test', 'test-college')).toBe(false);
+  });
+});
+
+describe('seats (AD-65)', () => {
+  it('projects the state a new limit would leave, for the preview only', () => {
+    expect(projectedSeatState(3, 10)).toBe('UNDER_LIMIT');
+    expect(projectedSeatState(3, 3)).toBe('AT_LIMIT');
+    expect(projectedSeatState(3, 2)).toBe('OVER_LIMIT');
+  });
+
+  it('warns in words at and over the limit, and says nobody is signed out', () => {
+    expect(seatWarning({ used: 3, limit: 10, remaining: 7, state: 'UNDER_LIMIT' })).toBeNull();
+    expect(seatWarning({ used: 3, limit: 3, remaining: 0, state: 'AT_LIMIT' })).toMatch(/cannot invite anyone/);
+    expect(seatWarning({ used: 5, limit: 3, remaining: 0, state: 'OVER_LIMIT' })).toMatch(/Nobody has been signed out/);
+  });
+
+  it('checks a plan change before sending it', () => {
+    const current = { plan: 'standard', seat_limit: 10 };
+    expect(planFormError({ plan: 'standard', seatLimit: '10' }, current)).toMatch(/Nothing has changed/);
+    expect(planFormError({ plan: 'standard', seatLimit: '0' }, current)).toMatch(/at least 1/);
+    expect(planFormError({ plan: 'standard', seatLimit: '2.5' }, current)).toMatch(/whole number/);
+    expect(planFormError({ plan: '', seatLimit: '10' }, current)).toMatch(/short label/);
+    expect(planFormError({ plan: 'Premium', seatLimit: '5' }, current)).toBeNull();
   });
 });

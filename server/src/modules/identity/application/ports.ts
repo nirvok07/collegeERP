@@ -64,6 +64,8 @@ export interface AccountRepository {
   markActivated(tx: Tx, id: string, at: Date): Promise<void>;
   recordSignIn(tx: Tx, id: string, at: Date): Promise<void>;
   findBootstrapAdministrator(tx: Tx): Promise<BootstrapAdministrator | null>;
+  /** AD-65: live accounts in the college, the seats in use. */
+  countLive(tx: Tx, tenantId: string): Promise<number>;
 }
 
 export interface CredentialRepository {

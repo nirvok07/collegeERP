@@ -5,8 +5,9 @@ import {
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import type { ProvisionedInstitution } from './ProvisionDrawer.tsx';
 import {
-  ACTION_COPY, confirmCodeMatches, formatWhen, invitationSummary, reactivationNote,
-  type InstitutionDetail, type LifecycleAction,
+  ACTION_COPY, SEAT_STATE_LABEL, SEAT_STATE_TONE, confirmCodeMatches, formatWhen, invitationSummary,
+  planFormError, projectedSeatState, reactivationNote, seatWarning,
+  type InstitutionDetail, type LifecycleAction, type PlanForm,
 } from './lifecycle.ts';
 
 const TONE: Record<string, ChipTone> = { active: 'success', trial: 'info', suspended: 'warning', closed: 'neutral' };
@@ -31,6 +32,8 @@ export function InstitutionDrawer({
   const [detail, setDetail] = useState<InstitutionDetail | null>(null);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
   const [pending, setPending] = useState<LifecycleAction | null>(null);
+  const [planOpen, setPlanOpen] = useState(false);
+  const [planForm, setPlanForm] = useState<PlanForm>({ plan: '', seatLimit: '' });
   const [typedCode, setTypedCode] = useState('');
   const [reissuing, setReissuing] = useState(false);
 
@@ -57,6 +60,23 @@ export function InstitutionDrawer({
       version: detail.version,
       reason,
       ...(action === 'close' ? { confirm_code: typedCode } : {}),
+    });
+    if (!result.ok) return result.error.message;
+    setDetail(result.value);
+    onChanged();
+    return null;
+  }
+
+  /** SA-4a. The database enforces the limit; this only asks for it. */
+  async function savePlan(reason: string): Promise<string | null> {
+    if (!detail) return 'The college is still loading.';
+    const problem = planFormError(planForm, detail);
+    if (problem) return problem;
+    const result = await api.post<InstitutionDetail>(`/v1/institutions/${detail.id}/plan`, {
+      version: detail.version,
+      reason,
+      plan: planForm.plan.trim(),
+      seat_limit: Number(planForm.seatLimit.trim()),
     });
     if (!result.ok) return result.error.message;
     setDetail(result.value);
@@ -93,8 +113,16 @@ export function InstitutionDrawer({
         subtitle={detail ? detail.code : 'Loading'}
         onClose={onClose}
         footer={
-          detail && canManage && detail.actions.length > 0 ? (
+          detail && canManage && (detail.actions.length > 0 || detail.status !== 'closed') ? (
             <div className="drawer-actions">
+              {detail.status !== 'closed' && (
+                <Button
+                  variant="secondary"
+                  onClick={() => { setPlanForm({ plan: detail.plan, seatLimit: String(detail.seat_limit) }); setPlanOpen(true); }}
+                >
+                  Plan and seats
+                </Button>
+              )}
               {detail.actions.map((action) => (
                 <Button
                   key={action}
@@ -117,13 +145,22 @@ export function InstitutionDrawer({
         {!detail && !failure && <p className="page__sub">Loading</p>}
         {detail && (
           <>
+            {seatWarning(detail.seats) && (
+              <Banner tone={detail.seats.state === 'OVER_LIMIT' ? 'error' : 'warning'}>{seatWarning(detail.seats)}</Banner>
+            )}
             <dl className="detail">
               <div><dt>Status</dt><dd><StatusChip tone={TONE[detail.status] ?? 'neutral'}>{detail.status}</StatusChip></dd></div>
               {note && <div><dt>On reactivation</dt><dd>{note}</dd></div>}
               <div><dt>Status changed</dt><dd>{formatWhen(detail.status_changed_at)}</dd></div>
               <div><dt>Created</dt><dd>{formatWhen(detail.created_at)}</dd></div>
               <div><dt>Plan</dt><dd>{detail.plan}</dd></div>
-              <div><dt>Seats</dt><dd className="tabular">{detail.seat_limit}</dd></div>
+              <div>
+                <dt>Seats</dt>
+                <dd className="tabular">
+                  {detail.seats.used} of {detail.seats.limit} used, {detail.seats.remaining} left{' '}
+                  <StatusChip tone={SEAT_STATE_TONE[detail.seats.state]}>{SEAT_STATE_LABEL[detail.seats.state]}</StatusChip>
+                </dd>
+              </div>
               <div><dt>Time zone</dt><dd>{detail.timezone}</dd></div>
             </dl>
 
@@ -169,6 +206,36 @@ export function InstitutionDrawer({
         }
         onClose={() => setPending(null)}
         onConfirm={(reason) => confirm(pending!, reason)}
+      />
+      <ReasonDrawer
+        open={planOpen}
+        title="Plan and seats"
+        subtitle={detail?.name}
+        label="Reason"
+        placeholder="For example: contract renewed for 800 seats"
+        confirmLabel="Save"
+        body={
+          detail ? (
+            <>
+              <Banner tone="info">
+                The plan is a label; it changes nothing else. A limit below current use signs nobody out:
+                the college simply cannot invite anyone until use falls below it.
+              </Banner>
+              <Field label="Plan" value={planForm.plan} onChange={(e) => setPlanForm({ ...planForm, plan: e.currentTarget.value })} />
+              <Field
+                label="Seat limit"
+                inputMode="numeric"
+                value={planForm.seatLimit}
+                hint={/^\d+$/.test(planForm.seatLimit.trim())
+                  ? `${detail.seats.used} in use: ${SEAT_STATE_LABEL[projectedSeatState(detail.seats.used, Number(planForm.seatLimit.trim()))].toLowerCase()}`
+                  : undefined}
+                onChange={(e) => setPlanForm({ ...planForm, seatLimit: e.currentTarget.value })}
+              />
+            </>
+          ) : undefined
+        }
+        onClose={() => setPlanOpen(false)}
+        onConfirm={savePlan}
       />
     </>
   );

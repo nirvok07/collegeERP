@@ -22,6 +22,8 @@ export interface InstitutionRepository {
   list(tx: Tx, limit: number): Promise<InstitutionRecord[]>;
   /** Pinned to a version; null when somebody changed it first. The trigger rules on legality. */
   setStatus(tx: Tx, id: string, version: number, status: InstitutionRecord['status']): Promise<InstitutionRecord | null>;
+  /** SA-4a. Pinned to a version; null when somebody changed the college first. */
+  setPlan(tx: Tx, id: string, version: number, plan: string, seatLimit: number): Promise<InstitutionRecord | null>;
 }
 
 export interface CampusRecord {

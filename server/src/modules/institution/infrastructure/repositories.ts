@@ -38,6 +38,17 @@ export class PgInstitutionRepository implements InstitutionRepository {
     return rows.map(toInstitution);
   }
 
+  async setPlan(
+    tx: Tx, id: string, version: number, plan: string, seatLimit: number,
+  ): Promise<InstitutionRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `UPDATE institutions SET plan = $3, seat_limit = $4, version = version + 1, updated_at = now()
+        WHERE id = $1 AND version = $2 RETURNING ${COLUMNS}`,
+      [id, version, plan, seatLimit],
+    );
+    return rows[0] ? toInstitution(rows[0]) : null;
+  }
+
   async setStatus(
     tx: Tx, id: string, version: number, status: InstitutionRecord['status'],
   ): Promise<InstitutionRecord | null> {
