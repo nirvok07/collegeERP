@@ -32,7 +32,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): the college flow, end to end (AD-75, R55–R57).
+Just done (2026-09-14): the college flow, end to end (AD-75, R55–R57; `0e19d41`).
 - **SAM-2a:** the Super Admin app suspends, reactivates and closes a college (reason; close needs
   the code typed; version-pinned), and reissues an administrator's invitation. The invitation
   screen says who it is for, offers one message to copy, and warns it is not an authenticator key
@@ -143,6 +143,7 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+0e19d41 Build the college handover flow: lifecycle in the Super Admin app, invitations accepted on web and phone
 f9303c0 Build OPS-2: operators create an Owner and disable an account in development
 4474abd Build SAM-1: a separate Super Admin app with its own entry point
 ff0f91d Build LOG-1: API logs through one redacting Dio interceptor
@@ -210,7 +211,8 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
   `owner@nirvok.com` disabled; dev leftovers `o@n.com`, `owner+31650@nirvok.com`,
   `owner+device-test@nirvok.dev` still active. Supabase has none until its rebuild, then
   `platform:create-owner` gives it the same Owner.
-- Owner's working-tree change, not yet committed (2026-09-14): `ApiClient` logs through
+- Owner's change, committed inside `d15ca38` and `0e19d41` (it was staged, and those commits took
+  the whole index; 2026-09-14): `ApiClient` logs through
   `CustomLogInterceptor` (`dio_intercepter.dart`, coloured `dart:developer` output) instead of
   `withApiLogs`; it masks the token and redacts bodies with the shared `redact` (AD-73 holds).
   `AuthApi` and `PlatformAuthApi` still use `ApiLogInterceptor`. Left in it: `onError` prints the
