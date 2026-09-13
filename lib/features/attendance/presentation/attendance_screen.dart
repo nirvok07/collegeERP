@@ -1,3 +1,5 @@
+import '../../../core/di/outbox_setup.dart';
+import '../../../core/widgets/outbox_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,7 +28,7 @@ class AttendanceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => AttendanceCubit(locator<AttendanceRepository>(), sessionId)..load(),
+      create: (_) => AttendanceCubit(locator<AttendanceRepository>(), sessionId, offline: offlineWrites)..load(),
       child: const _AttendanceView(),
     );
   }
@@ -150,6 +152,15 @@ class _RegisterState extends State<_Register> {
     return Column(
       children: [
         _Header(draft: draft),
+
+        OutboxStatusLine(
+          items: widget.state.waiting,
+          onSendNow: widget.cubit.sendNow,
+          onRetry: widget.cubit.retry,
+          onDiscard: (item) async {
+            if (await confirmDiscard(context, item)) await widget.cubit.discard(item);
+          },
+        ),
 
         if (widget.state.failure != null)
           Container(
@@ -398,6 +409,8 @@ class _MarkButton extends StatelessWidget {
 }
 
 /// Save and submit, with the state of the register said out loud.
+const _queuedMessage = 'Saved on this phone. It will be sent when you are online.';
+
 class _ActionBar extends StatelessWidget {
   const _ActionBar({required this.state, required this.cubit});
 
@@ -415,6 +428,20 @@ class _ActionBar extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.base),
           child: Text(
             'This register is submitted. A correction has to be made by your head of department.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      );
+    }
+
+    if (state.submissionQueued) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.base),
+          child: Text(
+            'Submission saved on this phone. It is sent automatically, and the register '
+            'stays closed here until then.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
@@ -475,7 +502,9 @@ class _ActionBar extends StatelessWidget {
   Future<void> _save(BuildContext context) async {
     final message = await cubit.save();
     if (!context.mounted || message != null) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Attendance saved')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(cubit.state.lastQueued ? _queuedMessage : 'Attendance saved')),
+    );
   }
 
   Future<void> _submit(BuildContext context) async {
@@ -500,6 +529,8 @@ class _ActionBar extends StatelessWidget {
 
     final message = await cubit.submit();
     if (!context.mounted || message != null) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Register submitted')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(cubit.state.lastQueued ? _queuedMessage : 'Register submitted')),
+    );
   }
 }

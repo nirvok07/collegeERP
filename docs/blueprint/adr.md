@@ -1203,7 +1203,7 @@ decision that goes with it. See docs/blueprint/capabilities/offline-outbox.md.
 
 **AD-59 — The mobile local store is Drift over SQLite3MultipleCiphers, keyed from the platform keystore**
 
-*Status.* PROPOSED, 2026-09-13. Awaiting owner approval before any dependency is added.
+*Status.* Approved by the owner and implemented, 2026-09-13. Drift 5 closes only after device verification.
 
 *Decision.* Drift over `package:sqlite3` 3.x, with its build hook selecting SQLite3MultipleCiphers.
 A random 256-bit key lives in `flutter_secure_storage`, which means the Android Keystore and the iOS

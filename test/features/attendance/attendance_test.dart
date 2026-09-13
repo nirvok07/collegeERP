@@ -1,3 +1,9 @@
+import 'package:college_erp/core/outbox/offline_writes.dart';
+import 'package:college_erp/core/outbox/outbox.dart';
+import 'package:college_erp/core/outbox/outbox_database.dart';
+import 'package:college_erp/core/outbox/outbox_replayer.dart';
+import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/native.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/widgets/screen_state.dart';
@@ -440,5 +446,45 @@ void main() {
       expect(repository.keys[0], isNot(repository.keys[1]));
     });
 
+
+    test('queues a save the server cannot receive, and a changed save queues behind it', () async {
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final db = OutboxDatabase(NativeDatabase.memory());
+      final outbox = Outbox(db);
+      const scope = OutboxScope(tenantId: 't1', personId: 'p1');
+      final replayer = OutboxReplayer(outbox: outbox, sender: _NeverSender(), scope: () => null);
+      final writes = OfflineWrites(outbox: outbox, replayer: replayer, scope: () => scope);
+
+      final repository = _FakeRepository(Ok(parse(sheetJson())));
+      repository.saveResult = const Err(Failure.network);
+      final cubit = AttendanceCubit(repository, 'cs1', offline: writes);
+      await cubit.load();
+
+      cubit.mark('st1', AttendanceMark.present);
+      expect(await cubit.save(), isNull, reason: 'queued is not a failure');
+      expect(cubit.state.lastQueued, isTrue);
+      expect(cubit.state.draft!.isDirty, isFalse, reason: 'saved on the phone, not unsaved');
+      expect(cubit.state.draft!.markFor('st1'), AttendanceMark.present);
+
+      cubit.mark('st2', AttendanceMark.absent);
+      await cubit.save();
+      expect(repository.keys, hasLength(1), reason: 'the second save waits behind the first');
+
+      final items = await outbox.unsynced(scope);
+      expect(items, hasLength(2));
+      expect(items[0].idempotencyKey, repository.keys[0], reason: 'the failed attempt\'s own key');
+      expect(items[1].idempotencyKey, isNot(items[0].idempotencyKey));
+      expect(items[1].predecessorId, items[0].id);
+
+      await cubit.close();
+      replayer.stop();
+      await db.close();
+    });
+
   });
+}
+
+class _NeverSender implements OutboxSender {
+  @override
+  Future<Result<int?>> send(OutboxItem item, int? version) async => const Err(Failure.network);
 }

@@ -1,7 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'dart:async';
+
 import '../../../core/error/failure.dart';
 import '../../../core/network/idempotency.dart';
+import '../../../core/outbox/offline_writes.dart';
+import '../../../core/outbox/outbox.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../domain/class_session.dart';
 import '../domain/delivery_repository.dart';
@@ -38,12 +42,30 @@ class MyScheduleState {
 }
 
 class MyScheduleCubit extends Cubit<MyScheduleState> {
-  MyScheduleCubit(this._repository, {String? today})
+  MyScheduleCubit(this._repository, {String? today, OfflineWrites? offline})
     : _today = today ?? todayDate(),
-      super(const MyScheduleState());
+      _offline = offline,
+      super(const MyScheduleState()) {
+    // A queued "taught" that reaches the server changes this screen.
+    _watch = offline?.watchAll().listen((items) {
+      final settled = items.length < _waiting;
+      _waiting = items.length;
+      if (settled && !isClosed) unawaited(load(refresh: true));
+    });
+  }
+
+  StreamSubscription<List<OutboxItem>>? _watch;
+  var _waiting = 0;
+
+  @override
+  Future<void> close() async {
+    await _watch?.cancel();
+    return super.close();
+  }
 
   final DeliveryRepository _repository;
   final String _today;
+  final OfflineWrites? _offline;
 
   // One key per class being recorded, kept while that write is retried (AD-58).
   final _taught = IdempotentWrite();
@@ -95,18 +117,33 @@ class MyScheduleCubit extends Cubit<MyScheduleState> {
   /// state, so the screen always shows what the server actually holds.
   Future<Failure?> markTaught(ClassSession session) async {
     emit(state.copyWith(marking: session.id, clearFailure: true));
-    final result = await _repository.markTaught(
-      session.id,
-      idempotencyKey: _taught.keyFor(session.id),
-    );
+    final key = _taught.keyFor(session.id);
+    final offline = _offline;
+    final WriteOutcome<void> outcome = offline == null
+        ? (await _repository.markTaught(session.id, idempotencyKey: key))
+              .when(ok: (_) => const Sent<void>(null), err: (f) => Refused<void>(f))
+        : await offline.run<void>(
+            kind: OutboxKind.sessionTaught,
+            targetId: session.id,
+            payload: const {},
+            idempotencyKey: key,
+            label: 'Taught · ${session.courseCode} · ${session.date}',
+            online: () => _repository.markTaught(session.id, idempotencyKey: key),
+          );
     if (isClosed) return null;
 
-    final failure = result.failureOrNull;
     emit(state.copyWith(clearMarking: true));
-    if (failure != null) return failure;
-    _taught.settle();
-
-    await load(refresh: true);
-    return null;
+    switch (outcome) {
+      case Refused(:final failure):
+        return failure;
+      case Queued():
+        // Saved on this phone; the schedule's bar shows it waiting.
+        _taught.settle();
+        return null;
+      case Sent():
+        _taught.settle();
+        await load(refresh: true);
+        return null;
+    }
   }
 }

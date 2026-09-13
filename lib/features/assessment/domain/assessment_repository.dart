@@ -11,7 +11,8 @@ abstract interface class AssessmentRepository {
   Future<Result<AssessmentSheet>> readSheet(String componentId);
 
   /// Every write below carries a key that makes a resend safe (AD-58).
-  Future<Result<void>> recordHeldOn({
+  /// Returns the sheet's new version.
+  Future<Result<int>> recordHeldOn({
     required String componentId,
     required int version,
     required String heldOn,
@@ -19,7 +20,8 @@ abstract interface class AssessmentRepository {
   });
 
   /// One request for the whole sheet, pinned to the version the teacher read.
-  Future<Result<void>> saveMarks({
+  /// Returns the sheet's new version.
+  Future<Result<int>> saveMarks({
     required String componentId,
     required int version,
     required List<Map<String, Object?>> marks,

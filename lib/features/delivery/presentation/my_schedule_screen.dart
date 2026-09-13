@@ -1,3 +1,5 @@
+import '../../../core/di/outbox_setup.dart';
+import '../../../core/widgets/pending_writes_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -21,7 +23,7 @@ class MyScheduleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => MyScheduleCubit(locator<DeliveryRepository>())..load(),
+      create: (_) => MyScheduleCubit(locator<DeliveryRepository>(), offline: offlineWrites)..load(),
       child: const _MyScheduleView(),
     );
   }
@@ -88,6 +90,7 @@ class _ScheduleList extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
         children: [
+          const PendingWritesBar(),
           if (state.failure != null)
             Container(
               margin: const EdgeInsets.all(AppSpacing.base),

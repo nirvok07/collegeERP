@@ -1,3 +1,5 @@
+import 'sign_out.dart';
+import '../core/outbox/outbox_replayer.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -59,6 +61,8 @@ class _CollegeAppState extends State<CollegeApp> {
     if (restored) {
       unawaited(_loadAuthority());
       FirebaseServices.instance.identify(_session.actor?.id);
+      // A restored session emits no sign-in event, so the outbox is resumed here.
+      if (locator.isRegistered<OutboxReplayer>()) unawaited(locator<OutboxReplayer>().resume());
       // Registered after the session exists, because the call is authenticated
       // and the backend ties the device to the account that owns it.
       unawaited(locator<DeviceRegistration>().register());
@@ -349,7 +353,7 @@ class _NoAccessScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(AppSpacing.base),
             child: TextButton(
-              onPressed: () => locator<SessionManager>().signOut(),
+              onPressed: () => signOutFromDevice(context),
               child: const Text('Sign out'),
             ),
           ),
@@ -379,7 +383,7 @@ class _AccountScreen extends StatelessWidget {
           ListTile(
             leading: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.error),
             title: Text('Sign out', style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            onTap: () => session.signOut(),
+            onTap: () => signOutFromDevice(context),
           ),
         ],
       ),

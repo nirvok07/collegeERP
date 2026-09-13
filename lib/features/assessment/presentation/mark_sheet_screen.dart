@@ -1,3 +1,5 @@
+import '../../../core/di/outbox_setup.dart';
+import '../../../core/widgets/outbox_status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,7 +25,7 @@ class MarkSheetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => MarkSheetCubit(locator<AssessmentRepository>(), componentId)..load(),
+      create: (_) => MarkSheetCubit(locator<AssessmentRepository>(), componentId, offline: offlineWrites)..load(),
       child: const _MarkSheetView(),
     );
   }
@@ -187,9 +189,19 @@ class _SheetState extends State<_Sheet> {
               style: TextStyle(color: scheme.onErrorContainer, fontSize: 13),
             ),
           ),
+        OutboxStatusLine(
+          items: widget.state.waiting,
+          onSendNow: widget.cubit.sendNow,
+          onRetry: widget.cubit.retry,
+          onDiscard: (item) async {
+            if (await confirmDiscard(context, item)) await widget.cubit.discard(item);
+          },
+        ),
         if (sheet.needsDate)
           Expanded(
-            child: _DateCard(sheet: sheet, cubit: widget.cubit, busy: widget.state.busy),
+            child: widget.state.dateQueued
+                ? const _DateWaiting()
+                : _DateCard(sheet: sheet, cubit: widget.cubit, busy: widget.state.busy),
           )
         else
           Expanded(
@@ -438,6 +450,20 @@ class _ActionBar extends StatelessWidget {
       );
     }
 
+    if (state.submissionQueued) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.base),
+          child: Text(
+            'Submission saved on this phone. It is sent automatically, and the sheet stays '
+            'closed here until then.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ),
+      );
+    }
+
     final blocked = draft.submitBlockedReason;
     return SafeArea(
       child: Padding(
@@ -489,7 +515,7 @@ class _ActionBar extends StatelessWidget {
   Future<void> _save(BuildContext context) async {
     final message = await cubit.save();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message ?? 'Results saved')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message ?? (cubit.state.lastQueued ? _queuedMessage : 'Results saved'))));
   }
 
   Future<void> _submit(BuildContext context) async {
@@ -514,6 +540,29 @@ class _ActionBar extends StatelessWidget {
     final message = await cubit.submit();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message ?? 'Sheet submitted')));
+        .showSnackBar(SnackBar(content: Text(message ?? (cubit.state.lastQueued ? _queuedMessage : 'Sheet submitted'))));
+  }
+}
+
+const _queuedMessage = 'Saved on this phone. It will be sent when you are online.';
+
+/// The date is on the phone, and the class list depends on the server knowing
+/// it, so there is honestly nothing to enter yet.
+class _DateWaiting extends StatelessWidget {
+  const _DateWaiting();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Text(
+          'The date is saved on this phone. The class list appears once it reaches the server.',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+        ),
+      ),
+    );
   }
 }

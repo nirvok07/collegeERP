@@ -580,6 +580,8 @@ before the enterprise brief and the blueprint written after it. Not silently res
   match a device but can never send it a push. The owner is the notifications slice. It needs a
   recoverable token, encrypted with a server-held key and kept apart from the lookup hash. Until
   then, push delivery can only be tested from the Firebase console.
+- **Drift 5 progress, 2026-09-13.** Slice two, the durable encrypted queue, is implemented (AD-59).
+  It stays open until an offline, queue, reconnect, replay cycle is verified on a device.
 - **Approval required.** Yes.
 
 ### Also noted, not drift but gaps created by the scope change

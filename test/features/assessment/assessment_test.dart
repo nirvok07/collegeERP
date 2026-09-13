@@ -83,7 +83,7 @@ class _FakeRepository implements AssessmentRepository {
   }
 
   @override
-  Future<Result<void>> recordHeldOn({
+  Future<Result<int>> recordHeldOn({
     required String componentId,
     required int version,
     required String heldOn,
@@ -92,11 +92,11 @@ class _FakeRepository implements AssessmentRepository {
     writes.add('held:$heldOn');
     keys.add(idempotencyKey);
     lastVersion = version;
-    return writeResult;
+    return writeResult.when(ok: (_) => const Ok(4), err: (f) => Err(f));
   }
 
   @override
-  Future<Result<void>> saveMarks({
+  Future<Result<int>> saveMarks({
     required String componentId,
     required int version,
     required List<Map<String, Object?>> marks,
@@ -106,7 +106,7 @@ class _FakeRepository implements AssessmentRepository {
     keys.add(idempotencyKey);
     lastVersion = version;
     lastMarks = marks;
-    return writeResult;
+    return writeResult.when(ok: (_) => const Ok(4), err: (f) => Err(f));
   }
 
   @override

@@ -157,30 +157,49 @@ class AttendanceSheet {
 /// where the network may not be, and a tap must never be lost to a failed
 /// request: the draft keeps every mark until the batch succeeds.
 ///
-/// This is NOT offline support. Nothing survives the app being killed, and the
-/// screen says so. Durable capture needs an outbox and a replay policy, and
-/// promising it without those is how attendance data goes missing.
+/// Marks saved on this phone but not yet sent (AD-59) are held apart from both:
+/// they are not unsaved, and they are not the server's yet.
 class SheetDraft {
   SheetDraft(this.sheet);
 
   final AttendanceSheet sheet;
   final Map<String, AttendanceMark> _pending = {};
+  final Map<String, AttendanceMark> _queued = {};
 
-  /// The mark to show: what the teacher just tapped, else what the server has.
-  AttendanceMark? markFor(String studentId) {
-    final pending = _pending[studentId];
-    if (pending != null) return pending;
-    return sheet.students.firstWhere((s) => s.studentId == studentId).mark;
+  /// The mark to show: what the teacher just tapped, else what is waiting on
+  /// this phone, else what the server has.
+  AttendanceMark? markFor(String studentId) =>
+      _pending[studentId] ?? _queued[studentId] ?? _saved(studentId);
+
+  AttendanceMark? _saved(String studentId) =>
+      sheet.students.firstWhere((s) => s.studentId == studentId).mark;
+
+  bool get hasQueued => _queued.isNotEmpty;
+
+  /// The save went to the outbox: those marks are no longer unsaved.
+  void queuePending() {
+    _queued.addAll(_pending);
+    _pending.clear();
+  }
+
+  /// Restores marks still waiting in the outbox onto a freshly read register.
+  void applyQueued(List<Object?> marks) {
+    final known = {for (final s in sheet.students) s.studentId};
+    for (final entry in marks.whereType<Map>()) {
+      final id = entry['student_id'] as String?;
+      final mark = AttendanceMark.fromWire(entry['state'] as String?);
+      if (id != null && mark != null && known.contains(id)) _queued[id] = mark;
+    }
   }
 
   bool get isDirty => _pending.isNotEmpty;
   int get pendingCount => _pending.length;
 
   void mark(String studentId, AttendanceMark mark) {
-    final onServer = sheet.students.firstWhere((s) => s.studentId == studentId).mark;
-    // Tapping back to what the server already holds is not a change. Keeping it
-    // out means "3 unsaved" always means three real differences.
-    if (onServer == mark) {
+    final baseline = _queued[studentId] ?? _saved(studentId);
+    // Tapping back to what is already saved is not a change. Keeping it out
+    // means "3 unsaved" always means three real differences.
+    if (baseline == mark) {
       _pending.remove(studentId);
     } else {
       _pending[studentId] = mark;

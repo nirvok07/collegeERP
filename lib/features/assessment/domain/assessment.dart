@@ -179,23 +179,45 @@ class PendingMark {
 /// A mark sheet held on the device until it is saved.
 ///
 /// A tap or a keystroke is never lost to a failed request: the draft keeps
-/// everything until the batch succeeds. This is not offline support; nothing
-/// survives the app being killed, and the screen says so.
+/// everything until the batch succeeds. Results saved on this phone but not yet
+/// sent (AD-59) are held apart: not unsaved, and not the server's yet.
 class MarkDraft {
   MarkDraft(this.sheet);
 
   final AssessmentSheet sheet;
   final Map<String, PendingMark> _pending = {};
+  final Map<String, PendingMark> _queued = {};
+
+  bool get hasQueued => _queued.isNotEmpty;
+
+  /// The save went to the outbox: those results are no longer unsaved.
+  void queuePending() {
+    _queued.addAll(_pending);
+    _pending.clear();
+  }
+
+  /// Restores results still waiting in the outbox onto a freshly read sheet.
+  void applyQueued(List<Object?> marks) {
+    final known = {for (final s in sheet.students) s.studentId};
+    for (final entry in marks.whereType<Map>()) {
+      final id = entry['student_id'] as String?;
+      final status = MarkStatus.fromWire(entry['status'] as String?);
+      final score = entry['score'];
+      if (id == null || status == null || !known.contains(id)) continue;
+      _queued[id] = PendingMark(status, score is num ? formatMarks(score.toDouble()) : '');
+    }
+  }
 
   static final _scorePattern = RegExp(r'^\d+(\.\d{1,2})?$');
 
   SheetStudent _student(String id) => sheet.students.firstWhere((s) => s.studentId == id);
 
-  MarkStatus? statusFor(String id) => _pending[id]?.status ?? _student(id).status;
+  MarkStatus? statusFor(String id) =>
+      _pending[id]?.status ?? _queued[id]?.status ?? _student(id).status;
 
   /// The text to show in a student's score field.
   String textFor(String id) {
-    final pending = _pending[id];
+    final pending = _pending[id] ?? _queued[id];
     if (pending != null) return pending.text;
     final student = _student(id);
     return student.status == MarkStatus.scored && student.score != null
@@ -213,13 +235,17 @@ class MarkDraft {
 
   void _set(String id, PendingMark next) {
     final student = _student(id);
-    final serverText = student.status == MarkStatus.scored && student.score != null
-        ? formatMarks(student.score!)
-        : '';
+    final queued = _queued[id];
+    final savedStatus = queued?.status ?? student.status;
+    final savedText =
+        queued?.text ??
+        (student.status == MarkStatus.scored && student.score != null
+            ? formatMarks(student.score!)
+            : '');
     final same =
-        next.status == student.status &&
-        (next.status != MarkStatus.scored || next.text.trim() == serverText);
-    // Back to what the server holds is not a change, so "unsaved" is honest.
+        next.status == savedStatus &&
+        (next.status != MarkStatus.scored || next.text.trim() == savedText.trim());
+    // Back to what is already saved is not a change, so "unsaved" is honest.
     if (same) {
       _pending.remove(id);
     } else {

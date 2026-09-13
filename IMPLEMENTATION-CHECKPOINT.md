@@ -7,10 +7,8 @@ Slices    S1 backend foundation — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework, in clients/web/
           Flutter for Android and iOS at the repository root; no Flutter Web
-Tests     327 backend + 161 web + 117 Flutter = 605 passing
-Next      Owner approval of AD-59, the encrypted local store, then build outbox
-          slice two from docs/blueprint/capabilities/offline-outbox.md §7.
-          Device: sign in on the phone to verify FCM registration
+Tests     327 backend + 161 web + 133 Flutter = 621 passing
+State     Current compact state: PROJECT_STATE.md. This file is slice history.
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked

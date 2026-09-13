@@ -7,6 +7,8 @@ class AssessmentApi implements AssessmentRepository {
   const AssessmentApi(this._client);
   final ApiClient _client;
 
+  static int _version(dynamic data) => ((data as Map)['version'] as num).toInt();
+
   @override
   Future<Result<List<AssessmentComponent>>> myComponents() => _client.get(
     '/v1/me/assessments',
@@ -18,7 +20,7 @@ class AssessmentApi implements AssessmentRepository {
       _client.get('/v1/assessments/$componentId/sheet', AssessmentSheet.fromJson);
 
   @override
-  Future<Result<void>> recordHeldOn({
+  Future<Result<int>> recordHeldOn({
     required String componentId,
     required int version,
     required String heldOn,
@@ -26,12 +28,12 @@ class AssessmentApi implements AssessmentRepository {
   }) => _client.post(
     '/v1/assessments/$componentId/held-on',
     {'version': version, 'held_on': heldOn},
-    (_) {},
+    _version,
     idempotencyKey: idempotencyKey,
   );
 
   @override
-  Future<Result<void>> saveMarks({
+  Future<Result<int>> saveMarks({
     required String componentId,
     required int version,
     required List<Map<String, Object?>> marks,
@@ -39,7 +41,7 @@ class AssessmentApi implements AssessmentRepository {
   }) => _client.put(
     '/v1/assessments/$componentId/marks',
     {'version': version, 'marks': marks},
-    (_) {},
+    _version,
     idempotencyKey: idempotencyKey,
   );
 

@@ -82,9 +82,17 @@ crash rather than to every lost response.
   resend is safe too.
 - Nothing about the screens changes. A save that fails keeps every mark on screen, as before.
 
-## 7. Slice two: the durable queue — design, not yet built
+## 7. Slice two: the durable queue
 
-Status: **designed, awaiting approval of AD-59** (the local store). Nothing below is implemented.
+Status: **implemented 2026-09-13 (AD-59), unit-tested, device verification pending.** Code in
+`lib/core/outbox/`. Three deliberate deviations from the design below:
+
+- **No roster cache (§7.2).** The minimum-data rule wins: only queued writes are stored. A sheet
+  already open keeps working offline; opening one for the first time offline does not.
+- **No coalescing (§7.4).** Writes go online first, so every queued write has already been
+  attempted and is frozen. Later edits queue behind it with their own key.
+- **Transport failures keep retrying (§7.6).** At most every 10 minutes, never parked: a missing
+  network does not need a person. Server errors still park after 6 attempts.
 
 ### 7.1 What may be queued
 

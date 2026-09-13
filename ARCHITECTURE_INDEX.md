@@ -1,0 +1,89 @@
+# Architecture Index
+
+Pointers, not content. Read the linked file for the decision itself.
+
+## Where things are decided
+
+| Topic | Source of truth |
+|---|---|
+| Decisions (AD-1…AD-59) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R41) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Blueprint module designs | `docs/blueprint/modules/*.md` |
+| Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
+| Offline model | `docs/03-offline-first.md` |
+| Security rules | `docs/08-security.md` |
+| Mobile platform, Firebase, device evidence | `docs/12-mobile-platform-config.md` |
+| Drift and blocker register | `MASTER-CHECKLIST.md` (Drift 1–6, OD-*) |
+| Long-form slice history | `IMPLEMENTATION-CHECKPOINT.md` |
+
+## Stack (locked)
+
+Server `server/`: Node 24, Fastify 5, `pg` without ORM, zod, node:test. Web `clients/web/`: React 19,
+Vite, TypeScript, Vitest (AD-54). Mobile at repo root `lib/`: Flutter, Cubit, Dio, get_it,
+Navigator `onGenerateRoute`, Drift over SQLite3MultipleCiphers (AD-59). No Flutter Web.
+Firebase: FCM, Remote Config, Crashlytics only.
+
+## Load-bearing patterns
+
+- Tenant row-level security with FORCE; least-privilege `erp_app`; DELETE only on declared tables.
+- Invariants in triggers; PL/pgSQL variables prefixed `v_`.
+- Role grants permission, instructor assignment limits reach (AD-40).
+- Optimistic concurrency by `version` (AD-52) plus idempotency keys (AD-58).
+- Correction rows apply changes; correction tables are INSERT and SELECT only.
+- Dates are calendar strings end to end (AD-49); rosters resolve as of the class date (AD-50).
+
+## ADR index
+
+| ADR | Decision | Status |
+|---|---|---|
+| AD-1 | Authority is role × scope × validity, not a role column | Active |
+| AD-2 | Campus is a first-class scope from day one | Active |
+| AD-3 | Curriculum is versioned by regulation year and frozen once published | Active |
+| AD-4 | Enrolment, not section membership, is the unit of academic record | Active |
+| AD-5 | Nine domains and eight platform capabilities, not twenty-five modules | Active |
+| AD-6 | All money lives in one ledger, owned by Student Finance | Active |
+| AD-7 | No derived academic value is stored | Active |
+| AD-8 | External examination results are a read-only mirror | Active |
+| AD-9 | Offline-first applies to field roles on mobile, not to the whole system | Active |
+| AD-10 | Modules integrate through domain events | Active |
+| AD-11 | Academic year rollover is a first-class, rehearsable operation | Active |
+| AD-12 | Every mutable record carries a version, and conflicts are surfaced | Active |
+| AD-13 | Correction is a workflow, never a database edit | Active |
+| AD-14 | Person and UserAccount are separate entities | Active |
+| AD-15 | Committee membership is a role assignment scoped to the committee | Active |
+| AD-16 | Permissions resolve at request time, with bounded-staleness caching | Active |
+| AD-17 | Delegation cannot be chained, exceeded, or outlive its source | Active |
+| AD-18 | Deny by default, and no-access is a designed state | Active |
+| AD-19 | Impersonation is read-only, institution-approved, time-boxed and fully audited | Active |
+| AD-20 | Tenant provisioning runs as one transaction across M1 and M2 | Active |
+| AD-21 | No denormalized administrator pointer on the institution | Active |
+| AD-22 | Shared PostgreSQL with row-level tenant isolation, partitioned on the two high-volume tables | Active |
+| AD-23 | A published result is the one permitted materialized academic value | Active |
+| AD-24 | The back office is a web console; Flutter serves students and faculty | Active |
+| AD-25 | Session lifetime and access-token lifetime are separate concerns | Active |
+| AD-26 | Web keeps the refresh token in an httpOnly cookie and the access token in memory | Active |
+| AD-27 | Archiving an organisational unit is refused while authority is scoped to it | Active |
+| AD-28 | Cross-module scope questions go through a declared capability, not a shared read | Active |
+| AD-29 | Organisational structure administration is web-only, by intent | Active |
+| AD-30 | Firebase is platform infrastructure, three services only | Active |
+| AD-31 | Flutter implements the same motion principles with native mechanisms | Active |
+| AD-32 | Mobile reads; the desktop console writes structure and authority | Active |
+| AD-33 | Course identity is separate from curriculum placement | Active |
+| AD-34 | Published curriculum immutability is enforced by database trigger | Active |
+| AD-35 | Errata and amendments are different operations | Active |
+| AD-36 | Section scope belongs to M3 Teaching Operations, not the curriculum | Active |
+| AD-37 | A program belongs to one department; campus variants are separate programs | Active |
+| AD-38 | A Section is a cohort of students within a program for one term, not a course offering | Active |
+| AD-39 | The academic calendar belongs to M2, not M3 | Active |
+| AD-40 | A role assignment is a permission; an instructor assignment is a reach constraint | Active |
+| AD-41 | Offering identity is (section, course, component), and the term is deliberately absent | Active |
+| AD-46 | M4 owns the room, and the boundary to a future facilities domain is stated now | Active |
+| AD-49 | A DATE column is read as a calendar date, never as an instant | Active |
+| AD-50 | M5's roster arrives with attendance, under M5's name, and is resolved as of a date | Active |
+| AD-52 | One register is written as a batch under optimistic concurrency | Active |
+| AD-53 | Correcting a submitted register is the head of department's authority, not the teacher's | Active |
+| AD-54 | The React client lives in `clients/web/`; the repository has no Flutter Web | Active |
+| AD-55 | Internal assessment is built now; examinations wait for OD-1 | Active |
+| AD-56 | A mark records what happened, not what it is worth | Active |
+| AD-58 | Field writes are made replay-safe by an idempotency key, layered over version pinning | Active |
+| AD-59 | The mobile local store is Drift over SQLite3MultipleCiphers, keyed from the platform keystore | Active |
