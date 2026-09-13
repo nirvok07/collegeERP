@@ -24,7 +24,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-1 ✅ DONE: 340 server tests, 167 web tests, typecheck clean (commit below).
+None in progress. SA-1 ✅ DONE: 340 server tests, 167 web tests, typecheck clean (commit `7c13554`).
 AD-59 device replay ⏸️ POSTPONED until the phone is connected.
 
 ### NEXT SLICE — SA-2 Platform Audit View
