@@ -24,7 +24,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-None in progress. SA-2 ✅ DONE: 353 server tests, 174 web tests, typechecks clean (commit recorded below).
+None in progress. SA-2 ✅ DONE: 353 server tests, 174 web tests, typechecks clean (commit `5774b28`).
 **Action for the owner:** apply migration `020_platform_audit_read.sql` to `college_erp_dev`
 (`npm run migrate` in `server/`). Until then `GET /v1/platform/audit` fails on the dev database.
 AD-59 device replay ⏸️ POSTPONED until the phone is connected.
