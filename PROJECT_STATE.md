@@ -28,7 +28,7 @@ None in progress. OD-SA-4 resolved as AD-65; SA-4a designed (`platform-administr
 commit `e3fce75`. `SECRET_SEALING_KEY` is configured in `server/.env` and held by the
 running dev server (no fallback); its value is recorded nowhere else.
 
-OD-ENV-1 ✅ resolved as AD-66: development uses local `college_erp_dev`. `npm run dev` and
+OD-ENV-1 ✅ resolved as AD-66 (commit `418af81`): development uses local `college_erp_dev`. `npm run dev` and
 `npm run migrate` load `server/.env` themselves and both resolve to it; no manual overrides.
 
 ### NEXT SLICE — SA-4a Plan & Seat Limits with concurrency-safe enforcement
