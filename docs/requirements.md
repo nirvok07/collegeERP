@@ -125,6 +125,7 @@ than from a feature list.
 | R65 | A college user changes their own password from the app's Profile | Active, built on mobile (ADM-1); web ❌ | [ADR](blueprint/adr.md) AD-79, `POST /v1/auth/password` |
 | R66 | The College Admin's dashboard is the college's (its numbers and the modules it manages, where the admin creates things), not a teacher's | Active; ADM-1 built the dashboard; creating organisation, programs, sections, timetable and students on the phone is ADM-2…ADM-6 | [ADR](blueprint/adr.md) AD-79 |
 | R67 | Firebase Crashlytics in the college app | Active, built earlier (initialisation verified on Android 2026-09-13); a first crash report in the Firebase console 🔍 | [Mobile Platform Configuration](12-mobile-platform-config.md) |
+| R69 | "What will an admin do to recover a forgotten password?" | Open, OD-PW-1: today there is no way; reissue works only before the invitation is accepted | [PROJECT_STATE](../PROJECT_STATE.md) |
 | R68 | "All the Firebase things" | Active, read as the approved set: Core, Crashlytics, Remote Config, Messaging, all built. Not Firebase Auth, Firestore or Storage (identity and data are the ERP's own). Open: console test push and crash report (owner), backend push delivery (Drift 6) | [Mobile Platform Configuration](12-mobile-platform-config.md) |
 
 ## Assumptions awaiting confirmation

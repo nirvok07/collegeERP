@@ -169,6 +169,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-MOB-1 | Should every module be on mobile too (R63)? | Mobile has teaching, attendance, marks and onboarding; curriculum, sections, timetable planning, verification and platform are web-only (AD-24, AD-32) | Mobile scope | Keep the split; move chosen modules | Partly resolved by AD-79: the College Admin's modules move (ADM-1…6); the rest open |
 | OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | Different modules, permissions and screens | M3/M4 on mobile | Sections; timetable slots and sessions; both | Open |
 | OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
+| OD-PW-1 | How does a college user who forgot their password get back in (R69)? | Today nobody can: reissue works only for an unaccepted invitation, and nothing is emailed (AD-75) | Identity, security | (a) a college admin, or the Super Admin for an admin, issues a one-time reset code handed over like an invitation (no email service needed); (b) emailed reset link (needs an email provider); (c) both | Open, owner to choose; recommended (a) |
 | OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |
 
 ### BLOCKERS
