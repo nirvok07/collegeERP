@@ -19,7 +19,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (023 on Supabase by hand, untracked; local at 024); SA-5 ❌
 - Approvals capability (P1): ❌ not specified
 - Mobile dashboard + light theme (MUX-1, AD-67): ✅ code, ✅ tests, ✅ APK builds; 🔍 visual check on the phone
-- Dev database on Supabase (ENV-2, AD-68): 🟡 tooling ✅ tested; 🚫 schema rebuild awaits the owner (destructive on an external service)
+- Dev database on Supabase (ENV-2, AD-68): ✅ rebuilt 2026-09-14 (all 24 migrations, tracked); `server/.env` points at Supabase; Owner `nirvokofficial@gmail.com` created there
 - College branding + college-code-first app (BR-1, AD-70): ✅ server, ✅ web, ✅ Flutter, ✅ tests, ✅ APK builds; 🔍 on the phone
 - Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
 - Super admin app, flavor `admin` (SAM-1, AD-72): ✅ sign-in with authenticator, colleges list and detail, add college; ✅ tests; ✅ both APKs build; 🔍 on the phone; SAM-2a ✅ suspend/reactivate/close/reissue; SAM-2b (plan, branding) and SAM-3 (audit, accounts) ❌
@@ -35,7 +35,14 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): BIO-1 ✅ (AD-78, R59; `1de03b6`). Both apps ask for the phone's fingerprint, face or
+Just done (2026-09-14): ENV-2 ✅. The owner ran the rebuild: Supabase now holds all 24 migrations,
+tracked. Its last step failed with 28P01 because Supabase's pooler keeps a role's old password for a
+while after bootstrap re-sets it; finished by hand (new migrator password, logins retried, `.env`
+switched with `LOCAL_*` kept, `BOOTSTRAP_DATABASE_URL` left empty so `npm run migrate` no longer
+re-sets passwords). The rebuild now retries through that delay. Supabase has no colleges yet; the
+Owner signs in there with the same password and sets up a new authenticator (a new account).
+
+Before that, BIO-1 ✅ (AD-78, R59; `1de03b6`). Both apps ask for the phone's fingerprint, face or
 screen lock when opened on a saved session and on every return from the background (not right
 after typing the password); `lib/core/security/`. `local_auth` 3.0.2; `MainActivity` is a
 `FlutterFragmentActivity`; `USE_BIOMETRIC` declared.
@@ -88,7 +95,7 @@ Earlier, 2026-09-13: BR-1 ✅ (`817eb5e`) and OPS-1 ✅ (`5c98d42`). ENV-2 🟡 
 - **OPS-1 (AD-71):** `npm run platform:set-password` (dev only, policy-checked, audited, password
   from the environment, authenticator untouched). Used for `owner@nirvok.com` on local.
 
-ENV-2 🟡 — Supabase as the development and app-testing database (R49, AD-68; tooling `5772603`). Node API unchanged;
+ENV-2 ✅ (2026-09-14) — Supabase as the development and app-testing database (R49, AD-68; tooling `5772603`). Node API unchanged;
 production stays on our own Node + PostgreSQL; `npm test` stays on local `college_erp_test`.
 - Found 2026-09-13: Supabase reachable through its pooler; its `public` schema is untracked (no
   `schema_migrations`, 022's table missing), 39 empty tables plus 3 seeded role definitions.
@@ -97,9 +104,10 @@ production stays on our own Node + PostgreSQL; `npm test` stays on local `colleg
   (`server/scripts/supabase-dev-rebuild.ts`, helpers `src/infrastructure/db/supabase-dev.ts`).
   Refuses in production, without the phrase, or if any table holds non-seed data; clears public,
   provisions roles, migrates, checks the app role connects, rewrites `server/.env` (`LOCAL_*` kept).
-- **Owner action:** run the rebuild (Claude Code's auto mode refused the drop on an external
-  database). Then `npm run dev`, move `.device-test.local.json` aside, `npm run seed:device-test`.
-- Until then `server/.env` still points at local `college_erp_dev`.
+- Done 2026-09-14 by the owner, finished as described under CURRENT SLICE. `server/.env` now names
+  Supabase for the app and migrator roles; local values are `LOCAL_*` for switching back.
+- Test data on Supabase: none yet. `seed:device-test` still holds local credentials in
+  `.device-test.local.json`; move it aside before seeding Supabase.
 
 Previous: MUX-1 ✅ DONE (R48, AD-67, commit `649a45b`): the mobile home is a dashboard in the prototype's
 style (`assets/*.jpeg`); bottom navigation removed; light theme only.
@@ -142,8 +150,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |
 
 ### BLOCKERS
-Supabase schema rebuild (owner runs or approves it; ENV-2). Xcode (iOS, deferred). Drift 6
-(backend push delivery). OD-1 (M10).
+Xcode (iOS, deferred). Drift 6 (backend push delivery). OD-1 (M10).
 
 ## 1. Modules
 M1–M7 built (see `MODULE_REGISTRY.md`). Offline outbox: slice 1 (AD-58) committed; slice 2, the
@@ -207,9 +214,11 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 `test/core/outbox/outbox_test.dart`, `docs/12-mobile-platform-config.md` device table.
 
 ## 9. Known inconsistencies and risks
-- `server/.env` still names local `college_erp_dev` for both roles until the Supabase rebuild runs
-  and rewrites it (AD-68); `SUPABASE_POOLER_DATABASE_URL` (erp_app) and `SUPABASE_DB_URL` (postgres)
-  are its inputs. The direct `db.<ref>.supabase.co` host does not resolve from here; the pooler does.
+- `server/.env` names Supabase (through its session pooler) since 2026-09-14 (AD-68); local values
+  are kept as `LOCAL_*`. The direct `db.<ref>.supabase.co` host does not resolve from here; the
+  pooler does. After any role password change the pooler refuses logins (28P01) for up to a minute.
+- Platform accounts have forced row-level security: the migrator login sees none of them; check
+  them with the admin login.
 - On Supabase, no platform Owner exists after the rebuild. `seed:device-test` creates one
   (`owner+device-test@…`, credentials in `.device-test.local.json`); there is no first-Owner CLI.
 - After reconnecting, the outbox honours its backoff (up to 10 minutes) until the teacher taps

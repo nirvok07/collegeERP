@@ -111,7 +111,7 @@ shows its shape.
 | AD-65 | A seat is a live college account; a lowered limit blocks new accounts and disables none | Active (023 on Supabase by hand; the rebuild tracks it) |
 | AD-66 | Development runs on local PostgreSQL `college_erp_dev`; the npm scripts load `server/.env` | Database superseded by AD-68 |
 | AD-67 | Mobile home is a dashboard, not bottom navigation; light theme only for now | Active |
-| AD-68 | Development and app testing on Supabase PostgreSQL; production on our own Node and PostgreSQL | Active (rebuild awaits owner) |
+| AD-68 | Development and app testing on Supabase PostgreSQL; production on our own Node and PostgreSQL | Active; Supabase rebuilt 2026-09-14 |
 | AD-69 | Onboarding one person at a time; students activate with enrolment number and a one-time code | Active |
 | AD-70 | College code first; the college's name, logo and colour dress the app; public lookup answers alike for unusable colleges | Active |
 | AD-71 | An operator may set a platform account's password, in development only | Active |

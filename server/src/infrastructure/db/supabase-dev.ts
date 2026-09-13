@@ -108,11 +108,16 @@ export function rewriteEnv(text: string, urls: Pick<SupabaseUrls, 'admin' | 'app
   const values = {
     DATABASE_URL: urls.app,
     MIGRATION_DATABASE_URL: urls.migrator,
-    BOOTSTRAP_DATABASE_URL: urls.admin,
+    // Left empty on purpose: the roles exist now, and bootstrapping again on
+    // every `npm run migrate` re-sets their passwords, which Supabase's pooler
+    // keeps refusing for a while afterwards (seen 2026-09-14, error 28P01).
+    BOOTSTRAP_DATABASE_URL: '',
   };
   for (const key of SWITCHED) {
     const current = get(key);
-    if (current !== undefined && get(`LOCAL_${key}`) === undefined && !current.includes('supabase')) {
+    // Only a real local value is worth keeping; an empty one (a key this tool
+    // left blank before) is not.
+    if (current && get(`LOCAL_${key}`) === undefined && !current.includes('supabase')) {
       set(`LOCAL_${key}`, current);
     }
     set(key, values[key]);

@@ -61,6 +61,23 @@ try {
   await admin.end();
 }
 
+/**
+ * Supabase's pooler keeps a role's old password for a while after it is
+ * changed, and answers 28P01 until it catches up (seen 2026-09-14). Retried
+ * for up to a minute rather than failing a rebuild that has otherwise worked.
+ */
+async function throughPooler<T>(label: string, attempt: () => Promise<T>): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await attempt();
+    } catch (e) {
+      if ((e as { code?: string }).code !== '28P01' || i >= 12) throw e;
+      console.log(`${label}: the pooler still has the old password; retrying (${i}/12)`);
+      await new Promise((r) => setTimeout(r, 5000));
+    }
+  }
+}
+
 const app = credentialsOf(urls.app);
 const migrator = credentialsOf(urls.migrator);
 await bootstrapRoles(urls.admin, {
@@ -69,16 +86,18 @@ await bootstrapRoles(urls.admin, {
   migratorRole: migrator.role,
   migratorPassword: migrator.password,
 });
-await migrate(urls.migrator, console.log, app.role);
+await throughPooler('migrate', () => migrate(urls.migrator, console.log, app.role));
 
 // The server's own path: the application role, through the pooler, under RLS.
-const check = createPool(urls.app);
-try {
-  const { rows } = await check.query<{ who: string }>('SELECT current_user AS who');
-  console.log(`application connects as ${rows[0].who}`);
-} finally {
-  await check.end();
-}
+await throughPooler('application check', async () => {
+  const check = createPool(urls.app);
+  try {
+    const { rows } = await check.query<{ who: string }>('SELECT current_user AS who');
+    console.log(`application connects as ${rows[0]!.who}`);
+  } finally {
+    await check.end();
+  }
+});
 
 const envPath = fileURLToPath(new URL('../.env', import.meta.url));
 writeFileSync(envPath, rewriteEnv(readFileSync(envPath, 'utf8'), urls), { mode: 0o600 });

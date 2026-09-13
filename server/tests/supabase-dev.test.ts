@@ -88,7 +88,7 @@ describe('rewriteEnv', () => {
 
     assert.equal(value('DATABASE_URL'), urls.app);
     assert.equal(value('MIGRATION_DATABASE_URL'), urls.migrator);
-    assert.equal(value('BOOTSTRAP_DATABASE_URL'), urls.admin);
+    assert.equal(value('BOOTSTRAP_DATABASE_URL'), '', 'no re-bootstrap on every migrate: the pooler would refuse');
     assert.equal(value('LOCAL_DATABASE_URL'), 'postgres://erp_app:l@localhost:5432/college_erp_dev');
     assert.equal(value('LOCAL_MIGRATION_DATABASE_URL'), 'postgres://erp_migrator:m@localhost:5432/college_erp_dev');
     assert.equal(value('JWT_SECRET'), 's');
