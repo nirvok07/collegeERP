@@ -97,6 +97,18 @@ the host address per run rather than hard-coding it:
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
 ```
 
+**Two apps (AD-72).** Android has two flavors. `college` is the default, so the commands above
+build the college app unchanged (`app-college-debug.apk`). The super admin app is its own install,
+`com.nirvok.collegeErp.admin`, named "Super Admin", with no Firebase:
+
+```
+flutter run   --flavor admin -t lib/main_admin.dart --dart-define=API_BASE_URL=http://10.0.2.2:3000
+flutter build apk --debug --flavor admin -t lib/main_admin.dart
+```
+
+Debug builds print API logs to the console with every secret masked (AD-73); release and
+production builds print none.
+
 **Toolchain on the current development machine**, as `flutter doctor` reports it: Android
 licences are not accepted, and Xcode is incomplete. Neither platform can be built there until
 both are resolved.

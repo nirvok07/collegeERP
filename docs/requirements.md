@@ -109,6 +109,8 @@ than from a feature list.
 | R49 | Development and app testing run against Supabase-hosted PostgreSQL through the Node API, with no Supabase SDK; production runs the same Node server on our own PostgreSQL | Active | [ADR](blueprint/adr.md) AD-68 |
 | R50 | The super admin creates each college with its College Admin; the College Admin onboards teachers and students one at a time; a student activates with enrolment number and a one-time code, and every student account takes a seat | Active | [ADR](blueprint/adr.md) AD-69 |
 | R51 | The app opens on the college code; the college's name, logo and colour then appear on sign-in and inside the app. The super admin and the College Admin can both set them | Active | [ADR](blueprint/adr.md) AD-70, migration 024 |
+| R52 | The super admin has a separate app with its own entry point; the platform is administered only from it (the web console's platform side retires once the app covers it) | Active | [ADR](blueprint/adr.md) AD-72, `lib/main_admin.dart` |
+| R53 | API calls are logged for development through Dio interceptors, never in production and never showing a secret | Active | [ADR](blueprint/adr.md) AD-73 |
 
 ## Assumptions awaiting confirmation
 

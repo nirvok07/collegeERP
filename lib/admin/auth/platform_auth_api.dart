@@ -4,6 +4,7 @@ import '../../core/config/app_config.dart';
 import '../../core/error/failure.dart';
 import '../../core/error/result.dart';
 import '../../core/network/api_client.dart';
+import '../../core/network/api_log_interceptor.dart';
 import '../../core/network/auth_api.dart';
 
 /// What a correct password leads to: never a session (AD-62).
@@ -42,13 +43,13 @@ class TotpEnrolment {
 class PlatformAuthApi {
   PlatformAuthApi([Dio? dio])
       : _dio = dio ??
-            Dio(BaseOptions(
+            withApiLogs(Dio(BaseOptions(
               baseUrl: AppConfig.current.apiBaseUrl,
               connectTimeout: const Duration(seconds: 15),
               receiveTimeout: const Duration(seconds: 30),
               validateStatus: (_) => true,
               contentType: 'application/json',
-            ));
+            )));
 
   final Dio _dio;
 

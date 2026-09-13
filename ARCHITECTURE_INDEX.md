@@ -6,8 +6,8 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-71) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R51) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Decisions (AD-1…AD-73) | `docs/blueprint/adr.md` |
+| Requirements register (R1…R53) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
@@ -21,7 +21,9 @@ Pointers, not content. Read the linked file for the decision itself.
 
 Server `server/`: Node 24, Fastify 5, `pg` without ORM, zod, node:test. Web `clients/web/`: React 19,
 Vite, TypeScript, Vitest (AD-54). Mobile at repo root `lib/`: Flutter, Cubit, Dio, get_it,
-Navigator `onGenerateRoute`, Drift over SQLite3MultipleCiphers (AD-59). No Flutter Web.
+Navigator `onGenerateRoute`, Drift over SQLite3MultipleCiphers (AD-59). No Flutter Web. Two Android
+apps: flavor `college` (`lib/main.dart`, default) and `admin` (`lib/main_admin.dart`, `lib/admin/`,
+AD-72). API logs: one redacting Dio interceptor, debug only (AD-73).
 Firebase: FCM, Remote Config, Crashlytics only.
 
 ## Development environment (AD-68, AD-66)
@@ -113,3 +115,5 @@ shows its shape.
 | AD-69 | Onboarding one person at a time; students activate with enrolment number and a one-time code | Active |
 | AD-70 | College code first; the college's name, logo and colour dress the app; public lookup answers alike for unusable colleges | Active |
 | AD-71 | An operator may set a platform account's password, in development only | Active |
+| AD-72 | The super admin has its own Flutter app (flavor `admin`); the web platform console retires at parity | Active (SAM-1) |
+| AD-73 | API logs in development only, through one redacting Dio interceptor | Active |

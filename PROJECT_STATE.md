@@ -22,13 +22,24 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Dev database on Supabase (ENV-2, AD-68): 🟡 tooling ✅ tested; 🚫 schema rebuild awaits the owner (destructive on an external service)
 - College branding + college-code-first app (BR-1, AD-70): ✅ server, ✅ web, ✅ Flutter, ✅ tests, ✅ APK builds; 🔍 on the phone
 - Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
+- Super admin app, flavor `admin` (SAM-1, AD-72): ✅ sign-in with authenticator, colleges list and detail, add college; ✅ tests; ✅ both APKs build; 🔍 on the phone; SAM-2/SAM-3 ❌
+- API logs via Dio interceptor (LOG-1, AD-73): ✅ debug only, secrets masked, tested
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-13): BR-1 ✅ (`817eb5e`) and OPS-1 ✅ (`5c98d42`). ENV-2 🟡 below still awaits the owner's rebuild.
+Just done (2026-09-14): SAM-1 ✅ and LOG-1 ✅. ENV-2 🟡 still awaits the owner's rebuild.
+- **SAM-1 (R52, AD-72):** `lib/main_admin.dart` + `lib/admin/`, Android flavor `admin`
+  (`com.nirvok.collegeErp.admin`, "Super Admin", no Firebase). Platform sign-in (password → code,
+  or authenticator setup by key), colleges list with totals, college detail (seats, administrator,
+  branding), add college with a one-time invitation screen (code + token, copyable). Server
+  unchanged. Web platform console kept until SAM-2/SAM-3 reach parity, then retired.
+- **LOG-1 (R53, AD-73):** `ApiLogInterceptor` on every client's own Dio, debug non-production only;
+  headers never printed; passwords, tokens, keys and platform auth codes masked.
+
+Earlier, 2026-09-13: BR-1 ✅ (`817eb5e`) and OPS-1 ✅ (`5c98d42`). ENV-2 🟡 below still awaits the owner's rebuild.
 - **BR-1 (R51, AD-70, migration 024):** the app opens on the college code
   (`lib/features/auth/presentation/college_code_screen.dart`); `GET /v1/public/colleges/:code`
   returns name, logo URL and colour, one identical 404 for unknown/suspended/closed; sign-in and the
@@ -61,7 +72,16 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ST-1: student accounts and "My attendance" on mobile
+### NEXT SLICE — WEB-1: College Admin activation and sign-in on the web console
+- **Why next:** a college created from the super admin app (or the web) gets an administrator who
+  cannot accept the invitation or sign in anywhere: the web console only signs in platform
+  accounts and has no college accept-invitation page, and the phone app has neither. The College
+  pages already built (People, Organisation, College, Students…) are unreachable until then.
+- **To build:** web college sign-in (college code → email + password, `POST /v1/auth/login`) and
+  `/accept-invite?college=&token=` (the link the web already generates); no server change expected.
+- **Then:** SAM-2 (lifecycle, plan, branding, reissue in the admin app), then ST-1 below.
+
+### AFTER THAT — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
   screens (attendance %, fees, circulars) are student surfaces. Attendance data already exists
   (M6); only the student role, the account and a self-scoped read are missing. Fees (D1) and
@@ -123,7 +143,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 412 backend, 193 web, 156 Flutter, all passing.
+Tests: 412 backend, 193 web, 169 Flutter, all passing.
 
 ## 5. Blockers
 - iOS: Xcode not installed (Command Line Tools only).
@@ -174,5 +194,9 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
   Owner creates it in the console (or run OPS-1 there after it exists).
 - `server/.env.example` has an uncommitted edit containing the real Supabase password; it must
   go back to the placeholder and never be committed.
+- A College Admin cannot sign in to the web console or accept an invitation in any UI (WEB-1).
+  The earlier credentials table listing "College admin → Web console" was wrong.
+- The super admin app has no app lock; an unlocked phone holding an Owner session is platform
+  access. Biometric lock recommended before production (AD-72). iOS flavors not configured.
 - The dev server on port 3000 was restarted from a Claude session; restart `npm run dev` in a
   terminal to own it.

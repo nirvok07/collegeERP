@@ -21,6 +21,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures {
+        resValues = true
+    }
+
     defaultConfig {
         // Requirement R2. Must match a client registered in the Firebase project:
         // the google-services plugin refuses to build when google-services.json

@@ -37,7 +37,7 @@ class CollegeDetailScreen extends StatelessWidget {
               _ when detail == null => const SkeletonList(rows: 4),
               _ => RefreshIndicator(
                 onRefresh: () => context.read<CollegeDetailCubit>().load(),
-                child: _Detail(detail: detail!),
+                child: _Detail(detail: detail),
               ),
             },
           );

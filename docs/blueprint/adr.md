@@ -1530,3 +1530,44 @@ policy applies; the password is read from the environment, never an argument; th
 as the system with the operator named; the authenticator is untouched, so a password alone still
 opens no platform session (AD-62). The command refuses when `NODE_ENV=production`: there, a lost
 password is an Owner reissuing the invitation (SA-3a). It creates no accounts.
+
+---
+
+**AD-72 — The super admin has its own Flutter app; the platform is administered only from it once it reaches parity**
+
+*Status.* Decided by the owner, 2026-09-14 ("super admin ka alag main; super admin sirf isi se
+khulega"), choosing a separate Flutter app over a separate web console. Amends AD-24 and AD-32 for
+the platform: platform administration moves from the web console to this app. SAM-1 built.
+
+*Decision.*
+1. One codebase, two Android apps: flavor `college` (canonical id `com.nirvok.collegeErp`, entry
+   `lib/main.dart`, the default flavor) and flavor `admin` (`com.nirvok.collegeErp.admin`, entry
+   `lib/main_admin.dart`, named "Super Admin"). Admin code lives under `lib/admin/` and is reachable
+   only from its entry, so the college app never contains platform screens.
+2. The admin app has no Firebase: no client is registered for its id and it needs no push; its
+   Gradle variants skip the google-services and Crashlytics tasks.
+3. Sign-in is the platform's own, unchanged on the server: password, then an authenticator code, or
+   setting one up (the key is shown with a copy button; on a phone the authenticator is usually on
+   the same device). The resulting session is kept, renewed and ended by the shared
+   `SessionManager` (refresh token in platform secure storage, AD-25). A session whose
+   `/v1/auth/me` is not a platform actor is signed out: a college account never opens this app.
+4. The web console's platform side stays until the app covers everything it does (SAM-2: lifecycle,
+   plan and seats, branding, reissue; SAM-3: audit, accounts and roles), then its platform sign-in
+   is removed. Until then both work; after, the super admin opens only in the app.
+
+*Not in this decision.* iOS flavors (no Xcode). An app lock (biometric) for a phone holding an
+Owner session is recommended before production; recorded as a risk.
+
+---
+
+**AD-73 — API logs in development only, through one redacting Dio interceptor**
+
+*Status.* Decided by the owner, 2026-09-14 ("use dio interceptors for api logs").
+
+*Decision.* Every client builds its Dio through `withApiLogs` (`lib/core/network/api_log_interceptor.dart`),
+which adds `ApiLogInterceptor` only in debug, non-production builds. It prints method, path, status,
+time and a truncated body. Headers are never printed (they carry the bearer token), and passwords,
+access, refresh, invitation and challenge tokens, authenticator keys and push tokens are masked
+wherever they sit in a body; on the platform sign-in endpoints `code` (the authenticator code) is
+masked too. A Dio passed in by a test is left alone. Dio's own `LogInterceptor` is not used, because
+it prints headers and bodies unredacted.
