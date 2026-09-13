@@ -1,3 +1,4 @@
+import { PgCollegeOverviewReader } from './modules/institution/infrastructure/overview.ts';
 /**
  * Composition root. The only place where infrastructure adapters meet
  * application ports. Nothing else constructs a repository or an adapter.
@@ -10,6 +11,7 @@ import type {
 } from './modules/identity/application/manage-platform-accounts.ts';
 import { TenantAccessGate } from './infrastructure/http/tenant-access.ts';
 import type { LifecycleDeps } from './modules/institution/application/manage-lifecycle.ts';
+import type { ChangePasswordDeps } from './modules/identity/application/change-password.ts';
 import type { PlatformAuditDeps } from './modules/institution/application/platform-audit.ts';
 import type { Config } from './config/config.ts';
 import { createPool, type Pool } from './infrastructure/db/pool.ts';
@@ -95,6 +97,7 @@ export interface Container {
   authenticate: AuthenticateDeps;
   acceptInvitation: AcceptInvitationDeps;
   refreshSession: RefreshSessionDeps;
+  changePassword: ChangePasswordDeps;
   managePeople: ManagePeopleDeps;
   manageDevices: ManageDevicesDeps;
   roleDefinitions: PgRoleDefinitionRepository;
@@ -111,6 +114,7 @@ export interface Container {
   attendance: AttendanceDeps;
   assessment: AssessmentDeps;
   institutions: PgInstitutionRepository;
+  collegeOverview: PgCollegeOverviewReader;
   tenantAccess: TenantAccessGate;
   platformAuthority: PlatformAuthorityReader;
   managePlatformAccounts: ManagePlatformAccountsDeps;
@@ -185,6 +189,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     media,
     uow,
     institutions,
+    collegeOverview: new PgCollegeOverviewReader(),
     tenantAccess,
     platformAuthority: {
       forAccount: (id) => uow.run(null, (tx) => platformAdmin.authorityOf(tx, id)),
@@ -214,6 +219,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       platformMfa,
     },
     acceptInvitation: { uow, invitations, accounts, credentials, audit, hasher, tokens, clock, ids },
+    changePassword: { uow, credentials, refreshTokens, hasher, audit, ids, clock },
     refreshSession: {
       uow, refreshTokens, accounts, platformAccounts, audit, tokens, clock, ids,
       refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS, tenantAccess,

@@ -368,6 +368,18 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
     return sendOk(reply, profileJson(changed.value));
   });
 
+  /* ADM-1: the College Admin dashboard's numbers, for their own college only. */
+  app.get('/college/overview', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'institution.read', institutionScope()))) return reply;
+    const tenantId = req.actor!.tenantId!;
+    const o = await c.uow.run(tenantId, (tx) => c.collegeOverview.read(tx));
+    return sendOk(reply, {
+      staff: o.staff, students: o.students, departments: o.departments, programs: o.programs,
+      sections: o.sections, offerings: o.offerings, rooms: o.rooms,
+      pending_invitations: o.pendingInvitations,
+    });
+  });
+
   /*
    * SA-2: platform events, newest first, keyset-paginated (AD-61). Only events
    * a platform account caused; a college's own activity is not visible here.

@@ -5,6 +5,7 @@ import 'package:college_erp/core/widgets/screen_state.dart';
 import 'package:college_erp/features/dashboard/domain/dashboard_summary.dart';
 import 'package:college_erp/features/dashboard/presentation/dashboard_cubit.dart';
 import 'package:college_erp/core/session/college_brand.dart';
+import 'package:college_erp/features/dashboard/data/overview_api.dart';
 import 'package:college_erp/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:college_erp/features/delivery/domain/class_session.dart';
 import 'package:college_erp/features/delivery/domain/delivery_repository.dart';
@@ -325,5 +326,42 @@ void main() {
       expect(find.text('Teaching record'), findsNothing);
       expect(find.text('Schedule'), findsNothing);
     });
+
+    testWidgets("a College Admin gets the college's dashboard, not a teacher's", (tester) async {
+      final cubit = DashboardCubit(
+        delivery: _FakeDelivery(const Ok([])),
+        teaching: _FakeTeaching(const Ok([])),
+        overview: _FakeOverview(),
+        today: today,
+        clock: () => '09:30',
+      );
+      await pump(
+        tester,
+        const Authority(
+          permissions: {
+            'institution.read', 'institution.manage', 'person.read', 'account.manage', 'role.assign',
+            'student.manage', 'session.read', 'offering.read',
+          },
+          hasAccess: true,
+        ),
+        cubit,
+      );
+
+      expect(find.text('Your college'), findsOneWidget);
+      expect(find.text('340'), findsOneWidget, reason: 'students, in the header');
+      expect(find.text('2 invitations not accepted yet'), findsOneWidget);
+      expect(find.text('Manage your college'), findsOneWidget);
+      expect(find.text('Onboarding'), findsOneWidget);
+      expect(find.text('12 staff'), findsOneWidget);
+      expect(find.text('Teaching record'), findsNothing, reason: 'no teaching record for an admin who does not teach');
+      expect(find.text("Today's classes"), findsNothing);
+    });
   });
+}
+
+class _FakeOverview implements OverviewRepository {
+  @override
+  Future<Result<CollegeOverview>> load() async => const Ok(CollegeOverview(
+    staff: 12, students: 340, departments: 4, programs: 3, sections: 6, offerings: 18, rooms: 9, pendingInvitations: 2,
+  ));
 }

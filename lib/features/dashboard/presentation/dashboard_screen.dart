@@ -17,6 +17,7 @@ import '../../delivery/domain/delivery_repository.dart';
 import '../../teaching/domain/teaching_offering.dart';
 import '../../teaching/domain/teaching_repository.dart';
 import '../../teaching/presentation/offering_sheet.dart';
+import '../data/overview_api.dart';
 import '../domain/dashboard_summary.dart';
 import 'dashboard_cubit.dart';
 
@@ -45,6 +46,7 @@ class DashboardScreen extends StatelessWidget {
                 DashboardCubit(
                   delivery: authority.can('session.read') ? locator<DeliveryRepository>() : null,
                   teaching: authority.can('offering.read') ? locator<TeachingRepository>() : null,
+                  overview: authority.can('institution.read') ? locator<OverviewRepository>() : null,
                 ))
             ..load(),
       child: _DashboardView(authority: authority, college: college),
@@ -60,6 +62,13 @@ class _DashboardView extends StatelessWidget {
 
   bool get _schedule => authority.can('session.read');
   bool get _teaching => authority.can('offering.read');
+
+  /// ADM-1: whoever manages the college gets the college's dashboard, not a
+  /// teacher's with a button added.
+  bool get _admin => authority.can('institution.manage');
+
+  /// An administrator who also teaches keeps the teaching parts.
+  static bool _teaches(DashboardSummary s) => s.courses.isNotEmpty || s.weekTotal > 0 || s.pulse.total > 0;
 
   /// Opens a surface, then re-reads on return: marking a class or taking a
   /// register there changes what this screen should say.
@@ -91,6 +100,9 @@ class _DashboardView extends StatelessWidget {
                     refreshing: state.status == LoadStatus.refreshing,
                     onProfile: () => _open(context, Routes.account, refresh: false),
                     onWaiting: () => _open(context, Routes.schedule),
+                    admin: _admin,
+                    overview: state.overview,
+                    onPeople: () => _open(context, Routes.people, refresh: false),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
@@ -103,12 +115,20 @@ class _DashboardView extends StatelessWidget {
                       delegate: SliverChildListDelegate(_stagger(context, [
                         if (state.failure != null) _InlineError(message: state.failure!.message),
                         if (_schedule) const PendingWritesBar(),
-                        _Shortcuts(
-                          authority: authority,
-                          college: college,
-                          open: (r, refresh, args) => _open(context, r, refresh: refresh, arguments: args),
-                        ),
-                        if (_schedule) ...[
+                        if (_admin)
+                          _AdminModules(
+                            authority: authority,
+                            college: college,
+                            overview: state.overview,
+                            open: (r, refresh, args) => _open(context, r, refresh: refresh, arguments: args),
+                          )
+                        else
+                          _Shortcuts(
+                            authority: authority,
+                            college: college,
+                            open: (r, refresh, args) => _open(context, r, refresh: refresh, arguments: args),
+                          ),
+                        if (_schedule && (!_admin || _teaches(summary))) ...[
                           _SectionTitle(
                             title: "Today's classes",
                             action: 'View all',
@@ -117,7 +137,7 @@ class _DashboardView extends StatelessWidget {
                           _TodayClasses(summary: summary, onOpen: () => _open(context, Routes.schedule)),
                           _WeekCard(summary: summary),
                         ],
-                        if (_teaching) ...[
+                        if (_teaching && (!_admin || summary.courses.isNotEmpty)) ...[
                           _SectionTitle(
                             title: 'My courses',
                             count: summary.courses.length,
@@ -173,6 +193,9 @@ class _DashboardHeader extends StatelessWidget {
     required this.refreshing,
     required this.onProfile,
     required this.onWaiting,
+    this.admin = false,
+    this.overview,
+    this.onPeople,
   });
 
   final DashboardSummary summary;
@@ -185,13 +208,19 @@ class _DashboardHeader extends StatelessWidget {
   final VoidCallback onProfile;
   final VoidCallback onWaiting;
 
+  /// ADM-1: the college's numbers instead of a teaching record.
+  final bool admin;
+  final CollegeOverview? overview;
+  final VoidCallback? onPeople;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final waiting = summary.needsMarking.isNotEmpty;
+    final waiting = admin ? (overview?.pendingInvitations ?? 0) > 0 : summary.needsMarking.isNotEmpty;
+    final panel = admin || showDay;
     return SliverAppBar(
       pinned: true,
-      expandedHeight: showDay ? kToolbarHeight + 232 + (waiting ? 52 : 0) : null,
+      expandedHeight: panel ? kToolbarHeight + 232 + (waiting ? 52 : 0) : null,
       backgroundColor: AppColors.navy,
       foregroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
@@ -223,7 +252,7 @@ class _DashboardHeader extends StatelessWidget {
       bottom: refreshing
           ? const PreferredSize(preferredSize: Size.fromHeight(2), child: LinearProgressIndicator(minHeight: 2))
           : null,
-      flexibleSpace: showDay
+      flexibleSpace: panel
           ? FlexibleSpaceBar(
               collapseMode: CollapseMode.pin,
               background: SafeArea(
@@ -243,7 +272,9 @@ class _DashboardHeader extends StatelessWidget {
                       alignment: Alignment.topCenter,
                       child: SizedBox(
                         width: MediaQuery.sizeOf(context).width - AppSpacing.base * 2,
-                        child: _HeaderPanel(summary: summary, onWaiting: onWaiting),
+                        child: admin
+                            ? _AdminPanel(overview: overview, onPending: onPeople)
+                            : _HeaderPanel(summary: summary, onWaiting: onWaiting),
                       ),
                     ),
                   ),
@@ -422,6 +453,215 @@ class _HeaderStat extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// ADM-1: the college at a glance, white on navy, as the teacher's panel is.
+class _AdminPanel extends StatelessWidget {
+  const _AdminPanel({required this.overview, required this.onPending});
+
+  final CollegeOverview? overview;
+  final VoidCallback? onPending;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final o = overview;
+    final pending = o?.pendingInvitations ?? 0;
+    int n(int? v) => v ?? 0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Your college',
+          style: theme.textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            _HeaderStat(value: n(o?.staff), label: 'Staff', dot: AppColors.infoDark),
+            _HeaderStat(value: n(o?.students), label: 'Students', dot: AppColors.success),
+            _HeaderStat(value: n(o?.departments), label: 'Departments', dot: AppColors.warningDark),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(color: AppColors.navyRaised, borderRadius: BorderRadius.circular(AppRadius.card)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.menu_book_rounded, size: 16, color: AppColors.warningDark),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Teaching setup',
+                    style: theme.textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  _HeaderStat(value: n(o?.programs), label: 'Programs', dot: AppColors.success),
+                  _HeaderStat(value: n(o?.sections), label: 'Sections', dot: AppColors.warningDark),
+                  _HeaderStat(value: n(o?.offerings), label: 'Courses', dot: AppColors.infoDark),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (pending > 0) ...[
+          const SizedBox(height: AppSpacing.md),
+          Material(
+            color: Colors.white.withValues(alpha: 0.08),
+            shape: const StadiumBorder(),
+            child: InkWell(
+              customBorder: const StadiumBorder(),
+              onTap: onPending,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: AppSpacing.sm + 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.mark_email_unread_rounded, size: 18, color: AppColors.warningDark),
+                    const SizedBox(width: AppSpacing.sm),
+                    Flexible(
+                      child: Text(
+                        pending == 1 ? '1 invitation not accepted yet' : '$pending invitations not accepted yet',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// ADM-1: what the College Admin manages from the phone, each tile present
+/// only with its permission, and an honest line about what comes next.
+class _AdminModules extends StatelessWidget {
+  const _AdminModules({required this.authority, required this.college, required this.overview, required this.open});
+
+  final Authority authority;
+  final CollegeBrand? college;
+  final CollegeOverview? overview;
+  final void Function(String route, bool refresh, Object? arguments) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canAppoint = authority.can('account.manage') && authority.can('role.assign');
+    final canAdmit = authority.can('student.manage');
+    final o = overview;
+    final tiles = <({String title, String subtitle, IconData icon, Color color, String route, Object? args, bool refresh})>[
+      if (canAppoint || canAdmit)
+        (
+          title: 'Onboarding',
+          subtitle: 'Appoint teachers, admit students',
+          icon: Icons.person_add_alt_1_rounded,
+          color: AppColors.success,
+          route: Routes.onboarding,
+          args: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
+          refresh: true,
+        ),
+      if (authority.can('person.read')) ...[
+        (
+          title: 'People',
+          subtitle: o == null ? 'Staff and roles' : '${o.staff} staff',
+          icon: Icons.people_rounded,
+          color: AppColors.info,
+          route: Routes.people,
+          args: null,
+          refresh: false,
+        ),
+        (
+          title: 'Organisation',
+          subtitle: o == null ? 'Campuses and departments' : '${o.departments} departments',
+          icon: Icons.account_tree_rounded,
+          color: AppColors.warning,
+          route: Routes.organisation,
+          args: null,
+          refresh: false,
+        ),
+      ],
+      (
+        title: 'Profile',
+        subtitle: 'Your details and password',
+        icon: Icons.account_circle_rounded,
+        color: AppColors.primary,
+        route: Routes.account,
+        args: null,
+        refresh: false,
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Manage your college', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppSpacing.sm),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: AppSpacing.sm,
+            crossAxisSpacing: AppSpacing.sm,
+            childAspectRatio: 1.55,
+            children: [
+              for (final t in tiles)
+                _Panel(
+                  onTap: () => open(t.route, t.refresh, t.args),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: t.color.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(AppRadius.card),
+                        ),
+                        child: Icon(t.icon, color: t.color, size: 20),
+                      ),
+                      const Spacer(),
+                      Text(t.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                      Text(
+                        t.subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _Panel(
+            color: theme.colorScheme.surfaceContainerLow,
+            bordered: false,
+            child: Text(
+              'Coming next to the app: programs, sections and courses, the timetable and the student list. '
+              'Until then they are on the web console.',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1668,3 +1668,24 @@ session without deleting unsent offline changes, which stay encrypted on the pho
 person signs in again (the lock sits above the app's screens, so it cannot ask first).
 
 *Android.* `MainActivity` is a `FlutterFragmentActivity`, and the manifest declares `USE_BIOMETRIC`.
+
+---
+
+**AD-79 — The College Admin runs the college from the phone: its own dashboard, its own password**
+
+*Status.* Decided by the owner, 2026-09-14 (R65, R66). Amends AD-32 for the College Admin's
+modules, one slice at a time; AD-76 was the first. Built so far as ADM-1.
+
+*Decision.* Whoever holds `institution.manage` gets the college's dashboard, not a teacher's: the
+navy header shows staff, students, departments, programs, sections and courses from
+`GET /v1/college/overview` (counts only, `institution.read`, one college under row-level security)
+and a pill for invitations not yet accepted; below it, "Manage your college" is a grid of the
+modules the admin may use, each present only with its permission. The teaching parts stay only for
+an admin who also teaches. Creating departments, programs, sections and courses (with their
+teachers), the timetable and the student list come to the phone as ADM-2…ADM-6, on the endpoints
+the web already uses; until then a line on the dashboard says they are on the web.
+
+*Change password.* `POST /v1/auth/password` (`current_password`, `new_password`), for a signed-in
+college account only. The current password must be right, the new one meets the password policy
+and differs from it. Every session of the account ends, this one included; audited
+`account.password_changed`. The app's Profile has "Change password" and signs the phone out after.

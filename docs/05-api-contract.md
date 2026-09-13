@@ -51,6 +51,8 @@ Error codes the client handles explicitly: `UNAUTHENTICATED`, `TOKEN_EXPIRED`,
 | POST | `/auth/forgot-password` | Sends a reset link |
 | POST | `/auth/accept-invite` | First-time password set for an invited user |
 | GET | `/auth/me` | Current user, tenant, role and permission set |
+| POST | `/auth/password` | A college account changes its own password (`current_password`, `new_password`); ends every session (AD-79) |
+| GET | `/college/overview` | The college's counts for the admin dashboard; `institution.read` (AD-79) |
 
 Access token lives 15 minutes. Refresh token lives 30 days and rotates on every use. Reuse of
 a consumed refresh token revokes the whole family and forces re-login, which is the standard

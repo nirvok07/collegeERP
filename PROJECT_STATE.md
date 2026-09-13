@@ -29,12 +29,28 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard (college overview) and change password, ✅ tests; 🔍 on the phone; ADM-2 organisation, ADM-3 programs, ADM-4 sections and courses, ADM-5 timetable, ADM-6 students ❌
+- Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): ADM-1 ✅ (AD-79; R65, R66). The owner found the College Admin's dashboard
+was a teacher's, and no way to change a password.
+- Server: `GET /v1/college/overview` (counts under RLS, `institution.read`;
+  `modules/institution/infrastructure/overview.ts`) and `POST /v1/auth/password`
+  (`identity/application/change-password.ts`; ends every session, audited). Tests
+  `college-overview.test.ts`, `change-password.test.ts`.
+- App: an admin (`institution.manage`) sees the college's numbers in the header, a pill for
+  unaccepted invitations, and "Manage your college" (Onboarding, People, Organisation, Profile);
+  teaching parts only if they teach. Profile → Change password (`lib/features/account/`).
+- Tested: server 421/421, Flutter 193/193 (the SQLCipher smoke test failed once under load and
+  passed on rerun), analyze clean. Not tested: on the phone; web change password not built.
+- Inbox absorbed: Firebase Crashlytics and "all Firebase things" as R67, R68 (already built; console
+  checks remain for the owner).
+
 Just done (2026-09-14): ENV-2 ✅. The owner ran the rebuild: Supabase now holds all 24 migrations,
 tracked. Its last step failed with 28P01 because Supabase's pooler keeps a role's old password for a
 while after bootstrap re-sets it; finished by hand (new migrator password, logins retried, `.env`
@@ -119,7 +135,13 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ST-1: student accounts and "My attendance" on mobile
+### NEXT SLICE — ADM-2: the College Admin creates campuses and departments on the phone
+- **Why next:** the owner's request (R66): the admin creates things from the app, and onboarding
+  needs departments first. Endpoints exist (web); the phone's Organisation screen only reads.
+- **Then:** ADM-3 programs, ADM-4 sections and courses with their teachers (answers OD-MOB-2 in
+  part), ADM-5 timetable, ADM-6 students; then ST-1 below.
+
+### LATER — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
   screens (attendance %, fees, circulars) are student surfaces. Attendance data already exists
   (M6); only the student role, the account and a self-scoped read are missing. Fees (D1) and
@@ -144,7 +166,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
-| OD-MOB-1 | Should every module be on mobile too (R63)? | Mobile has teaching, attendance, marks and onboarding; curriculum, sections, timetable planning, verification and platform are web-only (AD-24, AD-32) | Mobile scope | Keep the split; move chosen modules | Open, owner asked |
+| OD-MOB-1 | Should every module be on mobile too (R63)? | Mobile has teaching, attendance, marks and onboarding; curriculum, sections, timetable planning, verification and platform are web-only (AD-24, AD-32) | Mobile scope | Keep the split; move chosen modules | Partly resolved by AD-79: the College Admin's modules move (ADM-1…6); the rest open |
 | OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | Different modules, permissions and screens | M3/M4 on mobile | Sections; timetable slots and sessions; both | Open |
 | OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
 | OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |

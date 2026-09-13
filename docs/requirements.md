@@ -120,8 +120,12 @@ than from a feature list.
 | R60 | The dashboard shows no greeting and none of the user's own details (name, email) | Active, built (UX-2) | [ADR](blueprint/adr.md) AD-77 |
 | R61 | The user's own details are visible only in their Profile | Active, built (UX-2) | [ADR](blueprint/adr.md) AD-77 |
 | R62 | Classes can be created from the app | Open: which "classes" (a cohort section, or timetable sessions) is OD-MOB-2 | [PROJECT_STATE](../PROJECT_STATE.md) |
-| R63 | "Will all modules be on mobile too?" | Open question, OD-MOB-1 | [PROJECT_STATE](../PROJECT_STATE.md) |
+| R63 | "Will all modules be on mobile too?" | Partly answered by AD-79: the College Admin's modules come to the phone, one slice each (ADM-1…ADM-6); OD-MOB-1 stays open for the rest | [PROJECT_STATE](../PROJECT_STATE.md) |
 | R64 | The dashboard's app bar is a collapsing sliver app bar in the style of the prototype's attendance screen | Active, built (UX-2) | [ADR](blueprint/adr.md) AD-77, `assets/` |
+| R65 | A college user changes their own password from the app's Profile | Active, built on mobile (ADM-1); web ❌ | [ADR](blueprint/adr.md) AD-79, `POST /v1/auth/password` |
+| R66 | The College Admin's dashboard is the college's (its numbers and the modules it manages, where the admin creates things), not a teacher's | Active; ADM-1 built the dashboard; creating organisation, programs, sections, timetable and students on the phone is ADM-2…ADM-6 | [ADR](blueprint/adr.md) AD-79 |
+| R67 | Firebase Crashlytics in the college app | Active, built earlier (initialisation verified on Android 2026-09-13); a first crash report in the Firebase console 🔍 | [Mobile Platform Configuration](12-mobile-platform-config.md) |
+| R68 | "All the Firebase things" | Active, read as the approved set: Core, Crashlytics, Remote Config, Messaging, all built. Not Firebase Auth, Firestore or Storage (identity and data are the ERP's own). Open: console test push and crash report (owner), backend push delivery (Drift 6) | [Mobile Platform Configuration](12-mobile-platform-config.md) |
 
 ## Assumptions awaiting confirmation
 

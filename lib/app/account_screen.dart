@@ -9,6 +9,7 @@ import '../core/session/session_manager.dart';
 import '../core/session/session_store.dart';
 import '../core/widgets/college_logo.dart';
 import '../core/widgets/screen_state.dart';
+import 'routes.dart';
 import 'sign_out.dart';
 
 /// The person's own details, and only here (UX-2): the dashboard no longer
@@ -133,6 +134,17 @@ class _Profile extends StatelessWidget {
                       ),
                   ],
                 ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            side: BorderSide(color: scheme.outlineVariant),
+          ),
+          leading: Icon(Icons.password_rounded, color: scheme.primary),
+          title: const Text('Change password'),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () => Navigator.of(context).pushNamed(Routes.changePassword),
         ),
         const SizedBox(height: AppSpacing.sm),
         ListTile(

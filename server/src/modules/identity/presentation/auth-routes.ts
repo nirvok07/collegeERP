@@ -13,6 +13,7 @@ import {
   type PlatformChallenge,
 } from '../application/platform-mfa.ts';
 import { endSession, refreshSession } from '../application/refresh-session.ts';
+import { changePassword } from '../application/change-password.ts';
 import { registerDevice, revokeDevicesForAccount } from '../application/manage-devices.ts';
 
 const platformLogin = z.object({
@@ -23,6 +24,10 @@ const platformLogin = z.object({
 const challengeBody = z.object({ challenge_token: z.string().min(10).max(200) });
 const codeBody = challengeBody.extend({ code: z.string().max(12) });
 const platformAccept = z.object({ token: z.string().min(10).max(200), password: z.string().min(1).max(200) });
+const passwordBody = z.object({
+  current_password: z.string().min(1).max(200),
+  new_password: z.string().min(1).max(200),
+});
 
 const stepJson = (s: PlatformChallenge) => ({
   step: s.step, challenge_token: s.challengeToken, expires_at: s.expiresAt.toISOString(),
@@ -145,6 +150,30 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     });
     if (!result.ok) return sendFailure(reply, result.error);
     return sendOk(reply, { account_id: result.value.accountId });
+  });
+
+  /**
+   * ADM-1: a college account changes its own password. Every session of the
+   * account then ends, this one included, so the cookie is cleared too.
+   */
+  app.post('/auth/password', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId || !req.actor.accountId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const parsed = passwordBody.safeParse(req.body);
+    if (!parsed.success) {
+      return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter your current password and a new one.'));
+    }
+    const result = await changePassword(c.changePassword, {
+      tenantId: req.actor.tenantId,
+      accountId: req.actor.accountId,
+      personId: req.actor.sub,
+      currentPassword: parsed.data.current_password,
+      newPassword: parsed.data.new_password,
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    reply.clearCookie(REFRESH_COOKIE, refreshCookieOptions(c.config));
+    return sendOk(reply, { changed: true, signed_out: true });
   });
 
   /**
