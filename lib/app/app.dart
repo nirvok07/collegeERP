@@ -20,6 +20,7 @@ import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../core/network/auth_api.dart';
 import '../core/session/college_brand.dart';
 import '../features/auth/presentation/college_code_screen.dart';
+import '../core/security/app_lock.dart';
 
 class CollegeApp extends StatefulWidget {
   const CollegeApp({super.key});
@@ -40,6 +41,10 @@ class _CollegeAppState extends State<CollegeApp> {
 
   /// The college this phone is for (AD-70); null until the first screen is answered.
   CollegeBrand? _college;
+
+  /// BIO-1: true after the person typed their password in this run, so the
+  /// lock does not ask again at once; false when the app opened on a saved session.
+  bool _freshSignIn = false;
 
   @override
   void initState() {
@@ -133,6 +138,7 @@ class _CollegeAppState extends State<CollegeApp> {
       switch (event) {
         case SignedIn():
           _phase = _Phase.signedIn;
+          _freshSignIn = true;
           _degradedMessage = null;
           _authority = null;
           _authorityFailure = null;
@@ -141,6 +147,7 @@ class _CollegeAppState extends State<CollegeApp> {
           unawaited(locator<DeviceRegistration>().register());
         case SignedOut():
           _phase = _Phase.signedOut;
+          _freshSignIn = false;
           _degradedMessage = null;
           _authority = null;
           FirebaseServices.instance.identify(null);
@@ -159,6 +166,17 @@ class _CollegeAppState extends State<CollegeApp> {
     });
   }
 
+  /// BIO-1: every screen of a signed-in session sits behind the phone's lock.
+  Widget _lockWhenSignedIn(Widget content) => _phase != _Phase.signedIn
+      ? content
+      : AppLockGate(
+          unlock: locator<DeviceUnlock>(),
+          college: _college,
+          startLocked: !_freshSignIn,
+          onSignOut: () => unawaited(_session.signOut()),
+          child: content,
+        );
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -173,7 +191,7 @@ class _CollegeAppState extends State<CollegeApp> {
       themeMode: ThemeMode.light,
       // Above every route, because without tabs most screens are pushed and
       // the notice must stay visible wherever the person is.
-      builder: (context, child) {
+      builder: (context, child) => _lockWhenSignedIn(Builder(builder: (context) {
         final message = _phase == _Phase.signedIn ? _degradedMessage : null;
         if (message == null) return child!;
         return Column(
@@ -184,7 +202,7 @@ class _CollegeAppState extends State<CollegeApp> {
             ),
           ],
         );
-      },
+      })),
       home: switch (_phase) {
         _Phase.restoring => _RestoringScreen(offlineMessage: _degradedMessage),
         // The college code comes first; everything after wears the college.

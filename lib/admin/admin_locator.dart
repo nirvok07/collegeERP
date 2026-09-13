@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import '../core/network/api_client.dart';
 import '../core/network/auth_api.dart';
 import '../core/session/session_manager.dart';
+import '../core/security/app_lock.dart';
+import '../core/security/local_auth_unlock.dart';
 import '../core/session/session_store.dart';
 import 'auth/platform_auth_api.dart';
 import 'colleges/colleges_api.dart';
@@ -27,5 +29,6 @@ void configureAdminDependencies() {
         renew: () => adminLocator<SessionManager>().renew(),
       ),
     )
-    ..registerLazySingleton<CollegesRepository>(() => CollegesApi(adminLocator<ApiClient>()));
+    ..registerLazySingleton<CollegesRepository>(() => CollegesApi(adminLocator<ApiClient>()))
+    ..registerLazySingleton<DeviceUnlock>(LocalAuthUnlock.new);
 }

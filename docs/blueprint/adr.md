@@ -1648,3 +1648,23 @@ courses, and a pill when classes wait to be marked. It collapses to the college'
 greeting, name or email on the dashboard; a Profile action opens the person's own details (name,
 sign-in email, college, roles). `/v1/auth/me` now also returns the signed-in person's own
 `full_name` and `login_identifier`, and nobody else's.
+
+---
+
+**AD-78 — The phone's own lock guards every open of a signed-in app**
+
+*Status.* Decided by the owner, 2026-09-14 (R59). Built as BIO-1.
+
+*Decision.* In both apps, while a session exists, every screen sits behind a lock that asks for the
+phone's fingerprint, face or screen lock (`local_auth` 3; the operating system decides who passes and
+the app stores nothing). It asks when the app opens on a saved session and every time it returns from
+the background; not right after the person typed their password, and not for a notification shade
+or a call. A failed or cancelled prompt stays locked, with "Unlock" and "Sign out". The session is
+unchanged: this is a gate, not a second sign-in.
+
+*Assumptions for the owner to confirm (OD-BIO-1).* A phone with no screen lock at all is let
+through rather than locking the person out of their work. "Sign out" on the lock screen ends the
+session without deleting unsent offline changes, which stay encrypted on the phone until the same
+person signs in again (the lock sits above the app's screens, so it cannot ask first).
+
+*Android.* `MainActivity` is a `FlutterFragmentActivity`, and the manifest declares `USE_BIOMETRIC`.

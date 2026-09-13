@@ -6,7 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-77) | `docs/blueprint/adr.md` |
+| Decisions (AD-1…AD-78) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R64) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
@@ -121,3 +121,4 @@ shows its shape.
 | AD-75 | No college deletion; handover through a temporary administrator; invitations accepted on web and phone | Active |
 | AD-76 | College Admin onboards teachers and students from the phone too (amends AD-32 for onboarding) | Active |
 | AD-77 | Dashboard carries the college and the day, never the person; Profile carries the person | Active |
+| AD-78 | The phone's own lock guards every open of a signed-in app (both apps) | Active; OD-BIO-1 to confirm |

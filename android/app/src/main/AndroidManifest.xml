@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- BIO-1: the unlock prompt on every open (R59). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <application
         android:label="@string/app_name"
         android:allowBackup="false"

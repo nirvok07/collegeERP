@@ -18,6 +18,8 @@ import '../../features/attendance/domain/attendance_repository.dart';
 import '../../features/delivery/data/delivery_api.dart';
 import '../../features/delivery/domain/delivery_repository.dart';
 import '../../features/onboarding/data/onboarding_api.dart';
+import '../security/app_lock.dart';
+import '../security/local_auth_unlock.dart';
 
 final locator = GetIt.instance;
 
@@ -50,5 +52,7 @@ void configureDependencies() {
     ..registerLazySingleton<AttendanceRepository>(() => AttendanceApi(locator<ApiClient>()))
     ..registerLazySingleton(() => AuthorityApi(locator<ApiClient>()))
     ..registerLazySingleton<AssessmentRepository>(() => AssessmentApi(locator<ApiClient>()))
-    ..registerLazySingleton<OnboardingRepository>(() => OnboardingApi(locator<ApiClient>()));
+    ..registerLazySingleton<OnboardingRepository>(() => OnboardingApi(locator<ApiClient>()))
+    // BIO-1: the phone's own lock, asked on every open of a signed-in app.
+    ..registerLazySingleton<DeviceUnlock>(LocalAuthUnlock.new);
 }

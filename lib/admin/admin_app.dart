@@ -6,6 +6,7 @@ import '../core/design/theme.dart';
 import '../core/design/tokens.dart';
 import '../core/error/failure.dart';
 import '../core/network/api_client.dart';
+import '../core/security/app_lock.dart';
 import '../core/session/session_manager.dart';
 import '../core/widgets/screen_state.dart';
 import 'admin_locator.dart';
@@ -36,6 +37,9 @@ class _AdminAppState extends State<AdminApp> {
   PlatformAuthority? _authority;
   Failure? _authorityFailure;
   String? _degraded;
+
+  /// BIO-1: true right after the password and code were typed in this run.
+  bool _freshSignIn = false;
 
   @override
   void initState() {
@@ -84,12 +88,14 @@ class _AdminAppState extends State<AdminApp> {
       switch (event) {
         case SignedIn():
           _phase = _Phase.signedIn;
+          _freshSignIn = true;
           _degraded = null;
           _authority = null;
           _authorityFailure = null;
           unawaited(_loadAuthority());
         case SignedOut():
           _phase = _Phase.signedOut;
+          _freshSignIn = false;
           _authority = null;
           _degraded = null;
         case SessionDegraded():
@@ -104,6 +110,16 @@ class _AdminAppState extends State<AdminApp> {
     });
   }
 
+  /// BIO-1: an Owner's session on a phone sits behind the phone's lock too.
+  Widget _lockWhenSignedIn(Widget content) => _phase != _Phase.signedIn
+      ? content
+      : AppLockGate(
+          unlock: adminLocator<DeviceUnlock>(),
+          startLocked: !_freshSignIn,
+          onSignOut: () => unawaited(_session.signOut()),
+          child: content,
+        );
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -112,7 +128,7 @@ class _AdminAppState extends State<AdminApp> {
       theme: AppTheme.light(accent: AppColors.ink),
       themeMode: ThemeMode.light,
       onGenerateRoute: AdminRouter.onGenerateRoute,
-      builder: (context, child) {
+      builder: (context, child) => _lockWhenSignedIn(Builder(builder: (context) {
         final message = _degraded;
         if (message == null || _phase == _Phase.restoring) return child!;
         final scheme = Theme.of(context).colorScheme;
@@ -134,7 +150,7 @@ class _AdminAppState extends State<AdminApp> {
             Expanded(child: MediaQuery.removePadding(context: context, removeTop: true, child: child!)),
           ],
         );
-      },
+      })),
       home: switch (_phase) {
         _Phase.restoring => Scaffold(
           body: _degraded == null

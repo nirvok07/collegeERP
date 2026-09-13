@@ -28,14 +28,19 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College sign-in and invitation acceptance (WEB-1 web, ACC-1 mobile, AD-75): ✅ code, ✅ tests, ✅ end-to-end handover test; 🔍 on the phone and in a browser
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
-- Biometric lock on every open (BIO-1, R59): ❌ next
+- Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): UX-2 ✅ (AD-77; R60, R61, R64). The dashboard's header is a collapsing navy
+Just done (2026-09-14): BIO-1 ✅ (AD-78, R59). Both apps ask for the phone's fingerprint, face or
+screen lock when opened on a saved session and on every return from the background (not right
+after typing the password); `lib/core/security/`. `local_auth` 3.0.2; `MainActivity` is a
+`FlutterFragmentActivity`; `USE_BIOMETRIC` declared.
+
+Before that, UX-2 ✅ (AD-77; R60, R61, R64; `47ace6c`). The dashboard's header is a collapsing navy
 sliver app bar after the prototype's attendance screen (college, teaching-record ring, your week,
 waiting pill); no greeting or personal details on the dashboard; Profile shows name, sign-in email,
 college and roles, read from `/v1/auth/me`, which now returns the person's own name and login.
@@ -106,14 +111,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — BIO-1: biometric check every time the signed-in app opens (R59)
-- **Why next:** the owner's order after UX-2; small and self-contained.
-- **To build:** `local_auth`; a lock screen shown on launch and on return from the background
-  while a session exists; device PIN/pattern as the fallback the OS offers. Assumption to confirm:
-  a phone with no screen lock at all is let through with a notice, rather than locking the person out.
-- **Not in it:** biometrics as a replacement for the password (the session stays the same).
-
-### AFTER THAT — ST-1: student accounts and "My attendance" on mobile
+### NEXT SLICE — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
   screens (attendance %, fees, circulars) are student surfaces. Attendance data already exists
   (M6); only the student role, the account and a self-scoped read are missing. Fees (D1) and
@@ -140,6 +138,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 | OD-MOB-1 | Should every module be on mobile too (R63)? | Mobile has teaching, attendance, marks and onboarding; curriculum, sections, timetable planning, verification and platform are web-only (AD-24, AD-32) | Mobile scope | Keep the split; move chosen modules | Open, owner asked |
 | OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | Different modules, permissions and screens | M3/M4 on mobile | Sections; timetable slots and sessions; both | Open |
+| OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
 | OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |
 
 ### BLOCKERS
@@ -184,7 +183,7 @@ e15590f Make teacher field writes replay-safe: outbox slice one
 9180c3f Build internal assessment: the plan, the mark sheet, and corrections
 6ac3683 Keep the web/** analyzer exclusion as the owner decided
 ```
-Tests: 417 backend, 195 web, 184 Flutter, all passing. One outbox test ("a write waits behind an
+Tests: 417 backend, 195 web, 190 Flutter, all passing. One outbox test ("a write waits behind an
 earlier one…") failed once under full-suite load and passed alone three times and on rerun: timing-sensitive.
 
 ## 5. Blockers
