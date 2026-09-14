@@ -8,6 +8,8 @@ import '../features/sections/presentation/sections_screen.dart';
 import '../features/timetable/presentation/timetable_screen.dart';
 import '../features/students/presentation/students_screen.dart';
 import '../features/college/college_profile.dart';
+import '../features/review/presentation/registers_screen.dart';
+import '../features/review/presentation/verify_marks_screen.dart';
 import '../features/assessment/presentation/course_assessments_screen.dart';
 import '../features/assessment/presentation/mark_sheet_screen.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
@@ -45,6 +47,8 @@ abstract final class Routes {
   static const timetable = '/timetable';
   static const students = '/students';
   static const collegeProfile = '/college';
+  static const registers = '/registers';
+  static const verifyMarks = '/verify-marks';
   static const account = '/account';
   static const acceptInvitation = '/accept-invitation';
   static const changePassword = '/account/password';
@@ -168,6 +172,10 @@ abstract final class AppRouter {
           settings,
           CollegeProfileScreen(canManage: args is ManageArgs && args.authority.can('institution.manage')),
         );
+      case Routes.registers:
+        return _page(settings, const RegistersScreen());
+      case Routes.verifyMarks:
+        return _page(settings, const VerifyMarksScreen());
       case Routes.account:
         return _page(settings, const AccountScreen());
       case Routes.changePassword:

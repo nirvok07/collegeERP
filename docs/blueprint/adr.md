@@ -1746,3 +1746,6 @@ ADM-9 (2026-09-14): students (list with server filters, record, status, section 
 `lib/features/students/`.
 ADM-10 (2026-09-14): access (roles by scope, given and removed from a person's sheet),
 `lib/features/access/`; the college profile, `lib/features/college/`.
+ADM-11 (2026-09-14): registers by day with corrections, and mark sheet verification with
+corrections, `lib/features/review/`. Every college module is now on the phone; SAM-2b and SAM-3
+remain for the Super Admin app.

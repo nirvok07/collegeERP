@@ -667,6 +667,27 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: true,
         ),
+      // ADM-11 (AD-81): what teachers recorded, reviewed and corrected.
+      if (authority.can('attendance.correct'))
+        (
+          title: 'Registers',
+          subtitle: 'Attendance by day, corrections',
+          icon: Icons.fact_check_rounded,
+          color: AppColors.warning,
+          route: Routes.registers,
+          args: null,
+          refresh: false,
+        ),
+      if (authority.can('assessment.verify'))
+        (
+          title: 'Verify marks',
+          subtitle: 'Submitted mark sheets',
+          icon: Icons.verified_rounded,
+          color: AppColors.success,
+          route: Routes.verifyMarks,
+          args: null,
+          refresh: false,
+        ),
       // ADM-10 (AD-81): the college's name, logo and colour.
       if (authority.can('institution.read'))
         (
@@ -732,16 +753,6 @@ class _AdminModules extends StatelessWidget {
                   ),
                 ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _Panel(
-            color: theme.colorScheme.surfaceContainerLow,
-            bordered: false,
-            child: Text(
-              'Coming next to the app: verifying and correcting attendance and marks. '
-              'Until then it is on the web console.',
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-            ),
           ),
         ],
       ),
