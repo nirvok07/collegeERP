@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-6 ✅ (AD-81). "Sections" on the phone (`lib/features/sections/`): the
+Just done (2026-09-14): ADM-6 ✅ (AD-81; `a35dd2f`). "Sections" on the phone (`lib/features/sections/`): the
 term that contains today by default (or all terms); add a section (program, academic term, term of
 the program, next free label suggested, capacity); a section's screen shows the server's allowed
 transitions as buttons (cancel needs a reason; refusals such as enrolled students stay in the form),
@@ -246,6 +246,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+a35dd2f Build ADM-6: sections and their members on the phone (AD-81)
+40e5b2f Record the ADM-5 commit in the tracker
 6650b8f Build ADM-5: rooms on the phone (AD-81)
 68004bf Record the ADM-4 commit in the tracker
 5746d1e Build ADM-4: courses and curriculum versions on the phone (AD-81)
