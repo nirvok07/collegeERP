@@ -8,6 +8,7 @@ import '../../core/widgets/college_logo.dart';
 import '../../core/widgets/screen_state.dart';
 import '../../core/widgets/status_chip.dart';
 import '../../core/widgets/submit_dialog.dart';
+import '../../features/college/college_profile.dart' show brandingProblem;
 import '../../features/people/domain/reset_code.dart';
 import '../admin_locator.dart';
 import '../admin_router.dart';
@@ -192,6 +193,110 @@ class _Detail extends StatelessWidget {
     );
   }
 
+  /// SAM-2b: the plan label and seat limit, with a reason for the platform audit.
+  Future<void> _changePlan(BuildContext context) async {
+    final cubit = context.read<CollegeDetailCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final plan = TextEditingController(text: detail.plan);
+    final seats = TextEditingController(text: '${detail.seatLimit}');
+    final reason = TextEditingController();
+    final done = await showSubmitDialog(
+      context,
+      title: 'Plan and seats for ${detail.name}',
+      submitLabel: 'Save',
+      controllers: [plan, seats, reason],
+      fields: (refresh) {
+        final n = int.tryParse(seats.text.trim());
+        return [
+          TextField(controller: plan, decoration: const InputDecoration(labelText: 'Plan', helperText: 'A short label, such as standard')),
+          const SizedBox(height: AppSpacing.base),
+          TextField(
+            controller: seats,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: 'Seat limit', helperText: '${detail.seatsUsed} in use now'),
+            onChanged: (_) => refresh(() {}),
+          ),
+          if (n != null && n < detail.seatsUsed)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                'This is below the ${detail.seatsUsed} seats in use, so nobody new can be invited until seats free up or the limit is raised.',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.base),
+          TextField(controller: reason, decoration: const InputDecoration(labelText: 'Reason', helperText: 'Recorded in the platform audit')),
+        ];
+      },
+      submit: () async {
+        final p = plan.text.trim();
+        final n = int.tryParse(seats.text.trim());
+        if (p.isEmpty) return invalidInput('Give the plan a short label.');
+        if (n == null || n < 1) return invalidInput('The seat limit is a whole number of at least 1.');
+        if (reason.text.trim().isEmpty) return invalidInput('Say why, in a few words.');
+        return cubit.changePlan(
+          reason: reason.text.trim(),
+          plan: p == detail.plan ? null : p,
+          seatLimit: n == detail.seatLimit ? null : n,
+        );
+      },
+    );
+    if (done) messenger.showSnackBar(const SnackBar(content: Text('Plan and seats saved')));
+  }
+
+  /// SAM-2b (AD-70): the same fields and checks as the college's own profile.
+  Future<void> _editBranding(BuildContext context) async {
+    final cubit = context.read<CollegeDetailCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final name = TextEditingController(text: detail.name);
+    final logo = TextEditingController(text: detail.logoUrl ?? '');
+    final colour = TextEditingController(text: detail.brandColor ?? '');
+    final done = await showSubmitDialog(
+      context,
+      title: 'Branding for ${detail.name}',
+      submitLabel: 'Save',
+      controllers: [name, logo, colour],
+      fields: (refresh) => [
+        TextField(controller: name, decoration: const InputDecoration(labelText: 'College name')),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: logo,
+          keyboardType: TextInputType.url,
+          autocorrect: false,
+          decoration: const InputDecoration(labelText: 'Logo link (optional)', helperText: 'An https:// link to an image'),
+          onChanged: (_) => refresh(() {}),
+        ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: colour,
+          autocorrect: false,
+          decoration: const InputDecoration(labelText: 'Colour (optional)', helperText: 'Such as #1E40AF'),
+        ),
+        const SizedBox(height: AppSpacing.base),
+        Row(
+          children: [
+            CollegeLogo(
+              college: CollegeBrand(code: detail.code, name: name.text, logoUrl: logo.text.trim().isEmpty ? null : logo.text.trim()),
+              size: 40,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text('Preview', style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+      ],
+      submit: () async {
+        final problem = brandingProblem(name: name.text, logoUrl: logo.text, brandColor: colour.text);
+        if (problem != null) return invalidInput(problem);
+        return cubit.changeBranding(
+          name: name.text.trim(),
+          logoUrl: logo.text.trim().isEmpty ? null : logo.text.trim(),
+          brandColor: colour.text.trim().isEmpty ? null : colour.text.trim().toUpperCase(),
+        );
+      },
+    );
+    if (done) messenger.showSnackBar(const SnackBar(content: Text('Branding saved. The college sees it the next time the app opens.')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -264,6 +369,15 @@ class _Detail extends StatelessWidget {
               ),
             ),
             _Fact('Time zone', detail.timezone),
+            if (canManage && detail.status != 'closed')
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: OutlinedButton.icon(
+                  onPressed: busy ? null : () => _changePlan(context),
+                  icon: const Icon(Icons.tune_rounded),
+                  label: const Text('Change plan or seats'),
+                ),
+              ),
           ],
         ),
         _Section(
@@ -300,6 +414,15 @@ class _Detail extends StatelessWidget {
           children: [
             _Fact('Logo', detail.logoUrl ?? 'None, the app shows initials'),
             _Fact('Colour', detail.brandColor ?? 'None, the app uses its own'),
+            if (canManage && detail.status != 'closed')
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: OutlinedButton.icon(
+                  onPressed: busy ? null : () => _editBranding(context),
+                  icon: const Icon(Icons.palette_outlined),
+                  label: const Text('Edit branding'),
+                ),
+              ),
           ],
         ),
       ],

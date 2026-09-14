@@ -27,6 +27,12 @@ abstract interface class CollegesRepository {
   /// AD-80: a one-time reset code for one of the college's administrators,
   /// named by their sign-in email.
   Future<Result<ResetCode>> resetAdministrator(String id, String email);
+
+  /// SAM-2b: the plan label and seat limit, pinned to [version], with a reason.
+  Future<Result<CollegeDetail>> changePlan(String id, {required int version, required String reason, String? plan, int? seatLimit});
+
+  /// SAM-2b (AD-70): the college's name, logo and colour, pinned to [version].
+  Future<Result<CollegeDetail>> changeBranding(String id, {required int version, required String name, String? logoUrl, String? brandColor});
 }
 
 class CollegesApi implements CollegesRepository {
@@ -67,6 +73,23 @@ class CollegesApi implements CollegesRepository {
     const <String, Object?>{},
     ProvisionedCollege.fromJson,
   );
+
+  @override
+  Future<Result<CollegeDetail>> changePlan(String id, {required int version, required String reason, String? plan, int? seatLimit}) =>
+      _client.post(
+        '/v1/institutions/${Uri.encodeComponent(id)}/plan',
+        {'version': version, 'reason': reason, 'plan': ?plan, 'seat_limit': ?seatLimit},
+        CollegeDetail.fromJson,
+      );
+
+  /// Empty fields are sent as null, which clears them.
+  @override
+  Future<Result<CollegeDetail>> changeBranding(String id, {required int version, required String name, String? logoUrl, String? brandColor}) =>
+      _client.post(
+        '/v1/institutions/${Uri.encodeComponent(id)}/branding',
+        {'version': version, 'name': name, 'logo_url': logoUrl, 'brand_color': brandColor},
+        CollegeDetail.fromJson,
+      );
 
   @override
   Future<Result<ResetCode>> resetAdministrator(String id, String email) => _client.post(

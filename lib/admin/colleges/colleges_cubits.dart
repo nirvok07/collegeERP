@@ -96,6 +96,27 @@ class CollegeDetailCubit extends Cubit<CollegeDetailState> {
 
   Future<Result<ProvisionedCollege>> reissue() => _repository.reissueInvitation(_id);
 
+  /// SAM-2b: both return the refusal, or null once the screen shows the change.
+  Future<Failure?> changePlan({required String reason, String? plan, int? seatLimit}) =>
+      _apply((d) => _repository.changePlan(d.id, version: d.version, reason: reason, plan: plan, seatLimit: seatLimit));
+
+  Future<Failure?> changeBranding({required String name, String? logoUrl, String? brandColor}) =>
+      _apply((d) => _repository.changeBranding(d.id, version: d.version, name: name, logoUrl: logoUrl, brandColor: brandColor));
+
+  Future<Failure?> _apply(Future<Result<CollegeDetail>> Function(CollegeDetail) write) async {
+    final detail = state.detail;
+    if (detail == null) return null;
+    final result = await write(detail);
+    if (isClosed) return null;
+    return result.when(
+      ok: (updated) {
+        emit(CollegeDetailState(status: LoadStatus.success, detail: updated));
+        return null;
+      },
+      err: (failure) => failure,
+    );
+  }
+
   /// AD-80: the code is returned to the screen, shown once, never kept here.
   Future<Result<ResetCode>> resetAdministrator(String email) => _repository.resetAdministrator(_id, email.trim());
 }

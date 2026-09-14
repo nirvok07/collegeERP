@@ -112,6 +112,14 @@ class _Colleges implements CollegesRepository {
 
   @override
   Future<Result<ResetCode>> resetAdministrator(String id, String email) async => const Err(Failure.unknown);
+
+  @override
+  Future<Result<CollegeDetail>> changePlan(String id, {required int version, required String reason, String? plan, int? seatLimit}) async =>
+      const Err(Failure.unknown);
+
+  @override
+  Future<Result<CollegeDetail>> changeBranding(String id, {required int version, required String name, String? logoUrl, String? brandColor}) async =>
+      const Err(Failure.unknown);
 }
 
 const expired = Failure(code: FailureCode.unauthenticated, message: 'This sign-in has expired. Start again.');
@@ -337,4 +345,12 @@ class _Lifecycle implements CollegesRepository {
 
   @override
   Future<Result<ResetCode>> resetAdministrator(String id, String email) async => const Err(Failure.unknown);
+
+  @override
+  Future<Result<CollegeDetail>> changePlan(String id, {required int version, required String reason, String? plan, int? seatLimit}) async =>
+      const Err(Failure.unknown);
+
+  @override
+  Future<Result<CollegeDetail>> changeBranding(String id, {required int version, required String name, String? logoUrl, String? brandColor}) async =>
+      const Err(Failure.unknown);
 }

@@ -29,7 +29,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
-- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ADM-8 ✅ timetable, classes, non-teaching days; ADM-9 ✅ students; ADM-10 ✅ access and college profile; ADM-11 ✅ registers and mark verification, corrections; ✅ tests; 🔍 on the phone. Every college module is on the phone (AD-81); Super Admin app SAM-2b, SAM-3 ❌
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ADM-8 ✅ timetable, classes, non-teaching days; ADM-9 ✅ students; ADM-10 ✅ access and college profile; ADM-11 ✅ registers and mark verification, corrections; ✅ tests; 🔍 on the phone. Every college module is on the phone (AD-81); Super Admin app SAM-2b ✅ plan, seats, branding; SAM-3 ❌
 - Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
@@ -38,6 +38,14 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): SAM-2b ✅ (AD-72, AD-81). The Super Admin app's college detail changes the
+plan label and seat limit (a reason required, recorded in the platform audit; only what changed is
+sent; a warning when the limit is below the seats in use) and the college's branding (name, logo
+link with a preview, colour, the same checks as the college's own profile), both pinned to the
+version on screen and showing the server's updated college. Hidden for closed colleges and without
+`platform.colleges.manage`. No server change. Tested: Flutter 237/237, analyze clean, admin APK
+builds. Not tested: on the phone.
+
 Just done (2026-09-14): ADM-11 ✅ (AD-81; `4cee78c`). Review on the phone (`lib/features/review/`, a repository of
 its own so the teacher's offline-queued repositories and their fakes stay as they are):
 "Registers" shows a day's classes across the college with each register's state and counts, and a
@@ -231,11 +239,10 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — SAM-2b: plan, seats and branding in the Super Admin app (AD-72, AD-81)
-- **Why next:** every college module is on the phone; the platform's remaining web-only work for a
-  college is its plan and seat limit and its branding.
-- **Then:** SAM-3 (platform accounts and the platform audit) in the Super Admin app, then the web
-  platform console retires (AD-72); ST-1 below.
+### NEXT SLICE — SAM-3: platform accounts and the platform audit in the Super Admin app (AD-72, AD-81)
+- **Why next:** the last web-only platform work: inviting and managing platform accounts (role,
+  authenticator reset, disable) and reading the platform audit.
+- **Then:** the web platform console retires (AD-72, owner to confirm); ST-1 below.
 
 ### LATER — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
