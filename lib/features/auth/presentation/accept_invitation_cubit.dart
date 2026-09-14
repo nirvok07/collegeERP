@@ -28,7 +28,7 @@ class AcceptInvitationCubit extends Cubit<AcceptInvitationState> {
 
   Future<void> submit({required String token, required String password, required String again}) async {
     final code = token.trim();
-    if (code.isEmpty) return emit(AcceptInvitationState(failure: _invalid('Enter the invitation code from your message.')));
+    if (code.isEmpty) return emit(AcceptInvitationState(failure: _invalid('Enter the code from your message.')));
     if (password.length < 10 || !RegExp('[a-zA-Z]').hasMatch(password) || !RegExp('[0-9]').hasMatch(password)) {
       return emit(AcceptInvitationState(failure: _invalid('Use at least ten characters, with a letter and a number.')));
     }

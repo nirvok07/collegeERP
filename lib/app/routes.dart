@@ -9,6 +9,7 @@ import '../features/organisation/presentation/organisation_screen.dart';
 import '../features/people/presentation/people_screen.dart';
 import '../features/teaching/presentation/my_teaching_screen.dart';
 import 'account_screen.dart';
+import '../core/session/authority.dart';
 import '../core/session/college_brand.dart';
 import '../features/auth/presentation/accept_invitation_screen.dart';
 import '../features/account/change_password_screen.dart';
@@ -54,6 +55,14 @@ class TeacherInvitedArgs {
   const TeacherInvitedArgs({required this.teacher, required this.name, this.college});
   final AppointedTeacher teacher;
   final String name;
+  final CollegeBrand? college;
+}
+
+/// ADM-2 and AD-80: what the dashboard knows when it opens People or
+/// Organisation, so they offer only the actions this person may take.
+class ManageArgs {
+  const ManageArgs({required this.authority, this.college});
+  final Authority authority;
   final CollegeBrand? college;
 }
 
@@ -110,9 +119,14 @@ abstract final class AppRouter {
       case Routes.teaching:
         return _page(settings, const MyTeachingScreen());
       case Routes.people:
-        return _page(settings, const PeopleScreen());
+        final args = settings.arguments;
+        return _page(
+          settings,
+          args is ManageArgs ? PeopleScreen(authority: args.authority, college: args.college) : const PeopleScreen(),
+        );
       case Routes.organisation:
-        return _page(settings, const OrganisationScreen());
+        final args = settings.arguments;
+        return _page(settings, OrganisationScreen(authority: args is ManageArgs ? args.authority : null));
       case Routes.account:
         return _page(settings, const AccountScreen());
       case Routes.changePassword:

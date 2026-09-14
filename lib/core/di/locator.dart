@@ -46,7 +46,7 @@ void configureDependencies() {
       () => DeviceRegistration(locator<ApiClient>(), FirebaseServices.instance),
     )
     ..registerLazySingleton(() => PeopleApi(locator<ApiClient>()))
-    ..registerLazySingleton(() => OrganisationApi(locator<ApiClient>()))
+    ..registerLazySingleton<OrganisationRepository>(() => OrganisationApi(locator<ApiClient>()))
     // Registered behind its domain port, so presentation never names the
     // HTTP adapter.
     ..registerLazySingleton<TeachingRepository>(() => TeachingApi(locator<ApiClient>()))

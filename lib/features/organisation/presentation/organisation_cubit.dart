@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/error/result.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/organisation_api.dart';
 import '../domain/org_unit.dart';
@@ -29,10 +30,13 @@ class OrganisationState {
       );
 }
 
+/// The organisation tree, and for ADM-2 its changes. Every write returns the
+/// server's refusal, if any, to the form that asked, and re-reads on success,
+/// so the screen always shows what the server holds.
 class OrganisationCubit extends Cubit<OrganisationState> {
-  OrganisationCubit(this._api) : super(const OrganisationState());
+  OrganisationCubit(this._repository) : super(const OrganisationState());
 
-  final OrganisationApi _api;
+  final OrganisationRepository _repository;
 
   Future<void> load({bool refresh = false}) async {
     emit(state.copyWith(
@@ -40,7 +44,7 @@ class OrganisationCubit extends Cubit<OrganisationState> {
       clearFailure: true,
     ));
 
-    final result = await _api.loadTree();
+    final result = await _repository.loadTree();
     if (isClosed) return;
 
     result.when(
@@ -55,4 +59,30 @@ class OrganisationCubit extends Cubit<OrganisationState> {
       )),
     );
   }
+
+  Future<Failure?> _write(Future<Result<void>> write) async {
+    final failure = (await write).failureOrNull;
+    if (failure == null && !isClosed) await load(refresh: true);
+    return failure;
+  }
+
+  Future<Failure?> createCampus(String name, String code) =>
+      _write(_repository.createCampus(name: name.trim(), code: code.trim().toLowerCase()));
+
+  Future<Failure?> createDepartment(String campusId, String name, String code) =>
+      _write(_repository.createDepartment(campusId: campusId, name: name.trim(), code: code.trim().toLowerCase()));
+
+  Future<Failure?> renameDepartment(String id, String name) => _write(_repository.renameDepartment(id, name.trim()));
+
+  Future<Failure?> archiveCampus(String id, String reason) => _write(_repository.archiveCampus(id, reason.trim()));
+
+  Future<Failure?> archiveDepartment(String id, String reason) =>
+      _write(_repository.archiveDepartment(id, reason.trim()));
+}
+
+/// A code suggested from the name, in the server's shape: lowercase letters,
+/// numbers and hyphens, at most 32 characters.
+String suggestCode(String name) {
+  final slug = name.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+  return slug.length > 32 ? slug.substring(0, 32).replaceAll(RegExp(r'-+$'), '') : slug;
 }

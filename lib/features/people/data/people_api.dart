@@ -1,6 +1,7 @@
 import '../../../core/error/result.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/person.dart';
+import '../domain/reset_code.dart';
 
 /// Reads the same endpoints the web console uses. There is one API contract and
 /// one set of business rules; this client only shapes the response.
@@ -15,4 +16,8 @@ class PeopleApi {
     return _client.get('/v1/people$query', (data) =>
         (data as List).map((json) => Person.fromJson(json as Map)).toList());
   }
+
+  /// AD-80: a reset code (or a fresh invitation) for someone else's account.
+  Future<Result<ResetCode>> issueReset(String personId) =>
+      _client.post('/v1/people/${Uri.encodeComponent(personId)}/password-reset', null, ResetCode.fromJson);
 }

@@ -1,5 +1,6 @@
 import '../../core/error/result.dart';
 import '../../core/network/api_client.dart';
+import '../../features/people/domain/reset_code.dart';
 import 'college_models.dart';
 
 /// What the super admin app needs about colleges, stated as a port so the
@@ -22,6 +23,10 @@ abstract interface class CollegesRepository {
 
   /// A new invitation for the administrator; the previous one stops working.
   Future<Result<ProvisionedCollege>> reissueInvitation(String id);
+
+  /// AD-80: a one-time reset code for one of the college's administrators,
+  /// named by their sign-in email.
+  Future<Result<ResetCode>> resetAdministrator(String id, String email);
 }
 
 class CollegesApi implements CollegesRepository {
@@ -61,5 +66,12 @@ class CollegesApi implements CollegesRepository {
     '/v1/institutions/${Uri.encodeComponent(id)}/administrator-invitation',
     const <String, Object?>{},
     ProvisionedCollege.fromJson,
+  );
+
+  @override
+  Future<Result<ResetCode>> resetAdministrator(String id, String email) => _client.post(
+    '/v1/institutions/${Uri.encodeComponent(id)}/administrator-reset',
+    {'email': email},
+    ResetCode.fromJson,
   );
 }

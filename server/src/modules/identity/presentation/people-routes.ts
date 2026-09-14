@@ -8,6 +8,7 @@ import { institutionScope, type ScopeType } from '../domain/scope.ts';
 import {
   assignRole, invitePerson, listAssignments, listPeople, revokeAssignment, type Actor,
 } from '../application/manage-people.ts';
+import { issuePasswordReset } from '../application/password-reset.ts';
 
 const SCOPE_TYPES = ['institution', 'campus', 'department', 'program', 'section', 'committee', 'self'] as const;
 
@@ -115,6 +116,24 @@ export async function registerPeopleRoutes(app: FastifyInstance, c: Container) {
         expires_at: result.value.expiresAt.toISOString(),
         delivery: 'pending',
       },
+    }, 201);
+  });
+
+  /*
+   * AD-80: a one-time code for someone who forgot their password (or a fresh
+   * invitation if they never accepted one). Returned once, handed over by hand.
+   */
+  app.post('/people/:id/password-reset', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'account.manage', institutionScope()))) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That person was not found.'));
+    const result = await issuePasswordReset(c.passwordReset, actorOf(req), { personId: id });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, {
+      kind: result.value.kind,
+      token: result.value.token,
+      expires_at: result.value.expiresAt.toISOString(),
+      delivery: 'pending',
     }, 201);
   });
 

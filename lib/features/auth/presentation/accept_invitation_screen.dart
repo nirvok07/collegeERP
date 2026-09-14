@@ -57,7 +57,7 @@ class _AcceptViewState extends State<_AcceptView> {
       builder: (context, state) {
         final cubit = context.read<AcceptInvitationCubit>();
         return Scaffold(
-          appBar: AppBar(title: const Text('Set up your account')),
+          appBar: AppBar(title: const Text('Set your password')),
           body: SafeArea(
             child: ListView(
               padding: EdgeInsets.fromLTRB(
@@ -100,7 +100,7 @@ class _AcceptViewState extends State<_AcceptView> {
                     autocorrect: false,
                     enableSuggestions: false,
                     decoration: const InputDecoration(
-                      labelText: 'Invitation code',
+                      labelText: 'Invitation or reset code',
                       helperText: 'From the message you were sent.',
                     ),
                   ),

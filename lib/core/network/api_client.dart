@@ -56,6 +56,10 @@ class ApiClient {
     String? idempotencyKey,
   }) => _send(path, 'PUT', body, parse, idempotencyKey: idempotencyKey);
 
+  /// A change to one field of something that exists, renaming a department being the case.
+  Future<Result<T>> patch<T>(String path, Object? body, T Function(dynamic) parse) =>
+      _send(path, 'PATCH', body, parse);
+
   Future<Result<T>> _send<T>(
     String path,
     String method,

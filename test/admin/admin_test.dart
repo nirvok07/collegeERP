@@ -3,6 +3,7 @@ import 'package:college_erp/admin/auth/platform_sign_in_cubit.dart';
 import 'package:college_erp/admin/auth/platform_sign_in_screen.dart' show formatManualKey;
 import 'package:college_erp/admin/colleges/college_models.dart';
 import 'package:college_erp/admin/colleges/colleges_api.dart';
+import 'package:college_erp/features/people/domain/reset_code.dart';
 import 'package:college_erp/admin/colleges/colleges_cubits.dart';
 import 'package:college_erp/admin/colleges/colleges_screen.dart';
 import 'package:college_erp/admin/colleges/provisioned_screen.dart';
@@ -108,6 +109,9 @@ class _Colleges implements CollegesRepository {
   }) async => const Err(Failure.unknown);
   @override
   Future<Result<ProvisionedCollege>> reissueInvitation(String id) async => const Err(Failure.unknown);
+
+  @override
+  Future<Result<ResetCode>> resetAdministrator(String id, String email) async => const Err(Failure.unknown);
 }
 
 const expired = Failure(code: FailureCode.unauthenticated, message: 'This sign-in has expired. Start again.');
@@ -330,4 +334,7 @@ class _Lifecycle implements CollegesRepository {
   }
   @override
   Future<Result<ProvisionedCollege>> reissueInvitation(String id) async => const Err(Failure.unknown);
+
+  @override
+  Future<Result<ResetCode>> resetAdministrator(String id, String email) async => const Err(Failure.unknown);
 }

@@ -102,7 +102,12 @@ class _DashboardView extends StatelessWidget {
                     onWaiting: () => _open(context, Routes.schedule),
                     admin: _admin,
                     overview: state.overview,
-                    onPeople: () => _open(context, Routes.people, refresh: false),
+                    onPeople: () => _open(
+                      context,
+                      Routes.people,
+                      refresh: false,
+                      arguments: ManageArgs(authority: authority, college: college),
+                    ),
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
@@ -583,7 +588,7 @@ class _AdminModules extends StatelessWidget {
           icon: Icons.people_rounded,
           color: AppColors.info,
           route: Routes.people,
-          args: null,
+          args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),
         (
@@ -592,7 +597,7 @@ class _AdminModules extends StatelessWidget {
           icon: Icons.account_tree_rounded,
           color: AppColors.warning,
           route: Routes.organisation,
-          args: null,
+          args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),
       ],
@@ -726,14 +731,22 @@ class _Shortcuts extends StatelessWidget {
         const _Shortcut('Courses', Icons.school_rounded, AppColors.success, Routes.teaching),
       // The organisation tree is read behind `person.read`, which is the
       // permission the campus and department endpoints actually require.
-      if (authority.can('person.read')) ...const [
-        _Shortcut('People', Icons.people_rounded, AppColors.info, Routes.people, refresh: false),
+      if (authority.can('person.read')) ...[
+        _Shortcut(
+          'People',
+          Icons.people_rounded,
+          AppColors.info,
+          Routes.people,
+          refresh: false,
+          arguments: ManageArgs(authority: authority, college: college),
+        ),
         _Shortcut(
           'Organisation',
           Icons.account_tree_rounded,
           AppColors.warning,
           Routes.organisation,
           refresh: false,
+          arguments: ManageArgs(authority: authority, college: college),
         ),
       ],
     ];

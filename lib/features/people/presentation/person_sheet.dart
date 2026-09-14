@@ -7,19 +7,21 @@ import '../domain/person.dart';
 /// Detail as a bottom sheet, which is the mobile counterpart of the web
 /// drawer: it keeps the list in place behind it and returns the user exactly
 /// where they were.
-Future<void> showPersonSheet(BuildContext context, Person person) {
+/// [onReset] is present only when this person may reset [person]'s password.
+Future<void> showPersonSheet(BuildContext context, Person person, {VoidCallback? onReset}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => _PersonSheet(person: person),
+    builder: (context) => _PersonSheet(person: person, onReset: onReset),
   );
 }
 
 class _PersonSheet extends StatelessWidget {
-  const _PersonSheet({required this.person});
+  const _PersonSheet({required this.person, this.onReset});
 
   final Person person;
+  final VoidCallback? onReset;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +102,17 @@ class _PersonSheet extends StatelessWidget {
               ),
             ),
 
+            if (onReset != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onReset!();
+                },
+                icon: const Icon(Icons.lock_reset_rounded),
+                label: Text(person.accountStatus == 'invited' ? 'Send a new invitation' : 'Reset password'),
+              ),
+            ],
             const SizedBox(height: AppSpacing.lg),
             // Changing access is deliberately absent here. It is a desktop
             // workflow needing a scope picker over the organisation tree, and a

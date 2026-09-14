@@ -56,6 +56,8 @@ export interface AccountRepository {
   ): Promise<AccountRecord>;
   findByLoginIdentifier(tx: Tx, identifier: string): Promise<AccountRecord | null>;
   findById(tx: Tx, id: string): Promise<AccountRecord | null>;
+  /** BR-15: at most one live account per person; the newest when older ones are archived. */
+  findByPersonId(tx: Tx, personId: string): Promise<AccountRecord | null>;
   updateSecurityState(
     tx: Tx,
     id: string,

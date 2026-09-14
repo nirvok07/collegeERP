@@ -149,6 +149,17 @@ export class PgAccountRepository implements AccountRepository {
     return rows[0] ? toAccount(rows[0]) : null;
   }
 
+  async findByPersonId(tx: Tx, personId: string): Promise<AccountRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, tenant_id, person_id, login_identifier, status, mfa_required,
+              failed_attempts, locked_until, version
+         FROM user_accounts WHERE person_id = $1
+        ORDER BY created_at DESC LIMIT 1`,
+      [personId],
+    );
+    return rows[0] ? toAccount(rows[0]) : null;
+  }
+
   async updateSecurityState(
     tx: Tx,
     id: string,

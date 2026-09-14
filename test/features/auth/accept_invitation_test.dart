@@ -27,7 +27,7 @@ void main() {
     test('an incomplete form is refused without asking the server', () async {
       final cubit = AcceptInvitationCubit(accept, 'iit-doon');
       await cubit.submit(token: ' ', password: 'strong-pass-9', again: 'strong-pass-9');
-      expect(cubit.state.failure?.message, contains('invitation code'));
+      expect(cubit.state.failure?.message, contains('code from your message'));
       await cubit.submit(token: 'tok', password: 'short1', again: 'short1');
       expect(cubit.state.failure?.message, contains('ten characters'));
       await cubit.submit(token: 'tok', password: 'strong-pass-9', again: 'strong-pass-8');

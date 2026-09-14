@@ -6,7 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-79) | `docs/blueprint/adr.md` |
+| Decisions (AD-1…AD-80) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R64) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
@@ -122,4 +122,5 @@ shows its shape.
 | AD-76 | College Admin onboards teachers and students from the phone too (amends AD-32 for onboarding) | Active |
 | AD-77 | Dashboard carries the college and the day, never the person; Profile carries the person | Active |
 | AD-78 | The phone's own lock guards every open of a signed-in app (both apps) | Active; OD-BIO-1 to confirm |
-| AD-79 | College Admin's own dashboard and modules on the phone (amends AD-32); change password | Active; ADM-1 built, ADM-2…6 next |
+| AD-79 | College Admin's own dashboard and modules on the phone (amends AD-32); change password | Active; ADM-1, ADM-2 built; ADM-3…6 next |
+| AD-80 | Forgotten password: one-time reset code from an account manager or the Super Admin; no email | Active; PW-1 built |

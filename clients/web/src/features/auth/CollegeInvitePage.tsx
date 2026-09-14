@@ -6,7 +6,8 @@ import { acceptFormError, collegeInviteFrom } from './collegeInvite.ts';
 import './sign-in.css';
 
 /**
- * WEB-1: a college invitation. The person sets their own password here, from
+ * WEB-1: a college invitation, and (AD-80) a password reset code, which is redeemed the same way.
+ * The person sets their own password here, from
  * the link or from the college code and invitation code they were sent; then
  * they sign in. Nobody else, the platform included, ever knows the password.
  */
@@ -38,7 +39,7 @@ export function CollegeInvitePage({ auth, onDone }: { auth: AuthSession; onDone:
           <span className="signin__mark" aria-hidden="true">C</span>
           <div>
             <h1 className="signin__title">College</h1>
-            <p className="signin__sub">Set up your account</p>
+            <p className="signin__sub">Set your password</p>
           </div>
         </div>
         {failure && <Banner tone="error">{failure.message}</Banner>}
@@ -57,8 +58,8 @@ export function CollegeInvitePage({ auth, onDone }: { auth: AuthSession; onDone:
               onChange={(e) => setCollege(e.currentTarget.value)}
             />
             <Field
-              label="Invitation code" value={token} autoComplete="off" required
-              hint="From the message your college or the platform sent you."
+              label="Invitation or reset code" value={token} autoComplete="off" required
+              hint="From the message your college or the platform sent you. A reset code works here too."
               onChange={(e) => setToken(e.currentTarget.value)}
             />
             <Field

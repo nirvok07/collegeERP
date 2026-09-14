@@ -13,13 +13,16 @@ import type { BootstrapAdministrator } from '../../identity/application/ports.ts
 import {
   reissueAdministratorInvitation, type ReissueInvitationDeps,
 } from '../../identity/application/reissue-invitation.ts';
+import {
+  issueAdministratorReset, type IssuedReset, type PasswordResetDeps,
+} from '../../identity/application/password-reset.ts';
 import { availableActions, targetOf, type LifecycleAction } from '../domain/lifecycle.ts';
 import { seatUsage, type SeatUsage } from '../../identity/domain/seats.ts';
 
 export interface LifecycleDeps {
   uow: UnitOfWork;
   institutions: InstitutionRepository;
-  identity: ReissueInvitationDeps;
+  identity: ReissueInvitationDeps & PasswordResetDeps;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -232,6 +235,28 @@ export async function reissueInvitation(
         correlationId: deps.ids.next(),
       });
       return Ok({ detail: await detailOf(deps, tx, institution), token: issued.token, expiresAt: issued.expiresAt });
+    });
+  } catch (e) {
+    if (e instanceof AppException) return Err(fail(e.code, e.message));
+    throw e;
+  }
+}
+
+/** AD-80: a reset code for one of the college's administrators, by sign-in email. */
+export async function resetAdministratorPassword(
+  deps: LifecycleDeps,
+  input: { id: string; platformAccountId: string; email: string },
+): Promise<Result<IssuedReset>> {
+  try {
+    return await deps.uow.run(input.id, async (tx) => {
+      const institution = await deps.institutions.findById(tx, input.id);
+      if (!institution) return Err(fail('NOT_FOUND', 'That college was not found.'));
+      if (!canInvite(institution.status)) {
+        return Err(fail('CONFLICT', `Nobody can sign in to a ${institution.status} college.`));
+      }
+      return Ok(await issueAdministratorReset(deps.identity, tx, {
+        email: input.email, platformAccountId: input.platformAccountId, correlationId: deps.ids.next(),
+      }));
     });
   } catch (e) {
     if (e instanceof AppException) return Err(fail(e.code, e.message));

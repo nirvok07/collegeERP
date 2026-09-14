@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/error/failure.dart';
 import '../../core/error/result.dart';
 import '../../core/widgets/screen_state.dart';
+import '../../features/people/domain/reset_code.dart';
 import 'college_models.dart';
 import 'colleges_api.dart';
 
@@ -94,6 +95,9 @@ class CollegeDetailCubit extends Cubit<CollegeDetailState> {
   }
 
   Future<Result<ProvisionedCollege>> reissue() => _repository.reissueInvitation(_id);
+
+  /// AD-80: the code is returned to the screen, shown once, never kept here.
+  Future<Result<ResetCode>> resetAdministrator(String email) => _repository.resetAdministrator(_id, email.trim());
 }
 
 class ProvisionState {

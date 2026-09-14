@@ -3,31 +3,43 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
+import '../../../core/session/authority.dart';
+import '../../../core/session/college_brand.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../data/people_api.dart';
 import '../domain/person.dart';
 import 'people_cubit.dart';
 import 'person_sheet.dart';
+import 'reset_code_screen.dart';
 
 /// People, for touch.
 ///
 /// Not the desktop table narrowed: a list of two-line rows with an avatar, a
 /// bottom sheet for detail, and pull-to-refresh instead of a toolbar button.
 class PeopleScreen extends StatelessWidget {
-  const PeopleScreen({super.key});
+  const PeopleScreen({super.key, this.authority, this.college});
+
+  /// AD-80: decides whether "Reset password" is offered; the server decides again.
+  final Authority? authority;
+
+  /// For the reset message.
+  final CollegeBrand? college;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => PeopleCubit(locator<PeopleApi>())..load(),
-      child: const _PeopleView(),
+      child: _PeopleView(authority: authority, college: college),
     );
   }
 }
 
 class _PeopleView extends StatefulWidget {
-  const _PeopleView();
+  const _PeopleView({this.authority, this.college});
+
+  final Authority? authority;
+  final CollegeBrand? college;
 
   @override
   State<_PeopleView> createState() => _PeopleViewState();
@@ -41,6 +53,55 @@ class _PeopleViewState extends State<_PeopleView> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  static const _resettable = {'invited', 'active', 'locked'};
+
+  /// Someone else's account that can come back with a code; never your own,
+  /// which is Change password in your Profile.
+  bool _canReset(Person person) {
+    final authority = widget.authority;
+    if (authority == null || !authority.can('account.manage')) return false;
+    if (!_resettable.contains(person.accountStatus)) return false;
+    final me = authority.loginIdentifier?.toLowerCase();
+    return me == null || person.email?.toLowerCase() != me;
+  }
+
+  void _open(Person person) =>
+      showPersonSheet(context, person, onReset: _canReset(person) ? () => _reset(person) : null);
+
+  Future<void> _reset(Person person) async {
+    final invitation = person.accountStatus == 'invited';
+    final go = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(invitation ? 'Send ${person.fullName} a new invitation?' : 'Reset ${person.fullName}\'s password?'),
+        content: Text(
+          invitation
+              ? 'The earlier invitation stops working. You get a new one to hand over.'
+              : 'You get a one-time code to hand to them. Their current password keeps working until they use it; '
+                  'then they are signed out on every device.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(invitation ? 'New invitation' : 'Get reset code'),
+          ),
+        ],
+      ),
+    );
+    if (go != true || !mounted) return;
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await locator<PeopleApi>().issueReset(person.id);
+    if (!mounted) return;
+    result.when(
+      ok: (code) => navigator.push(MaterialPageRoute<void>(
+        builder: (_) => ResetCodeScreen(code: code, name: person.fullName, college: widget.college),
+      )),
+      err: (failure) => messenger.showSnackBar(SnackBar(content: Text(failure.message))),
+    );
   }
 
   @override
@@ -107,7 +168,7 @@ class _PeopleViewState extends State<_PeopleView> {
                   ],
                 ),
               ),
-            _ => _PeopleList(people: state.people, onRefresh: () => cubit.load(refresh: true)),
+            _ => _PeopleList(people: state.people, onRefresh: () => cubit.load(refresh: true), onOpen: _open),
           },
         );
       },
@@ -116,10 +177,11 @@ class _PeopleViewState extends State<_PeopleView> {
 }
 
 class _PeopleList extends StatelessWidget {
-  const _PeopleList({required this.people, required this.onRefresh});
+  const _PeopleList({required this.people, required this.onRefresh, required this.onOpen});
 
   final List<Person> people;
   final Future<void> Function() onRefresh;
+  final void Function(Person) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -132,6 +194,7 @@ class _PeopleList extends StatelessWidget {
         separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
         itemBuilder: (context, index) => _PersonRow(
           person: people[index],
+          onOpen: onOpen,
           // Only the first rows stagger. Past the cap the effect stops
           // explaining arrival order and only costs frames.
           index: index,
@@ -142,10 +205,11 @@ class _PeopleList extends StatelessWidget {
 }
 
 class _PersonRow extends StatelessWidget {
-  const _PersonRow({required this.person, required this.index});
+  const _PersonRow({required this.person, required this.index, required this.onOpen});
 
   final Person person;
   final int index;
+  final void Function(Person) onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +232,7 @@ class _PersonRow extends StatelessWidget {
         label: person.accountStatus ?? 'no account',
         tone: StatusChip.toneForAccount(person.accountStatus),
       ),
-      onTap: () => showPersonSheet(context, person),
+      onTap: () => onOpen(person),
     );
 
     if (index >= AppMotion.staggerLimit || AppMotion.reduced(context)) return row;

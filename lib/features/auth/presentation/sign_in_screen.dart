@@ -125,7 +125,13 @@ class _SignInScreenState extends State<SignInScreen> {
                             )
                           : const Text('Sign in'),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: state.submitting ? null : () => _forgot(context),
+                        child: const Text('Forgot password?'),
+                      ),
+                    ),
                     OutlinedButton.icon(
                       onPressed: state.submitting
                           ? null
@@ -149,6 +155,27 @@ class _SignInScreenState extends State<SignInScreen> {
         ),
       ),
     );
+  }
+
+  /// AD-80: nothing is emailed, so a forgotten password comes back with a
+  /// one-time code from someone who manages accounts at the college.
+  Future<void> _forgot(BuildContext context) async {
+    final hasCode = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Forgot your password?'),
+        content: const Text(
+          'Ask your college administrator for a password reset code. They issue it from People in the app.\n\n'
+          'If you are the administrator, ask another administrator, or Nirvok support.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Close')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('I have a code')),
+        ],
+      ),
+    );
+    if (hasCode != true || !context.mounted) return;
+    await Navigator.of(context).pushNamed(Routes.acceptInvitation, arguments: AcceptInvitationArgs(college: widget.college));
   }
 
   void _submit(BuildContext context) {

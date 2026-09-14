@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/design/tokens.dart';
@@ -125,6 +126,79 @@ class _Detail extends StatelessWidget {
     await cubit.load();
   }
 
+  /// AD-80: a college administrator forgot their password. Nothing is emailed,
+  /// so the code is shown here once and handed over.
+  Future<void> _resetAdministrator(BuildContext context, String? email) async {
+    final cubit = context.read<CollegeDetailCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = TextEditingController(text: email ?? '');
+    final chosen = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Reset an administrator's password"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'You get a one-time code for them. Their current password works until they use it; '
+              'then they are signed out everywhere.',
+            ),
+            const SizedBox(height: AppSpacing.base),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'Their sign-in email',
+                helperText: 'Any administrator of this college',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.of(context).pop(controller.text), child: const Text('Get reset code')),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (chosen == null || chosen.trim().isEmpty || !context.mounted) return;
+    final result = await cubit.resetAdministrator(chosen);
+    final code = result.valueOrNull;
+    if (code == null) {
+      messenger.showSnackBar(SnackBar(content: Text(result.failureOrNull?.message ?? 'That did not work.')));
+      return;
+    }
+    if (!context.mounted) return;
+    final message = code.message(college: CollegeBrand(code: detail.code, name: detail.name));
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Password reset code'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SelectableText(message),
+            const SizedBox(height: AppSpacing.md),
+            Text('Shown only once. Send it to them yourself.', style: Theme.of(context).textTheme.bodySmall),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: message));
+              messenger.showSnackBar(const SnackBar(content: Text('Message copied')));
+            },
+            child: const Text('Copy message'),
+          ),
+          FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -215,6 +289,15 @@ class _Detail extends StatelessWidget {
                         onPressed: busy ? null : () => _reissue(context),
                         icon: const Icon(Icons.forward_to_inbox_rounded),
                         label: const Text('Issue a new invitation'),
+                      ),
+                    ),
+                  if (canManage && detail.status == 'active')
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
+                      child: OutlinedButton.icon(
+                        onPressed: busy ? null : () => _resetAdministrator(context, admin.email),
+                        icon: const Icon(Icons.lock_reset_rounded),
+                        label: const Text("Reset an administrator's password"),
                       ),
                     ),
                 ],

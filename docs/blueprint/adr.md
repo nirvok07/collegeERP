@@ -1673,8 +1673,9 @@ person signs in again (the lock sits above the app's screens, so it cannot ask f
 
 **AD-79 — The College Admin runs the college from the phone: its own dashboard, its own password**
 
-*Status.* Decided by the owner, 2026-09-14 (R65, R66). Amends AD-32 for the College Admin's
-modules, one slice at a time; AD-76 was the first. Built so far as ADM-1.
+*Status.* Decided by the owner, 2026-09-14 (R65, R66, R70). Amends AD-32 for the College Admin's
+modules, one slice at a time; AD-76 was the first. Built so far as ADM-1 (dashboard, password) and
+ADM-2 (campuses and departments: add, rename, archive with a reason, on the web's endpoints).
 
 *Decision.* Whoever holds `institution.manage` gets the college's dashboard, not a teacher's: the
 navy header shows staff, students, departments, programs, sections and courses from
@@ -1689,3 +1690,23 @@ the web already uses; until then a line on the dashboard says they are on the we
 college account only. The current password must be right, the new one meets the password policy
 and differs from it. Every session of the account ends, this one included; audited
 `account.password_changed`. The app's Profile has "Change password" and signs the phone out after.
+
+---
+
+**AD-80 — A forgotten password comes back with a one-time reset code, not an email**
+
+*Status.* OD-PW-1, option (a), taken on the owner's request for a forgot-password flow,
+2026-09-14 (R69). Built as PW-1. An emailed link (option b) waits for an email provider.
+
+*Decision.* Someone who may manage accounts (`account.manage`) issues a code from People for another
+person's account: `POST /v1/people/:id/password-reset`. Never for themselves (that is Change
+password), and for someone holding College Administrator only if they hold it too, because
+whoever holds the code can set the password. The Super Admin issues one for any administrator of
+a college, by sign-in email: `POST /v1/institutions/:id/administrator-reset`; one answer for "no
+such account" and "not an administrator". The code is an `invitation_tokens` row, single use,
+hash only, 24 hours, and issuing one revokes any earlier code; an account still waiting on its
+invitation gets a fresh invitation instead. Issuing changes nothing; the old password works until
+the code is redeemed through `/v1/auth/accept-invite` (the app's "Forgot password?" or "I have an
+invitation", or the web page), which sets the new password, lifts a lockout and ends every
+session. Suspended, deactivated and archived accounts cannot be brought back this way. Audited
+`account.password_reset_issued` (person or platform) and `account.password_reset`. No migration.

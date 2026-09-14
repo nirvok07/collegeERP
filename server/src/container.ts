@@ -11,6 +11,7 @@ import type {
 } from './modules/identity/application/manage-platform-accounts.ts';
 import { TenantAccessGate } from './infrastructure/http/tenant-access.ts';
 import type { LifecycleDeps } from './modules/institution/application/manage-lifecycle.ts';
+import type { PasswordResetDeps } from './modules/identity/application/password-reset.ts';
 import type { ChangePasswordDeps } from './modules/identity/application/change-password.ts';
 import type { PlatformAuditDeps } from './modules/institution/application/platform-audit.ts';
 import type { Config } from './config/config.ts';
@@ -98,6 +99,7 @@ export interface Container {
   acceptInvitation: AcceptInvitationDeps;
   refreshSession: RefreshSessionDeps;
   changePassword: ChangePasswordDeps;
+  passwordReset: PasswordResetDeps & { uow: PgUnitOfWork };
   managePeople: ManagePeopleDeps;
   manageDevices: ManageDevicesDeps;
   roleDefinitions: PgRoleDefinitionRepository;
@@ -205,7 +207,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     lifecycle: {
       uow, institutions, audit, ids, clock,
       identity: {
-        accounts, invitations, audit, ids, clock, tokens,
+        accounts, invitations, assignments, audit, ids, clock, tokens,
         invitationTtlHours: config.INVITATION_TTL_HOURS,
       },
       onStatusChanged: (id) => tenantAccess.invalidate(id),
@@ -218,7 +220,11 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       audit, hasher, tokens, clock, ids, refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
       platformMfa,
     },
-    acceptInvitation: { uow, invitations, accounts, credentials, audit, hasher, tokens, clock, ids },
+    acceptInvitation: { uow, invitations, accounts, credentials, refreshTokens, audit, hasher, tokens, clock, ids },
+    passwordReset: {
+      uow, accounts, invitations, assignments, audit, ids, clock, tokens,
+      invitationTtlHours: config.INVITATION_TTL_HOURS,
+    },
     changePassword: { uow, credentials, refreshTokens, hasher, audit, ids, clock },
     refreshSession: {
       uow, refreshTokens, accounts, platformAccounts, audit, tokens, clock, ids,

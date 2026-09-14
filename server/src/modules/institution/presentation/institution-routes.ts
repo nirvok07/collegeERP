@@ -11,7 +11,8 @@ import {
 import { fail } from '../../../core/errors.ts';
 import { provisionInstitution } from '../application/provision-institution.ts';
 import {
-  changeLifecycle, changePlan, getInstitutionDetail, reissueInvitation, type InstitutionDetail,
+  changeLifecycle, changePlan, getInstitutionDetail, reissueInvitation, resetAdministratorPassword,
+  type InstitutionDetail,
 } from '../application/manage-lifecycle.ts';
 import type { LifecycleAction } from '../domain/lifecycle.ts';
 import { listPlatformAudit, MAX_PAGE } from '../application/platform-audit.ts';
@@ -69,6 +70,8 @@ const profileJson = (i: InstitutionRecord) => ({
   code: i.code, name: i.name, status: i.status, version: i.version,
   logo_url: i.logoUrl ?? null, brand_color: i.brandColor ?? null,
 });
+
+const resetBody = z.object({ email: z.string().email().max(200) });
 
 const lifecycleBody = z.object({
   version: z.number().int().positive(),
@@ -313,6 +316,21 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
     }, 201);
   });
 
+
+  /* AD-80: a one-time reset code for one of the college's administrators, returned once. */
+  app.post('/institutions/:id/administrator-reset', async (req, reply) => {
+    if (!(await requirePlatformPermission(c, req, reply, 'platform.colleges.manage'))) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That college was not found.'));
+    const parsed = resetBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    const result = await resetAdministratorPassword(c.lifecycle, { id, platformAccountId: req.actor!.sub, email: parsed.data.email });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, {
+      kind: result.value.kind, token: result.value.token,
+      expires_at: result.value.expiresAt.toISOString(), delivery: 'pending',
+    }, 201);
+  });
 
   /*
    * AD-70: a college's name, logo and colour, read by its code before anybody

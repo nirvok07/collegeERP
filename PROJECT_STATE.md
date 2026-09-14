@@ -29,7 +29,8 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
-- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard (college overview) and change password, ✅ tests; 🔍 on the phone; ADM-2 organisation, ADM-3 programs, ADM-4 sections and courses, ADM-5 timetable, ADM-6 students ❌
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ✅ tests; 🔍 on the phone; ADM-3 programs, ADM-4 sections and courses, ADM-5 timetable, ADM-6 students ❌
+- Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
 - Examinations, Results (M10): 🚫 OD-1
@@ -37,6 +38,18 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): ADM-2 ✅ and PW-1 ✅ (AD-79, AD-80; R69, R70).
+- ADM-2: Organisation on the phone adds campuses (FAB), opens every campus (even empty) to add
+  departments, renames and archives with a reason; each action only with `campus.manage` /
+  `department.manage`; server refusals shown on the field. `lib/features/organisation/`,
+  `ApiClient.patch`. People and Organisation now receive `ManageArgs` (authority, college).
+- PW-1 (OD-PW-1 → option a): `identity/application/password-reset.ts`; `accept-invitation.ts`
+  redeems reset codes (ends sessions, lifts lockout, refuses shut accounts). App: People sheet →
+  "Reset password" / "Send a new invitation" → one-time message; sign-in "Forgot password?"; Super
+  Admin app college detail → "Reset an administrator's password". Web accept page takes reset codes.
+- Tested: server 427/427 (`password-reset.test.ts` 6), web 195/195, Flutter all pass, analyze
+  clean, both APKs build. Not tested: on the phone; web People reset button not built.
+
 Just done (2026-09-14): ADM-1 ✅ (AD-79; R65, R66; `a74d340`). The owner found the College Admin's dashboard
 was a teacher's, and no way to change a password.
 - Server: `GET /v1/college/overview` (counts under RLS, `institution.read`;
@@ -135,10 +148,9 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ADM-2: the College Admin creates campuses and departments on the phone
-- **Why next:** the owner's request (R66): the admin creates things from the app, and onboarding
-  needs departments first. Endpoints exist (web); the phone's Organisation screen only reads.
-- **Then:** ADM-3 programs, ADM-4 sections and courses with their teachers (answers OD-MOB-2 in
+### NEXT SLICE — ADM-3: the College Admin creates programs on the phone
+- **Why next:** R66; admitting a student needs a program, and programs are still web-only.
+- **Then:** ADM-4 sections and courses with their teachers (answers OD-MOB-2 in
   part), ADM-5 timetable, ADM-6 students; then ST-1 below.
 
 ### LATER — ST-1: student accounts and "My attendance" on mobile
@@ -169,7 +181,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-MOB-1 | Should every module be on mobile too (R63)? | Mobile has teaching, attendance, marks and onboarding; curriculum, sections, timetable planning, verification and platform are web-only (AD-24, AD-32) | Mobile scope | Keep the split; move chosen modules | Partly resolved by AD-79: the College Admin's modules move (ADM-1…6); the rest open |
 | OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | Different modules, permissions and screens | M3/M4 on mobile | Sections; timetable slots and sessions; both | Open |
 | OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
-| OD-PW-1 | How does a college user who forgot their password get back in (R69)? | Today nobody can: reissue works only for an unaccepted invitation, and nothing is emailed (AD-75) | Identity, security | (a) a college admin, or the Super Admin for an admin, issues a one-time reset code handed over like an invitation (no email service needed); (b) emailed reset link (needs an email provider); (c) both | Open, owner to choose; recommended (a) |
+| OD-PW-1 | How does a college user who forgot their password get back in (R69)? | — | Identity, security | — | ✅ Resolved as AD-80: option (a), one-time reset code; emailed link later with an email provider |
 | OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |
 
 ### BLOCKERS
