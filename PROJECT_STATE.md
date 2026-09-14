@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): SAM-3 ✅ (AD-72, AD-81). The Super Admin app now has "Platform accounts"
+Just done (2026-09-14): SAM-3 ✅ (AD-72, AD-81; `c549779`). The Super Admin app now has "Platform accounts"
 (list; Owners invite Owner or Support and hand over a one-time code; an account's screen offers only
 the server's actions: disable, enable, change role pinned to the role shown, reset authenticator,
 new invitation, each with a reason; nothing on your own account; refusals such as "the platform must
@@ -311,6 +311,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+c549779 Build SAM-3: platform accounts, the audit and invitations in the Super Admin app (AD-72, AD-81)
+cba69d7 Record the SAM-2b commit in the tracker
 258940a Build SAM-2b: plan, seats and branding in the Super Admin app (AD-72, AD-81)
 eff961d Record the ADM-11 commit in the tracker
 4cee78c Build ADM-11: registers, mark verification and corrections on the phone (AD-81)
