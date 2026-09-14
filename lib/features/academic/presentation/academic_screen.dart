@@ -99,9 +99,12 @@ class _ProgramsTab extends StatelessWidget {
 
   Future<void> _add(BuildContext context) async {
     final cubit = context.read<AcademicCubit>();
-    final saved = await showDialog<bool>(
+    final saved = await showModalBottomSheet<bool>(
       context: context,
-      builder: (_) => _ProgramDialog(departments: state.departments, submit: cubit.createProgram),
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (_) => _ProgramSheet(departments: state.departments, submit: cubit.createProgram),
     );
     if (saved == true && context.mounted) _say(context, 'Program added');
   }
@@ -185,17 +188,20 @@ class _ProgramsTab extends StatelessWidget {
   }
 }
 
-class _ProgramDialog extends StatefulWidget {
-  const _ProgramDialog({required this.departments, required this.submit});
+/// Adding a program is a bottom sheet on the phone: the list stays in place
+/// behind it, the form rises above the keyboard, and the actions sit where the
+/// thumb is.
+class _ProgramSheet extends StatefulWidget {
+  const _ProgramSheet({required this.departments, required this.submit});
 
   final List<Department> departments;
   final Future<Failure?> Function(ProgramInput) submit;
 
   @override
-  State<_ProgramDialog> createState() => _ProgramDialogState();
+  State<_ProgramSheet> createState() => _ProgramSheetState();
 }
 
-class _ProgramDialogState extends State<_ProgramDialog> {
+class _ProgramSheetState extends State<_ProgramSheet> {
   late String _departmentId = widget.departments.first.id;
   final _name = TextEditingController();
   final _code = TextEditingController();
@@ -247,12 +253,17 @@ class _ProgramDialogState extends State<_ProgramDialog> {
   @override
   Widget build(BuildContext context) {
     final errors = _failure?.fieldErrors ?? const <String, String>{};
-    return AlertDialog(
-      title: const Text('Add a program'),
-      content: SingleChildScrollView(
+    return Padding(
+      // Lifts the whole sheet above the keyboard.
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Text('Add a program', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.base),
             if (_failure != null && errors.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -304,18 +315,29 @@ class _ProgramDialogState extends State<_ProgramDialog> {
               selected: {_termType},
               onSelectionChanged: (s) => setState(() => _termType = s.first),
             ),
+            const SizedBox(height: AppSpacing.xl),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _busy ? null : _save,
+                    child: _busy
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Add program'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
-      actions: [
-        TextButton(onPressed: _busy ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: _busy ? null : _save,
-          child: _busy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Add program'),
-        ),
-      ],
     );
   }
 }

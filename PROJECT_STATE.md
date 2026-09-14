@@ -47,6 +47,10 @@ sign-out/replay revoked nothing. Migration 026 adds `migrator_resolves` (SELECT)
 `migrator_revokes` (UPDATE) policies; applied to Supabase. New session test removes the migrator's
 BYPASSRLS and proves renew + sign-out (failed with 401 before 026, passes after). Server 432/432.
 🔍 NEEDS VALIDATION: a college user on the phone still signed in after 15+ minutes.
+UX (2026-09-14, user request): "Add program" on the phone opens as a bottom sheet instead of a
+dialog (drag handle, lifts above the keyboard, full-width Cancel / Add program). Same fields,
+validation and cubit call. Widget test asserts the sheet; Flutter 244/244. Other add forms
+(year, term, department) are still dialogs; not changed.
 Follow-up (not this slice): `platform_audit_events` (020/022) is migrator-owned SECURITY DEFINER over
 forced-RLS `audit_events`; on Supabase it likely misses platform events that carry a college.
 
@@ -349,6 +353,7 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+a4bb19e Fix college users signed out after 15 minutes on Supabase (migration 026)
 688696b Build ST-1: students sign in with their enrolment number and see their attendance (AD-69)
 4924220 Add the runbook, and take a real database URL out of .env.example
 5c1c541 Record the SAM-3 commit in the tracker

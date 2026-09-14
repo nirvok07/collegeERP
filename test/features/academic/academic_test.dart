@@ -70,7 +70,10 @@ void main() {
 
     await tester.tap(find.widgetWithText(FloatingActionButton, 'Add program'));
     await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget, reason: 'the form opens as a bottom sheet');
+    expect(find.byType(AlertDialog), findsNothing);
     await tester.enterText(find.widgetWithText(TextField, 'Name'), 'BTech Computer Science');
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add program'));
     await tester.tap(find.widgetWithText(FilledButton, 'Add program'));
     await tester.pumpAndSettle();
 
