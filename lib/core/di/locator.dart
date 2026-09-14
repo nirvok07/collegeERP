@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 
 import '../network/api_client.dart';
+import '../saved_reads/saved_reads.dart';
+import 'saved_reads_setup.dart';
 import '../platform/device_registration.dart';
 import '../platform/firebase_services.dart';
 import '../network/auth_api.dart';
@@ -51,6 +53,9 @@ void configureDependencies() {
         // never requires rebuilding it.
         accessToken: () async => locator<SessionManager>().accessToken,
         renew: () => locator<SessionManager>().renew(),
+        // AD-9 (amended): reads are saved per account once the store is open.
+        saved: () => locator.isRegistered<SavedReads>() ? locator<SavedReads>() : null,
+        scope: () => savedReadScope(locator<SessionManager>()),
       ),
     )
     ..registerLazySingleton(

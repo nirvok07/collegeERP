@@ -16,6 +16,9 @@ class DeliveryApi implements DeliveryRepository {
       _client.get(
         '/v1/me/sessions?from=$from&to=$to',
         (data) => (data as List).map((json) => ClassSession.fromJson(json as Map)).toList(),
+        // Saved by the window's length, not its dates, so tomorrow's open finds
+        // today's answer (AD-9 amended); the dashboard's and the schedule's differ.
+        saveAs: '/v1/me/sessions?days=${DateTime.parse(to).difference(DateTime.parse(from)).inDays}',
       );
 
   @override

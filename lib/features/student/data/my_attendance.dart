@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 
 /// ST-1: one course's attendance, or the total, from submitted registers.
@@ -100,7 +101,13 @@ class StudentHomeCubit extends Cubit<StudentHomeState> {
 
   final StudentSelfRepository _repository;
 
+  /// AD-9 (amended): what was saved first, then the server's answer.
   Future<void> load() async {
+    if (state.attendance == null) await fromSaved(_read);
+    return _read();
+  }
+
+  Future<void> _read() async {
     final result = await _repository.myAttendance();
     if (isClosed) return;
     result.when(

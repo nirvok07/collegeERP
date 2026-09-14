@@ -11,6 +11,7 @@ import '../core/design/tokens.dart';
 import '../core/di/locator.dart';
 import '../core/platform/device_registration.dart';
 import '../core/platform/firebase_services.dart';
+import '../core/saved_reads/saved_reads.dart';
 import '../core/widgets/screen_state.dart';
 import '../core/session/authority.dart';
 import '../core/session/session_manager.dart';
@@ -120,16 +121,26 @@ class _CollegeAppState extends State<CollegeApp> {
   /// is absent rather than disabled: a disabled entry advertises something they
   /// will never have.
   Future<void> _loadAuthority() async {
+    // AD-9 (amended): the last answer first, so the dashboard opens at once;
+    // the server's own answer replaces it a moment later.
+    if (_authority == null) await fromSaved(_readAuthority);
+    await _readAuthority();
+  }
+
+  Future<void> _readAuthority() async {
     final result = await locator<AuthorityApi>().mine();
     if (!mounted) return;
-    // A failed read leaves the dashboard unresolved rather than guessing wide.
-    // The shell retries, and nothing is shown that the server would refuse.
+    // A failed first read leaves the dashboard unresolved rather than guessing
+    // wide; the shell retries. A failed refresh keeps the saved answer: the
+    // server still refuses anything that answer no longer allows.
     result.when(
       ok: (authority) => setState(() {
         _authority = authority;
         _authorityFailure = null;
       }),
-      err: (failure) => setState(() => _authorityFailure = failure),
+      err: (failure) => setState(() {
+        if (_authority == null) _authorityFailure = failure;
+      }),
     );
   }
 

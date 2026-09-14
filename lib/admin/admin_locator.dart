@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 
+import '../core/di/saved_reads_setup.dart';
 import '../core/network/api_client.dart';
+import '../core/saved_reads/saved_reads.dart';
 import '../core/network/auth_api.dart';
 import '../core/session/session_manager.dart';
 import '../core/security/app_lock.dart';
@@ -28,6 +30,9 @@ void configureAdminDependencies() {
       () => ApiClient(
         accessToken: () async => adminLocator<SessionManager>().accessToken,
         renew: () => adminLocator<SessionManager>().renew(),
+        // AD-9 (amended): the platform's reads are saved per account too.
+        saved: () => adminLocator.isRegistered<SavedReads>() ? adminLocator<SavedReads>() : null,
+        scope: () => savedReadScope(adminLocator<SessionManager>()),
       ),
     )
     ..registerLazySingleton<CollegesRepository>(() => CollegesApi(adminLocator<ApiClient>()))

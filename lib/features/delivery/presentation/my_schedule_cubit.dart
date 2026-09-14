@@ -6,6 +6,7 @@ import '../../../core/error/failure.dart';
 import '../../../core/network/idempotency.dart';
 import '../../../core/outbox/offline_writes.dart';
 import '../../../core/outbox/outbox.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../domain/class_session.dart';
 import '../domain/delivery_repository.dart';
@@ -80,7 +81,13 @@ class MyScheduleCubit extends Cubit<MyScheduleState> {
   static const lookBackDays = 7;
   static const lookAheadDays = 14;
 
+  /// AD-9 (amended): what was saved first, then the server's answer.
   Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return _read(refresh: true);
+    return _read(refresh: refresh);
+  }
+
+  Future<void> _read({required bool refresh}) async {
     emit(
       state.copyWith(
         status: refresh ? LoadStatus.refreshing : LoadStatus.loading,

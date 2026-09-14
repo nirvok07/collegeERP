@@ -38,11 +38,32 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-OF-R1 — saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on
-the data it last received and refreshes in the background; writes unchanged. Plan: one encrypted
-Drift file for saved reads (AD-59 key handling, separate from the outbox), filled and read at the
-single HTTP boundary (`ApiClient.get`), scoped to account + college, wiped at sign-out, an entry the
-server refuses/cannot find dropped; screens show saved data, then fresh. ❌ NOT BUILT.
+Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
+it last received and refreshes in the background; writes unchanged.
+
+OF-R1 ✅ (2026-09-14) the mechanism, and the screens opened first.
+- `lib/core/saved_reads/`: its own encrypted Drift file (`saved_reads.sqlite`, AD-59 handling via
+  the now-shared `openEncryptedDatabase`, own key `saved_reads_key`); one row per account + read;
+  cleared at every sign-in and sign-out (a generation counter drops a late write from before).
+- `ApiClient.get` saves every successful read's `data`; inside `fromSaved(...)` answers from the
+  phone only (a miss throws `NotSaved`, ending that pass quietly); 403/404 drops the entry, offline
+  keeps it. `saveAs:` names date-window reads (`/v1/me/sessions?days=N`) so a new day still hits.
+- Saved-first: dashboard, my schedule, my teaching, student home, and `/v1/auth/me` (so the shell
+  opens at once; a failed refresh keeps the saved permissions, the server still enforces). College
+  and Super Admin apps both wired. `fromSaved` declines when no store exists (open failed, fakes).
+- Tests: 11 new (store, encryption at rest, ApiClient save/replay/miss/refusal/scope/window, a
+  screen saved → fresh, offline stays on saved). Flutter 268/268. 🔍 NEEDS VALIDATION on the phone.
+
+NOT IN OF-R1, next in order:
+- OF-R2: the remaining back-office screens (people, organisation, academic, curriculum, sections,
+  offerings, students, rooms, timetable, access, college profile, review lists, platform screens):
+  the same two-line `load` each.
+- OF-R1b: open fully offline. Today a launch waits for renewal (AD-25) and nothing is shown until
+  the network answers; showing saved data while renewal retries needs the actor kept on the phone
+  and changes AD-25's "wait" — record as an AD-25 amendment first.
+- OF-R3: attendance and mark sheets. A background refresh must never overwrite marks being typed;
+  needs its own design against the outbox (§7.2 roster cache).
+- A "Saved 2 h ago" freshness line (design system §7.6).
 
 Just done (2026-09-14): UX-3 ✅ skeletons match the real layouts. A skeleton kit
 (`lib/core/widgets/skeleton.dart`: one shimmer clock per screen, ListTile-true rows with the real

@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../delivery/domain/class_session.dart';
 import '../../delivery/domain/delivery_repository.dart';
@@ -69,7 +70,13 @@ class DashboardCubit extends Cubit<DashboardState> {
   static const lookBackDays = 28;
   static const lookAheadDays = 7;
 
+  /// AD-9 (amended): what was saved first, then the server's answer.
   Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return _read(refresh: true);
+    return _read(refresh: refresh);
+  }
+
+  Future<void> _read({required bool refresh}) async {
     emit(
       state.copyWith(
         status: refresh ? LoadStatus.refreshing : LoadStatus.loading,

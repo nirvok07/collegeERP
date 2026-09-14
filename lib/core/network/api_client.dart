@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../error/failure.dart';
 import '../error/result.dart';
+import '../saved_reads/saved_reads.dart';
 import 'dio_intercepter.dart';
 
 /// The single HTTP boundary.
@@ -12,8 +13,18 @@ import 'dio_intercepter.dart';
 /// contract: success carries `data`, failure carries `error` with a user-safe
 /// message that is shown verbatim rather than reworded here.
 class ApiClient {
-  ApiClient({Dio? dio, required this._accessToken, required this._renew})
-    : _dio = dio ?? _createDio();
+  ApiClient({
+    Dio? dio,
+    required this._accessToken,
+    required this._renew,
+    SavedReads? Function()? saved,
+    String? Function()? scope,
+  }) : _dio = dio ?? _createDio(),
+       _saved = saved ?? _noSavedReads,
+       _scope = scope ?? _noScope;
+
+  static SavedReads? _noSavedReads() => null;
+  static String? _noScope() => null;
 
   static Dio _createDio() {
     final client = Dio(
@@ -37,8 +48,58 @@ class ApiClient {
   final Future<String?> Function() _accessToken;
   final Future<bool> Function() _renew;
 
-  Future<Result<T>> get<T>(String path, T Function(dynamic) parse) =>
-      _send(path, 'GET', null, parse);
+  /// AD-9 (amended): where reads are saved, and whose they are. Asked per
+  /// request, so the store can open after this client exists and a sign-out
+  /// takes effect at once.
+  final SavedReads? Function() _saved;
+  final String? Function() _scope;
+
+  /// Reads are saved as they arrive, and inside [fromSaved] answered from what
+  /// was saved instead of the network (AD-9 amended).
+  ///
+  /// Only a successful answer is saved. One the server now refuses or cannot
+  /// find is dropped, so access that was taken away does not linger here.
+  /// [saveAs] names a read whose query shifts daily (a date window) so today's
+  /// open finds yesterday's answer.
+  Future<Result<T>> get<T>(String path, T Function(dynamic) parse, {String? saveAs}) async {
+    final store = _saved();
+    final scope = _scope();
+    final key = saveAs ?? path;
+
+    if (answeringFromSaved) {
+      final hit = store == null || scope == null ? null : await store.read(scope, key);
+      if (hit == null) throw const NotSaved();
+      try {
+        return Ok(parse(hit.data));
+      } catch (_) {
+        // Saved by an older build, in a shape this one no longer reads.
+        await store!.drop(scope!, key);
+        throw const NotSaved();
+      }
+    }
+
+    if (store == null || scope == null) return _send(path, 'GET', null, parse);
+
+    final generation = store.generation;
+    int? status;
+    Object? body;
+    final result = await _send(
+      path,
+      'GET',
+      null,
+      parse,
+      onAnswer: (s, b) {
+        status = s;
+        body = b;
+      },
+    );
+    if (result.failureOrNull == null) {
+      await store.write(scope, key, (body! as Map)['data'], generation: generation);
+    } else if (status == 403 || status == 404) {
+      await store.drop(scope, key);
+    }
+    return result;
+  }
 
   Future<Result<T>> post<T>(
     String path,
@@ -70,6 +131,7 @@ class ApiClient {
     T Function(dynamic) parse, {
     bool isRetry = false,
     String? idempotencyKey,
+    void Function(int status, Object? body)? onAnswer,
   }) async {
     var token = await _accessToken();
 
@@ -103,11 +165,20 @@ class ApiClient {
     // server answering 401 unconditionally cannot become an infinite loop.
     if (response.statusCode == 401 && !isRetry) {
       if (await _renew()) {
-        return _send(path, method, body, parse, isRetry: true, idempotencyKey: idempotencyKey);
+        return _send(
+          path,
+          method,
+          body,
+          parse,
+          isRetry: true,
+          idempotencyKey: idempotencyKey,
+          onAnswer: onAnswer,
+        );
       }
       return const Err(Failure.sessionEnded);
     }
 
+    onAnswer?.call(response.statusCode ?? 0, response.data);
     return parseEnvelope(response.statusCode ?? 0, response.data, parse);
   }
 }

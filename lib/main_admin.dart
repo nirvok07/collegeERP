@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'admin/admin_app.dart';
 import 'admin/admin_locator.dart';
+import 'core/di/saved_reads_setup.dart';
 
 /// The super admin app's own entry point (AD-72).
 ///
@@ -13,5 +14,7 @@ import 'admin/admin_locator.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   configureAdminDependencies();
+  // Before the app listens to the session, so a sign-out wipes it first.
+  await configureSavedReads(adminLocator);
   runApp(const AdminApp());
 }

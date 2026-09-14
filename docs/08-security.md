@@ -44,6 +44,10 @@ assignments in the DAO layer, and the server re-validates on every write.
 
 - The Drift database is encrypted with SQLCipher, keyed by a random value generated on first
   launch and stored in secure storage.
+- Saved reads (AD-9 amended) are a second encrypted Drift file, `saved_reads.sqlite`, with its own
+  key. It holds the server's last answer to each read, for the signed-in account only, and is
+  emptied at every sign-in and sign-out. An answer the server now refuses (403) or cannot find
+  (404) is deleted, so access that was taken away does not linger on the phone.
 - Cached avatars and notice attachments live in the app's private directory, never in shared
   or external storage.
 - The app opts out of Android auto-backup and iOS iCloud backup for its database and secure

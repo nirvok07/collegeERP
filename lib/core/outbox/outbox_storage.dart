@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 
+import 'package:drift/drift.dart' show GeneratedDatabase, QueryExecutor;
 import 'package:drift/native.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path/path.dart' as p;
@@ -19,7 +20,11 @@ abstract interface class DatabaseKeyStore {
 /// key never travels in a backup: a restored database file is unreadable, which
 /// is the point.
 class SecureDatabaseKeyStore implements DatabaseKeyStore {
-  SecureDatabaseKeyStore([FlutterSecureStorage? storage])
+  SecureDatabaseKeyStore([FlutterSecureStorage? storage]) : this.named('outbox_database_key', storage);
+
+  /// Another encrypted file's own key (the saved reads), so losing one file's
+  /// key never costs the other its contents.
+  SecureDatabaseKeyStore.named(this._name, [FlutterSecureStorage? storage])
     : _storage =
           storage ??
           const FlutterSecureStorage(
@@ -28,7 +33,7 @@ class SecureDatabaseKeyStore implements DatabaseKeyStore {
           );
 
   final FlutterSecureStorage _storage;
-  static const _name = 'outbox_database_key';
+  final String _name;
 
   @override
   Future<String?> read() => _storage.read(key: _name);
@@ -64,6 +69,35 @@ Future<OpenedOutbox> openOutboxDatabase({
   required File file,
   bool inBackground = true,
 }) async {
+  final opened = await openEncryptedDatabase(
+    keys: keys,
+    file: file,
+    build: OutboxDatabase.new,
+    inBackground: inBackground,
+  );
+  return OpenedOutbox(opened.database, recreated: opened.recreated);
+}
+
+/// Any encrypted Drift file on this phone (AD-59): the outbox, the saved reads.
+class OpenedDatabase<T> {
+  const OpenedDatabase(this.database, {required this.recreated});
+  final T database;
+
+  /// True when an existing file could not be read with the stored key and was
+  /// replaced. Anything it held is gone, by design.
+  final bool recreated;
+}
+
+/// Opens an encrypted Drift database, creating its key on first use.
+///
+/// Fails closed: if the bundled SQLite has no cipher, this throws rather than
+/// write students' data in plaintext.
+Future<OpenedDatabase<T>> openEncryptedDatabase<T extends GeneratedDatabase>({
+  required DatabaseKeyStore keys,
+  required File file,
+  required T Function(QueryExecutor executor) build,
+  bool inBackground = true,
+}) async {
   var recreated = false;
   var key = await keys.read();
   if (key == null) {
@@ -76,30 +110,28 @@ Future<OpenedOutbox> openOutboxDatabase({
     }
   }
 
-  var database = _open(file, key, inBackground);
+  var database = build(_executor(file, key, inBackground));
   try {
     await database.customSelect('SELECT count(*) FROM sqlite_master').get();
   } catch (_) {
     await database.close();
     if (file.existsSync()) file.deleteSync();
     recreated = true;
-    database = _open(file, key, inBackground);
+    database = build(_executor(file, key, inBackground));
     await database.customSelect('SELECT count(*) FROM sqlite_master').get();
   }
-  return OpenedOutbox(database, recreated: recreated);
+  return OpenedDatabase(database, recreated: recreated);
 }
 
-OutboxDatabase _open(File file, String key, bool inBackground) {
+QueryExecutor _executor(File file, String key, bool inBackground) {
   void setup(Database raw) {
     raw.execute("PRAGMA hexkey = '$key'");
     if (raw.select('PRAGMA cipher').isEmpty) {
-      throw StateError('SQLite encryption is not available; refusing to open the outbox.');
+      throw StateError('SQLite encryption is not available; refusing to open the database.');
     }
   }
 
-  return OutboxDatabase(
-    inBackground
-        ? NativeDatabase.createInBackground(file, setup: setup)
-        : NativeDatabase(file, setup: setup),
-  );
+  return inBackground
+      ? NativeDatabase.createInBackground(file, setup: setup)
+      : NativeDatabase(file, setup: setup);
 }
