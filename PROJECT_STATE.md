@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-7 ✅ (AD-81; the owner again: "sub kuch phone pe bhi hoga, everything").
+Just done (2026-09-14): ADM-7 ✅ (AD-81; `080a2fa`; the owner again: "sub kuch phone pe bhi hoga, everything").
 Course offerings on the phone (`lib/features/offerings/`), inside a section's screen ("Courses
 taught": add a course as lecture, lab or tutorial) and on their own screen: the server's
 transitions ("Start teaching" disabled with the reason until a teacher is assigned and the section
@@ -255,6 +255,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+080a2fa Build ADM-7: course offerings, their teachers and enrolments on the phone (AD-81)
+f5f85e5 Record the ADM-6 commit in the tracker
 a35dd2f Build ADM-6: sections and their members on the phone (AD-81)
 40e5b2f Record the ADM-5 commit in the tracker
 6650b8f Build ADM-5: rooms on the phone (AD-81)
