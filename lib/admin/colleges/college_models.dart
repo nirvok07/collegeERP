@@ -140,7 +140,11 @@ class ProvisionInput {
     required this.adminEmail,
     this.logoUrl = '',
     this.brandColor = '',
+    this.seatLimit,
   });
+
+  /// How many live accounts the college may hold (AD-65); the server uses 500 when absent.
+  final int? seatLimit;
 
   final String code;
   final String name;
@@ -154,6 +158,7 @@ class ProvisionInput {
     'name': name.trim(),
     'logo_url': logoUrl.trim().isEmpty ? null : logoUrl.trim(),
     'brand_color': brandColor.trim().isEmpty ? null : brandColor.trim().toUpperCase(),
+    'seat_limit': ?seatLimit,
     'admin': {'full_name': adminName.trim(), 'email': adminEmail.trim().toLowerCase()},
   };
 }
@@ -201,6 +206,7 @@ String? provisionFormError(ProvisionInput input) {
     return 'The code uses 3 to 32 lowercase letters, numbers and hyphens.';
   }
   if (input.adminName.trim().length < 2) return "Give the administrator's name.";
+  if (input.seatLimit != null && input.seatLimit! < 1) return 'Seats is a whole number of at least 1.';
   if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(input.adminEmail.trim())) {
     return "Enter the administrator's email address.";
   }

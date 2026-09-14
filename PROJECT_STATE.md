@@ -38,6 +38,13 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Fixed on the phone test (2026-09-14): adding a college on Supabase failed with "using all 0 of its
+seats". The seat check (023) runs as its owner, the migrator; `institutions` forces row-level
+security with only `app_role_only`; on Supabase the migrator has no BYPASSRLS (locally it does, so
+tests passed), so the check saw no college. Migration 025 adds a read-only `migrator_reads` policy;
+applied to Supabase and confirmed. The Super Admin app's add-college form now has a Seats field
+(default 500). Server 431/431, Flutter 244/244, admin APK rebuilt and installed on the phone.
+
 Just done (2026-09-14): ST-1 ✅ (AD-69, R72; `688696b`). Students on the phone. Server: `POST
 /v1/students/:id/access` issues a one-time code (12 characters, 7 days; a reset for an active student,
 24 hours), creating the student's account on first issue (a seat); `POST /v1/auth/student-activate`

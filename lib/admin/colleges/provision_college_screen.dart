@@ -38,6 +38,7 @@ class _ProvisionFormState extends State<_ProvisionForm> {
   final _adminEmail = TextEditingController();
   final _logo = TextEditingController();
   final _colour = TextEditingController();
+  final _seats = TextEditingController(text: '500');
   bool _codeEdited = false;
 
   @override
@@ -51,7 +52,7 @@ class _ProvisionFormState extends State<_ProvisionForm> {
 
   @override
   void dispose() {
-    for (final c in [_name, _code, _adminName, _adminEmail, _logo, _colour]) {
+    for (final c in [_name, _code, _adminName, _adminEmail, _logo, _colour, _seats]) {
       c.dispose();
     }
     super.dispose();
@@ -64,6 +65,9 @@ class _ProvisionFormState extends State<_ProvisionForm> {
     adminEmail: _adminEmail.text,
     logoUrl: _logo.text,
     brandColor: _colour.text,
+    // Empty means the server's default; anything else must be a whole number, so
+    // an unreadable entry is sent to the check below as invalid, never dropped.
+    seatLimit: _seats.text.trim().isEmpty ? null : (int.tryParse(_seats.text.trim()) ?? -1),
   );
 
   Future<void> _submit(BuildContext context) async {
@@ -110,6 +114,15 @@ class _ProvisionFormState extends State<_ProvisionForm> {
                   helper: 'What people type on the app\'s first screen.',
                   error: fields['code'],
                   onChanged: (_) => _codeEdited = true,
+                ),
+                // AD-65: one live account is one seat; changeable later from the college's page.
+                _field(
+                  _seats,
+                  'Seats',
+                  hint: '500',
+                  helper: 'How many staff and student accounts the college may have. Change it any time.',
+                  error: fields['seat_limit'],
+                  keyboard: TextInputType.number,
                 ),
                 const Divider(height: AppSpacing.xl),
                 _field(_adminName, 'Administrator name', hint: 'Priya Sharma', error: fields['admin.full_name']),

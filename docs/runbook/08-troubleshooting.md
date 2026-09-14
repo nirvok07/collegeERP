@@ -20,6 +20,11 @@ Supabase's pooler keeps a role's old password for a while after it changes. Wait
 **`psql` cannot parse a Supabase URL whose password contains `@`**
 Percent-encode it in URLs you give to `psql`: `@` is `%40`. The server's own URL handling copes.
 
+**Adding a college fails: "This college is using all 0 of its seats"**
+The database was migrated before `025_seat_check_reads_institutions.sql`. Run `npm run migrate`
+(from `server/`) against it. The seat check could not read the college on a database where the
+migrator role has no BYPASSRLS, which is the case on Supabase.
+
 **Tests fail with connection errors**
 They always use local PostgreSQL (`college_erp_test`), never Supabase. See
 [Tests and builds](07-tests-and-builds.md).
