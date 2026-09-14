@@ -39,7 +39,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 
 ### CURRENT SLICE
 Just done (2026-09-14): AD-81 recorded (owner: "all modules for phone too"; OD-MOB-1 resolved) and
-ADM-3 ✅: "Academic setup" on the phone (`lib/features/academic/`), Programs tab (by department; add
+ADM-3 ✅ (`3f0b740`): "Academic setup" on the phone (`lib/features/academic/`), Programs tab (by department; add
 with department, code, award, duration, semesters/annual; archive) and Calendar tab (years with
 terms; add year June–May by default, add the next term by default); `department.manage` /
 `term.manage`; calendar read only with `section.read`. Dashboard tile "Academic setup". No server
@@ -218,6 +218,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+3f0b740 Build ADM-3 and decide AD-81: every module on the phone; programs and the calendar first
+f1c3d10 Record the ADM-2 and PW-1 commit in the tracker
 2f6852b Build ADM-2 and PW-1: campuses and departments on the phone; forgotten passwords by reset code (AD-80)
 a74d340 Build ADM-1: the College Admin's own dashboard, and change password (AD-79)
 838c839 Finish ENV-2: development runs on Supabase; the rebuild survives the pooler's delay
