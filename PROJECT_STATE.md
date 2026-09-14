@@ -47,14 +47,28 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
   tests (incl. 403 for a teacher), Flutter +2. 🔍 NEEDS VALIDATION on the phone.
 - OTP sign-in 🟡 AD-82 approved (everyone incl. Super Admin; no passwords; fixed code 123456 on every
   server until go-live, risk accepted by owner). Slices, in order:
-  - OTP-1 ❌ server: request/verify for college (email, mobile, enrolment no.) and platform; 5-min
-    single-use codes, 5 tries, 5 requests / 15 min, no existence disclosure; invited → active on
-    first code; sender port with the fixed-code sender; startup warning.
-  - OTP-2 ❌ college app: identifier → code screens; remove sign-in password, accept-invite
-    password, student activation, change password, reset code UI.
-  - OTP-3 ❌ Super Admin app: same; remove password + authenticator enrolment.
-  - OTP-4 ❌ mobile numbers on appoint-teacher and admit-student (server + both forms).
+  - OTP-1 ✅ `adf1fe5` server: `/v1/auth/otp/request|verify` (college: email, mobile, enrolment no.)
+    and `/v1/auth/platform/otp/*`; 5-min single-use hashed codes, 5 tries, 5 requests / 15 min, decoy
+    for unknown identifiers (no existence disclosure); invited → active on first code; sender port
+    (fixed-code sender; unconfigured sender refuses all alike); startup warning. AD-62 superseded:
+    guard, /auth/me, renewal and account actions no longer need an authenticator. Migration 028
+    (applied to Supabase). Server 449/449 (+10 OTP tests, platform tests rewritten).
+  - OTP-2 ✅ `77975e5` college app: identifier → code (Change, Send a new code); removed the
+    invitation, student-activation and change-password screens/routes, Profile's Change password,
+    People's Reset password; student "Give app access" confirms access, shows no code. Flutter 269/269.
+  - OTP-3 ✅ `f3152d0` Super Admin app: email → code; password, authenticator setup and invitation
+    form removed. Flutter 269/269.
+  - 🔍 NEEDS VALIDATION on the phone: both apps sign in with 123456; a session renews.
+  - OTP-4 ✅ `265e9be` students can be admitted with a mobile (server stores it on the person);
+    admit form asks for a mobile or email; appoint form says the email/mobile is where the code
+    goes. Server 450/450, Flutter 270/270. Runbook 09 steps 7, 8 and 13 describe code sign-in.
+    Platform accounts have no phone column: the Super Admin signs in by email only.
   - OTP-5 ❌ web console to codes; remove password endpoints; real email / WhatsApp / SMS senders.
+  - OTP-6 ❌ change a person's email or mobile on record (server + People / Students on the phone).
+    Nothing edits them today; someone whose number changes cannot receive a code. Needed before
+    go-live alongside the senders.
+  - Docs ✅ runbook START-HERE, 01, 06 and 09 describe code sign-in; 04 (web console) still passwords
+    until OTP-5.
 - 🚫 GO-LIVE BLOCKER (AD-82): no real OTP senders; `OTP_FIXED_CODE=123456` lets anyone sign in as
   anyone. Must be removed before any real college uses the system.
 
@@ -412,6 +426,15 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+265e9be Capture a mobile number for students and teachers, for their sign-in code (OTP-4, AD-82)
+f3152d0 The Super Admin app signs in with a code to its email (OTP-3, AD-82)
+77975e5 The college app signs in with a code to email or mobile (OTP-2, AD-82)
+adf1fe5 Sign in by a one-time code to email or mobile, on the server (OTP-1, AD-82)
+d4f6121 Seed script reuses an existing calendar, and seeds 7 teachers, 10 students
+28a4060 Edit and archive programs, academic years and terms (FB-2)
+151ec7c People no longer lists the person looking at it (FB-1)
+7814377 Add a script that builds runbook 09's whole college through the API
+943ea33 Record today's commits in the tracker
 a1f9d11 Open screens on their saved data, then refresh (OF-R1)
 16c1545 Amend AD-9: reads are cache-first on every mobile screen
 90bce01 Make every loading skeleton match its screen (UX-3)

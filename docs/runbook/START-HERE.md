@@ -97,13 +97,13 @@ adb install -r build/app/outputs/flutter-apk/app-admin-debug.apk
 
 Steps 3 and 4 done, open the app on the phone:
 
-1. **Super Admin app**: sign in as the Owner (`nirvokofficial@gmail.com` and your password). The
-   first time, it shows an authenticator key: add it to Google Authenticator, type the 6-digit code,
-   then sign in again with password + a fresh code.
+1. **Super Admin app**: enter the Owner's email (`nirvokofficial@gmail.com`) → **Send code** → type
+   the code. There is no password and no authenticator (AD-82). Until go-live nothing is sent and
+   the code is always **123456**.
 2. **Add college**: code (such as `sunrise`), name, and the administrator's name and email (your own
-   email works). Copy the invitation message.
-3. **College app**: enter the college code → **I have an invitation** → paste the invitation code →
-   set a password → sign in.
+   email works).
+3. **College app**: enter the college code → the administrator's email → **Send code** → type
+   **123456**. The administrator's account becomes active on this first sign-in.
 4. Set up the college in the order in [First college, end to end](06-first-college.md): Organisation →
    Academic setup → Curriculum → Rooms → Onboarding → Sections → courses → timetable.
 

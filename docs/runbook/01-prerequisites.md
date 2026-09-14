@@ -17,9 +17,6 @@ Optional:
 
 - **A Supabase project**, if the team shares a hosted development database instead of each person
   running PostgreSQL. See [Database](02-database.md).
-- **An authenticator app** on a phone (Google Authenticator, Microsoft Authenticator, 1Password…).
-  Every platform account signs in with a password **and** a six-digit code (AD-62), so you need one
-  before you can use the Super Admin app.
 - **Xcode** for iOS. Not validated yet; the instructions here cover Android.
 
 ## Check the setup

@@ -215,7 +215,10 @@ Dashboard → **Rooms** → **Add room**:
 
 ### Step 7: Onboarding, Teachers
 
-Dashboard → **Onboarding** → **Appoint a teacher**. Each one gives you an invitation message to send.
+Dashboard → **Onboarding** → **Appoint a teacher**. There is no invitation to accept and no
+password (AD-82): the teacher opens the app, enters the college code, then their email (or the
+mobile you gave), and signs in with the code sent to it. Until go-live the code is always
+**123456** and nothing is actually sent.
 
 | Name | Email | Department | Role |
 |---|---|---|---|
@@ -229,7 +232,8 @@ To see a teacher's side on your own phone, use an email you can sign in with for
 
 ### Step 8: Onboarding, Students
 
-**Onboarding** → **Onboard a student**. Program: B.Tech CSE, admitted on 20 Jul 2026.
+**Onboarding** → **Onboard a student**. Program: B.Tech CSE, admitted on 20 Jul 2026. Give each
+student a **mobile number** or an email: that is where their sign-in code goes.
 
 | Enrolment number | Name | Section (Step 9) |
 |---|---|---|
@@ -307,10 +311,10 @@ generation skips them:
 
 ### Step 13: Student app access
 
-Dashboard → **Students** → a student → **App access code** → send them the message. The student
-opens the College app, enters `iit-delhi`, taps **Student? Activate your account**, enters their
-enrolment number and the code, and sets a password. They then sign in with their enrolment number
-and see **My attendance**.
+Dashboard → **Students** → a student → **Give app access** (it creates their account, which takes
+a seat) → send them the message. The student opens the College app, enters `iit-delhi`, then their
+enrolment number, mobile or email, and types the code that arrives on their mobile or email on
+record (**123456** until go-live). They see **My attendance**. There is no password.
 
 ---
 
