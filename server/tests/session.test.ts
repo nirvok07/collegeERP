@@ -5,7 +5,7 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type { LightMyRequestResponse } from 'fastify';
 import {
-  buildTestApp, resetData, seedPlatformAccount, setupDatabase, signInPlatform, MIGRATOR_URL, type TestApp,
+  buildTestApp, resetData, seedPlatformAccount, setupDatabase, signInPlatform, MIGRATOR_URL, TEST_DB, type TestApp,
   platformSessionResponse,
 } from './helpers.ts';
 import { createPool } from '../src/infrastructure/db/pool.ts';
@@ -170,30 +170,68 @@ describe('persistent session', () => {
   });
 
   it('a tenant user session renews with the same mechanism', async () => {
-    const account = await seedPlatformAccount();
-    const login = await signInPlatform(harness.app, account.email, account.password);
-    const prov = (await harness.app.inject({
-      method: 'POST', url: '/v1/institutions',
-      headers: { authorization: `Bearer ${login.body.data.access_token}` },
-      payload: { code: 'river-college', name: 'River College', admin: { full_name: 'Meera Rao', email: 'meera@river.edu' } },
-    })) as LightMyRequestResponse;
-
-    await harness.app.inject({
-      method: 'POST', url: '/v1/auth/accept-invite',
-      payload: {
-        institution_code: 'river-college',
-        token: prov.json().data.invitation.token,
-        password: 'meera-strong-99',
-      },
-    });
-    const signedIn = (await harness.app.inject({
-      method: 'POST', url: '/v1/auth/login',
-      payload: { institution_code: 'river-college', identifier: 'meera@river.edu', password: 'meera-strong-99' },
-    })) as LightMyRequestResponse;
+    const signedIn = await signInCollegeUser();
 
     const refreshed = await refreshWith(cookieFrom(signedIn)!);
     assert.equal(refreshed.statusCode, 200);
     assert.equal(refreshed.json().data.actor.actor_type, 'person');
     assert.ok(refreshed.json().data.actor.tenant_id, 'the renewed token stays tenant-scoped');
   });
+
+  // Supabase: the migrator that owns the session functions has no BYPASSRLS
+  // there (migration 026). Locally it does, which hid the bug, so this test
+  // takes the privilege away for its duration.
+  it('a college session renews and signs out when the migrator cannot bypass row-level security', async (t) => {
+    const admin = createPool(`postgres://${process.env.USER}@localhost:5432/${TEST_DB}`);
+    try {
+      const { rows } = await admin.query('SELECT rolsuper FROM pg_roles WHERE rolname = current_user');
+      if (!rows[0]?.rolsuper) return t.skip('needs a local superuser to change the migrator role');
+    } catch {
+      await admin.end();
+      return t.skip('needs a local superuser to change the migrator role');
+    }
+
+    const signedIn = await signInCollegeUser();
+    await admin.query('ALTER ROLE erp_migrator NOBYPASSRLS');
+    try {
+      const renewed = await refreshWith(cookieFrom(signedIn)!);
+      assert.equal(renewed.statusCode, 200, 'a college token must be found without tenant context');
+
+      const token = renewed.json().data.refresh_token as string;
+      const out = await harness.app.inject({
+        method: 'POST', url: '/v1/auth/logout', payload: { refresh_token: token },
+      }) as LightMyRequestResponse;
+      assert.equal(out.statusCode, 200);
+      const after = await refreshWith(token);
+      assert.equal(after.statusCode, 401, 'signing out must really revoke the college family');
+    } finally {
+      await admin.query('ALTER ROLE erp_migrator BYPASSRLS');
+      await admin.end();
+    }
+  });
 });
+
+async function signInCollegeUser(): Promise<LightMyRequestResponse> {
+  const account = await seedPlatformAccount();
+  const login = await signInPlatform(harness.app, account.email, account.password);
+  const prov = (await harness.app.inject({
+    method: 'POST', url: '/v1/institutions',
+    headers: { authorization: `Bearer ${login.body.data.access_token}` },
+    payload: { code: 'river-college', name: 'River College', admin: { full_name: 'Meera Rao', email: 'meera@river.edu' } },
+  })) as LightMyRequestResponse;
+
+  await harness.app.inject({
+    method: 'POST', url: '/v1/auth/accept-invite',
+    payload: {
+      institution_code: 'river-college',
+      token: prov.json().data.invitation.token,
+      password: 'meera-strong-99',
+    },
+  });
+  const signedIn = (await harness.app.inject({
+    method: 'POST', url: '/v1/auth/login',
+    payload: { institution_code: 'river-college', identifier: 'meera@river.edu', password: 'meera-strong-99' },
+  })) as LightMyRequestResponse;
+  assert.equal(signedIn.statusCode, 200);
+  return signedIn;
+}

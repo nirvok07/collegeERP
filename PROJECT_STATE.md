@@ -38,7 +38,19 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Fixed on the phone test (2026-09-14): adding a college on Supabase failed with "using all 0 of its
+Fixed on the phone test (2026-09-14): college users were signed out ~15 minutes after sign-in
+("Your session has ended"). Not the design (AD-25 sliding 30-day renewal is intact): the same
+Supabase cause as 025. `auth_resolve_refresh_token` and `auth_revoke_token_family` (005) are
+SECURITY DEFINER, owned by the migrator; `refresh_tokens` forces row-level security, so without
+BYPASSRLS they saw only platform rows. The first renewal of every college session failed, and
+sign-out/replay revoked nothing. Migration 026 adds `migrator_resolves` (SELECT) and
+`migrator_revokes` (UPDATE) policies; applied to Supabase. New session test removes the migrator's
+BYPASSRLS and proves renew + sign-out (failed with 401 before 026, passes after). Server 432/432.
+🔍 NEEDS VALIDATION: a college user on the phone still signed in after 15+ minutes.
+Follow-up (not this slice): `platform_audit_events` (020/022) is migrator-owned SECURITY DEFINER over
+forced-RLS `audit_events`; on Supabase it likely misses platform events that carry a college.
+
+Earlier (2026-09-14): adding a college on Supabase failed with "using all 0 of its
 seats". The seat check (023) runs as its owner, the migrator; `institutions` forces row-level
 security with only `app_role_only`; on Supabase the migrator has no BYPASSRLS (locally it does, so
 tests passed), so the check saw no college. Migration 025 adds a read-only `migrator_reads` policy;

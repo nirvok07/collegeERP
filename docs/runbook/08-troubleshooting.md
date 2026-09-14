@@ -25,6 +25,12 @@ The database was migrated before `025_seat_check_reads_institutions.sql`. Run `n
 (from `server/`) against it. The seat check could not read the college on a database where the
 migrator role has no BYPASSRLS, which is the case on Supabase.
 
+**College users are signed out after 15 minutes: "Your session has ended. Please sign in again."**
+The database was migrated before `026_session_functions_read_refresh_tokens.sql`. Run
+`npm run migrate` (from `server/`), then sign in once more. Renewal could not find a college
+user's refresh token on a database where the migrator role has no BYPASSRLS (Supabase), so the
+first renewal after sign-in failed. Super admin sessions were not affected.
+
 **Tests fail with connection errors**
 They always use local PostgreSQL (`college_erp_test`), never Supabase. See
 [Tests and builds](07-tests-and-builds.md).
