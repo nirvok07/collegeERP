@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-11 ✅ (AD-81). Review on the phone (`lib/features/review/`, a repository of
+Just done (2026-09-14): ADM-11 ✅ (AD-81; `4cee78c`). Review on the phone (`lib/features/review/`, a repository of
 its own so the teacher's offline-queued repositories and their fakes stay as they are):
 "Registers" shows a day's classes across the college with each register's state and counts, and a
 submitted register opens for correcting one student's mark with a reason (`attendance.correct`);
@@ -292,6 +292,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+4cee78c Build ADM-11: registers, mark verification and corrections on the phone (AD-81)
+e5ec63d Record the ADM-10 commit in the tracker
 d558b20 Build ADM-10: access and the college profile on the phone (AD-81)
 f054e4d Record the ADM-9 commit in the tracker
 e956717 Build ADM-9: students on the phone (AD-81)
