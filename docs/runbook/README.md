@@ -16,6 +16,7 @@ a quick start for someone who has done it before.
 | 6 | [First college, end to end](06-first-college.md) | From the platform Owner to a teacher marking attendance |
 | 7 | [Tests and builds](07-tests-and-builds.md) | Every check the project has, and building the APKs |
 | 8 | [Troubleshooting](08-troubleshooting.md) | The problems people actually hit, and the fix for each |
+| 9 | [Example: IIT Delhi](09-example-iit-delhi.md) | A complete college, as a tree and screen by screen, with realistic values |
 
 ## The pieces
 
