@@ -7,6 +7,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../offerings/data/offerings_api.dart';
 import '../data/sections_api.dart';
 import '../domain/section.dart';
 import 'section_screen.dart';
@@ -192,6 +193,7 @@ class _SectionsView extends StatelessWidget {
                               sectionId: s.id,
                               repository: cubit.repository,
                               authority: authority,
+                              offerings: locator.isRegistered<OfferingsRepository>() ? locator<OfferingsRepository>() : null,
                             ),
                           ));
                           if (context.mounted) await cubit.load();

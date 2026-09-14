@@ -627,7 +627,7 @@ class _AdminModules extends StatelessWidget {
       if (authority.can('section.read') && authority.can('person.read'))
         (
           title: 'Sections',
-          subtitle: o == null ? 'Cohorts and students' : '${o.sections} running',
+          subtitle: o == null ? 'Cohorts, courses and students' : '${o.sections} running, ${o.offerings} courses',
           icon: Icons.groups_rounded,
           color: AppColors.primary,
           route: Routes.sections,
@@ -705,7 +705,7 @@ class _AdminModules extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLow,
             bordered: false,
             child: Text(
-              'Coming next to the app: course offerings, the timetable and the student list. '
+              'Coming next to the app: the timetable and the student list. '
               'Until then they are on the web console.',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),

@@ -1738,3 +1738,5 @@ keeps a refusal, local or the server's, in the form, and owns its text controlle
 ADM-5 (2026-09-14): rooms, `lib/features/rooms/`.
 ADM-6 (2026-09-14): sections and their members, `lib/features/sections/`; OD-MOB-2 answered: both
 sections (here) and timetable slots and sessions (ADM-8).
+ADM-7 (2026-09-14): course offerings, their teachers and enrolments, `lib/features/offerings/`,
+reached from a section's screen.

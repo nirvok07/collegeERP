@@ -6,6 +6,8 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../offerings/data/offerings_api.dart';
+import '../../offerings/presentation/section_offerings.dart';
 import '../data/sections_api.dart';
 import '../domain/section.dart';
 import 'sections_cubits.dart';
@@ -15,11 +17,14 @@ import 'sections_screen.dart' show sectionTone;
 /// in it. Each action is present only with its permission; the server checks
 /// again and its refusal stays in the form that caused it.
 class SectionScreen extends StatelessWidget {
-  const SectionScreen({super.key, required this.sectionId, required this.repository, this.authority});
+  const SectionScreen({super.key, required this.sectionId, required this.repository, this.authority, this.offerings});
 
   final String sectionId;
   final SectionsRepository repository;
   final Authority? authority;
+
+  /// ADM-7: the section's courses, for whoever may see offerings.
+  final OfferingsRepository? offerings;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +34,8 @@ class SectionScreen extends StatelessWidget {
         canManage: authority?.can('section.manage') ?? false,
         canSeeMembers: authority?.can('student.read') ?? false,
         canPlace: authority?.can('enrolment.manage') ?? false,
+        offerings: (authority?.can('offering.read') ?? false) ? offerings : null,
+        authority: authority,
       ),
     );
   }
@@ -38,11 +45,19 @@ void _say(BuildContext context, String message) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
 class _SectionView extends StatelessWidget {
-  const _SectionView({required this.canManage, required this.canSeeMembers, required this.canPlace});
+  const _SectionView({
+    required this.canManage,
+    required this.canSeeMembers,
+    required this.canPlace,
+    this.offerings,
+    this.authority,
+  });
 
   final bool canManage;
   final bool canSeeMembers;
   final bool canPlace;
+  final OfferingsRepository? offerings;
+  final Authority? authority;
 
   Future<void> _move(BuildContext context, Section section, String to) async {
     final cubit = context.read<SectionCubit>();
@@ -251,6 +266,10 @@ class _SectionView extends StatelessWidget {
                                 : FilledButton.tonal(onPressed: () => _move(context, section, to), child: Text(Section.actionLabel(to))),
                         ],
                       ),
+                    ],
+                    if (offerings != null) ...[
+                      const Divider(height: AppSpacing.xl),
+                      SectionOfferings(section: section, repository: offerings!, authority: authority),
                     ],
                     if (canSeeMembers) ...[
                       const Divider(height: AppSpacing.xl),

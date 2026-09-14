@@ -29,7 +29,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
-- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ✅ tests; 🔍 on the phone; ADM-7…ADM-11 ❌ (AD-81: every module on the phone)
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ✅ tests; 🔍 on the phone; ADM-8…ADM-11 ❌ (AD-81: every module on the phone)
 - Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
@@ -38,6 +38,15 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): ADM-7 ✅ (AD-81; the owner again: "sub kuch phone pe bhi hoga, everything").
+Course offerings on the phone (`lib/features/offerings/`), inside a section's screen ("Courses
+taught": add a course as lecture, lab or tutorial) and on their own screen: the server's
+transitions ("Start teaching" disabled with the reason until a teacher is assigned and the section
+is active; cancel needs a reason), teachers (assign from staff as lead, co or assistant; end with a
+reason), roster (enrol the whole section in one step, choose students of the section, drop with a
+reason). `offering.manage`, `instructor.assign`, `enrolment.manage`. No server change. Tested:
+Flutter 219/219, analyze clean, APK builds. Not tested: on the phone.
+
 Just done (2026-09-14): ADM-6 ✅ (AD-81; `a35dd2f`). "Sections" on the phone (`lib/features/sections/`): the
 term that contains today by default (or all terms); add a section (program, academic term, term of
 the program, next free label suggested, capacity); a section's screen shows the server's allowed
@@ -185,10 +194,10 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ADM-7: course offerings, their teachers and enrolments on the phone (AD-81)
-- **Why next:** a section's courses are offerings; teachers are assigned to them, and students are
-  enrolled in them before attendance and marks can be taken. Still web-only.
-- **Then:** ADM-8 timetable and non-teaching days, ADM-9 students, ADM-10 access and college profile,
+### NEXT SLICE — ADM-8: the timetable and non-teaching days on the phone (AD-81)
+- **Why next:** a running course needs weekly slots (day, time, room) and its sessions generated
+  before teachers can mark attendance; holidays come off the calendar. Still web-only.
+- **Then:** ADM-9 students (list, detail, status, placements), ADM-10 access and college profile,
   ADM-11 verification and corrections; SAM-2b and SAM-3 in the Super Admin app; ST-1 below.
 
 ### LATER — ST-1: student accounts and "My attendance" on mobile
