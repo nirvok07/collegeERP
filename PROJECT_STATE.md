@@ -392,6 +392,11 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+a1f9d11 Open screens on their saved data, then refresh (OF-R1)
+16c1545 Amend AD-9: reads are cache-first on every mobile screen
+90bce01 Make every loading skeleton match its screen (UX-3)
+93a726a Keep sessions for a year from last use
+b8e0e71 Add program opens as a bottom sheet on the phone
 a4bb19e Fix college users signed out after 15 minutes on Supabase (migration 026)
 688696b Build ST-1: students sign in with their enrolment number and see their attendance (AD-69)
 4924220 Add the runbook, and take a real database URL out of .env.example
