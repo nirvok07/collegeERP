@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-4 ✅ (AD-81). "Curriculum" on the phone (`lib/features/curriculum/`):
+Just done (2026-09-14): ADM-4 ✅ (AD-81; `5746d1e`). "Curriculum" on the phone (`lib/features/curriculum/`):
 Regulations (one program at a time; new draft with this year and the program's term count by
 default; version screen term by term: add course with credits and core/elective/audit, remove,
 publish with the empty-term warning; published versions offer "New version": revision or new
@@ -229,6 +229,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+5746d1e Build ADM-4: courses and curriculum versions on the phone (AD-81)
+c2a7cc2 Record the ADM-3 commit in the tracker
 3f0b740 Build ADM-3 and decide AD-81: every module on the phone; programs and the calendar first
 f1c3d10 Record the ADM-2 and PW-1 commit in the tracker
 2f6852b Build ADM-2 and PW-1: campuses and departments on the phone; forgotten passwords by reset code (AD-80)
