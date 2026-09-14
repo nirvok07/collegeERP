@@ -126,6 +126,14 @@ Online-only, rejected because it breaks the product's most frequent daily action
 notices and a student's own records are offline-capable. Back-office modules are online-first
 with graceful degradation.
 
+*Amendment, 2026-09-14 (owner's decision).* Reads are cache-first on every mobile screen, the
+back office included: a screen opens on the data it last received, marked as saved, and refreshes
+in the background; the fresh answer replaces it on screen and on the device. Only reads change.
+Writes stay online, except the operations the outbox already queues (AD-59). The saved reads live
+in their own encrypted Drift file (AD-59's key handling), scoped to the signed-in account and
+college, deleted at sign-out, and an entry the server now refuses or cannot find is dropped. A
+first-ever open, with nothing saved, still shows the skeleton.
+
 ---
 
 **AD-10 — Modules integrate through domain events**

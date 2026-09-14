@@ -60,7 +60,7 @@ shows its shape.
 | AD-6 | All money lives in one ledger, owned by Student Finance | Active |
 | AD-7 | No derived academic value is stored | Active |
 | AD-8 | External examination results are a read-only mirror | Active |
-| AD-9 | Offline-first applies to field roles on mobile, not to the whole system | Active |
+| AD-9 | Offline-first applies to field roles on mobile, not to the whole system; amended 2026-09-14: reads are cache-first on every mobile screen, writes unchanged | Active, amended |
 | AD-10 | Modules integrate through domain events | Active |
 | AD-11 | Academic year rollover is a first-class, rehearsable operation | Active |
 | AD-12 | Every mutable record carries a version, and conflicts are surfaced | Active |
