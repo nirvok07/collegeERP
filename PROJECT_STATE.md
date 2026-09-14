@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-5 ✅ (AD-81). "Rooms" on the phone (`lib/features/rooms/`): rooms by
+Just done (2026-09-14): ADM-5 ✅ (AD-81; `6650b8f`). "Rooms" on the phone (`lib/features/rooms/`): rooms by
 campus with type, seats and timetable use; add (campus, permanent code sent in capitals, name,
 type, seats), edit (name, type, seats), archive with a warning when the timetable uses it and
 the server's refusal kept in the form. Read with `session.read`, write with `room.manage`;
@@ -238,6 +238,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+6650b8f Build ADM-5: rooms on the phone (AD-81)
+68004bf Record the ADM-4 commit in the tracker
 5746d1e Build ADM-4: courses and curriculum versions on the phone (AD-81)
 c2a7cc2 Record the ADM-3 commit in the tracker
 3f0b740 Build ADM-3 and decide AD-81: every module on the phone; programs and the calendar first
