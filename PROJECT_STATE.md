@@ -16,7 +16,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Offline Outbox slice 1, idempotency (AD-58): ✅
 - Offline Outbox slice 2, durable queue (AD-59): ✅ code, ✅ unit tests, ✅ Android real-device replay and conflict, 2026-09-13
 - Android runtime: ✅ build, launch, API, Firebase, Crashlytics init, Remote Config, FCM registration and revocation (2026-09-13); push delivery 🔍 console, 🚫 backend (Drift 6)
-- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅ (023 on Supabase by hand, untracked; local at 024); SA-5 ❌
+- Platform Administration: ⚠️ PARTIAL. S1/S2 ✅; SA-1 ✅; SA-2 ✅; SA-3 ✅; SA-4a ✅; SAM-2b ✅, SAM-3 ✅ (all in the Super Admin app); SA-5 (impersonation) ❌
 - Approvals capability (P1): ❌ not specified
 - Mobile dashboard + light theme (MUX-1, AD-67): ✅ code, ✅ tests, ✅ APK builds; 🔍 visual check on the phone
 - Dev database on Supabase (ENV-2, AD-68): ✅ rebuilt 2026-09-14 (all 24 migrations, tracked); `server/.env` points at Supabase; Owner `nirvokofficial@gmail.com` created there
@@ -29,7 +29,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
-- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ADM-8 ✅ timetable, classes, non-teaching days; ADM-9 ✅ students; ADM-10 ✅ access and college profile; ADM-11 ✅ registers and mark verification, corrections; ✅ tests; 🔍 on the phone. Every college module is on the phone (AD-81); Super Admin app SAM-2b ✅ plan, seats, branding; SAM-3 ❌
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ADM-8 ✅ timetable, classes, non-teaching days; ADM-9 ✅ students; ADM-10 ✅ access and college profile; ADM-11 ✅ registers and mark verification, corrections; ✅ tests; 🔍 on the phone. Every college module is on the phone (AD-81); Super Admin app SAM-2b ✅ plan, seats, branding; SAM-3 ✅ platform accounts, audit, invitation acceptance. Every module is on the phone
 - Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
@@ -38,6 +38,16 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): SAM-3 ✅ (AD-72, AD-81). The Super Admin app now has "Platform accounts"
+(list; Owners invite Owner or Support and hand over a one-time code; an account's screen offers only
+the server's actions: disable, enable, change role pinned to the role shown, reset authenticator,
+new invitation, each with a reason; nothing on your own account; refusals such as "the platform must
+always keep an active Owner" stay in the form) and "Platform audit" (newest first, by college,
+pages by cursor, before and after in a sheet). Its sign-in has "I have an invitation", which sets
+the password and goes straight to setting up the authenticator, so no platform person needs the
+web. `lib/admin/platform/`. No server change. With this, every module is on the phone (AD-81).
+Tested: Flutter full suite, analyze clean, admin APK builds. Not tested: on the phone.
+
 Just done (2026-09-14): SAM-2b ✅ (AD-72, AD-81; `258940a`). The Super Admin app's college detail changes the
 plan label and seat limit (a reason required, recorded in the platform audit; only what changed is
 sent; a warning when the limit is below the seats in use) and the college's branding (name, logo
@@ -239,12 +249,13 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — SAM-3: platform accounts and the platform audit in the Super Admin app (AD-72, AD-81)
-- **Why next:** the last web-only platform work: inviting and managing platform accounts (role,
-  authenticator reset, disable) and reading the platform audit.
-- **Then:** the web platform console retires (AD-72, owner to confirm); ST-1 below.
+### NEXT SLICE — ST-1: student accounts and "My attendance" on the phone
+- **Why next:** every administrative module is on the phone; the student is the one actor with no
+  way in. Decided in AD-69 (enrolment number + one-time code, a seat each).
+- **Owner to confirm (OD-AD72-1):** retire the web platform console now that the Super Admin app
+  covers it (AD-72 said so at parity). The college web console stays (AD-81).
 
-### LATER — ST-1: student accounts and "My attendance" on mobile
+### LATER — ST-1 detail
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
   screens (attendance %, fees, circulars) are student surfaces. Attendance data already exists
   (M6); only the student role, the account and a self-scoped read are missing. Fees (D1) and
@@ -273,6 +284,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | — | M3/M4 on mobile | — | ✅ Both, under AD-81: sections are ADM-6 (built); timetable slots and sessions are ADM-8 |
 | OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
 | OD-PW-1 | How does a college user who forgot their password get back in (R69)? | — | Identity, security | — | ✅ Resolved as AD-80: option (a), one-time reset code; emailed link later with an email provider |
+| OD-AD72-1 | Retire the web platform console now that the Super Admin app covers it? | AD-72 said to retire it at parity; SAM-2b and SAM-3 reach parity | Web platform console | Retire (remove its routes from the web client); keep as a fallback | Open, owner to confirm; blocks nothing |
 | OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |
 
 ### BLOCKERS

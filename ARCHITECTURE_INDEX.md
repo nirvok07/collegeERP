@@ -124,4 +124,4 @@ shows its shape.
 | AD-78 | The phone's own lock guards every open of a signed-in app (both apps) | Active; OD-BIO-1 to confirm |
 | AD-79 | College Admin's own dashboard and modules on the phone (amends AD-32); change password | Active; ADM-1, ADM-2 built; ADM-3…6 next |
 | AD-80 | Forgotten password: one-time reset code from an account manager or the Super Admin; no email | Active; PW-1 built |
-| AD-81 | Every module on the phone too (supersedes AD-32); back-office writes online only | Active; college app complete (ADM-1…11); SAM-2b, SAM-3 next |
+| AD-81 | Every module on the phone too (supersedes AD-32); back-office writes online only | Active; complete: college app ADM-1…11, Super Admin app SAM-2b, SAM-3 |

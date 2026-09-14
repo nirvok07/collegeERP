@@ -60,6 +60,11 @@ class PlatformAuthApi {
   Future<Result<AuthSession>> verifyCode({required String challenge, required String code}) =>
       _post('/v1/auth/platform/second-factor', {'challenge_token': challenge, 'code': code}, AuthSession.fromJson);
 
+  /// SAM-3: a platform invitation accepted in this app; like a correct
+  /// password, it leads to setting up the authenticator, never to a session.
+  Future<Result<PlatformStep>> acceptInvitation({required String token, required String password}) =>
+      _post('/v1/auth/platform/accept-invite', {'token': token, 'password': password}, PlatformStep.fromJson);
+
   Future<Result<TotpEnrolment>> beginEnrolment(String challenge) =>
       _post('/v1/auth/platform/enrolment', {'challenge_token': challenge}, TotpEnrolment.fromJson);
 

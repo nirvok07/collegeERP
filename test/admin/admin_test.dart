@@ -29,6 +29,10 @@ AuthSession session() => AuthSession(
 );
 
 class _FakePlatformAuth implements PlatformAuthApi {
+  @override
+  Future<Result<PlatformStep>> acceptInvitation({required String token, required String password}) async =>
+      const Err(Failure.unknown);
+
   Result<PlatformStep> step = const Ok(PlatformStep(kind: PlatformStepKind.secondFactor, challenge: 'ch1'));
   Result<AuthSession>? verify;
   Result<void> confirm = const Ok(null);

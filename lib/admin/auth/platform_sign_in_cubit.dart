@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/error/failure.dart';
+import '../../core/error/result.dart';
 import '../../core/network/auth_api.dart';
 import 'platform_auth_api.dart';
 
@@ -57,6 +58,25 @@ class PlatformSignInCubit extends Cubit<PlatformSignInState> {
     emit(const PlatformSignInState(busy: true));
     final result = await _api.signIn(email: email.trim().toLowerCase(), password: password);
     if (isClosed) return;
+    await _continue(result);
+  }
+
+  /// SAM-3: an invitation from an Owner, accepted here with a password only
+  /// this person knows. It continues exactly as a first sign-in does.
+  Future<void> acceptInvitation({required String token, required String password, required String again}) async {
+    Failure invalid(String m) => Failure(code: FailureCode.validationFailed, message: m);
+    if (token.trim().isEmpty) return emit(PlatformSignInState(failure: invalid('Enter the invitation code from your message.')));
+    if (password.length < 10 || !RegExp('[a-zA-Z]').hasMatch(password) || !RegExp('[0-9]').hasMatch(password)) {
+      return emit(PlatformSignInState(failure: invalid('Use at least ten characters, with a letter and a number.')));
+    }
+    if (password != again) return emit(PlatformSignInState(failure: invalid('The passwords do not match.')));
+    emit(const PlatformSignInState(busy: true));
+    final result = await _api.acceptInvitation(token: token.trim(), password: password);
+    if (isClosed) return;
+    await _continue(result);
+  }
+
+  Future<void> _continue(Result<PlatformStep> result) async {
     final step = result.valueOrNull;
     if (step == null) {
       emit(PlatformSignInState(failure: result.failureOrNull));

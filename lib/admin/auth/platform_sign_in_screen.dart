@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/design/tokens.dart';
+import '../../core/widgets/submit_dialog.dart';
 import '../../core/network/auth_api.dart';
 import 'platform_auth_api.dart';
 import 'platform_sign_in_cubit.dart';
@@ -133,7 +134,42 @@ class _SignInViewState extends State<_SignInView> {
       ),
       const SizedBox(height: AppSpacing.xl),
       FilledButton(onPressed: state.busy ? null : submit, child: _label(state.busy, 'Continue')),
+      TextButton(onPressed: state.busy ? null : () => _acceptInvitation(context, cubit), child: const Text('I have an invitation')),
     ];
+  }
+
+  /// SAM-3: accepting a platform invitation here rather than on the web. A
+  /// refusal (an expired or used code) stays in the form; on success the
+  /// screen moves on to setting up the authenticator.
+  Future<void> _acceptInvitation(BuildContext context, PlatformSignInCubit cubit) async {
+    final token = TextEditingController();
+    final password = TextEditingController();
+    final again = TextEditingController();
+    await showSubmitDialog(
+      context,
+      title: 'Accept your invitation',
+      submitLabel: 'Set password',
+      controllers: [token, password, again],
+      fields: (_) => [
+        TextField(
+          controller: token,
+          autocorrect: false,
+          decoration: const InputDecoration(labelText: 'Invitation code', helperText: 'From the message an Owner sent you'),
+        ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: password,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: 'New password', helperText: 'At least ten characters, with a letter and a number'),
+        ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(controller: again, obscureText: true, decoration: const InputDecoration(labelText: 'Repeat the password')),
+      ],
+      submit: () async {
+        await cubit.acceptInvitation(token: token.text, password: password.text, again: again.text);
+        return cubit.state.failure;
+      },
+    );
   }
 
   List<Widget> _codeStep(BuildContext context, PlatformSignInState state, PlatformSignInCubit cubit) {

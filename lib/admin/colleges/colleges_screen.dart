@@ -61,6 +61,19 @@ class _CollegesView extends StatelessWidget {
                 ? const PreferredSize(preferredSize: Size.fromHeight(2), child: LinearProgressIndicator(minHeight: 2))
                 : null,
             actions: [
+              // SAM-3: the platform's own people and its audit, each with its permission.
+              if (authority.can('platform.accounts.read'))
+                IconButton(
+                  tooltip: 'Platform accounts',
+                  icon: const Icon(Icons.manage_accounts_rounded),
+                  onPressed: () => Navigator.of(context).pushNamed(AdminRoutes.accounts, arguments: authority),
+                ),
+              if (authority.can('platform.audit.read'))
+                IconButton(
+                  tooltip: 'Platform audit',
+                  icon: const Icon(Icons.history_rounded),
+                  onPressed: () => Navigator.of(context).pushNamed(AdminRoutes.audit),
+                ),
               Padding(
                 padding: const EdgeInsets.only(right: AppSpacing.xs),
                 child: Center(child: StatusChip(label: authority.roleLabel, tone: ChipTone.neutral)),

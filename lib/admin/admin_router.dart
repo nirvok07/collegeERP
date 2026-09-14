@@ -5,6 +5,9 @@ import 'colleges/college_detail_screen.dart';
 import 'colleges/college_models.dart';
 import 'colleges/provision_college_screen.dart';
 import 'colleges/provisioned_screen.dart';
+import 'platform/accounts_screen.dart';
+import 'platform/audit_screen.dart';
+import 'platform_authority.dart';
 
 /// Route names for the super admin app. No raw path string appears in a widget.
 abstract final class AdminRoutes {
@@ -12,6 +15,8 @@ abstract final class AdminRoutes {
   static const addCollege = '/college/new';
   static const provisioned = '/college/created';
   static const reissued = '/college/invitation';
+  static const accounts = '/platform/accounts';
+  static const audit = '/platform/audit';
 }
 
 class CollegeArgs {
@@ -37,6 +42,9 @@ abstract final class AdminRouter {
         MaterialPageRoute<bool>(settings: settings, builder: (_) => ProvisionedScreen(result: args)),
       AdminRoutes.reissued when args is ProvisionedCollege =>
         MaterialPageRoute<bool>(settings: settings, builder: (_) => ProvisionedScreen(result: args, reissued: true)),
+      AdminRoutes.accounts when args is PlatformAuthority =>
+        MaterialPageRoute<dynamic>(settings: settings, builder: (_) => PlatformAccountsScreen(authority: args)),
+      AdminRoutes.audit => MaterialPageRoute<dynamic>(settings: settings, builder: (_) => const PlatformAuditScreen()),
       _ => MaterialPageRoute<dynamic>(
         settings: settings,
         builder: (_) => Scaffold(

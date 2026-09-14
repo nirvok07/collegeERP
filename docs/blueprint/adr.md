@@ -1748,5 +1748,7 @@ ADM-10 (2026-09-14): access (roles by scope, given and removed from a person's s
 `lib/features/access/`; the college profile, `lib/features/college/`.
 ADM-11 (2026-09-14): registers by day with corrections, and mark sheet verification with
 corrections, `lib/features/review/`. Every college module is now on the phone.
-SAM-2b (2026-09-14): plan, seats and branding in the Super Admin app's college detail. SAM-3
-(platform accounts, audit) remains.
+SAM-2b (2026-09-14): plan, seats and branding in the Super Admin app's college detail.
+SAM-3 (2026-09-14): platform accounts, the platform audit and accepting a platform invitation, in
+the Super Admin app, `lib/admin/platform/`. Every module is now on the phone. Retiring the web
+platform console (AD-72, at parity) waits for the owner's word (OD-AD72-1).
