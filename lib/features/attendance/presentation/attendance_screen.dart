@@ -62,7 +62,7 @@ class _AttendanceView extends StatelessWidget {
                   : null,
             ),
             body: switch (state.status) {
-              LoadStatus.loading => const SkeletonList(rows: 8),
+              LoadStatus.loading => const SkeletonRegister(),
               LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
               LoadStatus.empty => const EmptyView(
                 title: 'Nobody enrolled',

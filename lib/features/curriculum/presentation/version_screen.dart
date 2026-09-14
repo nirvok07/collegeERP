@@ -187,7 +187,7 @@ class _VersionView extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(detail?.version.label ?? 'Curriculum')),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 5),
+            LoadStatus.loading => const SkeletonList(rows: 5, detailHeader: true),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
                 onRefresh: cubit.load,

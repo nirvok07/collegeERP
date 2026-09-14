@@ -38,6 +38,21 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+OF-R1 — saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on
+the data it last received and refreshes in the background; writes unchanged. Plan: one encrypted
+Drift file for saved reads (AD-59 key handling, separate from the outbox), filled and read at the
+single HTTP boundary (`ApiClient.get`), scoped to account + college, wiped at sign-out, an entry the
+server refuses/cannot find dropped; screens show saved data, then fresh. ❌ NOT BUILT.
+
+Just done (2026-09-14): UX-3 ✅ skeletons match the real layouts. A skeleton kit
+(`lib/core/widgets/skeleton.dart`: one shimmer clock per screen, ListTile-true rows with the real
+leading/trailing, filters, tabs, detail header, day/cohort cards, register rows at 40-pt targets,
+forms) replaces the one avatar-row list every screen used. The dashboard draws its real navy header
+(college name and logo) with placeholder numbers, then the admin tile grid or the teacher's
+shortcuts/today/week/courses in place. All 31 loading states mapped. Flutter 257/257 (13 new:
+every preset at 320 wide, one "Loading" announcement, tap-target sizes, admin and teacher dashboard
+while loading). 🔍 NEEDS VALIDATION: seen on the phone.
+
 Fixed on the phone test (2026-09-14): college users were signed out ~15 minutes after sign-in
 ("Your session has ended"). Not the design (AD-25 sliding 30-day renewal is intact): the same
 Supabase cause as 025. `auth_resolve_refresh_token` and `auth_revoke_token_family` (005) are

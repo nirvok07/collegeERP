@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
@@ -356,7 +358,96 @@ void main() {
       expect(find.text('Teaching record'), findsNothing, reason: 'no teaching record for an admin who does not teach');
       expect(find.text("Today's classes"), findsNothing);
     });
+
+    // UX-3: the first read's placeholder is the dashboard's own shape.
+    Future<void> pumpLoading(WidgetTester tester, Authority authority, DashboardCubit cubit) async {
+      tester.view.physicalSize = const Size(1080, 2340);
+      tester.view.devicePixelRatio = 2.6;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DashboardScreen(
+            authority: authority,
+            createCubit: () => cubit,
+            college: const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
+          ),
+        ),
+      );
+      // The skeleton shimmers for as long as it shows, so it never settles.
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    testWidgets('while an admin dashboard loads, its real header and tile grid are drawn in place', (tester) async {
+      final overview = _PendingOverview();
+      final cubit = DashboardCubit(overview: overview, today: today, clock: () => '09:30');
+      await pumpLoading(
+        tester,
+        const Authority(permissions: {'institution.read', 'institution.manage', 'person.read'}, hasAccess: true),
+        cubit,
+      );
+
+      expect(cubit.state.status, LoadStatus.loading);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Sunrise College'), findsOneWidget, reason: 'the college is known before the numbers');
+      expect(find.byType(SliverAppBar), findsOneWidget, reason: 'the navy header, not a list of rows');
+      expect(find.byType(GridView), findsOneWidget, reason: 'the module tiles, in their grid');
+      expect(find.byType(SkeletonBox), findsWidgets);
+      expect(find.text('Your college'), findsNothing, reason: 'no numbers until they arrive');
+
+      overview.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Your college'), findsOneWidget);
+      expect(find.byType(SkeletonBox), findsNothing);
+    });
+
+    testWidgets("while a teacher's dashboard loads, the day and the week are drawn in place", (tester) async {
+      final delivery = _PendingDelivery();
+      final cubit = DashboardCubit(
+        delivery: delivery,
+        teaching: _FakeTeaching(Ok([offering()])),
+        today: today,
+        clock: () => '09:30',
+      );
+      await pumpLoading(tester, const Authority(permissions: {'session.read', 'offering.read'}, hasAccess: true), cubit);
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Sunrise College'), findsOneWidget);
+      expect(find.byType(SliverAppBar), findsOneWidget);
+      expect(find.byType(GridView), findsNothing, reason: 'a teacher has shortcuts, not the admin grid');
+      expect(find.byType(SkeletonBox), findsWidgets);
+
+      delivery.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Teaching record'), findsOneWidget);
+      expect(find.byType(SkeletonBox), findsNothing);
+    });
   });
+}
+
+/// Holds the first read open, so the loading state can be looked at.
+class _PendingOverview implements OverviewRepository {
+  final _done = Completer<Result<CollegeOverview>>();
+
+  void complete() => _done.complete(const Ok(CollegeOverview(
+    staff: 12, students: 340, departments: 4, programs: 3, sections: 6, offerings: 18, rooms: 9, pendingInvitations: 0,
+  )));
+
+  @override
+  Future<Result<CollegeOverview>> load() => _done.future;
+}
+
+class _PendingDelivery extends _FakeDelivery {
+  _PendingDelivery() : super(const Ok([]));
+
+  final _done = Completer<void>();
+
+  void complete() => _done.complete();
+
+  @override
+  Future<Result<List<ClassSession>>> mySessions({required String from, required String to}) async {
+    await _done.future;
+    return result;
+  }
 }
 
 class _FakeOverview implements OverviewRepository {

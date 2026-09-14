@@ -46,7 +46,7 @@ class _MyTeachingView extends StatelessWidget {
                 : null,
           ),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 4),
+            LoadStatus.loading => const SkeletonGroups(groups: 2, rowsPerGroup: 3),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
             LoadStatus.empty => RefreshIndicator(
               onRefresh: () => cubit.load(refresh: true),

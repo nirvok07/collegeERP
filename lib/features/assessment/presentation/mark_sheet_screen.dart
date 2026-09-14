@@ -58,7 +58,7 @@ class _MarkSheetView extends StatelessWidget {
                   : null,
             ),
             body: switch (state.status) {
-              LoadStatus.loading => const SkeletonList(rows: 8),
+              LoadStatus.loading => const SkeletonRegister(marks: 2, scoreField: true, bulkActions: false, summaryLine: false),
               LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
               LoadStatus.empty => const EmptyView(
                 title: 'Nobody enrolled',

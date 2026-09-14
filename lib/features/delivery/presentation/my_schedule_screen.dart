@@ -48,7 +48,7 @@ class _MyScheduleView extends StatelessWidget {
                 : null,
           ),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 5),
+            LoadStatus.loading => const SkeletonGroups(leading: SkeletonLeading.time),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
             LoadStatus.empty => RefreshIndicator(
               onRefresh: () => cubit.load(refresh: true),

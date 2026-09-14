@@ -93,7 +93,7 @@ class _CollegesView extends StatelessWidget {
                 )
               : null,
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 6),
+            LoadStatus.loading => const _CollegesSkeleton(),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
             LoadStatus.empty => EmptyView(
               title: 'No colleges yet',
@@ -134,6 +134,48 @@ class _CollegesView extends StatelessWidget {
       },
     );
   }
+}
+
+/// UX-3: the totals card and the college cards, in place.
+class _CollegesSkeleton extends StatelessWidget {
+  const _CollegesSkeleton();
+
+  @override
+  Widget build(BuildContext context) => SkeletonScope(
+    child: ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.base, AppSpacing.sm, AppSpacing.base, 96),
+      children: [
+        Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
+            child: Row(
+              children: [
+                for (var i = 0; i < 4; i++)
+                  const Expanded(
+                    child: Column(
+                      children: [
+                        SkeletonBox(width: 28, height: 22),
+                        SizedBox(height: AppSpacing.xs),
+                        SkeletonBox(width: 52, height: 10),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        for (var i = 0; i < 6; i++)
+          Card(
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+            clipBehavior: Clip.antiAlias,
+            child: SkeletonTile(index: i, leading: SkeletonLeading.logo, trailing: SkeletonTrailing.chip),
+          ),
+      ],
+    ),
+  );
 }
 
 class _Totals extends StatelessWidget {

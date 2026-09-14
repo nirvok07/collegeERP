@@ -66,7 +66,7 @@ class _CurriculumView extends StatelessWidget {
               bottom: const TabBar(tabs: [Tab(text: 'Regulations'), Tab(text: 'Courses')]),
             ),
             body: switch (state.status) {
-              LoadStatus.loading => const SkeletonList(rows: 5),
+              LoadStatus.loading => const SkeletonList(rows: 5, filters: [SkeletonFilter.dropdown], trailing: SkeletonTrailing.chip),
               LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
               _ => TabBarView(
                   children: [

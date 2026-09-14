@@ -198,7 +198,7 @@ class _CollegeProfileView extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: const Text('College profile')),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 4),
+            LoadStatus.loading => const SkeletonList(rows: 4, detailHeader: true),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => ListView(
                 padding: const EdgeInsets.all(AppSpacing.base),

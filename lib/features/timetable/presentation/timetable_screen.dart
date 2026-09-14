@@ -190,7 +190,7 @@ class _TimetableView extends StatelessWidget {
               bottom: const TabBar(tabs: [Tab(text: 'Classes'), Tab(text: 'Holidays')]),
             ),
             body: switch (state.status) {
-              LoadStatus.loading => const SkeletonList(rows: 6),
+              LoadStatus.loading => const SkeletonList(rows: 6, leading: SkeletonLeading.time, trailing: SkeletonTrailing.chip, groupEvery: 3),
               LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
               _ => TabBarView(
                   children: [

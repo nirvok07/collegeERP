@@ -41,7 +41,7 @@ class _AccountScreenState extends State<AccountScreen> {
         future: _load,
         builder: (context, snapshot) {
           final data = snapshot.data;
-          if (data == null) return const SkeletonList(rows: 3);
+          if (data == null) return const SkeletonList(rows: 3, detailHeader: true, leading: SkeletonLeading.icon, subtitle: false);
           final (result, college) = data;
           final authority = result.valueOrNull;
           if (authority == null) {

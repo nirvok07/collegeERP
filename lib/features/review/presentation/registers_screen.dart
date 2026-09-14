@@ -128,7 +128,7 @@ class _RegistersView extends StatelessWidget {
               ),
               Expanded(
                 child: switch (state.status) {
-                  LoadStatus.loading => const SkeletonList(rows: 5),
+                  LoadStatus.loading => const SkeletonList(rows: 5, trailing: SkeletonTrailing.chip),
                   LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
                   _ => RefreshIndicator(
                       onRefresh: cubit.load,
@@ -231,7 +231,7 @@ class RegisterReviewScreen extends StatelessWidget {
           return Scaffold(
             appBar: AppBar(title: Text(r == null ? 'Register' : '${r.sheet.session.courseCode} · ${r.sheet.session.sectionLabel}')),
             body: switch (state.status) {
-              LoadStatus.loading => const SkeletonList(rows: 6),
+              LoadStatus.loading => const SkeletonList(rows: 6, trailing: SkeletonTrailing.text),
               LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
               _ => RefreshIndicator(
                   onRefresh: cubit.load,

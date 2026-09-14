@@ -55,7 +55,7 @@ class _AcademicView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<AcademicCubit>();
         final body = switch (state.status) {
-          LoadStatus.loading => const SkeletonList(rows: 5),
+          LoadStatus.loading => const SkeletonList(rows: 6, groupEvery: 3, trailing: SkeletonTrailing.icon),
           LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
           _ => null,
         };

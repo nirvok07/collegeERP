@@ -89,7 +89,7 @@ class _StudentFormState extends State<_StudentForm> {
         return Scaffold(
           appBar: AppBar(title: const Text('Onboard a student')),
           body: state.loading
-              ? const SkeletonList(rows: 4)
+              ? const SkeletonForm()
               : state.loadFailure != null
               ? ErrorView(failure: state.loadFailure!, onRetry: () => cubit.load())
               : state.options.isEmpty

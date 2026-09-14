@@ -93,7 +93,7 @@ class _OrganisationView extends StatelessWidget {
                 )
               : null,
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 4),
+            LoadStatus.loading => const SkeletonList(rows: 4, leading: SkeletonLeading.avatar, dividers: true, dividerIndent: 72),
             LoadStatus.failure => ErrorView(
                 failure: state.failure!,
                 onRetry: () => cubit.load(),

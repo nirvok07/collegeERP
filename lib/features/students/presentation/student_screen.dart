@@ -160,7 +160,7 @@ class _StudentView extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(s?.fullName ?? 'Student')),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 5),
+            LoadStatus.loading => const SkeletonList(rows: 4, detailHeader: true, leading: SkeletonLeading.icon),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
                 onRefresh: cubit.load,

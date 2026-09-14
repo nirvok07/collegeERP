@@ -70,7 +70,7 @@ class _StudentHomeView extends StatelessWidget {
             ],
           ),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 4),
+            LoadStatus.loading => const _StudentHomeSkeleton(),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
                 onRefresh: cubit.load,
@@ -108,6 +108,71 @@ class _StudentHomeView extends StatelessWidget {
       },
     );
   }
+}
+
+/// UX-3: the attendance ring, then course rows with their bars, in place.
+class _StudentHomeSkeleton extends StatelessWidget {
+  const _StudentHomeSkeleton();
+
+  static const _titles = [0.7, 0.55, 0.65, 0.5];
+
+  @override
+  Widget build(BuildContext context) => SkeletonScope(
+    child: ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(AppSpacing.base),
+      children: [
+        const SkeletonLine(widthFactor: 0.55, height: 13),
+        const SizedBox(height: AppSpacing.md),
+        const Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.base),
+            child: Row(
+              children: [
+                SkeletonBox(width: 96, height: 96, radius: AppRadius.pill),
+                SizedBox(width: AppSpacing.base),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonLine(widthFactor: 0.7, height: 16),
+                      SizedBox(height: AppSpacing.sm),
+                      SkeletonLine(widthFactor: 0.55, height: 12),
+                      SizedBox(height: AppSpacing.xs),
+                      SkeletonLine(widthFactor: 0.85, height: 11),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        const SkeletonBox(width: 96, height: 16),
+        const SizedBox(height: AppSpacing.sm),
+        for (final title in _titles)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: SkeletonLine(widthFactor: title, height: 13)),
+                    const SkeletonBox(width: 36, height: 13),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                const SkeletonBox(height: 6, radius: AppRadius.pill),
+                const SizedBox(height: AppSpacing.xs),
+                const SkeletonLine(widthFactor: 0.4, height: 11),
+              ],
+            ),
+          ),
+      ],
+    ),
+  );
 }
 
 class _Overall extends StatelessWidget {

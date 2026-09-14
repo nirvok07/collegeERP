@@ -85,7 +85,7 @@ class _StudentsViewState extends State<_StudentsView> {
                 )
               : null,
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 6),
+            LoadStatus.loading => const SkeletonList(rows: 6, filters: [SkeletonFilter.search, SkeletonFilter.chips, SkeletonFilter.dropdown], countLabel: true, trailing: SkeletonTrailing.chip),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
                 onRefresh: cubit.load,

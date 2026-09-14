@@ -247,7 +247,7 @@ class _OfferingView extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(o?.courseCode ?? 'Course')),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 5),
+            LoadStatus.loading => const SkeletonList(rows: 4, detailHeader: true),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
                 onRefresh: cubit.load,

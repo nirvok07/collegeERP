@@ -76,7 +76,7 @@ class _TeacherFormState extends State<_TeacherForm> {
         return Scaffold(
           appBar: AppBar(title: const Text('Appoint a teacher')),
           body: state.loading
-              ? const SkeletonList(rows: 4)
+              ? const SkeletonForm(switchRow: true)
               : state.loadFailure != null
               ? ErrorView(failure: state.loadFailure!, onRetry: () => cubit.load())
               : state.options.isEmpty

@@ -207,7 +207,7 @@ class _AccessView extends StatelessWidget {
                 )
               : null,
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 3),
+            LoadStatus.loading => const SkeletonList(rows: 3, leading: SkeletonLeading.icon),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
                 onRefresh: cubit.load,

@@ -43,7 +43,7 @@ class _CourseAssessmentsView extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(title: Text(courseTitle)),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(rows: 4),
+            LoadStatus.loading => const SkeletonList(rows: 4, trailing: SkeletonTrailing.chip, dividers: true),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
             LoadStatus.empty => RefreshIndicator(
               onRefresh: () => cubit.load(refresh: true),

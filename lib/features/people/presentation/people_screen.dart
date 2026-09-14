@@ -164,7 +164,7 @@ class _PeopleViewState extends State<_PeopleView> {
                 : null,
           ),
           body: switch (state.status) {
-            LoadStatus.loading => const SkeletonList(),
+            LoadStatus.loading => const SkeletonList(rows: 8, leading: SkeletonLeading.avatar, trailing: SkeletonTrailing.chip, dividers: true, dividerIndent: 72),
             LoadStatus.failure => ErrorView(
                 failure: state.failure!,
                 onRetry: () => cubit.load(),

@@ -67,6 +67,15 @@ class _DashboardView extends StatelessWidget {
   /// teacher's with a button added.
   bool get _admin => authority.can('institution.manage');
 
+  /// How many shortcuts [_Shortcuts] will draw, so the skeleton draws as many.
+  int get _shortcutCount => [
+    (authority.can('account.manage') && authority.can('role.assign')) || authority.can('student.manage'),
+    authority.can('session.read'),
+    authority.can('offering.read'),
+    authority.can('person.read'),
+    authority.can('person.read'),
+  ].where((shown) => shown).length;
+
   /// An administrator who also teaches keeps the teaching parts.
   static bool _teaches(DashboardSummary s) => s.courses.isNotEmpty || s.weekTotal > 0 || s.pulse.total > 0;
 
@@ -85,7 +94,14 @@ class _DashboardView extends StatelessWidget {
         final summary = state.summary;
         return Scaffold(
           body: switch (state.status) {
-            LoadStatus.loading => const SafeArea(child: SkeletonList(rows: 6)),
+            LoadStatus.loading => _DashboardSkeleton(
+              admin: _admin,
+              showDay: _schedule,
+              courses: _teaching && !_admin,
+              shortcuts: _admin ? 0 : _shortcutCount,
+              college: college,
+              onProfile: () => _open(context, Routes.account, refresh: false),
+            ),
             LoadStatus.failure => SafeArea(
               child: ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
             ),
@@ -184,6 +200,304 @@ class _DashboardView extends StatelessWidget {
   }
 }
 
+/* ---------------------------------------------------------------- skeleton */
+
+/// UX-3: the dashboard while its first read is in flight. The real header, with
+/// the college's own name and logo, and each section below drawn in place at
+/// its real size, so nothing moves when the numbers arrive.
+class _DashboardSkeleton extends StatelessWidget {
+  const _DashboardSkeleton({
+    required this.admin,
+    required this.showDay,
+    required this.courses,
+    required this.shortcuts,
+    required this.college,
+    required this.onProfile,
+  });
+
+  final bool admin;
+  final bool showDay;
+  final bool courses;
+  final int shortcuts;
+  final CollegeBrand? college;
+  final VoidCallback onProfile;
+
+  /// The week chart's bars, uneven as a real week is.
+  static const _bars = [40.0, 64.0, 28.0, 72.0, 52.0, 20.0, 36.0];
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SkeletonScope(
+      child: CustomScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        slivers: [
+          _DashboardHeader(
+            summary: DashboardSummary.empty,
+            college: college,
+            showDay: showDay,
+            refreshing: false,
+            onProfile: onProfile,
+            onWaiting: () {},
+            admin: admin,
+            skeleton: true,
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.base, AppSpacing.sm, AppSpacing.base, AppSpacing.xxl),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                if (admin) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  const SkeletonBox(width: 180, height: 16),
+                  const SizedBox(height: AppSpacing.sm),
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    childAspectRatio: 1.55,
+                    children: [
+                      for (var i = 0; i < 6; i++)
+                        _Panel(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SkeletonBox(width: 36, height: 36, radius: AppRadius.card),
+                              const Spacer(),
+                              SkeletonLine(widthFactor: i.isEven ? 0.62 : 0.46, height: 13),
+                              const SizedBox(height: 6),
+                              const SkeletonLine(widthFactor: 0.8, height: 10),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ] else ...[
+                  if (shortcuts > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.lg),
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < shortcuts; i++)
+                            const Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                                child: Column(
+                                  children: [
+                                    SkeletonBox(width: 52, height: 52, radius: AppRadius.sheet),
+                                    SizedBox(height: AppSpacing.sm),
+                                    SkeletonBox(width: 44, height: 10),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  if (showDay) ...[
+                    const _SectionTitleSkeleton(),
+                    _Panel(
+                      color: Color.alphaBlend(scheme.primary.withValues(alpha: 0.08), scheme.surface),
+                      bordered: false,
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              SkeletonBox(width: 56, height: 24, radius: AppRadius.pill),
+                              Spacer(),
+                              SkeletonBox(width: 64, height: 14),
+                            ],
+                          ),
+                          SizedBox(height: AppSpacing.md),
+                          SkeletonLine(widthFactor: 0.7, height: 20),
+                          SizedBox(height: AppSpacing.sm),
+                          SkeletonLine(widthFactor: 0.6, height: 11),
+                          SizedBox(height: AppSpacing.xs),
+                          SkeletonLine(widthFactor: 0.4, height: 11),
+                        ],
+                      ),
+                    ),
+                    _Panel(
+                      margin: const EdgeInsets.only(top: AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SkeletonLine(widthFactor: 0.35, height: 16),
+                          const SizedBox(height: 6),
+                          const SkeletonLine(widthFactor: 0.55, height: 11),
+                          const SizedBox(height: AppSpacing.base),
+                          SizedBox(
+                            height: 96,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                for (final h in _bars)
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          SkeletonBox(height: h, radius: 6),
+                                          const SizedBox(height: 6),
+                                          const SkeletonBox(width: 24, height: 10),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (courses) ...[
+                    const _SectionTitleSkeleton(),
+                    SizedBox(
+                      height: 132,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const NeverScrollableScrollPhysics(),
+                        children: [
+                          for (var i = 0; i < 3; i++)
+                            Padding(
+                              padding: const EdgeInsets.only(right: AppSpacing.sm),
+                              child: SizedBox(
+                                width: 208,
+                                child: _Panel(
+                                  padding: const EdgeInsets.all(AppSpacing.md),
+                                  child: const Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          SkeletonBox(width: 56, height: 12),
+                                          Spacer(),
+                                          SkeletonBox(width: 56, height: 22, radius: AppRadius.pill),
+                                        ],
+                                      ),
+                                      SizedBox(height: AppSpacing.sm),
+                                      SkeletonLine(widthFactor: 0.9, height: 13),
+                                      SizedBox(height: 6),
+                                      SkeletonLine(widthFactor: 0.6, height: 13),
+                                      Spacer(),
+                                      SkeletonLine(widthFactor: 0.75, height: 10),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A section title's place: the title, and the "View all" beside it.
+class _SectionTitleSkeleton extends StatelessWidget {
+  const _SectionTitleSkeleton();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
+    child: SizedBox(
+      height: 40,
+      child: Row(
+        children: [
+          SkeletonBox(width: 140, height: 16),
+          Spacer(),
+          SkeletonBox(width: 64, height: 14),
+        ],
+      ),
+    ),
+  );
+}
+
+/// The navy panel's numbers as placeholders, in the same rows as
+/// [_HeaderPanel] and [_AdminPanel].
+class _HeaderPanelSkeleton extends StatelessWidget {
+  const _HeaderPanelSkeleton({required this.admin});
+
+  final bool admin;
+
+  static Widget _stats() => Row(
+    children: [
+      for (var i = 0; i < 3; i++)
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SkeletonBox(width: 36, height: 22, tone: SkeletonTone.navy),
+              SizedBox(height: 6),
+              SkeletonBox(width: 56, height: 10, tone: SkeletonTone.navy),
+            ],
+          ),
+        ),
+    ],
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (admin) ...[
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: SkeletonBox(width: 96, height: 14, tone: SkeletonTone.navy),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _stats(),
+        ] else
+          Row(
+            children: [
+              const SkeletonBox(width: 88, height: 88, radius: AppRadius.pill, tone: SkeletonTone.navy),
+              const SizedBox(width: AppSpacing.lg),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SkeletonBox(width: 110, height: 14, tone: SkeletonTone.navy),
+                    const SizedBox(height: 6),
+                    const SkeletonBox(width: 70, height: 10, tone: SkeletonTone.navy),
+                    const SizedBox(height: AppSpacing.sm),
+                    _stats(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        const SizedBox(height: AppSpacing.md),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(color: AppColors.navyRaised, borderRadius: BorderRadius.circular(AppRadius.card)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SkeletonBox(width: 90, height: 14, tone: SkeletonTone.navy),
+              const SizedBox(height: AppSpacing.sm),
+              _stats(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /* ------------------------------------------------------------------ header */
 
 /// UX-2: the dashboard's header, after the prototype's attendance screen: a
@@ -201,6 +515,7 @@ class _DashboardHeader extends StatelessWidget {
     this.admin = false,
     this.overview,
     this.onPeople,
+    this.skeleton = false,
   });
 
   final DashboardSummary summary;
@@ -218,10 +533,15 @@ class _DashboardHeader extends StatelessWidget {
   final CollegeOverview? overview;
   final VoidCallback? onPeople;
 
+  /// The same header while the first read is in flight: the college's name is
+  /// already known, and only the numbers are placeholders.
+  final bool skeleton;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final waiting = admin ? (overview?.pendingInvitations ?? 0) > 0 : summary.needsMarking.isNotEmpty;
+    final waiting =
+        !skeleton && (admin ? (overview?.pendingInvitations ?? 0) > 0 : summary.needsMarking.isNotEmpty);
     final panel = admin || showDay;
     return SliverAppBar(
       pinned: true,
@@ -277,7 +597,9 @@ class _DashboardHeader extends StatelessWidget {
                       alignment: Alignment.topCenter,
                       child: SizedBox(
                         width: MediaQuery.sizeOf(context).width - AppSpacing.base * 2,
-                        child: admin
+                        child: skeleton
+                            ? _HeaderPanelSkeleton(admin: admin)
+                            : admin
                             ? _AdminPanel(overview: overview, onPending: onPeople)
                             : _HeaderPanel(summary: summary, onWaiting: onWaiting),
                       ),
