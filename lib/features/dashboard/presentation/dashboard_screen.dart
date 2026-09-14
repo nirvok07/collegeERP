@@ -634,6 +634,17 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: true,
         ),
+      // ADM-9 (AD-81): the student list, records and status.
+      if (authority.can('student.read'))
+        (
+          title: 'Students',
+          subtitle: o == null ? 'Records and status' : '${o.students} enrolled',
+          icon: Icons.school_rounded,
+          color: AppColors.info,
+          route: Routes.students,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: true,
+        ),
       // ADM-8 (AD-81): the college's classes by week, and its holidays.
       if (authority.can('session.manage'))
         (
@@ -716,8 +727,8 @@ class _AdminModules extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLow,
             bordered: false,
             child: Text(
-              'Coming next to the app: the student list, access and the college profile, and '
-              'verification. Until then they are on the web console.',
+              'Coming next to the app: access and roles, the college profile, and verification of '
+              'attendance and marks. Until then they are on the web console.',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
