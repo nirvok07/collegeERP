@@ -60,6 +60,9 @@ class ApiClient {
   Future<Result<T>> patch<T>(String path, Object? body, T Function(dynamic) parse) =>
       _send(path, 'PATCH', body, parse);
 
+  /// Removing something from a draft, a curriculum entry being the case.
+  Future<Result<T>> delete<T>(String path, T Function(dynamic) parse) => _send(path, 'DELETE', null, parse);
+
   Future<Result<T>> _send<T>(
     String path,
     String method,

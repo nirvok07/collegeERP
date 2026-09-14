@@ -1732,3 +1732,6 @@ of attendance and marks; SAM-2b plan and branding; SAM-3 platform accounts and a
 back-office writes on the phone are online only, and say so when the network is gone.
 
 *Built.* ADM-3 (2026-09-14): programs, academic years and terms, `lib/features/academic/`.
+ADM-4 (2026-09-14): courses and curriculum versions, `lib/features/curriculum/`. Every phone form
+for a back-office write is one `showSubmitDialog` (`lib/core/widgets/submit_dialog.dart`): it
+keeps a refusal, local or the server's, in the form, and owns its text controllers.

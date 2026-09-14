@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/design/tokens.dart';
 import '../features/academic/presentation/academic_screen.dart';
+import '../features/curriculum/presentation/curriculum_screen.dart';
 import '../features/assessment/presentation/course_assessments_screen.dart';
 import '../features/assessment/presentation/mark_sheet_screen.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
@@ -33,6 +34,7 @@ abstract final class Routes {
   static const people = '/people';
   static const organisation = '/organisation';
   static const academic = '/academic';
+  static const curriculum = '/curriculum';
   static const account = '/account';
   static const acceptInvitation = '/accept-invitation';
   static const changePassword = '/account/password';
@@ -132,6 +134,9 @@ abstract final class AppRouter {
       case Routes.academic:
         final args = settings.arguments;
         return _page(settings, AcademicScreen(authority: args is ManageArgs ? args.authority : null));
+      case Routes.curriculum:
+        final args = settings.arguments;
+        return _page(settings, CurriculumScreen(authority: args is ManageArgs ? args.authority : null));
       case Routes.account:
         return _page(settings, const AccountScreen());
       case Routes.changePassword:

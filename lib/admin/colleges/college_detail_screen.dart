@@ -7,6 +7,8 @@ import '../../core/session/college_brand.dart';
 import '../../core/widgets/college_logo.dart';
 import '../../core/widgets/screen_state.dart';
 import '../../core/widgets/status_chip.dart';
+import '../../core/widgets/submit_dialog.dart';
+import '../../features/people/domain/reset_code.dart';
 import '../admin_locator.dart';
 import '../admin_router.dart';
 import 'college_models.dart';
@@ -132,46 +134,37 @@ class _Detail extends StatelessWidget {
     final cubit = context.read<CollegeDetailCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final controller = TextEditingController(text: email ?? '');
-    final chosen = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Reset an administrator's password"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'You get a one-time code for them. Their current password works until they use it; '
-              'then they are signed out everywhere.',
-            ),
-            const SizedBox(height: AppSpacing.base),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
-              decoration: const InputDecoration(
-                labelText: 'Their sign-in email',
-                helperText: 'Any administrator of this college',
-              ),
-            ),
-          ],
+    ResetCode? code;
+    final issued = await showSubmitDialog(
+      context,
+      title: "Reset an administrator's password",
+      submitLabel: 'Get reset code',
+      controllers: [controller],
+      fields: (_) => [
+        const Text(
+          'You get a one-time code for them. Their current password works until they use it; '
+          'then they are signed out everywhere.',
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(controller.text), child: const Text('Get reset code')),
-        ],
-      ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          decoration: const InputDecoration(
+            labelText: 'Their sign-in email',
+            helperText: 'Any administrator of this college',
+          ),
+        ),
+      ],
+      submit: () async {
+        if (controller.text.trim().isEmpty) return invalidInput("Enter the administrator's sign-in email.");
+        final result = await cubit.resetAdministrator(controller.text);
+        code = result.valueOrNull;
+        return result.failureOrNull;
+      },
     );
-    controller.dispose();
-    if (chosen == null || chosen.trim().isEmpty || !context.mounted) return;
-    final result = await cubit.resetAdministrator(chosen);
-    final code = result.valueOrNull;
-    if (code == null) {
-      messenger.showSnackBar(SnackBar(content: Text(result.failureOrNull?.message ?? 'That did not work.')));
-      return;
-    }
-    if (!context.mounted) return;
-    final message = code.message(college: CollegeBrand(code: detail.code, name: detail.name));
+    if (!issued || code == null || !context.mounted) return;
+    final message = code!.message(college: CollegeBrand(code: detail.code, name: detail.name));
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
