@@ -10,7 +10,8 @@ import type {
 
 const YEAR_SELECT = `
   SELECT y.id, y.name, y.starts_on, y.ends_on, y.is_current, y.status,
-         (SELECT count(*)::int FROM terms t WHERE t.academic_year_id = y.id) AS term_count
+         (SELECT count(*)::int FROM terms t
+           WHERE t.academic_year_id = y.id AND t.status <> 'archived') AS term_count
     FROM academic_years y`;
 
 export class PgAcademicYearRepository implements AcademicYearRepository {
@@ -30,7 +31,9 @@ export class PgAcademicYearRepository implements AcademicYearRepository {
   }
 
   async list(tx: Tx): Promise<AcademicYearRecord[]> {
-    const { rows } = await clientOf(tx).query(`${YEAR_SELECT} ORDER BY y.starts_on DESC`);
+    const { rows } = await clientOf(tx).query(
+      `${YEAR_SELECT} WHERE y.status <> 'archived' ORDER BY y.starts_on DESC`,
+    );
     return rows.map(toYear);
   }
 
@@ -42,6 +45,26 @@ export class PgAcademicYearRepository implements AcademicYearRepository {
     const { rowCount } = await clientOf(tx).query(
       `UPDATE academic_years SET is_current = true, updated_at = now(), version = version + 1
         WHERE id = $1`, [id],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async update(tx: Tx, id: string, input: { name: string; startsOn: string; endsOn: string }): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE academic_years SET name = $2, starts_on = $3, ends_on = $4,
+              updated_at = now(), version = version + 1
+        WHERE id = $1 AND status <> 'archived'`,
+      [id, input.name, input.startsOn, input.endsOn],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE academic_years SET status = 'archived', archived_at = $2, archived_by = $3,
+              updated_at = now(), version = version + 1
+        WHERE id = $1 AND status <> 'archived' AND NOT is_current`,
+      [id, at, by],
     );
     return (rowCount ?? 0) > 0;
   }
@@ -73,11 +96,31 @@ export class PgTermRepository implements TermRepository {
   async list(tx: Tx, academicYearId: string | null): Promise<TermRecord[]> {
     const { rows } = await clientOf(tx).query(
       `${TERM_SELECT}
-        WHERE ($1::uuid IS NULL OR t.academic_year_id = $1)
+        WHERE t.status <> 'archived' AND ($1::uuid IS NULL OR t.academic_year_id = $1)
         ORDER BY y.starts_on DESC, t.sequence`,
       [academicYearId],
     );
     return rows.map(toTerm);
+  }
+
+  async update(tx: Tx, id: string, input: { name: string; startsOn: string; endsOn: string }): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE terms SET name = $2, starts_on = $3, ends_on = $4,
+              updated_at = now(), version = version + 1
+        WHERE id = $1 AND status <> 'archived'`,
+      [id, input.name, input.startsOn, input.endsOn],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE terms SET status = 'archived', archived_at = $2, archived_by = $3,
+              updated_at = now(), version = version + 1
+        WHERE id = $1 AND status <> 'archived'`,
+      [id, at, by],
+    );
+    return (rowCount ?? 0) > 0;
   }
 }
 

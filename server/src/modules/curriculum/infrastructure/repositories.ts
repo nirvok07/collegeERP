@@ -47,6 +47,15 @@ export class PgProgramRepository implements ProgramRepository {
     );
     return (rowCount ?? 0) > 0;
   }
+
+  async rename(tx: Tx, id: string, input: { name: string; award: string | null }): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE programs SET name=$2, award=$3, updated_at=now(), version=version+1
+        WHERE id=$1 AND status='active'`,
+      [id, input.name, input.award],
+    );
+    return (rowCount ?? 0) > 0;
+  }
 }
 
 const COURSE_SELECT = `

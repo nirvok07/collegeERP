@@ -6,8 +6,9 @@ import { requirePermission } from '../../../infrastructure/http/guards.ts';
 import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
-  createAcademicYear, createSection, createTerm, listAcademicYears, listSections,
-  listTerms, readSection, setSectionCapacity, transitionSection, type TeachingActor,
+  archiveAcademicYear, archiveTerm, createAcademicYear, createSection, createTerm,
+  listAcademicYears, listSections, listTerms, readSection, setSectionCapacity,
+  transitionSection, updateAcademicYear, updateTerm, type TeachingActor,
 } from '../application/manage-sections.ts';
 import type { SectionStatus } from '../application/ports.ts';
 
@@ -26,6 +27,18 @@ const termBody = z.object({
   starts_on: isoDate,
   ends_on: isoDate,
 });
+const yearPatch = z.object({
+  name: z.string().min(2).max(40).optional(),
+  starts_on: isoDate.optional(),
+  ends_on: isoDate.optional(),
+  make_current: z.boolean().optional(),
+});
+const termPatch = z.object({
+  name: z.string().min(1).max(40).optional(),
+  starts_on: isoDate.optional(),
+  ends_on: isoDate.optional(),
+});
+const removeBody = z.object({ reason: z.string().max(500).optional() });
 const sectionBody = z.object({
   program_id: z.string().uuid(),
   term_id: z.string().uuid(),
@@ -103,6 +116,57 @@ export async function registerTeachingRoutes(app: FastifyInstance, c: Container)
       startsOn: parsed.data.starts_on,
       endsOn: parsed.data.ends_on,
     }), 201);
+  });
+
+  /* FB-2: correcting and removing the calendar. Removal is archival. */
+
+  const idOrNotFound = (req: { params: unknown }, what: string) => {
+    const id = (req.params as { id: string }).id;
+    return z.string().uuid().safeParse(id).success ? id : fail('NOT_FOUND', `That ${what} was not found.`);
+  };
+
+  app.patch('/academic-years/:id', async (req, reply) => {
+    if (!(await canManageCalendar(req as never, reply as never))) return reply;
+    const id = idOrNotFound(req, 'academic year');
+    if (typeof id !== 'string') return sendFailure(reply, id);
+    const parsed = yearPatch.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await updateAcademicYear(c.teaching, actorOf(req), {
+      id,
+      name: parsed.data.name,
+      startsOn: parsed.data.starts_on,
+      endsOn: parsed.data.ends_on,
+      makeCurrent: parsed.data.make_current,
+    }));
+  });
+
+  app.post('/academic-years/:id/archive', async (req, reply) => {
+    if (!(await canManageCalendar(req as never, reply as never))) return reply;
+    const id = idOrNotFound(req, 'academic year');
+    if (typeof id !== 'string') return sendFailure(reply, id);
+    const parsed = removeBody.safeParse(req.body ?? {});
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await archiveAcademicYear(c.teaching, actorOf(req), { id, reason: parsed.data.reason }));
+  });
+
+  app.patch('/terms/:id', async (req, reply) => {
+    if (!(await canManageCalendar(req as never, reply as never))) return reply;
+    const id = idOrNotFound(req, 'term');
+    if (typeof id !== 'string') return sendFailure(reply, id);
+    const parsed = termPatch.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await updateTerm(c.teaching, actorOf(req), {
+      id, name: parsed.data.name, startsOn: parsed.data.starts_on, endsOn: parsed.data.ends_on,
+    }));
+  });
+
+  app.post('/terms/:id/archive', async (req, reply) => {
+    if (!(await canManageCalendar(req as never, reply as never))) return reply;
+    const id = idOrNotFound(req, 'term');
+    if (typeof id !== 'string') return sendFailure(reply, id);
+    const parsed = removeBody.safeParse(req.body ?? {});
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await archiveTerm(c.teaching, actorOf(req), { id, reason: parsed.data.reason }));
   });
 
   /* ---------------------------------------------------------------- sections */

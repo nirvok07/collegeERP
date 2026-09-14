@@ -120,6 +120,21 @@ class _ProgramsTab extends StatelessWidget {
     if (done && context.mounted) _say(context, '${program.name} archived');
   }
 
+  Future<void> _edit(BuildContext context, Program program) async {
+    final cubit = context.read<AcademicCubit>();
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (_) => _ProgramEditSheet(
+        program: program,
+        submit: (name, award) => cubit.renameProgram(program.id, name, award),
+      ),
+    );
+    if (saved == true && context.mounted) _say(context, 'Program updated');
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AcademicCubit>();
@@ -172,11 +187,16 @@ class _ProgramsTab extends StatelessWidget {
                         subtitle: Text(
                           [program.code, if (program.award != null) program.award!, program.durationLabel].join(' · '),
                         ),
+                        onTap: canManage ? () => _edit(context, program) : null,
                         trailing: canManage
                             ? PopupMenuButton<String>(
                                 tooltip: 'More for ${program.name}',
-                                onSelected: (_) => _archive(context, program),
-                                itemBuilder: (_) => const [PopupMenuItem(value: 'archive', child: Text('Archive'))],
+                                onSelected: (action) =>
+                                    action == 'edit' ? _edit(context, program) : _archive(context, program),
+                                itemBuilder: (_) => const [
+                                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                  PopupMenuItem(value: 'archive', child: Text('Archive')),
+                                ],
                               )
                             : null,
                       ),
@@ -342,6 +362,113 @@ class _ProgramSheetState extends State<_ProgramSheet> {
   }
 }
 
+/// FB-2: what can change about a program once it exists. Its code, department
+/// and length are what sections and records are keyed by, so they stay.
+class _ProgramEditSheet extends StatefulWidget {
+  const _ProgramEditSheet({required this.program, required this.submit});
+
+  final Program program;
+  final Future<Failure?> Function(String name, String? award) submit;
+
+  @override
+  State<_ProgramEditSheet> createState() => _ProgramEditSheetState();
+}
+
+class _ProgramEditSheetState extends State<_ProgramEditSheet> {
+  late final _name = TextEditingController(text: widget.program.name);
+  late final _award = TextEditingController(text: widget.program.award ?? '');
+  bool _busy = false;
+  Failure? _failure;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _award.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_name.text.trim().length < 2) {
+      return setState(() => _failure = Failure(code: FailureCode.validationFailed, message: 'Enter the program name.'));
+    }
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
+    final award = _award.text.trim();
+    final failure = await widget.submit(_name.text, award.isEmpty ? null : award);
+    if (!mounted) return;
+    if (failure == null) return Navigator.of(context).pop(true);
+    setState(() {
+      _busy = false;
+      _failure = failure;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final errors = _failure?.fieldErrors ?? const <String, String>{};
+    final p = widget.program;
+    return Padding(
+      // Lifts the whole sheet above the keyboard.
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0, AppSpacing.xl, AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Edit program', style: theme.textTheme.titleLarge),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '${p.code} · ${p.departmentName} · ${p.durationLabel}. These stay as they are.',
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpacing.base),
+            if (_failure != null && errors.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Text(_failure!.message, style: TextStyle(color: theme.colorScheme.error)),
+              ),
+            TextField(
+              controller: _name,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(labelText: 'Name', errorText: errors['name']),
+            ),
+            const SizedBox(height: AppSpacing.base),
+            TextField(
+              controller: _award,
+              decoration: InputDecoration(labelText: 'Award (optional)', hintText: 'B.Tech', errorText: errors['award']),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _busy ? null : _save,
+                    child: _busy
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Save'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /* ------------------------------------------------------------------ calendar */
 
 class _CalendarTab extends StatelessWidget {
@@ -387,6 +514,79 @@ class _CalendarTab extends StatelessWidget {
     if (saved == true && context.mounted) _say(context, 'Term added');
   }
 
+  // FB-2: correcting and removing. Archived years and terms leave the calendar
+  // and every picker; their history is kept, and the server refuses to archive
+  // what is still in use.
+
+  Future<void> _editYear(BuildContext context, AcademicYear year) async {
+    final cubit = context.read<AcademicCubit>();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _PeriodDialog(
+        title: 'Edit ${year.name}',
+        submitLabel: 'Save',
+        name: year.name,
+        startsOn: year.startsOn,
+        endsOn: year.endsOn,
+        offerCurrent: !year.isCurrent,
+        initialCurrent: false,
+        submit: (name, from, to, current) => cubit.updateYear(year.id, name, from, to, current),
+      ),
+    );
+    if (saved == true && context.mounted) _say(context, 'Academic year updated');
+  }
+
+  Future<void> _archiveYear(BuildContext context, AcademicYear year) async {
+    final cubit = context.read<AcademicCubit>();
+    final done = await showArchiveForm(
+      context,
+      title: 'Archive ${year.name}?',
+      body: 'It leaves the calendar and every picker; its history is kept. '
+          'The current year, or a year that still has terms, cannot be archived.',
+      submit: (reason) => cubit.archiveYear(year.id, reason),
+    );
+    if (done && context.mounted) _say(context, '${year.name} archived');
+  }
+
+  Future<void> _editTerm(BuildContext context, Term term) async {
+    final cubit = context.read<AcademicCubit>();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _PeriodDialog(
+        title: 'Edit ${term.name}',
+        submitLabel: 'Save',
+        name: term.name,
+        startsOn: term.startsOn,
+        endsOn: term.endsOn,
+        offerCurrent: false,
+        submit: (name, from, to, _) => cubit.updateTerm(term.id, name, from, to),
+      ),
+    );
+    if (saved == true && context.mounted) _say(context, 'Term updated');
+  }
+
+  Future<void> _archiveTerm(BuildContext context, Term term) async {
+    final cubit = context.read<AcademicCubit>();
+    final done = await showArchiveForm(
+      context,
+      title: 'Archive ${term.name}?',
+      body: 'It leaves the calendar and the section pickers; its history is kept. '
+          'A term that a section uses cannot be archived.',
+      submit: (reason) => cubit.archiveTerm(term.id, reason),
+    );
+    if (done && context.mounted) _say(context, '${term.name} archived');
+  }
+
+  /// Edit and Archive, on the thing they act on.
+  Widget _menu(String name, VoidCallback onEdit, VoidCallback onArchive) => PopupMenuButton<String>(
+    tooltip: 'More for $name',
+    onSelected: (action) => action == 'edit' ? onEdit() : onArchive(),
+    itemBuilder: (_) => const [
+      PopupMenuItem(value: 'edit', child: Text('Edit')),
+      PopupMenuItem(value: 'archive', child: Text('Archive')),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<AcademicCubit>();
@@ -431,6 +631,8 @@ class _CalendarTab extends StatelessWidget {
                                   child: Text(year.name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                                 ),
                                 if (year.isCurrent) const StatusChip(label: 'Current', tone: ChipTone.success),
+                                if (canManage)
+                                  _menu(year.name, () => _editYear(context, year), () => _archiveYear(context, year)),
                               ],
                             ),
                             Text(
@@ -450,6 +652,8 @@ class _CalendarTab extends StatelessWidget {
                                       '${shortDate(term.startsOn)} – ${shortDate(term.endsOn)}',
                                       style: theme.textTheme.bodySmall,
                                     ),
+                                    if (canManage)
+                                      _menu(term.name, () => _editTerm(context, term), () => _archiveTerm(context, term)),
                                   ],
                                 ),
                               ),
@@ -483,6 +687,7 @@ class _PeriodDialog extends StatefulWidget {
     required this.endsOn,
     required this.offerCurrent,
     required this.submit,
+    this.initialCurrent = true,
   });
 
   final String title;
@@ -491,6 +696,9 @@ class _PeriodDialog extends StatefulWidget {
   final DateTime startsOn;
   final DateTime endsOn;
   final bool offerCurrent;
+
+  /// A new year is usually the current one; an edited one keeps what it was.
+  final bool initialCurrent;
   final Future<Failure?> Function(String name, DateTime from, DateTime to, bool current) submit;
 
   @override
@@ -501,7 +709,7 @@ class _PeriodDialogState extends State<_PeriodDialog> {
   late final _name = TextEditingController(text: widget.name);
   late DateTime _from = widget.startsOn;
   late DateTime _to = widget.endsOn;
-  bool _current = true;
+  late bool _current = widget.initialCurrent;
   bool _busy = false;
   Failure? _failure;
 

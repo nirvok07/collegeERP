@@ -130,6 +130,175 @@ export async function createTerm(
   }
 }
 
+/* ------------------------------------- FB-2: correcting and removing them -- */
+
+const sameDay = (a: string, b: string) => new Date(a).getTime() === new Date(b).getTime();
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export async function updateAcademicYear(
+  deps: TeachingDeps,
+  actor: TeachingActor,
+  input: { id: string; name?: string; startsOn?: string; endsOn?: string; makeCurrent?: boolean },
+): Promise<Result<{ updated: true }>> {
+  try {
+    return await deps.uow.run(actor.tenantId, async (tx) => {
+      const year = await deps.years.findById(tx, input.id);
+      if (!year || year.status === 'archived') return Err(fail('NOT_FOUND', 'That academic year was not found.'));
+
+      const name = (input.name ?? year.name).trim();
+      const startsOn = input.startsOn ?? year.startsOn;
+      const endsOn = input.endsOn ?? year.endsOn;
+      if (name.length < 2) {
+        return Err(fail('VALIDATION_FAILED', 'Name the academic year as your college writes it.', {
+          fieldErrors: { name: 'Required' },
+        }));
+      }
+      if (!(new Date(endsOn) > new Date(startsOn))) {
+        return Err(fail('VALIDATION_FAILED', 'The year must end after it starts.', {
+          fieldErrors: { endsOn: 'Must be later' },
+        }));
+      }
+      // Every term must still fall inside its year, or its dates become ambiguous.
+      const outside = (await deps.terms.list(tx, year.id)).find(
+        (t) => new Date(t.startsOn) < new Date(startsOn) || new Date(t.endsOn) > new Date(endsOn),
+      );
+      if (outside) {
+        return Err(fail('VALIDATION_FAILED',
+          `${outside.name} runs ${outside.startsOn} to ${outside.endsOn}, outside those dates. Change it first.`,
+          { fieldErrors: { startsOn: 'A term would fall outside' } }));
+      }
+
+      await deps.years.update(tx, year.id, { name, startsOn, endsOn });
+      const makeCurrent = input.makeCurrent === true && !year.isCurrent;
+      if (makeCurrent) {
+        await deps.years.clearCurrent(tx);
+        await deps.years.setCurrent(tx, year.id);
+      }
+      await deps.audit.record({
+        correlationId: deps.ids.next(), tenantId: actor.tenantId,
+        actorType: 'person', actorId: actor.personId,
+        action: 'academic_year.updated', subjectType: 'academic_year', subjectId: year.id,
+        before: { name: year.name, startsOn: year.startsOn, endsOn: year.endsOn, isCurrent: year.isCurrent },
+        after: { name, startsOn, endsOn, isCurrent: year.isCurrent || makeCurrent },
+      }, tx);
+      return Ok({ updated: true as const });
+    });
+  } catch (e) {
+    if (e instanceof AppException && e.code === 'CONFLICT') {
+      return Err(fail('CONFLICT', `${input.name?.trim()} already exists.`, { fieldErrors: { name: 'Already used' } }));
+    }
+    if (e instanceof AppException) return Err(fail(e.code, e.message));
+    throw e;
+  }
+}
+
+export async function archiveAcademicYear(
+  deps: TeachingDeps,
+  actor: TeachingActor,
+  input: { id: string; reason?: string },
+): Promise<Result<{ archived: true }>> {
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const year = await deps.years.findById(tx, input.id);
+    if (!year || year.status === 'archived') return Err(fail('NOT_FOUND', 'That academic year was not found.'));
+    // Every module asks for the current year; there must always be an answer.
+    if (year.isCurrent) {
+      return Err(fail('CONFLICT', `${year.name} is the current year. Make another year current before removing it.`));
+    }
+    if (year.termCount > 0) {
+      return Err(fail('CONFLICT', `${year.name} still has ${plural(year.termCount, 'term', 'terms')}. Remove them first.`));
+    }
+    const sections = await deps.sections.list(tx, { academicYearId: year.id });
+    if (sections.length > 0) {
+      return Err(fail('CONFLICT', `${plural(sections.length, 'section belongs', 'sections belong')} to ${year.name}, so it cannot be removed.`));
+    }
+
+    const archived = await deps.years.archive(tx, year.id, actor.personId, deps.clock.now());
+    if (!archived) return Err(fail('CONFLICT', 'That academic year was changed by someone else just now.'));
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'academic_year.archived', subjectType: 'academic_year', subjectId: year.id,
+      before: { name: year.name, status: year.status }, after: { status: 'archived' },
+      reason: input.reason?.trim() || null,
+    }, tx);
+    return Ok({ archived: true as const });
+  });
+}
+
+export async function updateTerm(
+  deps: TeachingDeps,
+  actor: TeachingActor,
+  input: { id: string; name?: string; startsOn?: string; endsOn?: string },
+): Promise<Result<{ updated: true }>> {
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const term = await deps.terms.findById(tx, input.id);
+    if (!term || term.status === 'archived') return Err(fail('NOT_FOUND', 'That term was not found.'));
+
+    const name = (input.name ?? term.name).trim();
+    const startsOn = input.startsOn ?? term.startsOn;
+    const endsOn = input.endsOn ?? term.endsOn;
+    if (!name) return Err(fail('VALIDATION_FAILED', 'Name the term.', { fieldErrors: { name: 'Required' } }));
+    if (!(new Date(endsOn) > new Date(startsOn))) {
+      return Err(fail('VALIDATION_FAILED', 'The term must end after it starts.', {
+        fieldErrors: { endsOn: 'Must be later' },
+      }));
+    }
+
+    if (!sameDay(startsOn, term.startsOn) || !sameDay(endsOn, term.endsOn)) {
+      const year = await deps.years.findById(tx, term.academicYearId);
+      if (year && (new Date(startsOn) < new Date(year.startsOn) || new Date(endsOn) > new Date(year.endsOn))) {
+        return Err(fail('VALIDATION_FAILED',
+          `A term must fall inside ${year.name}, which runs ${year.startsOn} to ${year.endsOn}.`,
+          { fieldErrors: { startsOn: 'Outside the academic year' } }));
+      }
+      // Classes and registers are dated inside the term. Once a section is in
+      // it, moving the dates would strand them; the name can still change.
+      const sections = await deps.sections.list(tx, { termId: term.id });
+      if (sections.length > 0) {
+        return Err(fail('CONFLICT',
+          `${plural(sections.length, 'section uses', 'sections use')} ${term.name}, so its dates are fixed. Its name can still change.`));
+      }
+    }
+
+    const updated = await deps.terms.update(tx, term.id, { name, startsOn, endsOn });
+    if (!updated) return Err(fail('CONFLICT', 'That term was changed by someone else just now.'));
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'term.updated', subjectType: 'term', subjectId: term.id,
+      before: { name: term.name, startsOn: term.startsOn, endsOn: term.endsOn },
+      after: { name, startsOn, endsOn },
+    }, tx);
+    return Ok({ updated: true as const });
+  });
+}
+
+export async function archiveTerm(
+  deps: TeachingDeps,
+  actor: TeachingActor,
+  input: { id: string; reason?: string },
+): Promise<Result<{ archived: true }>> {
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const term = await deps.terms.findById(tx, input.id);
+    if (!term || term.status === 'archived') return Err(fail('NOT_FOUND', 'That term was not found.'));
+    const sections = await deps.sections.list(tx, { termId: term.id });
+    if (sections.length > 0) {
+      return Err(fail('CONFLICT', `${plural(sections.length, 'section uses', 'sections use')} ${term.name}, so it cannot be removed.`));
+    }
+
+    const archived = await deps.terms.archive(tx, term.id, actor.personId, deps.clock.now());
+    if (!archived) return Err(fail('CONFLICT', 'That term was changed by someone else just now.'));
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'term.archived', subjectType: 'term', subjectId: term.id,
+      before: { name: term.name, status: term.status }, after: { status: 'archived' },
+      reason: input.reason?.trim() || null,
+    }, tx);
+    return Ok({ archived: true as const });
+  });
+}
+
 export function listAcademicYears(
   deps: TeachingDeps, actor: TeachingActor,
 ): Promise<AcademicYearRecord[]> {

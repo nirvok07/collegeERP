@@ -8,7 +8,7 @@ import { institutionScope } from '../../identity/domain/scope.ts';
 import {
   addEntry, archiveProgram, createCourse, createDraft, createProgram, createSuccessor,
   listCourses, listPrograms, listVersions, publishVersion, readVersion, removeEntry,
-  retitleCourse, type CurriculumActor,
+  renameProgram, retitleCourse, type CurriculumActor,
 } from '../application/manage-curriculum.ts';
 
 const programBody = z.object({
@@ -18,6 +18,10 @@ const programBody = z.object({
   award: z.string().max(80).optional(),
   duration_years: z.number().positive().max(10),
   term_type: z.enum(['semester', 'annual']).default('semester'),
+});
+const renameProgramBody = z.object({
+  name: z.string().min(2).max(160),
+  award: z.string().max(80).nullable().optional(),
 });
 const courseBody = z.object({
   code: z.string().min(2).max(20),
@@ -94,6 +98,19 @@ export async function registerCurriculumRoutes(app: FastifyInstance, c: Containe
       durationYears: parsed.data.duration_years,
       termType: parsed.data.term_type,
     }), 201);
+  });
+
+  app.patch('/programs/:id', async (req, reply) => {
+    if (!(await canWrite(req as never, reply as never))) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) {
+      return sendFailure(reply, fail('NOT_FOUND', 'That program was not found.'));
+    }
+    const parsed = renameProgramBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await renameProgram(c.curriculum, actorOf(req), {
+      id, name: parsed.data.name, award: parsed.data.award ?? null,
+    }));
   });
 
   app.post('/programs/:id/archive', async (req, reply) => {

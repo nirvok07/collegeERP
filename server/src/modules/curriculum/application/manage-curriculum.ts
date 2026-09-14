@@ -135,6 +135,40 @@ export async function archiveProgram(
   });
 }
 
+/**
+ * FB-2: a program's name and award can be corrected. Its code cannot: it is
+ * what sections, students' records and published curricula are known by.
+ */
+export async function renameProgram(
+  deps: CurriculumDeps,
+  actor: CurriculumActor,
+  input: { id: string; name: string; award: string | null },
+): Promise<Result<{ updated: true }>> {
+  const name = input.name.trim();
+  if (name.length < 2) {
+    return Err(fail('VALIDATION_FAILED', 'Enter a program name.', { fieldErrors: { name: 'Required' } }));
+  }
+  const award = input.award?.trim() || null;
+
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const program = await deps.programs.findById(tx, input.id);
+    if (!program || program.status !== 'active') {
+      return Err(fail('NOT_FOUND', 'That program was not found.'));
+    }
+    const updated = await deps.programs.rename(tx, input.id, { name, award });
+    if (!updated) return Err(fail('CONFLICT', 'That program was changed by someone else just now.'));
+
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'program.renamed', subjectType: 'program', subjectId: input.id,
+      scopeType: 'program', scopeRefId: input.id,
+      before: { name: program.name, award: program.award }, after: { name, award },
+    }, tx);
+    return Ok({ updated: true as const });
+  });
+}
+
 /* ---------------------------------------------------------------- courses -- */
 
 export async function createCourse(

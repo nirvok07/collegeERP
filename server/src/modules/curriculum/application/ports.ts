@@ -60,6 +60,8 @@ export interface ProgramRepository {
   findById(tx: Tx, id: string): Promise<ProgramRecord | null>;
   list(tx: Tx, includeArchived: boolean): Promise<ProgramRecord[]>;
   archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean>;
+  /** Name and award only: the code is permanent, as a course's is. */
+  rename(tx: Tx, id: string, input: { name: string; award: string | null }): Promise<boolean>;
 }
 
 export interface CourseRepository {

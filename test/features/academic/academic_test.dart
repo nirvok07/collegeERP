@@ -42,8 +42,8 @@ void main() {
     expect(isoDate(second.endsOn), '2027-05-31');
   });
 
-  Future<_FakeAcademic> pump(WidgetTester tester, Set<String> permissions) async {
-    final repo = _FakeAcademic();
+  Future<_FakeAcademic> pump(WidgetTester tester, Set<String> permissions, [_FakeAcademic? given]) async {
+    final repo = given ?? _FakeAcademic();
     await tester.pumpWidget(MaterialApp(
       home: AcademicScreen(
         authority: Authority(permissions: permissions, hasAccess: true),
@@ -103,6 +103,64 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Semester 1'), findsOneWidget);
   });
+
+  testWidgets('FB-2: an admin edits a program, its name and award, never its code', (tester) async {
+    final repo = _FakeAcademic();
+    repo._programs.add(const Program(
+      id: 'p1', name: 'BTech CS', code: 'btech-cs', award: null, departmentId: 'd1',
+      departmentName: 'Computer Science', durationYears: 4, termType: 'semester', publishedVersions: 0,
+    ));
+    await pump(tester, admin, repo);
+
+    await tester.tap(find.byTooltip('More for BTech CS'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit program'), findsOneWidget);
+    expect(find.textContaining('btech-cs'), findsWidgets, reason: 'the code is shown, not editable');
+
+    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'B.Tech Computer Science');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(repo.renamed['p1'], 'B.Tech Computer Science');
+    expect(find.text('B.Tech Computer Science'), findsOneWidget);
+    expect(find.text('Program updated'), findsOneWidget);
+  });
+
+  testWidgets('FB-2: an admin corrects a term, then archives it', (tester) async {
+    final repo = _FakeAcademic();
+    repo._years.add(AcademicYear(
+      id: 'y1', name: '2026-27', startsOn: DateTime(2026, 6, 1), endsOn: DateTime(2027, 5, 31), isCurrent: true, status: 'active',
+    ));
+    repo._terms.add(Term(
+      id: 't1', academicYearId: 'y1', sequence: 1, name: 'Semester 1', startsOn: DateTime(2026, 6, 1), endsOn: DateTime(2026, 11, 30),
+    ));
+    await pump(tester, admin, repo);
+    await tester.tap(find.text('Calendar'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('More for Semester 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Odd semester');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+    expect(find.text('Odd semester'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('More for Odd semester'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archive'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Reason'), 'Added by mistake');
+    await tester.tap(find.widgetWithText(FilledButton, 'Archive'));
+    await tester.pumpAndSettle();
+
+    expect(repo.archivedTerms, ['t1']);
+    expect(find.text('Odd semester'), findsNothing);
+    expect(find.text('No terms yet'), findsOneWidget);
+  });
 }
 
 class _FakeAcademic implements AcademicRepository {
@@ -160,6 +218,59 @@ class _FakeAcademic implements AcademicRepository {
     required DateTime endsOn,
   }) async {
     _terms.add(Term(id: 't${_terms.length + 1}', academicYearId: yearId, sequence: sequence, name: name, startsOn: startsOn, endsOn: endsOn));
+    return const Ok(null);
+  }
+
+  final renamed = <String, String>{};
+  final archivedTerms = <String>[];
+
+  @override
+  Future<Result<void>> renameProgram(String id, {required String name, String? award}) async {
+    renamed[id] = name;
+    final i = _programs.indexWhere((p) => p.id == id);
+    final p = _programs[i];
+    _programs[i] = Program(
+      id: p.id, name: name, code: p.code, award: award, departmentId: p.departmentId,
+      departmentName: p.departmentName, durationYears: p.durationYears, termType: p.termType,
+      publishedVersions: p.publishedVersions,
+    );
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> updateYear(
+    String id, {
+    required String name,
+    required DateTime startsOn,
+    required DateTime endsOn,
+    required bool makeCurrent,
+  }) async {
+    final i = _years.indexWhere((y) => y.id == id);
+    final y = _years[i];
+    _years[i] = AcademicYear(
+      id: id, name: name, startsOn: startsOn, endsOn: endsOn, isCurrent: y.isCurrent || makeCurrent, status: y.status,
+    );
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> archiveYear(String id, String reason) async {
+    _years.removeWhere((y) => y.id == id);
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> updateTerm(String id, {required String name, required DateTime startsOn, required DateTime endsOn}) async {
+    final i = _terms.indexWhere((t) => t.id == id);
+    final t = _terms[i];
+    _terms[i] = Term(id: id, academicYearId: t.academicYearId, sequence: t.sequence, name: name, startsOn: startsOn, endsOn: endsOn);
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> archiveTerm(String id, String reason) async {
+    archivedTerms.add(id);
+    _terms.removeWhere((t) => t.id == id);
     return const Ok(null);
   }
 }

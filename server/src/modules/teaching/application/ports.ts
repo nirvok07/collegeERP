@@ -8,7 +8,7 @@ export interface AcademicYearRecord {
   startsOn: string;
   endsOn: string;
   isCurrent: boolean;
-  status: 'planned' | 'active' | 'closed';
+  status: 'planned' | 'active' | 'closed' | 'archived';
   termCount: number;
 }
 
@@ -20,7 +20,7 @@ export interface TermRecord {
   name: string;
   startsOn: string;
   endsOn: string;
-  status: 'planned' | 'active' | 'closed';
+  status: 'planned' | 'active' | 'closed' | 'archived';
 }
 
 export interface SectionRecord {
@@ -51,6 +51,9 @@ export interface AcademicYearRepository {
   /** Clears the flag elsewhere, so exactly one year is current. */
   clearCurrent(tx: Tx): Promise<void>;
   setCurrent(tx: Tx, id: string): Promise<boolean>;
+  update(tx: Tx, id: string, input: { name: string; startsOn: string; endsOn: string }): Promise<boolean>;
+  /** FB-2: removal is archival; nothing is ever deleted (bootstrap 001). */
+  archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean>;
 }
 
 export interface TermRepository {
@@ -60,6 +63,8 @@ export interface TermRepository {
   }): Promise<void>;
   findById(tx: Tx, id: string): Promise<TermRecord | null>;
   list(tx: Tx, academicYearId: string | null): Promise<TermRecord[]>;
+  update(tx: Tx, id: string, input: { name: string; startsOn: string; endsOn: string }): Promise<boolean>;
+  archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean>;
 }
 
 export interface SectionFilter {

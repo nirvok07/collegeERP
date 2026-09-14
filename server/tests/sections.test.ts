@@ -108,6 +108,128 @@ describe('academic period belongs to the calendar, not to sections', () => {
   });
 });
 
+describe('FB-2: the calendar and programs can be corrected and removed', () => {
+  it('renames a year, moves its dates and makes it current', async () => {
+    const c = await teachingCollege();
+    const other = (await post('/v1/academic-years', c.token, {
+      name: '2027-28', starts_on: '2027-06-01', ends_on: '2028-05-31', make_current: true,
+    })).json().data.id;
+
+    const res = await patch(`/v1/academic-years/${c.year}`, c.token, {
+      name: '2026-2027', ends_on: '2027-05-30', make_current: true,
+    });
+    assert.equal(res.statusCode, 200);
+    const years = (await get('/v1/academic-years', c.token)).json().data;
+    const year = years.find((y: { id: string }) => y.id === c.year);
+    assert.equal(year.name, '2026-2027');
+    assert.equal(year.ends_on, '2027-05-30');
+    assert.equal(year.is_current, true);
+    assert.equal(years.find((y: { id: string }) => y.id === other).is_current, false, 'still exactly one current year');
+  });
+
+  it('refuses year dates that would leave one of its terms outside', async () => {
+    const c = await teachingCollege();
+    const res = await patch(`/v1/academic-years/${c.year}`, c.token, { starts_on: '2026-07-01' });
+    assert.equal(res.statusCode, 422);
+    assert.match(res.json().error.message, /Semester 1 runs .* outside those dates/);
+  });
+
+  it("changes an unused term's name and dates, but only its name once a section uses it", async () => {
+    const c = await teachingCollege();
+    let res = await patch(`/v1/terms/${c.term}`, c.token, { name: 'Odd semester', ends_on: '2026-12-15' });
+    assert.equal(res.statusCode, 200);
+
+    await makeSection(c);
+    res = await patch(`/v1/terms/${c.term}`, c.token, { ends_on: '2026-12-20' });
+    assert.equal(res.statusCode, 409);
+    assert.match(res.json().error.message, /dates are fixed/);
+    res = await patch(`/v1/terms/${c.term}`, c.token, { name: 'Autumn semester' });
+    assert.equal(res.statusCode, 200, 'the name can still change');
+
+    const term = (await get(`/v1/terms?academic_year_id=${c.year}`, c.token)).json().data[0];
+    assert.equal(term.name, 'Autumn semester');
+    assert.equal(term.ends_on, '2026-12-15');
+  });
+
+  it('archives an unused term and frees its sequence, but keeps one a section uses', async () => {
+    const c = await teachingCollege();
+    const second = { academic_year_id: c.year, sequence: 2, name: 'Semester 2', starts_on: '2026-12-01', ends_on: '2027-05-31' };
+    const id = (await post('/v1/terms', c.token, second)).json().data.id;
+
+    let res = await post(`/v1/terms/${id}/archive`, c.token, {});
+    assert.equal(res.statusCode, 200);
+    const names = (await get(`/v1/terms?academic_year_id=${c.year}`, c.token)).json().data.map((t: { name: string }) => t.name);
+    assert.deepEqual(names, ['Semester 1'], 'an archived term leaves the calendar');
+    res = await post('/v1/terms', c.token, second);
+    assert.equal(res.statusCode, 201, 'its sequence is free again');
+
+    await makeSection(c);
+    res = await post(`/v1/terms/${c.term}/archive`, c.token, {});
+    assert.equal(res.statusCode, 409);
+    assert.match(res.json().error.message, /cannot be removed/);
+  });
+
+  it('never archives the current year, nor a year that still has terms', async () => {
+    const c = await teachingCollege();
+    let res = await post(`/v1/academic-years/${c.year}/archive`, c.token, {});
+    assert.equal(res.statusCode, 409);
+    assert.match(res.json().error.message, /current year/);
+
+    const next = (await post('/v1/academic-years', c.token, {
+      name: '2027-28', starts_on: '2027-06-01', ends_on: '2028-05-31',
+    })).json().data.id;
+    const term = (await post('/v1/terms', c.token, {
+      academic_year_id: next, sequence: 1, name: 'Semester 1', starts_on: '2027-06-01', ends_on: '2027-11-30',
+    })).json().data.id;
+    res = await post(`/v1/academic-years/${next}/archive`, c.token, {});
+    assert.equal(res.statusCode, 409);
+    assert.match(res.json().error.message, /still has 1 term/);
+
+    await post(`/v1/terms/${term}/archive`, c.token, {});
+    res = await post(`/v1/academic-years/${next}/archive`, c.token, { reason: 'Added by mistake' });
+    assert.equal(res.statusCode, 200);
+    const names = (await get('/v1/academic-years', c.token)).json().data.map((y: { name: string }) => y.name);
+    assert.deepEqual(names, ['2026-27']);
+    res = await post('/v1/academic-years', c.token, { name: '2027-28', starts_on: '2027-06-01', ends_on: '2028-05-31' });
+    assert.equal(res.statusCode, 201, 'its name is free again');
+  });
+
+  it("renames a program and its award; its code never changes", async () => {
+    const c = await teachingCollege();
+    const res = await patch(`/v1/programs/${c.program}`, c.token, {
+      name: 'B.Tech Computer Science and Engineering', award: 'B.Tech', code: 'something-else',
+    });
+    assert.equal(res.statusCode, 200);
+    const program = (await get('/v1/programs', c.token)).json().data.find((p: { id: string }) => p.id === c.program);
+    assert.equal(program.name, 'B.Tech Computer Science and Engineering');
+    assert.equal(program.award, 'B.Tech');
+    assert.equal(program.code, 'btech-cse');
+  });
+
+  it('only those who manage the calendar and programs may change them', async () => {
+    const c = await teachingCollege();
+    const section = (await makeSection(c)).json().data.id;
+    const invited = (await post('/v1/people', c.token, {
+      full_name: 'Test Teacher', email: `teacher@${c.code}.edu`, person_type: 'staff',
+      role: { role_key: 'faculty', scope_type: 'section', scope_ref_id: section },
+    })).json().data;
+    await harness.app.inject({
+      method: 'POST', url: '/v1/auth/accept-invite',
+      payload: { institution_code: c.code, token: invited.invitation.token, password: 'teacher-strong-99' },
+    });
+    const teacher = ((await harness.app.inject({
+      method: 'POST', url: '/v1/auth/login',
+      payload: { institution_code: c.code, identifier: `teacher@${c.code}.edu`, password: 'teacher-strong-99' },
+    })) as LightMyRequestResponse).json().data.access_token as string;
+
+    assert.equal((await patch(`/v1/academic-years/${c.year}`, teacher, { name: '2026-99' })).statusCode, 403);
+    assert.equal((await post(`/v1/academic-years/${c.year}/archive`, teacher, {})).statusCode, 403);
+    assert.equal((await patch(`/v1/terms/${c.term}`, teacher, { name: 'Mine now' })).statusCode, 403);
+    assert.equal((await post(`/v1/terms/${c.term}/archive`, teacher, {})).statusCode, 403);
+    assert.equal((await patch(`/v1/programs/${c.program}`, teacher, { name: 'Renamed' })).statusCode, 403);
+  });
+});
+
 describe('a section is a cohort, carrying its whole context', () => {
   it('creates a section and reports campus, department, program, year and term', async () => {
     const c = await teachingCollege();

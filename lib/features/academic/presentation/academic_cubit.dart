@@ -88,4 +88,21 @@ class AcademicCubit extends Cubit<AcademicState> {
   Future<Failure?> createTerm(String yearId, int sequence, String name, DateTime startsOn, DateTime endsOn) => _write(
     _repository.createTerm(yearId: yearId, sequence: sequence, name: name.trim(), startsOn: startsOn, endsOn: endsOn),
   );
+
+  // FB-2: correcting and removing. The server decides what may change; its
+  // refusal comes back to the form that asked.
+
+  Future<Failure?> renameProgram(String id, String name, String? award) =>
+      _write(_repository.renameProgram(id, name: name.trim(), award: award?.trim()));
+
+  Future<Failure?> updateYear(String id, String name, DateTime startsOn, DateTime endsOn, bool makeCurrent) => _write(
+    _repository.updateYear(id, name: name.trim(), startsOn: startsOn, endsOn: endsOn, makeCurrent: makeCurrent),
+  );
+
+  Future<Failure?> archiveYear(String id, String reason) => _write(_repository.archiveYear(id, reason.trim()));
+
+  Future<Failure?> updateTerm(String id, String name, DateTime startsOn, DateTime endsOn) =>
+      _write(_repository.updateTerm(id, name: name.trim(), startsOn: startsOn, endsOn: endsOn));
+
+  Future<Failure?> archiveTerm(String id, String reason) => _write(_repository.archiveTerm(id, reason.trim()));
 }

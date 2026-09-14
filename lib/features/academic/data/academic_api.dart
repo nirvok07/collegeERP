@@ -20,6 +20,19 @@ abstract interface class AcademicRepository {
     required DateTime startsOn,
     required DateTime endsOn,
   });
+
+  // FB-2: correcting and removing. Removal is archival on the server.
+  Future<Result<void>> renameProgram(String id, {required String name, String? award});
+  Future<Result<void>> updateYear(
+    String id, {
+    required String name,
+    required DateTime startsOn,
+    required DateTime endsOn,
+    required bool makeCurrent,
+  });
+  Future<Result<void>> archiveYear(String id, String reason);
+  Future<Result<void>> updateTerm(String id, {required String name, required DateTime startsOn, required DateTime endsOn});
+  Future<Result<void>> archiveTerm(String id, String reason);
 }
 
 class AcademicApi implements AcademicRepository {
@@ -80,4 +93,37 @@ class AcademicApi implements AcademicRepository {
     },
     _ignore,
   );
+
+  @override
+  Future<Result<void>> renameProgram(String id, {required String name, String? award}) =>
+      _client.patch('/v1/programs/${Uri.encodeComponent(id)}', {'name': name, 'award': award}, _ignore);
+
+  @override
+  Future<Result<void>> updateYear(
+    String id, {
+    required String name,
+    required DateTime startsOn,
+    required DateTime endsOn,
+    required bool makeCurrent,
+  }) => _client.patch(
+    '/v1/academic-years/${Uri.encodeComponent(id)}',
+    {'name': name, 'starts_on': isoDate(startsOn), 'ends_on': isoDate(endsOn), if (makeCurrent) 'make_current': true},
+    _ignore,
+  );
+
+  @override
+  Future<Result<void>> archiveYear(String id, String reason) =>
+      _client.post('/v1/academic-years/${Uri.encodeComponent(id)}/archive', {'reason': reason}, _ignore);
+
+  @override
+  Future<Result<void>> updateTerm(String id, {required String name, required DateTime startsOn, required DateTime endsOn}) =>
+      _client.patch(
+        '/v1/terms/${Uri.encodeComponent(id)}',
+        {'name': name, 'starts_on': isoDate(startsOn), 'ends_on': isoDate(endsOn)},
+        _ignore,
+      );
+
+  @override
+  Future<Result<void>> archiveTerm(String id, String reason) =>
+      _client.post('/v1/terms/${Uri.encodeComponent(id)}/archive', {'reason': reason}, _ignore);
 }
