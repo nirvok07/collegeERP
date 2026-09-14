@@ -16,6 +16,28 @@ import { endSession, refreshSession } from '../application/refresh-session.ts';
 import { changePassword } from '../application/change-password.ts';
 import { normaliseActivationCode, studentLoginIdentifier } from '../application/student-access.ts';
 import { registerDevice, revokeDevicesForAccount } from '../application/manage-devices.ts';
+import {
+  requestCollegeCode, requestPlatformCode, verifyCollegeCode, verifyPlatformCode, type CodeRequested,
+} from '../application/otp-sign-in.ts';
+
+// AD-82: sign-in by a one-time code to the person's email or mobile.
+const codeRequest = z.object({
+  institution_code: z.string().min(1).max(64),
+  identifier: z.string().min(1).max(254),
+});
+const codeVerify = z.object({
+  institution_code: z.string().min(1).max(64),
+  challenge_token: z.string().min(10).max(200),
+  code: z.string().min(1).max(12),
+});
+const platformCodeRequest = z.object({ email: z.string().email().max(254) });
+const platformCodeVerify = z.object({
+  challenge_token: z.string().min(10).max(200),
+  code: z.string().min(1).max(12),
+});
+const codeJson = (r: CodeRequested) => ({
+  challenge_token: r.challengeToken, expires_at: r.expiresAt.toISOString(), destination: r.destination,
+});
 
 const platformLogin = z.object({
   email: z.string().email(),
@@ -60,6 +82,56 @@ const accept = z.object({
 });
 
 export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
+  /* ------------------------------------------------- AD-82: sign-in by code */
+
+  app.post('/auth/otp/request', async (req, reply) => {
+    const parsed = codeRequest.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter your email or mobile number.'));
+    const tenantId = await resolveTenantId(c, parsed.data.institution_code);
+    // As for passwords: whether a college code exists is not for an
+    // unauthenticated caller to learn.
+    if (!tenantId) return sendFailure(reply, fail('UNAUTHENTICATED', 'Those sign-in details are not correct.'));
+    const result = await requestCollegeCode(c.otpSignIn, { tenantId, identifier: parsed.data.identifier });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, codeJson(result.value));
+  });
+
+  app.post('/auth/otp/verify', async (req, reply) => {
+    const parsed = codeVerify.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter the six-digit code.'));
+    const tenantId = await resolveTenantId(c, parsed.data.institution_code);
+    if (!tenantId) return sendFailure(reply, fail('UNAUTHENTICATED', 'This code has expired. Ask for a new one.'));
+    const result = await verifyCollegeCode(c.otpSignIn, {
+      tenantId, challengeToken: parsed.data.challenge_token, code: parsed.data.code, ipHash: ipHashOf(req),
+    });
+    if (result.ok) {
+      reply.setCookie(REFRESH_COOKIE, result.value.tokens.refreshToken, refreshCookieOptions(c.config));
+    }
+    return sendResult(reply, mapTokens(result), 200, req.log.warn.bind(req.log));
+  });
+
+  app.post('/auth/platform/otp/request', async (req, reply) => {
+    const parsed = platformCodeRequest.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter your email.'));
+    const result = await requestPlatformCode(c.otpSignIn, { email: parsed.data.email });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, codeJson(result.value));
+  });
+
+  app.post('/auth/platform/otp/verify', async (req, reply) => {
+    const parsed = platformCodeVerify.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter the six-digit code.'));
+    const result = await verifyPlatformCode(c.otpSignIn, {
+      challengeToken: parsed.data.challenge_token, code: parsed.data.code, ipHash: ipHashOf(req),
+    });
+    if (result.ok) {
+      reply.setCookie(REFRESH_COOKIE, result.value.tokens.refreshToken, refreshCookieOptions(c.config));
+    }
+    return sendResult(reply, mapTokens(result), 200, req.log.warn.bind(req.log));
+  });
+
+  /* ------------------------------------------------ passwords (until OTP-5) */
+
   app.post('/auth/platform/login', async (req, reply) => {
     const parsed = platformLogin.safeParse(req.body);
     if (!parsed.success) {
@@ -315,7 +387,8 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     if (req.actor.actorType === 'platform') {
       // SA-3a: permissions from the account's live role, never a fixed set.
       const found = await c.platformAuthority.forAccount(req.actor.sub);
-      if (!found || found.status !== 'active' || !found.mfaEnrolled) {
+      // AD-82 supersedes AD-62: an active account, however it signed in.
+      if (!found || found.status !== 'active') {
         return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
       }
       const permissions = [...platformPermissions(found.role)].sort();

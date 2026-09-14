@@ -6,6 +6,8 @@ import { PgCollegeOverviewReader } from './modules/institution/infrastructure/ov
 import { sealerFor } from './config/config.ts';
 import { OtplibTotp } from './infrastructure/crypto/totp.ts';
 import type { PlatformMfaDeps } from './modules/identity/application/platform-mfa.ts';
+import type { OtpDeps } from './modules/identity/application/otp-sign-in.ts';
+import { FixedCodeSender, UnconfiguredSender } from './infrastructure/messaging/otp-senders.ts';
 import type {
   ManagePlatformAccountsDeps, PlatformAuthorityReader,
 } from './modules/identity/application/manage-platform-accounts.ts';
@@ -44,6 +46,8 @@ import {
   PgRoleDefinitionRepository,
   PgPlatformAdminRepository,
   PgPlatformMfaRepository,
+  PgOtpRepository,
+  PgSignInIdentityReader,
 } from './modules/identity/infrastructure/repositories.ts';
 import {
   PgCampusRepository,
@@ -125,6 +129,8 @@ export interface Container {
   platformAuthority: PlatformAuthorityReader;
   managePlatformAccounts: ManagePlatformAccountsDeps;
   platformMfa: PlatformMfaDeps;
+  /** AD-82: sign-in by a one-time code, for colleges and the platform. */
+  otpSignIn: OtpDeps;
   lifecycle: LifecycleDeps;
   platformAudit: PlatformAuditDeps;
   uow: PgUnitOfWork;
@@ -207,6 +213,14 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     platformMfa: {
       uow, mfa: platformMfa, platformAccounts, platformAdmin, refreshTokens, loginAttempts,
       hasher, tokens, sealer, totp, audit, ids, clock, refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
+    },
+    otpSignIn: {
+      uow, otp: new PgOtpRepository(), identities: new PgSignInIdentityReader(), accounts, platformAccounts,
+      refreshTokens, loginAttempts, audit, tokens, ids, clock, tenantAccess,
+      refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
+      fixedCode: config.OTP_FIXED_CODE,
+      // AD-82: real senders (email; WhatsApp then SMS) are the go-live blocker.
+      sender: config.OTP_FIXED_CODE ? new FixedCodeSender() : new UnconfiguredSender(),
     },
     lifecycle: {
       uow, institutions, audit, ids, clock,

@@ -38,6 +38,26 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Owner feedback, 2026-09-14 (`feedbackchanges.md`):
+- FB-1 ✅ `151ec7c` People does not list the signed-in person. Flutter test.
+- FB-2 ✅ `28a4060` Edit + archive for programs, academic years and terms (migration 027, applied
+  to Supabase). Archive = removal (no DELETE by design); name/sequence freed for reuse. Rules: year
+  dates must hold its terms; term dates fixed once a section uses it; current year / year with terms
+  / anything a section uses cannot be archived; program code, department, length fixed. Server +7
+  tests (incl. 403 for a teacher), Flutter +2. 🔍 NEEDS VALIDATION on the phone.
+- OTP sign-in 🟡 AD-82 approved (everyone incl. Super Admin; no passwords; fixed code 123456 on every
+  server until go-live, risk accepted by owner). Slices, in order:
+  - OTP-1 ❌ server: request/verify for college (email, mobile, enrolment no.) and platform; 5-min
+    single-use codes, 5 tries, 5 requests / 15 min, no existence disclosure; invited → active on
+    first code; sender port with the fixed-code sender; startup warning.
+  - OTP-2 ❌ college app: identifier → code screens; remove sign-in password, accept-invite
+    password, student activation, change password, reset code UI.
+  - OTP-3 ❌ Super Admin app: same; remove password + authenticator enrolment.
+  - OTP-4 ❌ mobile numbers on appoint-teacher and admit-student (server + both forms).
+  - OTP-5 ❌ web console to codes; remove password endpoints; real email / WhatsApp / SMS senders.
+- 🚫 GO-LIVE BLOCKER (AD-82): no real OTP senders; `OTP_FIXED_CODE=123456` lets anyone sign in as
+  anyone. Must be removed before any real college uses the system.
+
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.
 

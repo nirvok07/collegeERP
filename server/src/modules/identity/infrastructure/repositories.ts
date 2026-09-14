@@ -28,6 +28,9 @@ import type {
   PlatformAccountSummary, PlatformAdminRepository, RoleHistoryEntry,
 } from '../application/manage-platform-accounts.ts';
 import type { PlatformRole } from '../domain/platform-authority.ts';
+import type {
+  IdentifierKind, OtpChallengeRecord, OtpChannel, OtpRepository, SignInCandidate, SignInIdentityReader,
+} from '../application/otp-sign-in.ts';
 import { LIVE_ACCOUNT_STATUSES } from '../domain/seats.ts';
 import type {
   ChallengePurpose, PlatformCredentialState, PlatformMfaRepository,
@@ -626,6 +629,94 @@ export class PgLoginAttemptRepository implements LoginAttemptRepository {
        VALUES ($1,$2,$3,$4,$5,$6,$7)`,
       [input.id, input.tenantId, input.identifierHash, input.accountId, input.outcome, input.failureReason, input.ipHash],
     );
+  }
+}
+
+/** OTP-1 (AD-82): one row per code asked for; hashes only (migration 028). */
+export class PgOtpRepository implements OtpRepository {
+  async create(tx: Tx, input: {
+    id: string; tenantId: string | null; accountId: string | null; platformAccountId: string | null;
+    identifierHash: string; channel: OtpChannel; tokenHash: string; codeHash: string | null; expiresAt: Date;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO otp_challenges
+         (id, tenant_id, account_id, platform_account_id, identifier_hash, channel, token_hash, code_hash, expires_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [input.id, input.tenantId, input.accountId, input.platformAccountId, input.identifierHash,
+       input.channel, input.tokenHash, input.codeHash, input.expiresAt],
+    );
+  }
+
+  async countSince(tx: Tx, identifierHash: string, since: Date): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT count(*)::int AS n FROM otp_challenges WHERE identifier_hash = $1 AND created_at > $2`,
+      [identifierHash, since],
+    );
+    return rows[0].n;
+  }
+
+  async findByTokenHash(tx: Tx, tokenHash: string): Promise<OtpChallengeRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, tenant_id, account_id, platform_account_id, identifier_hash, channel, code_hash,
+              expires_at, consumed_at, attempts
+         FROM otp_challenges WHERE token_hash = $1`,
+      [tokenHash],
+    );
+    const r = rows[0];
+    return r
+      ? {
+          id: r.id, tenantId: r.tenant_id, accountId: r.account_id, platformAccountId: r.platform_account_id,
+          identifierHash: r.identifier_hash, channel: r.channel, codeHash: r.code_hash,
+          expiresAt: r.expires_at, consumedAt: r.consumed_at, attempts: r.attempts,
+        }
+      : null;
+  }
+
+  async fail(tx: Tx, id: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `UPDATE otp_challenges SET attempts = attempts + 1 WHERE id = $1 RETURNING attempts`, [id],
+    );
+    return rows[0]?.attempts ?? 0;
+  }
+
+  async consume(tx: Tx, id: string, at: Date): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE otp_challenges SET consumed_at = $2 WHERE id = $1 AND consumed_at IS NULL`, [id, at],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async revokeLive(tx: Tx, owner: { accountId: string | null; platformAccountId: string | null }, at: Date): Promise<void> {
+    await clientOf(tx).query(
+      `UPDATE otp_challenges SET consumed_at = $3
+        WHERE consumed_at IS NULL AND (account_id = $1 OR platform_account_id = $2)`,
+      [owner.accountId, owner.platformAccountId, at],
+    );
+  }
+}
+
+/**
+ * OTP-1: the live college account a typed identifier names. A mobile number is
+ * compared on its last ten digits however it was stored, so "+91 98765-43210"
+ * and "9876543210" are the same number.
+ */
+export class PgSignInIdentityReader implements SignInIdentityReader {
+  async candidates(tx: Tx, match: { kind: IdentifierKind; value: string }): Promise<SignInCandidate[]> {
+    const where =
+      match.kind === 'email'
+        ? `(p.primary_email = $1 OR a.login_identifier = $1)`
+        : match.kind === 'phone'
+          ? `right(regexp_replace(coalesce(p.primary_phone, ''), '\\D', '', 'g'), 10) = $1`
+          : `a.login_identifier = $1`;
+    const { rows } = await clientOf(tx).query(
+      `SELECT a.id, a.tenant_id, a.person_id, a.login_identifier, a.status, a.mfa_required,
+              a.failed_attempts, a.locked_until, a.version, p.primary_email, p.primary_phone
+         FROM user_accounts a JOIN persons p ON p.id = a.person_id
+        WHERE a.status NOT IN ('deactivated','archived') AND ${where}
+        LIMIT 2`,
+      [match.value],
+    );
+    return rows.map((r) => ({ ...toAccount(r), email: r.primary_email, phone: r.primary_phone }));
   }
 }
 

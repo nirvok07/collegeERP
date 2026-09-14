@@ -13,6 +13,16 @@ const schema = z.object({
   /** Sliding (AD-25): counted from the last renewal, so a year of not opening the app. */
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(365),
   INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(72),
+  /**
+   * AD-82: until go-live every sign-in code is this, on every server, and
+   * nothing is sent. Anyone who knows a person's email or number can sign in
+   * as them: a go-live blocker. Empty means real, random codes (which need a
+   * sender).
+   */
+  OTP_FIXED_CODE: z
+    .string()
+    .refine((v) => v === '' || /^\d{6}$/.test(v), 'six digits, or empty for real codes')
+    .default('123456'),
   /** Migrations own the schema; the application never does. */
   MIGRATION_DATABASE_URL: z.string().min(1),
   /**

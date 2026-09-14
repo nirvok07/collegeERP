@@ -92,8 +92,9 @@ export async function refreshSession(
 
     if (found.platformAccountId) {
       const account = await deps.platformAccounts.findById(tx, found.platformAccountId);
-      // SA-3b: no platform session outlives its authenticator (AD-62).
-      if (!account || account.status !== 'active' || !account.mfaEnrolled) return Err(fail('UNAUTHENTICATED', ENDED));
+      // AD-82 supersedes AD-62: a platform session rests on the account being
+      // active, as a college session does. A code is how it was opened.
+      if (!account || account.status !== 'active') return Err(fail('UNAUTHENTICATED', ENDED));
       actor = {
         actorType: 'platform', actorId: account.id, tenantId: null,
         accountId: null, fullName: account.fullName,

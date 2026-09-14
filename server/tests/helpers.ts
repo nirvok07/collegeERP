@@ -43,6 +43,8 @@ export async function resetData(): Promise<void> {
     for (const table of [
       // A cache of outcomes that references persons, so it goes first.
       'idempotency_keys',
+      // A decoy code (AD-82) names a college but no account, so it goes first.
+      'otp_challenges',
       'audit_events', 'login_attempts', 'refresh_tokens', 'invitation_tokens',
       'devices', 'credentials', 'role_assignments',
       // Attendance references a class session, so it goes before delivery.

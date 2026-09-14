@@ -127,17 +127,17 @@ describe('the second factor', () => {
   });
 });
 
-describe('no platform session without an enrolled authenticator', () => {
-  it('a token issued before enrolment became mandatory stops working', async () => {
+describe('AD-82: a platform session rests on the account, not on an authenticator', () => {
+  it('an active account without an authenticator keeps its session', async () => {
     const account = await seedPlatformAccount('owner@nirvok.com', PASSWORD, 'owner', { enrolled: false });
-    const legacy = new JwtTokenIssuer(testConfig().JWT_SECRET, 900).issueAccessToken({
+    const token = new JwtTokenIssuer(testConfig().JWT_SECRET, 900).issueAccessToken({
       sub: account.id, actorType: 'platform', tenantId: null, accountId: null,
     }).token;
-    assert.equal((await call('GET', '/v1/institutions', legacy)).statusCode, 401);
-    assert.equal((await call('GET', '/v1/auth/me', legacy)).statusCode, 401);
+    assert.equal((await call('GET', '/v1/institutions', token)).statusCode, 200);
+    assert.equal((await call('GET', '/v1/auth/me', token)).statusCode, 200);
   });
 
-  it('an Owner reset ends the target’s session and renewal, needs a reason, and is Owner-only', async () => {
+  it('an Owner reset clears the authenticator for the password door, needs a reason, and is Owner-only', async () => {
     await seedPlatformAccount('owner@nirvok.com', PASSWORD, 'owner');
     const target = await seedPlatformAccount('owner2@nirvok.com', PASSWORD, 'owner');
     await seedPlatformAccount('support@nirvok.com', PASSWORD, 'support');
@@ -152,8 +152,9 @@ describe('no platform session without an enrolled authenticator', () => {
     assert.equal(res.statusCode, 200);
     assert.equal(res.json().data.mfa, 'enrolment_required');
 
-    assert.equal((await call('GET', '/v1/institutions', other.access_token)).statusCode, 401, 'the live session stops');
-    assert.notEqual((await call('POST', '/v1/auth/refresh', undefined, { refresh_token: other.refresh_token })).statusCode, 200);
+    // AD-82: sessions no longer depend on the authenticator; the password door
+    // (the web console until OTP-5) asks for a new one.
+    assert.equal((await call('GET', '/v1/institutions', other.access_token)).statusCode, 200);
     assert.equal((await login('owner2@nirvok.com')).json().data.step, 'enrolment');
     const [row] = await sql(`SELECT * FROM audit_events WHERE action = 'platform_account.mfa_reset'`);
     assert.equal(row.reason, 'Lost phone');

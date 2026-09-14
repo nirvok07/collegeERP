@@ -1776,3 +1776,42 @@ SAM-2b (2026-09-14): plan, seats and branding in the Super Admin app's college d
 SAM-3 (2026-09-14): platform accounts, the platform audit and accepting a platform invitation, in
 the Super Admin app, `lib/admin/platform/`. Every module is now on the phone. Retiring the web
 platform console (AD-72, at parity) waits for the owner's word (OD-AD72-1).
+
+---
+
+**AD-82 — Sign-in is by a one-time code sent to the person's email or mobile; there are no passwords**
+
+*Status.* Approved by the owner, 2026-09-14. Supersedes AD-62 (the platform's authenticator app),
+AD-69's activation code, AD-80 (reset codes), and the password step of accepting an invitation.
+Built in slices OTP-1 to OTP-5.
+
+*Decision.*
+1. Everyone signs in the same way: teachers, students, College Administrators and the Super Admin.
+   They type an email or a mobile number (a student may also type the enrolment number); the server
+   sends a 6-digit code; typing it signs them in. No password is created, stored, changed or reset
+   in either app.
+2. The channel follows what was typed: an email gets the code by email; a mobile number by
+   WhatsApp, falling back to SMS. An enrolment number uses the student's mobile on record, else
+   their email.
+3. A code lives 5 minutes, is used once, allows 5 wrong tries, and one identifier may ask for at most
+   5 codes in 15 minutes. Asking always answers the same way whether or not the identifier exists
+   (BR-24), so the endpoint cannot be used to find out who is registered.
+4. An invited account becomes active on its first correct code. Being on record is the invitation;
+   there is no link to accept.
+5. Until go-live nothing is sent: every code is **123456** (`OTP_FIXED_CODE`), on every server.
+   **Risk accepted by the owner:** anyone who knows a person's email or number can sign in as them,
+   the Super Admin included. The server says so in its log at every start. **Go-live blocker:** an
+   email provider, WhatsApp Business and an SMS gateway behind the sender port, and
+   `OTP_FIXED_CODE` removed.
+
+*Why.* The owner's decision: passwords are forgotten, shared and reset by hand; a code sent to what
+the person already carries is simpler for a college's staff and students.
+
+*Alternatives.* The Super Admin keeping password + authenticator, because that account controls
+every college: recommended, declined. The fixed code only on development servers: recommended,
+declined until go-live.
+
+*Consequences.* A person needs a mobile or an email on record, so appointing a teacher and admitting
+a student take a mobile number (OTP-4). The web console keeps password sign-in until it moves to
+codes (OTP-5), when the password endpoints are removed. Sessions (AD-25, 365-day sliding) and seats
+are unchanged.

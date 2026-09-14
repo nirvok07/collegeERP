@@ -57,6 +57,9 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   platform_role_assignments: 'INSERT+SELECT+UPDATE',
   // SA-3b: single-use second-factor challenges (migration 022).
   platform_auth_challenges: 'INSERT+SELECT+UPDATE',
+  // OTP-1 (AD-82): one-time sign-in codes (migration 028). No DELETE: a spent
+  // or expired code is a state, kept for the rate limit and the audit.
+  otp_challenges: 'INSERT+SELECT+UPDATE',
 
   // Push registrations. No DELETE: revocation is a visible state, so a device
   // that was signed out of stays in the register.

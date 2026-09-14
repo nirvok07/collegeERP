@@ -66,9 +66,9 @@ export async function requirePlatformPermission(
 ): Promise<PlatformAuthority | null> {
   if (!requirePlatformActor(req, reply)) return null;
   const found = await container.platformAuthority.forAccount(req.actor!.sub);
-  // SA-3b: a platform account without an enrolled authenticator holds no
-  // session, including one issued before enrolment became mandatory.
-  if (!found || found.status !== 'active' || !found.mfaEnrolled) {
+  // AD-82 supersedes AD-62: a platform session rests on the account being
+  // active, as a college session does, whether it opened by code or password.
+  if (!found || found.status !== 'active') {
     sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
     return null;
   }

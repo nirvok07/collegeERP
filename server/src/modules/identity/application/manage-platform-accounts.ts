@@ -124,8 +124,8 @@ async function requireStillAllowed(
   deps: ManagePlatformAccountsDeps, tx: Tx, actorId: string, permission: PlatformPermission,
 ): Promise<Result<true>> {
   const authority = await deps.platformAdmin.authorityOf(tx, actorId);
-  if (!authority || authority.status !== 'active' || !authority.mfaEnrolled
-      || !platformPermissions(authority.role).has(permission)) {
+  // AD-82 supersedes AD-62: the account is active and its role allows it.
+  if (!authority || authority.status !== 'active' || !platformPermissions(authority.role).has(permission)) {
     return Err(fail('FORBIDDEN', 'Your platform role does not allow this.'));
   }
   return Ok(true);
