@@ -623,6 +623,17 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),
+      // ADM-5 (AD-81): the rooms the timetable places classes in.
+      if (authority.can('session.read') && authority.can('room.manage'))
+        (
+          title: 'Rooms',
+          subtitle: o == null ? 'Classrooms and labs' : '${o.rooms} rooms',
+          icon: Icons.meeting_room_rounded,
+          color: AppColors.warning,
+          route: Routes.rooms,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: true,
+        ),
       (
         title: 'Profile',
         subtitle: 'Your details and password',
@@ -683,8 +694,8 @@ class _AdminModules extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLow,
             bordered: false,
             child: Text(
-              'Coming next to the app: rooms, sections, course offerings, the timetable and the student '
-              'list. Until then they are on the web console.',
+              'Coming next to the app: sections, course offerings, the timetable and the student list. '
+              'Until then they are on the web console.',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
