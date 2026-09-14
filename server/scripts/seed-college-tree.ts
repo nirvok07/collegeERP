@@ -103,6 +103,10 @@ const TEACHERS = [
   ['neha', 'Dr. Neha Kapoor', 'neha.kapoor@iitd.example', 'cse', 'faculty'],
   ['meera', 'Dr. Meera Iyer', 'meera.iyer@iitd.example', 'maths', 'faculty'],
   ['rohan', 'Dr. Rohan Das', 'rohan.das@iitd.example', 'physics', 'faculty'],
+  // Every department has at least one teacher, even those this script does
+  // not yet assign a course: onboarding still creates the person and account.
+  ['sanjay', 'Dr. Sanjay Malhotra', 'sanjay.malhotra@iitd.example', 'ee', 'faculty'],
+  ['priya', 'Dr. Priya Nambiar', 'priya.nambiar@iitd.example', 'mech', 'faculty'],
 ] as const;
 type TeacherKey = (typeof TEACHERS)[number][0];
 
@@ -116,6 +120,8 @@ const STUDENTS = [
   ['2026CS10006', 'Sanya Gupta', 'B'],
   ['2026CS10007', 'Aditya Menon', 'B'],
   ['2026CS10008', 'Tara Joshi', 'B'],
+  ['2026CS10009', 'Vivaan Chatterjee', 'A'],
+  ['2026CS10010', 'Ananya Bhatt', 'B'],
 ] as const;
 
 type Component = 'lecture' | 'lab';
@@ -280,14 +286,26 @@ const btech = must(program['btech-cse'], 'btech-cse');
 /* ---------------------------------------------------------------- 3. calendar */
 
 step('3. Calendar');
-const years = await call<(Id & { name: string })[]>('GET', '/academic-years');
-const year = await ensure(`academic year ${YEAR.name}`, years.find((y) => y.name === YEAR.name),
+const years = await call<(Id & { name: string; ends_on: string })[]>('GET', '/academic-years');
+const yearRow = years.find((y) => y.name === YEAR.name);
+const year = await ensure(`academic year ${YEAR.name}`, yearRow,
   () => call('POST', '/academic-years', { ...YEAR, make_current: true }));
-const terms = await call<(Id & { name: string })[]>('GET', `/terms?academic_year_id=${year.id}`);
+const terms = await call<(Id & { sequence: number; name: string })[]>('GET', `/terms?academic_year_id=${year.id}`);
 const term: Record<string, Id> = {};
 for (const [sequence, name, starts_on, ends_on] of TERMS) {
-  term[name] = await ensure(`term ${name}`, terms.find((t) => t.name === name),
-    () => call('POST', '/terms', { academic_year_id: year.id, sequence, name, starts_on, ends_on }));
+  // Matched by sequence, which is what the server enforces uniqueness on
+  // within a year; an existing college may already name its terms differently
+  // ("Semester 1" rather than "Semester I"), and that existing term is kept.
+  const existing = terms.find((t) => t.sequence === sequence);
+  if (!existing && yearRow && ends_on > yearRow.ends_on) {
+    console.log(`  · skipped term ${sequence} ${name}: the year already ends ${yearRow.ends_on}, no room left`);
+    continue;
+  }
+  term[name] = await ensure(
+    existing ? `term ${sequence} (kept as "${existing.name}")` : `term ${name}`,
+    existing,
+    () => call('POST', '/terms', { academic_year_id: year.id, sequence, name, starts_on, ends_on }),
+  );
 }
 const semesterOne = must(term['Semester I'], 'Semester I');
 
