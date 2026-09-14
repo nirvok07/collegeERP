@@ -1,6 +1,5 @@
 import 'package:college_erp/admin/auth/platform_auth_api.dart';
 import 'package:college_erp/admin/auth/platform_sign_in_cubit.dart';
-import 'package:college_erp/admin/auth/platform_sign_in_screen.dart' show formatManualKey;
 import 'package:college_erp/admin/colleges/college_models.dart';
 import 'package:college_erp/admin/colleges/colleges_api.dart';
 import 'package:college_erp/features/people/domain/reset_code.dart';
@@ -17,10 +16,10 @@ import 'package:college_erp/core/session/session_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// AD-72: the super admin app. What matters: a password alone never signs
-/// anybody in; enrolment and expired steps behave as on the web; a college
-/// session never opens this app; and the colleges screen offers only what the
-/// platform role allows.
+/// AD-72: the super admin app. What matters: sign-in is the account's email
+/// and then the code sent to it (AD-82), and only a correct code adopts a
+/// session; a college session never opens this app; and the colleges screen
+/// offers only what the platform role allows.
 AuthSession session() => AuthSession(
   actor: const Actor(id: 'pa1', fullName: 'Platform Owner', tenantId: null),
   accessToken: 'access',
@@ -29,30 +28,21 @@ AuthSession session() => AuthSession(
 );
 
 class _FakePlatformAuth implements PlatformAuthApi {
-  @override
-  Future<Result<PlatformStep>> acceptInvitation({required String token, required String password}) async =>
-      const Err(Failure.unknown);
-
-  Result<PlatformStep> step = const Ok(PlatformStep(kind: PlatformStepKind.secondFactor, challenge: 'ch1'));
   Result<AuthSession>? verify;
-  Result<void> confirm = const Ok(null);
+  final emails = <String>[];
   final codes = <String>[];
 
   @override
-  Future<Result<PlatformStep>> signIn({required String email, required String password}) async => step;
+  Future<Result<CodeChallenge>> requestCode(String email) async {
+    emails.add(email);
+    return Ok(CodeChallenge(token: 'ch${emails.length}', destination: CodeDestination.email, expiresAt: DateTime.now()));
+  }
 
   @override
   Future<Result<AuthSession>> verifyCode({required String challenge, required String code}) async {
     codes.add(code);
     return verify ?? Ok(session());
   }
-
-  @override
-  Future<Result<TotpEnrolment>> beginEnrolment(String challenge) async =>
-      const Ok(TotpEnrolment(otpauthUri: 'otpauth://totp/x', manualKey: 'ABCDEFGHIJKLMNOP'));
-
-  @override
-  Future<Result<void>> confirmEnrolment({required String challenge, required String code}) async => confirm;
 }
 
 class _Store implements SessionStore {
@@ -127,19 +117,19 @@ class _Colleges implements CollegesRepository {
       const Err(Failure.unknown);
 }
 
-const expired = Failure(code: FailureCode.unauthenticated, message: 'This sign-in has expired. Start again.');
 const wrong = Failure(code: FailureCode.unauthenticated, message: 'That code is not correct.');
 
 void main() {
-  group('platform sign-in', () {
-    test('a password leads to a code step, and only a correct code adopts a session', () async {
+  group('platform sign-in (AD-82)', () {
+    test('an email leads to a code step, and only a correct code adopts a session', () async {
       final api = _FakePlatformAuth();
       final adopted = <AuthSession>[];
       final cubit = PlatformSignInCubit(api, (s) async => adopted.add(s));
 
-      await cubit.submitPassword(email: ' Owner@Nirvok.com ', password: 'pw');
+      await cubit.requestCode(' Owner@Nirvok.com ');
+      expect(api.emails, ['owner@nirvok.com']);
       expect(cubit.state.step, PlatformSignInStep.code);
-      expect(adopted, isEmpty, reason: 'a password alone never signs in');
+      expect(adopted, isEmpty, reason: 'asking for a code signs nobody in');
 
       await cubit.submitCode('12 34');
       expect(api.codes, isEmpty, reason: 'an incomplete code is not sent');
@@ -156,34 +146,31 @@ void main() {
       await cubit.close();
     });
 
-    test('an expired step goes back to the password', () async {
-      final api = _FakePlatformAuth()..verify = const Err(expired);
+    test('nothing is asked for without an email', () async {
+      final api = _FakePlatformAuth();
       final cubit = PlatformSignInCubit(api, (_) async {});
-      await cubit.submitPassword(email: 'o@n.com', password: 'pw');
-      await cubit.submitCode('123456');
-      expect(cubit.state.step, PlatformSignInStep.password);
-      expect(cubit.state.failure, expired);
+      await cubit.requestCode('owner');
+      expect(cubit.state.failure?.message, 'Enter your email.');
+      expect(api.emails, isEmpty);
       await cubit.close();
     });
 
-    test('first sign-in sets up the authenticator, then asks for the password again', () async {
-      final api = _FakePlatformAuth()
-        ..step = const Ok(PlatformStep(kind: PlatformStepKind.enrolment, challenge: 'ch2'));
+    test('a new code says the earlier one no longer works; Change goes back to the email', () async {
+      final api = _FakePlatformAuth();
       final cubit = PlatformSignInCubit(api, (_) async {});
-      await cubit.submitPassword(email: 'o@n.com', password: 'pw');
-      expect(cubit.state.step, PlatformSignInStep.enrol);
-      expect(cubit.state.enrolment?.manualKey, 'ABCDEFGHIJKLMNOP');
+      await cubit.requestCode('owner@nirvok.com');
+      await cubit.requestCode(cubit.state.email, again: true);
+      expect(cubit.state.notice, contains('earlier one no longer works'));
+      expect(api.emails, hasLength(2));
 
-      await cubit.confirmEnrolment('111111');
-      expect(cubit.state.step, PlatformSignInStep.password);
-      expect(cubit.state.enrolment, isNull, reason: 'the secret is gone from memory');
-      expect(cubit.state.notice, contains('authenticator is set up'));
+      cubit.changeEmail();
+      expect(cubit.state.step, PlatformSignInStep.email);
+      expect(cubit.state.email, 'owner@nirvok.com');
       await cubit.close();
     });
 
-    test('codes are digits only, and keys print in groups of four', () {
+    test('codes are digits only, whatever was pasted', () {
       expect(PlatformSignInCubit.normaliseCode(' 12-34 56 78'), '123456');
-      expect(formatManualKey('ABCDEFGHIJ'), 'ABCD EFGH IJ');
     });
 
     test('an adopted platform session is kept and announced like any other', () async {

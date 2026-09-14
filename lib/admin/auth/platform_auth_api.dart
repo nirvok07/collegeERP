@@ -7,39 +7,9 @@ import '../../core/network/api_client.dart';
 import '../../core/network/api_log_interceptor.dart';
 import '../../core/network/auth_api.dart';
 
-/// What a correct password leads to: never a session (AD-62).
-enum PlatformStepKind { secondFactor, enrolment }
-
-class PlatformStep {
-  const PlatformStep({required this.kind, required this.challenge});
-
-  final PlatformStepKind kind;
-  final String challenge;
-
-  static PlatformStep fromJson(dynamic json) {
-    final map = json as Map;
-    return PlatformStep(
-      kind: map['step'] == 'enrolment' ? PlatformStepKind.enrolment : PlatformStepKind.secondFactor,
-      challenge: map['challenge_token'] as String,
-    );
-  }
-}
-
-/// The authenticator secret, which reaches the phone once and is never stored.
-class TotpEnrolment {
-  const TotpEnrolment({required this.otpauthUri, required this.manualKey});
-
-  final String otpauthUri;
-  final String manualKey;
-
-  static TotpEnrolment fromJson(dynamic json) {
-    final map = json as Map;
-    return TotpEnrolment(otpauthUri: map['otpauth_uri'] as String, manualKey: map['manual_key'] as String);
-  }
-}
-
-/// The super admin app's sign-in (AD-72), on the same endpoints the web
-/// console uses. Renewal and sign-out go through the shared [AuthApi].
+/// The super admin app's sign-in (AD-72): a code sent to the account's email
+/// (AD-82), with no password and no authenticator. Renewal and sign-out go
+/// through the shared [AuthApi].
 class PlatformAuthApi {
   PlatformAuthApi([Dio? dio])
       : _dio = dio ??
@@ -53,23 +23,12 @@ class PlatformAuthApi {
 
   final Dio _dio;
 
-  Future<Result<PlatformStep>> signIn({required String email, required String password}) =>
-      _post('/v1/auth/platform/login', {'email': email, 'password': password}, PlatformStep.fromJson);
+  Future<Result<CodeChallenge>> requestCode(String email) =>
+      _post('/v1/auth/platform/otp/request', {'email': email}, CodeChallenge.fromJson);
 
   /// The only call that starts a platform session.
   Future<Result<AuthSession>> verifyCode({required String challenge, required String code}) =>
-      _post('/v1/auth/platform/second-factor', {'challenge_token': challenge, 'code': code}, AuthSession.fromJson);
-
-  /// SAM-3: a platform invitation accepted in this app; like a correct
-  /// password, it leads to setting up the authenticator, never to a session.
-  Future<Result<PlatformStep>> acceptInvitation({required String token, required String password}) =>
-      _post('/v1/auth/platform/accept-invite', {'token': token, 'password': password}, PlatformStep.fromJson);
-
-  Future<Result<TotpEnrolment>> beginEnrolment(String challenge) =>
-      _post('/v1/auth/platform/enrolment', {'challenge_token': challenge}, TotpEnrolment.fromJson);
-
-  Future<Result<void>> confirmEnrolment({required String challenge, required String code}) =>
-      _post('/v1/auth/platform/enrolment/confirm', {'challenge_token': challenge, 'code': code}, (_) {});
+      _post('/v1/auth/platform/otp/verify', {'challenge_token': challenge, 'code': code}, AuthSession.fromJson);
 
   Future<Result<T>> _post<T>(String path, Map<String, Object?> body, T Function(dynamic) parse) async {
     Response<dynamic> response;
