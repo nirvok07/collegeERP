@@ -1,4 +1,5 @@
 node_modules/
 dist/
 .env
-.device-test.local.json
+# Credentials and codes written by dev scripts: never committed.
+*.local.json

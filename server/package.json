@@ -15,6 +15,7 @@
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed:device-test": "tsx --env-file-if-exists=.env scripts/seed-device-test.ts",
+    "seed:college-tree": "tsx --env-file-if-exists=.env scripts/seed-college-tree.ts",
     "platform:break-glass": "tsx --env-file-if-exists=.env scripts/platform-break-glass.ts",
     "db:supabase:rebuild": "tsx --env-file-if-exists=.env scripts/supabase-dev-rebuild.ts",
     "platform:set-password": "tsx --env-file-if-exists=.env scripts/platform-set-password.ts",
