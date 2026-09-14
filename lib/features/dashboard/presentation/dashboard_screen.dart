@@ -634,6 +634,17 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: true,
         ),
+      // ADM-8 (AD-81): the college's classes by week, and its holidays.
+      if (authority.can('session.manage'))
+        (
+          title: 'Timetable',
+          subtitle: 'Classes and holidays',
+          icon: Icons.calendar_view_week_rounded,
+          color: AppColors.success,
+          route: Routes.timetable,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: true,
+        ),
       // ADM-5 (AD-81): the rooms the timetable places classes in.
       if (authority.can('session.read') && authority.can('room.manage'))
         (
@@ -705,8 +716,8 @@ class _AdminModules extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLow,
             bordered: false,
             child: Text(
-              'Coming next to the app: the timetable and the student list. '
-              'Until then they are on the web console.',
+              'Coming next to the app: the student list, access and the college profile, and '
+              'verification. Until then they are on the web console.',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),

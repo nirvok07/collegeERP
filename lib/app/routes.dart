@@ -5,6 +5,7 @@ import '../features/academic/presentation/academic_screen.dart';
 import '../features/curriculum/presentation/curriculum_screen.dart';
 import '../features/rooms/presentation/rooms_screen.dart';
 import '../features/sections/presentation/sections_screen.dart';
+import '../features/timetable/presentation/timetable_screen.dart';
 import '../features/assessment/presentation/course_assessments_screen.dart';
 import '../features/assessment/presentation/mark_sheet_screen.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
@@ -39,6 +40,7 @@ abstract final class Routes {
   static const curriculum = '/curriculum';
   static const rooms = '/rooms';
   static const sections = '/sections';
+  static const timetable = '/timetable';
   static const account = '/account';
   static const acceptInvitation = '/accept-invitation';
   static const changePassword = '/account/password';
@@ -147,6 +149,9 @@ abstract final class AppRouter {
       case Routes.sections:
         final args = settings.arguments;
         return _page(settings, SectionsScreen(authority: args is ManageArgs ? args.authority : null));
+      case Routes.timetable:
+        final args = settings.arguments;
+        return _page(settings, TimetableScreen(authority: args is ManageArgs ? args.authority : null));
       case Routes.account:
         return _page(settings, const AccountScreen());
       case Routes.changePassword:

@@ -25,6 +25,7 @@ class ClassSession {
     required this.cancelledReason,
     required this.movedFromDate,
     required this.allowedActions,
+    this.roomId,
   });
 
   final String id;
@@ -42,6 +43,8 @@ class ClassSession {
   final String sectionLabel;
   final String programName;
   final String termName;
+  /// ADM-8: moving a class keeps its room unless someone changes it.
+  final String? roomId;
   final String? roomCode;
   final String? roomName;
   final String? teacherName;
@@ -102,6 +105,7 @@ class ClassSession {
       sectionLabel: section['label'] as String,
       programName: program['name'] as String,
       termName: term['name'] as String,
+      roomId: room?['id'] as String?,
       roomCode: room?['code'] as String?,
       roomName: room?['name'] as String?,
       teacherName: teacher?['full_name'] as String?,

@@ -6,6 +6,8 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../timetable/data/timetable_api.dart';
+import '../../timetable/presentation/offering_timetable.dart';
 import '../data/offerings_api.dart';
 import '../domain/offering.dart';
 import 'offerings_cubits.dart';
@@ -15,11 +17,14 @@ import 'section_offerings.dart' show offeringTone;
 /// and who is on its roster. Each action is present only with its permission;
 /// the server checks again and a refusal stays in the form.
 class OfferingScreen extends StatelessWidget {
-  const OfferingScreen({super.key, required this.offeringId, required this.repository, this.authority});
+  const OfferingScreen({super.key, required this.offeringId, required this.repository, this.authority, this.timetable});
 
   final String offeringId;
   final OfferingsRepository repository;
   final Authority? authority;
+
+  /// ADM-8: its weekly slots and classes, for whoever may see sessions.
+  final TimetableRepository? timetable;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +34,8 @@ class OfferingScreen extends StatelessWidget {
         canManage: authority?.can('offering.manage') ?? false,
         canAssign: authority?.can('instructor.assign') ?? false,
         canEnrol: authority?.can('enrolment.manage') ?? false,
+        timetable: (authority?.can('session.read') ?? false) ? timetable : null,
+        canSchedule: authority?.can('session.manage') ?? false,
       ),
     );
   }
@@ -38,11 +45,19 @@ void _say(BuildContext context, String message) =>
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 
 class _OfferingView extends StatelessWidget {
-  const _OfferingView({required this.canManage, required this.canAssign, required this.canEnrol});
+  const _OfferingView({
+    required this.canManage,
+    required this.canAssign,
+    required this.canEnrol,
+    this.timetable,
+    this.canSchedule = false,
+  });
 
   final bool canManage;
   final bool canAssign;
   final bool canEnrol;
+  final TimetableRepository? timetable;
+  final bool canSchedule;
 
   Future<void> _move(BuildContext context, Offering offering, String to) async {
     final cubit = context.read<OfferingCubit>();
@@ -309,6 +324,15 @@ class _OfferingView extends StatelessWidget {
                               )
                             : null,
                       ),
+                    if (timetable != null) ...[
+                      const Divider(height: AppSpacing.xl),
+                      OfferingTimetable(
+                        offeringId: o.id,
+                        repository: timetable!,
+                        canManage: canSchedule,
+                        changeable: o.changeable,
+                      ),
+                    ],
                     const Divider(height: AppSpacing.xl),
                     Text(
                       'Students (${state.roster.length})',

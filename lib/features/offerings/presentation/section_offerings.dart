@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/design/tokens.dart';
+import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
 import '../../sections/domain/section.dart';
+import '../../timetable/data/timetable_api.dart';
 import '../data/offerings_api.dart';
 import '../domain/offering.dart';
 import 'offering_screen.dart';
@@ -136,7 +138,12 @@ class _SectionOfferingsView extends StatelessWidget {
                 trailing: StatusChip(label: Offering.statusLabel(o.status), tone: offeringTone(o.status)),
                 onTap: () async {
                   await Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => OfferingScreen(offeringId: o.id, repository: cubit.repository, authority: authority),
+                    builder: (_) => OfferingScreen(
+                      offeringId: o.id,
+                      repository: cubit.repository,
+                      authority: authority,
+                      timetable: locator.isRegistered<TimetableRepository>() ? locator<TimetableRepository>() : null,
+                    ),
                   ));
                   if (context.mounted) await cubit.load();
                 },

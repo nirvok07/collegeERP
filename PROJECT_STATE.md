@@ -29,7 +29,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
-- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ✅ tests; 🔍 on the phone; ADM-8…ADM-11 ❌ (AD-81: every module on the phone)
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ADM-8 ✅ timetable, classes, non-teaching days; ✅ tests; 🔍 on the phone; ADM-9…ADM-11 ❌ (AD-81: every module on the phone)
 - Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
@@ -38,6 +38,15 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): ADM-8 ✅ (AD-81). The timetable on the phone (`lib/features/timetable/`):
+a course's screen has "Weekly timetable" (add a slot: day, start, end, room; remove it) and
+"Generate the term's classes", which previews first (classes, skipped non-teaching days) and
+refuses on clashes, listing them; a "Timetable" screen shows the college's classes a week at a
+time (move: date, times, room kept unless changed, reason; cancel with a reason) and non-teaching
+days (add, remove). `session.read` / `session.manage` / `term.manage`. `ClassSession` now carries
+`room_id`, so moving a class keeps its room (the server treats a missing room as none). No server
+change. Tested: Flutter 224/224, analyze clean, APK builds. Not tested: on the phone.
+
 Just done (2026-09-14): ADM-7 ✅ (AD-81; `080a2fa`; the owner again: "sub kuch phone pe bhi hoga, everything").
 Course offerings on the phone (`lib/features/offerings/`), inside a section's screen ("Courses
 taught": add a course as lecture, lab or tutorial) and on their own screen: the server's
@@ -194,11 +203,12 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ADM-8: the timetable and non-teaching days on the phone (AD-81)
-- **Why next:** a running course needs weekly slots (day, time, room) and its sessions generated
-  before teachers can mark attendance; holidays come off the calendar. Still web-only.
-- **Then:** ADM-9 students (list, detail, status, placements), ADM-10 access and college profile,
-  ADM-11 verification and corrections; SAM-2b and SAM-3 in the Super Admin app; ST-1 below.
+### NEXT SLICE — ADM-9: students on the phone (AD-81)
+- **Why next:** the student list, a student's record, status (on leave, withdrawn, graduated) and
+  placement history are still web-only; admitting one is already on the phone (ONB-1).
+- **Then:** ADM-10 access (grant and revoke roles) and the college profile and branding, ADM-11
+  verification and corrections of attendance and marks; SAM-2b and SAM-3 in the Super Admin app;
+  ST-1 below.
 
 ### LATER — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype

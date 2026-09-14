@@ -1740,3 +1740,5 @@ ADM-6 (2026-09-14): sections and their members, `lib/features/sections/`; OD-MOB
 sections (here) and timetable slots and sessions (ADM-8).
 ADM-7 (2026-09-14): course offerings, their teachers and enrolments, `lib/features/offerings/`,
 reached from a section's screen.
+ADM-8 (2026-09-14): weekly slots and class generation (previewed, clashes refused) in a course's
+screen; the college's week of classes and its non-teaching days, `lib/features/timetable/`.
