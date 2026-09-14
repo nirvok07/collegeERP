@@ -623,6 +623,17 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),
+      // ADM-6 (AD-81): cohort sections and who is in them.
+      if (authority.can('section.read') && authority.can('person.read'))
+        (
+          title: 'Sections',
+          subtitle: o == null ? 'Cohorts and students' : '${o.sections} running',
+          icon: Icons.groups_rounded,
+          color: AppColors.primary,
+          route: Routes.sections,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: true,
+        ),
       // ADM-5 (AD-81): the rooms the timetable places classes in.
       if (authority.can('session.read') && authority.can('room.manage'))
         (
@@ -694,7 +705,7 @@ class _AdminModules extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLow,
             bordered: false,
             child: Text(
-              'Coming next to the app: sections, course offerings, the timetable and the student list. '
+              'Coming next to the app: course offerings, the timetable and the student list. '
               'Until then they are on the web console.',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),

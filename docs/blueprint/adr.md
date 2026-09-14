@@ -1736,3 +1736,5 @@ ADM-4 (2026-09-14): courses and curriculum versions, `lib/features/curriculum/`.
 for a back-office write is one `showSubmitDialog` (`lib/core/widgets/submit_dialog.dart`): it
 keeps a refusal, local or the server's, in the form, and owns its text controllers.
 ADM-5 (2026-09-14): rooms, `lib/features/rooms/`.
+ADM-6 (2026-09-14): sections and their members, `lib/features/sections/`; OD-MOB-2 answered: both
+sections (here) and timetable slots and sessions (ADM-8).

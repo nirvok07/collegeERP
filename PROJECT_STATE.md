@@ -29,7 +29,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
-- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ✅ tests; 🔍 on the phone; ADM-6…ADM-11 ❌ (AD-81: every module on the phone)
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ✅ tests; 🔍 on the phone; ADM-7…ADM-11 ❌ (AD-81: every module on the phone)
 - Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
@@ -38,6 +38,15 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): ADM-6 ✅ (AD-81). "Sections" on the phone (`lib/features/sections/`): the
+term that contains today by default (or all terms); add a section (program, academic term, term of
+the program, next free label suggested, capacity); a section's screen shows the server's allowed
+transitions as buttons (cancel needs a reason; refusals such as enrolled students stay in the form),
+capacity, and members: `enrolment.manage` adds unplaced enrolled students of the program (search,
+choose several) and takes a student out with a reason. `section.read` to see (with `person.read` for
+programs), `section.manage` to change, `student.read` for members. No server change. Answers
+OD-MOB-2 for cohort sections. Tested: Flutter 216/216, analyze clean, APK builds. Not tested: on the phone.
+
 Just done (2026-09-14): ADM-5 ✅ (AD-81; `6650b8f`). "Rooms" on the phone (`lib/features/rooms/`): rooms by
 campus with type, seats and timetable use; add (campus, permanent code sent in capitals, name,
 type, seats), edit (name, type, seats), archive with a warning when the timetable uses it and
@@ -176,12 +185,11 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ADM-6: sections and their members on the phone (AD-81)
-- **Why next:** offerings, enrolments and the timetable all hang off a section; sections are
-  still web-only. Also answers OD-MOB-2 ("create classes") for cohort sections.
-- **Then:** ADM-7 offerings, teachers and enrolments, ADM-8 timetable and non-teaching days, ADM-9
-  students, ADM-10 access and college profile, ADM-11 verification and corrections; SAM-2b and
-  SAM-3 in the Super Admin app; ST-1 below.
+### NEXT SLICE — ADM-7: course offerings, their teachers and enrolments on the phone (AD-81)
+- **Why next:** a section's courses are offerings; teachers are assigned to them, and students are
+  enrolled in them before attendance and marks can be taken. Still web-only.
+- **Then:** ADM-8 timetable and non-teaching days, ADM-9 students, ADM-10 access and college profile,
+  ADM-11 verification and corrections; SAM-2b and SAM-3 in the Super Admin app; ST-1 below.
 
 ### LATER — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
@@ -209,7 +217,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
 | OD-MOB-1 | Should every module be on mobile too (R63)? | — | Mobile scope | — | ✅ Resolved as AD-81: every module, one slice at a time |
-| OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | Different modules, permissions and screens | M3/M4 on mobile | Sections; timetable slots and sessions; both | Open |
+| OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | — | M3/M4 on mobile | — | ✅ Both, under AD-81: sections are ADM-6 (built); timetable slots and sessions are ADM-8 |
 | OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
 | OD-PW-1 | How does a college user who forgot their password get back in (R69)? | — | Identity, security | — | ✅ Resolved as AD-80: option (a), one-time reset code; emailed link later with an email provider |
 | OD-ST-1 | How a student gets an account: who issues it, how they sign in, does it take a seat (AD-65) | Identity, seats, data protection | ST-1 | — | ✅ Resolved as AD-69: admin-issued, enrolment number + one-time code, takes a seat |
