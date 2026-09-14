@@ -584,7 +584,7 @@ class _AdminModules extends StatelessWidget {
       if (authority.can('person.read')) ...[
         (
           title: 'People',
-          subtitle: o == null ? 'Staff and roles' : '${o.staff} staff',
+          subtitle: o == null ? 'Staff, access and passwords' : '${o.staff} staff',
           icon: Icons.people_rounded,
           color: AppColors.info,
           route: Routes.people,
@@ -667,6 +667,17 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: true,
         ),
+      // ADM-10 (AD-81): the college's name, logo and colour.
+      if (authority.can('institution.read'))
+        (
+          title: 'College profile',
+          subtitle: 'Name, logo and colour',
+          icon: Icons.apartment_rounded,
+          color: AppColors.primary,
+          route: Routes.collegeProfile,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
       (
         title: 'Profile',
         subtitle: 'Your details and password',
@@ -727,8 +738,8 @@ class _AdminModules extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLow,
             bordered: false,
             child: Text(
-              'Coming next to the app: access and roles, the college profile, and verification of '
-              'attendance and marks. Until then they are on the web console.',
+              'Coming next to the app: verifying and correcting attendance and marks. '
+              'Until then it is on the web console.',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),

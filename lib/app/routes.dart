@@ -7,6 +7,7 @@ import '../features/rooms/presentation/rooms_screen.dart';
 import '../features/sections/presentation/sections_screen.dart';
 import '../features/timetable/presentation/timetable_screen.dart';
 import '../features/students/presentation/students_screen.dart';
+import '../features/college/college_profile.dart';
 import '../features/assessment/presentation/course_assessments_screen.dart';
 import '../features/assessment/presentation/mark_sheet_screen.dart';
 import '../features/attendance/presentation/attendance_screen.dart';
@@ -43,6 +44,7 @@ abstract final class Routes {
   static const sections = '/sections';
   static const timetable = '/timetable';
   static const students = '/students';
+  static const collegeProfile = '/college';
   static const account = '/account';
   static const acceptInvitation = '/accept-invitation';
   static const changePassword = '/account/password';
@@ -159,6 +161,12 @@ abstract final class AppRouter {
         return _page(
           settings,
           StudentsScreen(authority: args is ManageArgs ? args.authority : null, college: args is ManageArgs ? args.college : null),
+        );
+      case Routes.collegeProfile:
+        final args = settings.arguments;
+        return _page(
+          settings,
+          CollegeProfileScreen(canManage: args is ManageArgs && args.authority.can('institution.manage')),
         );
       case Routes.account:
         return _page(settings, const AccountScreen());

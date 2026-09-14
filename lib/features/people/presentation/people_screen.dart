@@ -12,6 +12,7 @@ import '../domain/person.dart';
 import 'people_cubit.dart';
 import 'person_sheet.dart';
 import 'reset_code_screen.dart';
+import '../../access/presentation/access_screen.dart';
 
 /// People, for touch.
 ///
@@ -67,8 +68,23 @@ class _PeopleViewState extends State<_PeopleView> {
     return me == null || person.email?.toLowerCase() != me;
   }
 
-  void _open(Person person) =>
-      showPersonSheet(context, person, onReset: _canReset(person) ? () => _reset(person) : null);
+  /// The access list reads the college's assignments, which is `audit.read`.
+  bool get _canSeeAccess => widget.authority?.can('audit.read') ?? false;
+
+  void _open(Person person) => showPersonSheet(
+    context,
+    person,
+    onReset: _canReset(person) ? () => _reset(person) : null,
+    onAccess: _canSeeAccess
+        ? () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => AccessScreen(
+                personId: person.id,
+                personName: person.fullName,
+                canAssign: widget.authority?.can('role.assign') ?? false,
+              ),
+            ))
+        : null,
+  );
 
   Future<void> _reset(Person person) async {
     final invitation = person.accountStatus == 'invited';

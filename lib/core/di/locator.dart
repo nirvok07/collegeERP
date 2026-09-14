@@ -29,6 +29,8 @@ import '../../features/sections/data/sections_api.dart';
 import '../../features/offerings/data/offerings_api.dart';
 import '../../features/timetable/data/timetable_api.dart';
 import '../../features/students/data/students_api.dart';
+import '../../features/access/data/access_api.dart';
+import '../../features/college/college_profile.dart';
 
 final locator = GetIt.instance;
 
@@ -72,5 +74,7 @@ void configureDependencies() {
     ..registerLazySingleton<SectionsRepository>(() => SectionsApi(locator<ApiClient>()))
     ..registerLazySingleton<OfferingsRepository>(() => OfferingsApi(locator<ApiClient>()))
     ..registerLazySingleton<TimetableRepository>(() => TimetableApi(locator<ApiClient>()))
-    ..registerLazySingleton<StudentsRepository>(() => StudentsApi(locator<ApiClient>()));
+    ..registerLazySingleton<StudentsRepository>(() => StudentsApi(locator<ApiClient>()))
+    ..registerLazySingleton<AccessRepository>(() => AccessApi(locator<ApiClient>()))
+    ..registerLazySingleton<CollegeProfileRepository>(() => CollegeProfileApi(locator<ApiClient>()));
 }

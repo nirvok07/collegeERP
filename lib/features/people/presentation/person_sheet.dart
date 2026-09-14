@@ -7,21 +7,23 @@ import '../domain/person.dart';
 /// Detail as a bottom sheet, which is the mobile counterpart of the web
 /// drawer: it keeps the list in place behind it and returns the user exactly
 /// where they were.
-/// [onReset] is present only when this person may reset [person]'s password.
-Future<void> showPersonSheet(BuildContext context, Person person, {VoidCallback? onReset}) {
+/// [onReset] is present only when this person may reset [person]'s password;
+/// [onAccess] only when they may see or change access (ADM-10).
+Future<void> showPersonSheet(BuildContext context, Person person, {VoidCallback? onReset, VoidCallback? onAccess}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => _PersonSheet(person: person, onReset: onReset),
+    builder: (context) => _PersonSheet(person: person, onReset: onReset, onAccess: onAccess),
   );
 }
 
 class _PersonSheet extends StatelessWidget {
-  const _PersonSheet({required this.person, this.onReset});
+  const _PersonSheet({required this.person, this.onReset, this.onAccess});
 
   final Person person;
   final VoidCallback? onReset;
+  final VoidCallback? onAccess;
 
   @override
   Widget build(BuildContext context) {
@@ -113,16 +115,19 @@ class _PersonSheet extends StatelessWidget {
                 label: Text(person.accountStatus == 'invited' ? 'Send a new invitation' : 'Reset password'),
               ),
             ],
-            const SizedBox(height: AppSpacing.lg),
-            // Changing access is deliberately absent here. It is a desktop
-            // workflow needing a scope picker over the organisation tree, and a
-            // half version on a phone would invite mistakes rather than prevent
-            // them.
-            Text(
-              'Access is managed from the web console.',
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: scheme.onSurfaceVariant),
-            ),
+            if (onAccess != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              // ADM-10 (AD-81): access is managed on the phone too, on its own
+              // screen with the scope chosen from real departments.
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onAccess!();
+                },
+                icon: const Icon(Icons.key_rounded),
+                label: const Text('Manage access'),
+              ),
+            ],
           ],
         ),
       ),

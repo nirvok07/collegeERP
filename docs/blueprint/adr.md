@@ -1744,3 +1744,5 @@ ADM-8 (2026-09-14): weekly slots and class generation (previewed, clashes refuse
 screen; the college's week of classes and its non-teaching days, `lib/features/timetable/`.
 ADM-9 (2026-09-14): students (list with server filters, record, status, section history),
 `lib/features/students/`.
+ADM-10 (2026-09-14): access (roles by scope, given and removed from a person's sheet),
+`lib/features/access/`; the college profile, `lib/features/college/`.
