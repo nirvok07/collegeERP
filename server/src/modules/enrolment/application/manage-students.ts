@@ -71,7 +71,7 @@ export async function admitStudent(
   deps: EnrolmentDeps,
   actor: EnrolmentActor,
   input: {
-    fullName: string; email: string | null; enrolmentNumber: string;
+    fullName: string; email: string | null; phone?: string | null; enrolmentNumber: string;
     programId: string; admittedOn: string;
   },
 ): Promise<Result<{ id: string; personId: string }>> {
@@ -86,7 +86,9 @@ export async function admitStudent(
         fullName: input.fullName.trim(),
         // Normalised at the boundary, as M1 requires: the column checks it.
         primaryEmail: input.email?.trim().toLowerCase() || null,
-        primaryPhone: null,
+        // AD-82: a sign-in code can go here. Kept as typed; sign-in compares
+        // its last ten digits.
+        primaryPhone: input.phone?.trim() || null,
         personType: 'student',
         status: 'provisional',
       });

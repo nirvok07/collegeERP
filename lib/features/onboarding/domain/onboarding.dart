@@ -86,7 +86,8 @@ class AppointedTeacher {
   }
 }
 
-/// A student record: no login yet. Student sign-in arrives with ST-1 (AD-69).
+/// A student record: no login yet. Once given app access, the student signs
+/// in with a code sent to this email or mobile (AD-82).
 class StudentInput {
   const StudentInput({
     required this.fullName,
@@ -94,6 +95,7 @@ class StudentInput {
     required this.programId,
     required this.admittedOn,
     this.email = '',
+    this.phone = '',
   });
 
   final String fullName;
@@ -103,10 +105,12 @@ class StudentInput {
   /// 'YYYY-MM-DD', a calendar date (AD-49).
   final String admittedOn;
   final String email;
+  final String phone;
 
   Map<String, Object?> toJson() => {
     'full_name': fullName.trim(),
     if (email.trim().isNotEmpty) 'email': email.trim().toLowerCase(),
+    if (phone.trim().isNotEmpty) 'phone': phone.trim(),
     'enrolment_number': enrolmentNumber.trim(),
     'program_id': programId,
     'admitted_on': admittedOn,

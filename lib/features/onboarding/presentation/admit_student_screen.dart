@@ -38,6 +38,7 @@ class _StudentFormState extends State<_StudentForm> {
   final _name = TextEditingController();
   final _number = TextEditingController();
   final _email = TextEditingController();
+  final _phone = TextEditingController();
   String? _programId;
   String _admittedOn = todayDate();
 
@@ -46,6 +47,7 @@ class _StudentFormState extends State<_StudentForm> {
     _name.dispose();
     _number.dispose();
     _email.dispose();
+    _phone.dispose();
     super.dispose();
   }
 
@@ -70,6 +72,7 @@ class _StudentFormState extends State<_StudentForm> {
       programId: _programId,
       admittedOn: _admittedOn,
       email: _email.text,
+      phone: _phone.text,
     ));
     if (!ok || !mounted) return;
     messenger.showSnackBar(SnackBar(content: Text('$name is admitted.')));
@@ -77,6 +80,7 @@ class _StudentFormState extends State<_StudentForm> {
     _name.clear();
     _number.clear();
     _email.clear();
+    _phone.clear();
   }
 
   @override
@@ -125,7 +129,7 @@ class _StudentFormState extends State<_StudentForm> {
                       decoration: InputDecoration(
                         labelText: 'Enrolment number',
                         hintText: 'CSE2026-001',
-                        helperText: 'Unique in the college. The student will sign in with it.',
+                        helperText: 'Unique in the college. The student can sign in with it.',
                         errorText: fields['enrolment_number'] ?? fields['enrolmentNumber'],
                       ),
                     ),
@@ -153,10 +157,21 @@ class _StudentFormState extends State<_StudentForm> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     TextField(
+                      controller: _phone,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Mobile number',
+                        hintText: '98765 43210',
+                        helperText: 'Their sign-in code goes here or to the email. Give at least one.',
+                        errorText: fields['phone'],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    TextField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
-                      decoration: InputDecoration(labelText: 'Email, optional', errorText: fields['email']),
+                      decoration: InputDecoration(labelText: 'Email', errorText: fields['email']),
                     ),
                     const SizedBox(height: AppSpacing.xl),
                     FilledButton(

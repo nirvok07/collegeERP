@@ -112,7 +112,7 @@ class _TeacherFormState extends State<_TeacherForm> {
                       decoration: InputDecoration(
                         labelText: 'Email',
                         hintText: 'ravi@college.edu',
-                        helperText: 'They sign in with this email.',
+                        helperText: 'They sign in with a code sent to this email.',
                         errorText: fields['email'],
                       ),
                     ),
@@ -120,7 +120,10 @@ class _TeacherFormState extends State<_TeacherForm> {
                     TextField(
                       controller: _phone,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(labelText: 'Phone, optional'),
+                      decoration: const InputDecoration(
+                        labelText: 'Mobile number, optional',
+                        helperText: 'They can also sign in with a code sent here.',
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     DropdownButtonFormField<String>(

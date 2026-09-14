@@ -61,6 +61,15 @@ void main() {
         .containsKey('email'), isFalse);
   });
 
+  test('OTP-4: a student\'s mobile is sent when given, for their sign-in code (AD-82)', () {
+    const withMobile = StudentInput(
+      fullName: 'Diya', enrolmentNumber: 'E2', programId: 'p1', admittedOn: '2026-09-14', phone: ' +91 91234 56789 ',
+    );
+    expect(withMobile.toJson()['phone'], '+91 91234 56789');
+    expect(const StudentInput(fullName: 'Diya', enrolmentNumber: 'E2', programId: 'p1', admittedOn: '2026-09-14').toJson()
+        .containsKey('phone'), isFalse);
+  });
+
   test('the invitation reads the server response', () {
     final t = AppointedTeacher.fromJson({
       'person_id': 'p1', 'account_id': 'a1',

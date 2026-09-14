@@ -17,6 +17,8 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const admitBody = z.object({
   full_name: z.string().min(2).max(120),
   email: z.string().email().max(254).nullable().optional(),
+  // OTP-4 (AD-82): where the student's sign-in code can go, with the email.
+  phone: z.string().max(20).nullable().optional(),
   enrolment_number: z.string().min(1).max(40),
   program_id: z.string().uuid(),
   admitted_on: isoDate,
@@ -100,6 +102,7 @@ export async function registerEnrolmentRoutes(app: FastifyInstance, c: Container
     return sendResult(reply, await admitStudent(c.enrolment, actorOf(req), {
       fullName: parsed.data.full_name,
       email: parsed.data.email ?? null,
+      phone: parsed.data.phone ?? null,
       enrolmentNumber: parsed.data.enrolment_number,
       programId: parsed.data.program_id,
       admittedOn: parsed.data.admitted_on,
