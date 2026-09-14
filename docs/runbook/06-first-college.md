@@ -72,8 +72,9 @@ accept. Until go-live nothing is sent and the code is always **123456**.
 
 - There is no password to forget (AD-82): asking for a new code is **Send a new code**. A code lasts
   five minutes; at most five can be asked for in fifteen minutes.
-- Someone whose mobile number or email has changed cannot receive a code. Changing a person's
-  email or mobile on record is **not built yet** (OTP-6); until it is, the Super Admin or an
-  operator must correct it in the database.
+- Someone whose mobile number or email has changed cannot receive a code until it is corrected: an
+  administrator opens **People** → the person (or **Students** → the student) → **Edit email or
+  mobile**. The new one works at once and the old one stops. An email or mobile someone else at the
+  college already uses is refused, and staff always keep an email.
 - Until go-live every code is **123456** and nothing is sent, so anyone who knows a person's email
   or number can sign in as them. Never use a real college before the message senders exist.

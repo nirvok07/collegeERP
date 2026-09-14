@@ -64,9 +64,11 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
     goes. Server 450/450, Flutter 270/270. Runbook 09 steps 7, 8 and 13 describe code sign-in.
     Platform accounts have no phone column: the Super Admin signs in by email only.
   - OTP-5 ❌ web console to codes; remove password endpoints; real email / WhatsApp / SMS senders.
-  - OTP-6 ❌ change a person's email or mobile on record (server + People / Students on the phone).
-    Nothing edits them today; someone whose number changes cannot receive a code. Needed before
-    go-live alongside the senders.
+  - OTP-6 ✅ `9b0199b` change a person's email or mobile: `PATCH /v1/people/:id/contact`
+    (account.manage), from People and from a student's record. New address works at once, old one
+    stops (staff sign-in name moves with the email; live codes cancelled); duplicates refused (mobile
+    by last ten digits); an account keeps an email or mobile, staff keep an email; audited. People
+    list and student records carry the mobile. Server 457/457 (+7), Flutter 273/273 (+3).
   - Docs ✅ runbook START-HERE, 01, 06 and 09 describe code sign-in; 04 (web console) still passwords
     until OTP-5.
 - 🚫 GO-LIVE BLOCKER (AD-82): no real OTP senders; `OTP_FIXED_CODE=123456` lets anyone sign in as
@@ -365,8 +367,10 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 
 ### NEXT SLICE — validate on the phone, end to end (runbook 06)
 - **Why next:** every module is built and unit-tested but none has been opened on a real phone since
-  ADM-1. One pass of `docs/runbook/06-first-college.md` against a running server, both apps, records
-  what works and what breaks before more is built.
+  ADM-1, and since then skeletons (UX-3), saved reads (OF-R1), calendar/program edit and archive
+  (FB-2) and sign-in by code (OTP-1…4, OTP-6) were all built without a device. One pass of
+  `docs/runbook/06-first-college.md` against a running server, both apps, signing in with code
+  123456, records what works and what breaks before more is built.
 - **Then:** a student's marks and timetable (their other self-scoped reads); fees (D1) and circulars
   need their modules specified first. OD-AD72-1 (retire the web platform console) awaits the owner.
 
@@ -426,6 +430,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+9b0199b Change where a person's sign-in code goes (OTP-6, AD-82)
+e32ddde Runbook and tracker: sign-in is by code (AD-82)
 265e9be Capture a mobile number for students and teachers, for their sign-in code (OTP-4, AD-82)
 f3152d0 The Super Admin app signs in with a code to its email (OTP-3, AD-82)
 77975e5 The college app signs in with a code to email or mobile (OTP-2, AD-82)
