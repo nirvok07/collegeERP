@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): SAM-2b ✅ (AD-72, AD-81). The Super Admin app's college detail changes the
+Just done (2026-09-14): SAM-2b ✅ (AD-72, AD-81; `258940a`). The Super Admin app's college detail changes the
 plan label and seat limit (a reason required, recorded in the platform audit; only what changed is
 sent; a warning when the limit is below the seats in use) and the college's branding (name, logo
 link with a preview, colour, the same checks as the college's own profile), both pinned to the
@@ -299,6 +299,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+258940a Build SAM-2b: plan, seats and branding in the Super Admin app (AD-72, AD-81)
+eff961d Record the ADM-11 commit in the tracker
 4cee78c Build ADM-11: registers, mark verification and corrections on the phone (AD-81)
 e5ec63d Record the ADM-10 commit in the tracker
 d558b20 Build ADM-10: access and the college profile on the phone (AD-81)
