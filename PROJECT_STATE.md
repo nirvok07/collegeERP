@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-8 ✅ (AD-81). The timetable on the phone (`lib/features/timetable/`):
+Just done (2026-09-14): ADM-8 ✅ (AD-81; `4103271`). The timetable on the phone (`lib/features/timetable/`):
 a course's screen has "Weekly timetable" (add a slot: day, start, end, room; remove it) and
 "Generate the term's classes", which previews first (classes, skipped non-teaching days) and
 refuses on clashes, listing them; a "Timetable" screen shows the college's classes a week at a
@@ -265,6 +265,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+4103271 Build ADM-8: the timetable, classes and non-teaching days on the phone (AD-81)
+85fbe1c Record the ADM-7 commit in the tracker
 080a2fa Build ADM-7: course offerings, their teachers and enrolments on the phone (AD-81)
 f5f85e5 Record the ADM-6 commit in the tracker
 a35dd2f Build ADM-6: sections and their members on the phone (AD-81)
