@@ -47,6 +47,16 @@ export interface PersonRepository {
   findByEmail(tx: Tx, email: string): Promise<PersonRecord | null>;
   /** The People list: person, account and role chips in one query. */
   list(tx: Tx, filter: PersonListFilter): Promise<PersonListItem[]>;
+  /** OTP-6: where the person's sign-in code goes. */
+  updateContact(tx: Tx, id: string, input: { email: string | null; phone: string | null }): Promise<boolean>;
+  /**
+   * Whether another live person here already has this email (as their email
+   * or their sign-in name) or this mobile (its last ten digits). Null skips.
+   */
+  findContactClash(
+    tx: Tx,
+    input: { excludePersonId: string; email: string | null; phone10: string | null },
+  ): Promise<{ email: boolean; phone: boolean }>;
 }
 
 export interface AccountRepository {
@@ -65,6 +75,8 @@ export interface AccountRepository {
   ): Promise<void>;
   markActivated(tx: Tx, id: string, at: Date): Promise<void>;
   recordSignIn(tx: Tx, id: string, at: Date): Promise<void>;
+  /** OTP-6: a staff account signs in by its email, and moves with it. */
+  changeLoginIdentifier(tx: Tx, id: string, identifier: string): Promise<void>;
   findBootstrapAdministrator(tx: Tx): Promise<BootstrapAdministrator | null>;
   /** AD-65: live accounts in the college, the seats in use. */
   countLive(tx: Tx, tenantId: string): Promise<number>;
@@ -123,6 +135,7 @@ export interface PersonListItem {
   personId: string;
   fullName: string;
   primaryEmail: string | null;
+  primaryPhone: string | null;
   personType: string;
   accountId: string | null;
   accountStatus: string | null;

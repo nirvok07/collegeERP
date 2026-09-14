@@ -11,11 +11,15 @@ class Person {
     required this.accountStatus,
     required this.roleKeys,
     required this.lastLoginAt,
+    this.phone,
   });
 
   final String id;
   final String fullName;
   final String? email;
+
+  /// Where their sign-in code can go, with the email (AD-82).
+  final String? phone;
   final String personType;
   final String? accountStatus;
   final List<String> roleKeys;
@@ -36,6 +40,7 @@ class Person {
         id: json['person_id'] as String,
         fullName: json['full_name'] as String,
         email: json['email'] as String?,
+        phone: json['phone'] as String?,
         personType: json['person_type'] as String? ?? 'staff',
         accountStatus: json['account_status'] as String?,
         roleKeys: ((json['role_keys'] as List?) ?? const []).map((e) => '$e').toList(),

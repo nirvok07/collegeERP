@@ -15,6 +15,7 @@ import type {
 } from './ports.ts';
 import type { ScopeType } from '../domain/scope.ts';
 import { COLLEGE_ADMIN_ROLE_KEY } from './provision-initial-admin.ts';
+import type { OtpRepository } from './otp-sign-in.ts';
 
 export interface ManagePeopleDeps {
   uow: UnitOfWork;
@@ -28,7 +29,11 @@ export interface ManagePeopleDeps {
   clock: Clock;
   tokens: TokenIssuer;
   invitationTtlHours: number;
+  /** OTP-6: codes already sent to an old address are cancelled when it changes. */
+  otp: OtpRepository;
 }
+
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export interface Actor {
   tenantId: string;
@@ -164,6 +169,98 @@ export async function invitePerson(
       return Ok({ personId: person.id, accountId: account.id, invitationToken: token, expiresAt });
     });
   } catch (e) {
+    if (e instanceof AppException) return Err(fail(e.code, e.message));
+    throw e;
+  }
+}
+
+/* --------------------------------------------------------------- contact -- */
+
+/**
+ * OTP-6 (AD-82): where a person's sign-in code goes.
+ *
+ * An email or mobile another person here already uses is refused: signing in
+ * by it would become ambiguous. A person with an account keeps at least one.
+ * A staff account signs in by its email, so its sign-in name moves with the
+ * email and the old address stops working at once; codes already sent there
+ * are cancelled. `undefined` leaves a field as it is; `null` clears it.
+ */
+export async function changeContact(
+  deps: ManagePeopleDeps,
+  actor: Actor,
+  input: { personId: string; email?: string | null; phone?: string | null },
+): Promise<Result<{ email: string | null; phone: string | null }>> {
+  try {
+    return await deps.uow.run(actor.tenantId, async (tx) => {
+      const person = await deps.persons.findById(tx, input.personId);
+      if (!person) return Err(fail('NOT_FOUND', 'That person was not found.'));
+
+      const email = input.email === undefined ? person.primaryEmail : input.email?.trim().toLowerCase() || null;
+      const phone = input.phone === undefined ? person.primaryPhone : input.phone?.trim() || null;
+      if (email && !EMAIL.test(email)) {
+        return Err(fail('VALIDATION_FAILED', 'Enter a valid email address.', { fieldErrors: { email: 'Invalid email address' } }));
+      }
+      const phoneDigits = phone?.replace(/\D/g, '') ?? '';
+      if (phone && phoneDigits.length < 10) {
+        return Err(fail('VALIDATION_FAILED', 'Enter a mobile number with at least ten digits.', {
+          fieldErrors: { phone: 'Too short' },
+        }));
+      }
+
+      const account = await deps.accounts.findByPersonId(tx, person.id);
+      const live = account && account.status !== 'deactivated' && account.status !== 'archived' ? account : null;
+      if (live && !email && !phone) {
+        return Err(fail('VALIDATION_FAILED', 'Keep an email or a mobile number: it is where their sign-in code goes.', {
+          fieldErrors: { email: 'Required', phone: 'Required' },
+        }));
+      }
+      const signsInByEmail = live !== null && person.primaryEmail !== null && live.loginIdentifier === person.primaryEmail;
+      if (signsInByEmail && !email) {
+        return Err(fail('VALIDATION_FAILED', 'They sign in with their email. Change it rather than remove it.', {
+          fieldErrors: { email: 'Required' },
+        }));
+      }
+
+      const clash = await deps.persons.findContactClash(tx, {
+        excludePersonId: person.id,
+        email: email !== person.primaryEmail ? email : null,
+        phone10: phone && phone !== person.primaryPhone ? phoneDigits.slice(-10) : null,
+      });
+      if (clash.email) {
+        return Err(fail('CONFLICT', 'Someone else at this college already uses that email.', { fieldErrors: { email: 'Already in use' } }));
+      }
+      if (clash.phone) {
+        return Err(fail('CONFLICT', 'Someone else at this college already uses that mobile number.', {
+          fieldErrors: { phone: 'Already in use' },
+        }));
+      }
+
+      if (email === person.primaryEmail && phone === person.primaryPhone) return Ok({ email, phone });
+
+      await deps.persons.updateContact(tx, person.id, { email, phone });
+      const base = {
+        correlationId: deps.ids.next(), tenantId: actor.tenantId,
+        actorType: 'person' as const, actorId: actor.personId,
+      };
+      if (live && signsInByEmail && email !== person.primaryEmail) {
+        await deps.accounts.changeLoginIdentifier(tx, live.id, email!);
+        await deps.audit.record({
+          ...base, action: 'account.identifier_changed', subjectType: 'user_account', subjectId: live.id,
+          before: { loginIdentifier: live.loginIdentifier }, after: { loginIdentifier: email },
+        }, tx);
+      }
+      if (live) await deps.otp.revokeLive(tx, { accountId: live.id, platformAccountId: null }, deps.clock.now());
+      await deps.audit.record({
+        ...base, action: 'person.contact_changed', subjectType: 'person', subjectId: person.id,
+        before: { email: person.primaryEmail, phone: person.primaryPhone }, after: { email, phone },
+      }, tx);
+      return Ok({ email, phone });
+    });
+  } catch (e) {
+    // The sign-in name is unique per college; a race past the check lands here.
+    if (e instanceof AppException && e.code === 'CONFLICT') {
+      return Err(fail('CONFLICT', 'Someone else at this college already uses that email.', { fieldErrors: { email: 'Already in use' } }));
+    }
     if (e instanceof AppException) return Err(fail(e.code, e.message));
     throw e;
   }

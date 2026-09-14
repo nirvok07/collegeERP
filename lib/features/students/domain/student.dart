@@ -9,6 +9,8 @@ class Student {
     required this.admittedOn,
     required this.status,
     this.email,
+    this.phone,
+    this.personId,
     this.statusReason,
     this.sectionId,
     this.sectionLabel,
@@ -18,6 +20,12 @@ class Student {
   final String id;
   final String fullName;
   final String? email;
+
+  /// Where their sign-in code can go, with the email (AD-82).
+  final String? phone;
+
+  /// The person behind the record, whose contact identity owns (OTP-6).
+  final String? personId;
   final String enrolmentNumber;
   final String programId;
   final String programName;
@@ -58,6 +66,8 @@ class Student {
       id: m['id'] as String,
       fullName: m['full_name'] as String,
       email: m['email'] as String?,
+      phone: m['phone'] as String?,
+      personId: m['person_id'] as String?,
       enrolmentNumber: m['enrolment_number'] as String? ?? '',
       programId: program['id'] as String? ?? '',
       programName: program['name'] as String? ?? '',

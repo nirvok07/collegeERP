@@ -122,4 +122,14 @@ class StudentCubit extends Cubit<StudentState> {
     if (failure == null && !isClosed) await load();
     return failure;
   }
+
+  /// OTP-6 (AD-82): where the student's sign-in code goes; the server refuses
+  /// a duplicate, or leaving an account nowhere to send one. Re-reads on success.
+  Future<Failure?> changeContact({required String? email, required String? phone}) async {
+    final personId = state.student?.personId;
+    if (personId == null) return Failure.unknown;
+    final failure = (await _repository.changeContact(personId, email: email, phone: phone)).failureOrNull;
+    if (failure == null && !isClosed) await load();
+    return failure;
+  }
 }

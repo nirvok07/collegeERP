@@ -204,6 +204,7 @@ function serialiseStudent(s: StudentRecord) {
     person_id: s.personId,
     full_name: s.fullName,
     email: s.email,
+    phone: s.phone,
     enrolment_number: s.enrolmentNumber,
     program: { id: s.programId, name: s.programName },
     admitted_on: s.admittedOn,

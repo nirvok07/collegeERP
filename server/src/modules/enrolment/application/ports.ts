@@ -7,6 +7,8 @@ export interface StudentRecord {
   personId: string;
   fullName: string;
   email: string | null;
+  /** Where their sign-in code can go (AD-82). */
+  phone: string | null;
   enrolmentNumber: string;
   programId: string;
   programName: string;

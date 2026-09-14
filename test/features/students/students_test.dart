@@ -66,18 +66,50 @@ void main() {
     expect(repo.changed, ['st1/withdrawn/Moved to another city']);
     expect(find.text('Withdrawn'), findsOneWidget);
   });
+
+  testWidgets('OTP-6: an account manager changes where a student\'s sign-in code goes', (tester) async {
+    final repo = await pump(tester, {'student.read', 'student.manage', 'account.manage'});
+    await tester.tap(find.text('Asha Rao'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mobile'), findsNothing, reason: 'no mobile on record yet');
+
+    await tester.tap(find.text('Edit email or mobile'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Mobile number'), ' 98765 43210 ');
+    await tester.tap(inDialog('Save'));
+    await tester.pumpAndSettle();
+
+    expect(repo.contacts, ['pa1/null/98765 43210'], reason: 'the person, trimmed, an empty email as null');
+    expect(find.text('98765 43210'), findsOneWidget, reason: 'the record re-reads and shows it');
+  });
+
+  testWidgets('without account management there is no way to change it', (tester) async {
+    await pump(tester, {'student.read', 'student.manage'});
+    await tester.tap(find.text('Asha Rao'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit email or mobile'), findsNothing);
+  });
 }
 
 class _FakeStudents implements StudentsRepository {
   final queries = <String>[];
   final changed = <String>[];
+  final contacts = <String>[];
   String status = 'enrolled';
+  String? phone;
 
   Student _asha() => Student(
         id: 'st1', fullName: 'Asha Rao', enrolmentNumber: 'CSE26001', programId: 'p1', programName: 'BTech CSE',
         admittedOn: '2026-07-01', status: status, sectionId: status == 'enrolled' ? 'x1' : null,
-        sectionLabel: 'A', sectionTermNumber: 1,
+        sectionLabel: 'A', sectionTermNumber: 1, personId: 'pa1', phone: phone,
       );
+
+  @override
+  Future<Result<void>> changeContact(String personId, {required String? email, required String? phone}) async {
+    contacts.add('$personId/$email/$phone');
+    this.phone = phone;
+    return const Ok(null);
+  }
 
   @override
   Future<Result<List<Student>>> students(StudentFilter filter) async {

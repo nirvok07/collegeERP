@@ -6,7 +6,7 @@ import { requirePermission } from '../../../infrastructure/http/guards.ts';
 import { fail } from '../../../core/errors.ts';
 import { institutionScope, type ScopeType } from '../domain/scope.ts';
 import {
-  assignRole, invitePerson, listAssignments, listPeople, revokeAssignment, type Actor,
+  assignRole, changeContact, invitePerson, listAssignments, listPeople, revokeAssignment, type Actor,
 } from '../application/manage-people.ts';
 import { issuePasswordReset } from '../application/password-reset.ts';
 import { issueStudentAccess } from '../application/student-access.ts';
@@ -37,6 +37,12 @@ const assignBody = z.object({
 
 const revokeBody = z.object({ reason: z.string().min(1).max(500) });
 
+// OTP-6 (AD-82): an absent field stays as it is; null clears it.
+const contactBody = z.object({
+  email: z.string().max(254).nullable().optional(),
+  phone: z.string().max(20).nullable().optional(),
+});
+
 export async function registerPeopleRoutes(app: FastifyInstance, c: Container) {
   const actorOf = (req: { actor?: { sub: string; tenantId: string | null } }): Actor => ({
     tenantId: req.actor!.tenantId!,
@@ -62,6 +68,7 @@ export async function registerPeopleRoutes(app: FastifyInstance, c: Container) {
       person_id: p.personId,
       full_name: p.fullName,
       email: p.primaryEmail,
+      phone: p.primaryPhone,
       person_type: p.personType,
       account_status: p.accountStatus,
       last_login_at: p.lastLoginAt,
@@ -118,6 +125,21 @@ export async function registerPeopleRoutes(app: FastifyInstance, c: Container) {
         delivery: 'pending',
       },
     }, 201);
+  });
+
+  /**
+   * OTP-6 (AD-82): where a person's sign-in code goes. Identity data, so it
+   * takes account management, whoever the person is (staff or student).
+   */
+  app.patch('/people/:id/contact', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'account.manage', institutionScope()))) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That person was not found.'));
+    const parsed = contactBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    return sendResult(reply, await changeContact(c.managePeople, actorOf(req), {
+      personId: id, email: parsed.data.email, phone: parsed.data.phone,
+    }));
   });
 
   /*

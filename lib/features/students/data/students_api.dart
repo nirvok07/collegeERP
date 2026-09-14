@@ -45,6 +45,10 @@ abstract interface class StudentsRepository {
 
   /// ST-1 (AD-69): a one-time code for the student's own sign-in.
   Future<Result<StudentAccessCode>> issueAccess(String id);
+
+  /// OTP-6 (AD-82): where the student's sign-in code goes. Identity owns it,
+  /// so it is the person's endpoint, not the student record's.
+  Future<Result<void>> changeContact(String personId, {required String? email, required String? phone});
 }
 
 class StudentsApi implements StudentsRepository {
@@ -79,4 +83,8 @@ class StudentsApi implements StudentsRepository {
   @override
   Future<Result<List<Section>>> sections() =>
       _client.get('/v1/sections', (data) => (data as List).map(Section.fromJson).toList());
+
+  @override
+  Future<Result<void>> changeContact(String personId, {required String? email, required String? phone}) =>
+      _client.patch('/v1/people/${_enc(personId)}/contact', {'email': email, 'phone': phone}, (_) {});
 }

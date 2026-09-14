@@ -23,6 +23,10 @@ class _FakePeople implements PeopleApi {
 
   @override
   Future<Result<List<Person>>> list({String? search}) async => Ok(List.of(people));
+
+  @override
+  Future<Result<void>> changeContact(String personId, {required String? email, required String? phone}) async =>
+      const Ok(null);
 }
 
 void main() {
@@ -42,6 +46,15 @@ void main() {
 
     expect(cubit.state.people, hasLength(2));
     await cubit.close();
+  });
+
+  test('OTP-6: a person carries their mobile, where a sign-in code can go', () {
+    final person = Person.fromJson({
+      'person_id': 'p1', 'full_name': 'Dr. Meera Iyer', 'email': 'meera@college.edu',
+      'phone': '98765 43210', 'person_type': 'staff', 'role_keys': <String>[],
+    });
+    expect(person.phone, '98765 43210');
+    expect(Person.fromJson({'person_id': 'p2', 'full_name': 'X'}).phone, isNull);
   });
 
   test('when the college has only you, the list reads as empty, not as you', () async {

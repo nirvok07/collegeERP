@@ -8,6 +8,7 @@ import '../../../core/session/college_brand.dart';
 import '../../../core/session/session_manager.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/submit_dialog.dart';
 import '../data/people_api.dart';
 import '../domain/person.dart';
 import 'people_cubit.dart';
@@ -59,9 +60,54 @@ class _PeopleViewState extends State<_PeopleView> {
   /// The access list reads the college's assignments, which is `audit.read`.
   bool get _canSeeAccess => widget.authority?.can('audit.read') ?? false;
 
+  /// OTP-6: where a person's sign-in code goes is account management.
+  bool get _canEditContact => widget.authority?.can('account.manage') ?? false;
+
+  Future<void> _editContact(Person person) async {
+    final cubit = context.read<PeopleCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final email = TextEditingController(text: person.email ?? '');
+    final phone = TextEditingController(text: person.phone ?? '');
+    String? orNull(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
+    final saved = await showSubmitDialog(
+      context,
+      title: '${person.fullName}: email or mobile',
+      submitLabel: 'Save',
+      controllers: [email, phone],
+      fields: (_) => [
+        Text(
+          'Their sign-in code goes here. The old one stops working at once.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: email,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: phone,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(labelText: 'Mobile number'),
+        ),
+      ],
+      submit: () async => (await locator<PeopleApi>().changeContact(
+        person.id,
+        email: orNull(email),
+        phone: orNull(phone),
+      )).failureOrNull,
+    );
+    if (!saved || !mounted) return;
+    messenger.showSnackBar(SnackBar(content: Text('${person.fullName}\'s contact is updated')));
+    await cubit.load(refresh: true);
+  }
+
   void _open(Person person) => showPersonSheet(
     context,
     person,
+    onEditContact: _canEditContact ? () => _editContact(person) : null,
     onAccess: _canSeeAccess
         ? () => Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => AccessScreen(

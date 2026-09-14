@@ -67,6 +67,36 @@ export class PgPersonRepository implements PersonRepository {
     return rows[0] ? toPerson(rows[0]) : null;
   }
 
+  async updateContact(tx: Tx, id: string, input: { email: string | null; phone: string | null }): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE persons SET primary_email = $2, primary_phone = $3, updated_at = now(), version = version + 1
+        WHERE id = $1 AND deleted_at IS NULL`,
+      [id, input.email, input.phone],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async findContactClash(
+    tx: Tx,
+    input: { excludePersonId: string; email: string | null; phone10: string | null },
+  ): Promise<{ email: boolean; phone: boolean }> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT
+         ($2::text IS NOT NULL AND (
+            EXISTS (SELECT 1 FROM persons p
+                     WHERE p.id <> $1 AND p.deleted_at IS NULL AND p.primary_email = $2)
+            OR EXISTS (SELECT 1 FROM user_accounts a
+                        WHERE a.person_id <> $1 AND a.status NOT IN ('deactivated','archived')
+                          AND a.login_identifier = $2))) AS email,
+         ($3::text IS NOT NULL AND EXISTS (
+            SELECT 1 FROM persons p
+             WHERE p.id <> $1 AND p.deleted_at IS NULL
+               AND right(regexp_replace(coalesce(p.primary_phone, ''), '\\D', '', 'g'), 10) = $3)) AS phone`,
+      [input.excludePersonId, input.email, input.phone10],
+    );
+    return { email: rows[0].email === true, phone: rows[0].phone === true };
+  }
+
   /**
    * One query for the list. Roles are aggregated rather than fetched per row,
    * because N+1 on the screen an administrator lives in is the difference
@@ -77,6 +107,7 @@ export class PgPersonRepository implements PersonRepository {
       `SELECT p.id            AS person_id,
               p.full_name,
               p.primary_email,
+              p.primary_phone,
               p.person_type,
               ua.id           AS account_id,
               ua.status       AS account_status,
@@ -107,6 +138,7 @@ export class PgPersonRepository implements PersonRepository {
       personId: r.person_id,
       fullName: r.full_name,
       primaryEmail: r.primary_email,
+      primaryPhone: r.primary_phone,
       personType: r.person_type,
       accountId: r.account_id,
       accountStatus: r.account_status,
@@ -150,6 +182,13 @@ export class PgAccountRepository implements AccountRepository {
       [id],
     );
     return rows[0] ? toAccount(rows[0]) : null;
+  }
+
+  async changeLoginIdentifier(tx: Tx, id: string, identifier: string): Promise<void> {
+    await clientOf(tx).query(
+      `UPDATE user_accounts SET login_identifier = $2, updated_at = now(), version = version + 1 WHERE id = $1`,
+      [id, identifier],
+    );
   }
 
   async findByPersonId(tx: Tx, personId: string): Promise<AccountRecord | null> {

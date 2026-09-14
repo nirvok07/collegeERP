@@ -187,6 +187,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const tenantAccess = new TenantAccessGate(uow, institutions);
   const platformAdmin = new PgPlatformAdminRepository();
   const platformMfa = new PgPlatformMfaRepository();
+  const otpChallenges = new PgOtpRepository();
   const sealer = sealerFor(config);
   const totp = new OtplibTotp();
 
@@ -215,7 +216,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       hasher, tokens, sealer, totp, audit, ids, clock, refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
     },
     otpSignIn: {
-      uow, otp: new PgOtpRepository(), identities: new PgSignInIdentityReader(), accounts, platformAccounts,
+      uow, otp: otpChallenges, identities: new PgSignInIdentityReader(), accounts, platformAccounts,
       refreshTokens, loginAttempts, audit, tokens, ids, clock, tenantAccess,
       refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
       fixedCode: config.OTP_FIXED_CODE,
@@ -253,6 +254,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     managePeople: {
       uow, persons, accounts, assignments, roles, invitations, audit, ids, clock, tokens,
       invitationTtlHours: config.INVITATION_TTL_HOURS,
+      otp: otpChallenges,
     },
     manageDevices: { uow, devices, audit, ids, clock, tokens },
     roleDefinitions: roles,

@@ -11,7 +11,7 @@ import type {
  * or would show identifiers, and neither is usable.
  */
 const STUDENT_SELECT = `
-  SELECT st.id, st.person_id, p.full_name, p.primary_email AS email,
+  SELECT st.id, st.person_id, p.full_name, p.primary_email AS email, p.primary_phone AS phone,
          st.enrolment_number, st.program_id, pr.name AS program_name,
          st.admitted_on, st.status, st.status_reason,
          live.section_id, sec.label AS section_label, sec.term_number AS section_term_number
@@ -228,7 +228,7 @@ export class PgEnrolmentRepository implements EnrolmentRepository {
 
 function toStudent(r: any): StudentRecord {
   return {
-    id: r.id, personId: r.person_id, fullName: r.full_name, email: r.email,
+    id: r.id, personId: r.person_id, fullName: r.full_name, email: r.email, phone: r.phone,
     enrolmentNumber: r.enrolment_number, programId: r.program_id,
     programName: r.program_name, admittedOn: String(r.admitted_on),
     status: r.status, statusReason: r.status_reason,

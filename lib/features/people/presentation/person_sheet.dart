@@ -7,22 +7,29 @@ import '../domain/person.dart';
 /// Detail as a bottom sheet, which is the mobile counterpart of the web
 /// drawer: it keeps the list in place behind it and returns the user exactly
 /// where they were.
-/// [onAccess] is present only when they may see or change access (ADM-10).
-/// There is no password to reset (AD-82): a person signs in with a code.
-Future<void> showPersonSheet(BuildContext context, Person person, {VoidCallback? onAccess}) {
+/// [onAccess] is present only when they may see or change access (ADM-10);
+/// [onEditContact] only when they may change where the person's sign-in code
+/// goes (OTP-6). There is no password to reset (AD-82).
+Future<void> showPersonSheet(
+  BuildContext context,
+  Person person, {
+  VoidCallback? onAccess,
+  VoidCallback? onEditContact,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => _PersonSheet(person: person, onAccess: onAccess),
+    builder: (context) => _PersonSheet(person: person, onAccess: onAccess, onEditContact: onEditContact),
   );
 }
 
 class _PersonSheet extends StatelessWidget {
-  const _PersonSheet({required this.person, this.onAccess});
+  const _PersonSheet({required this.person, this.onAccess, this.onEditContact});
 
   final Person person;
   final VoidCallback? onAccess;
+  final VoidCallback? onEditContact;
 
   @override
   Widget build(BuildContext context) {
@@ -56,12 +63,13 @@ class _PersonSheet extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(person.fullName, style: Theme.of(context).textTheme.titleLarge),
-                      if (person.email != null)
-                        Text(
-                          person.email!,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
+                      for (final contact in [person.email, person.phone])
+                        if (contact != null)
+                          Text(
+                            contact,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
                     ],
                   ),
                 ),
@@ -103,6 +111,17 @@ class _PersonSheet extends StatelessWidget {
               ),
             ),
 
+            if (onEditContact != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  onEditContact!();
+                },
+                icon: const Icon(Icons.contact_phone_outlined),
+                label: const Text('Edit email or mobile'),
+              ),
+            ],
             if (onAccess != null) ...[
               const SizedBox(height: AppSpacing.sm),
               // ADM-10 (AD-81): access is managed on the phone too, on its own

@@ -93,6 +93,42 @@ class _StudentView extends StatelessWidget {
     );
   }
 
+  /// OTP-6 (AD-82): where the student's sign-in code goes.
+  Future<void> _editContact(BuildContext context, Student student) async {
+    final cubit = context.read<StudentCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final email = TextEditingController(text: student.email ?? '');
+    final phone = TextEditingController(text: student.phone ?? '');
+    String? orNull(TextEditingController c) => c.text.trim().isEmpty ? null : c.text.trim();
+    final saved = await showSubmitDialog(
+      context,
+      title: '${student.fullName}: email or mobile',
+      submitLabel: 'Save',
+      controllers: [email, phone],
+      fields: (_) => [
+        Text(
+          'Their sign-in code goes here. The old one stops working at once.',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: phone,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(labelText: 'Mobile number'),
+        ),
+        const SizedBox(height: AppSpacing.base),
+        TextField(
+          controller: email,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          decoration: const InputDecoration(labelText: 'Email'),
+        ),
+      ],
+      submit: () => cubit.changeContact(email: orNull(email), phone: orNull(phone)),
+    );
+    if (saved) messenger.showSnackBar(const SnackBar(content: Text('Contact updated')));
+  }
+
   Future<void> _changeStatus(BuildContext context, Student student) async {
     final cubit = context.read<StudentCubit>();
     final options = Student.statuses.where((s) => s != student.status).toList();
@@ -183,6 +219,7 @@ class _StudentView extends StatelessWidget {
                     fact('Admitted', s.admittedOn),
                     fact('Section', s.placement),
                     if (s.email != null) fact('Email', s.email!),
+                    if (s.phone != null) fact('Mobile', s.phone!),
                     if (s.statusReason != null) fact('Status note', s.statusReason!),
                     if (canManage || canGiveAccess) ...[
                       const SizedBox(height: AppSpacing.md),
@@ -201,6 +238,12 @@ class _StudentView extends StatelessWidget {
                               onPressed: () => _access(context, s),
                               icon: const Icon(Icons.phone_iphone_rounded),
                               label: const Text('Give app access'),
+                            ),
+                          if (canGiveAccess && s.personId != null)
+                            OutlinedButton.icon(
+                              onPressed: () => _editContact(context, s),
+                              icon: const Icon(Icons.contact_phone_outlined),
+                              label: const Text('Edit email or mobile'),
                             ),
                         ],
                       ),
