@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-2 ✅ and PW-1 ✅ (AD-79, AD-80; R69, R70).
+Just done (2026-09-14): ADM-2 ✅ and PW-1 ✅ (AD-79, AD-80; R69, R70; `2f6852b`).
 - ADM-2: Organisation on the phone adds campuses (FAB), opens every campus (even empty) to add
   departments, renames and archives with a reason; each action only with `campus.manage` /
   `department.manage`; server refusals shown on the field. `lib/features/organisation/`,
@@ -208,6 +208,7 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+2f6852b Build ADM-2 and PW-1: campuses and departments on the phone; forgotten passwords by reset code (AD-80)
 a74d340 Build ADM-1: the College Admin's own dashboard, and change password (AD-79)
 838c839 Finish ENV-2: development runs on Supabase; the rebuild survives the pooler's delay
 1de03b6 Build BIO-1: the phone's own lock guards every open of a signed-in app
