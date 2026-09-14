@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-9 ✅ (AD-81). "Students" on the phone (`lib/features/students/`): the
+Just done (2026-09-14): ADM-9 ✅ (AD-81; `e956717`). "Students" on the phone (`lib/features/students/`): the
 list opens on enrolled students; search, status, program and "not in a section" filters are the
 server's (`/v1/students?…`, first 200); "Admit student" reuses the ONB-1 form; a student's screen
 shows the record, "Change status" (reason required for on leave and withdrawn; a warning that
@@ -272,6 +272,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+e956717 Build ADM-9: students on the phone (AD-81)
+927424c Record the ADM-8 commit in the tracker
 4103271 Build ADM-8: the timetable, classes and non-teaching days on the phone (AD-81)
 85fbe1c Record the ADM-7 commit in the tracker
 080a2fa Build ADM-7: course offerings, their teachers and enrolments on the phone (AD-81)
