@@ -38,6 +38,13 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Also (2026-09-14): the runbook, `docs/runbook/` (prerequisites, database, server, web console,
+mobile apps, first college end to end, tests and builds, troubleshooting), asked for by the owner;
+the root README points to it. Found and fixed: `server/.env.example` held a real Supabase database
+URL with its password since `ff0f91d` (not on any remote branch in this clone). The file now holds a
+placeholder; the password stays in local history, so the owner should reset the Supabase database
+password before pushing.
+
 Just done (2026-09-14): SAM-3 ✅ (AD-72, AD-81; `c549779`). The Super Admin app now has "Platform accounts"
 (list; Owners invite Owner or Support and hand over a one-time code; an account's screen offers only
 the server's actions: disable, enable, change role pinned to the role shown, reset authenticator,

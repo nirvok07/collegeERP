@@ -1,17 +1,9 @@
-# college_erp
+# College ERP
 
-A new Flutter project.
+A multi-college ERP: one Node API on PostgreSQL, a web console, and two Flutter apps (the College
+app for administrators and teachers, and the Super Admin app for the platform).
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Run it:** [docs/runbook/](docs/runbook/README.md), from an empty laptop to a college set up on a phone
+- **What is built, tested and next:** [PROJECT_STATE.md](PROJECT_STATE.md)
+- **Decisions:** [docs/blueprint/adr.md](docs/blueprint/adr.md), indexed in [ARCHITECTURE_INDEX.md](ARCHITECTURE_INDEX.md)
+- **Requirements:** [docs/requirements.md](docs/requirements.md)
