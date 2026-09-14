@@ -1710,3 +1710,25 @@ the code is redeemed through `/v1/auth/accept-invite` (the app's "Forgot passwor
 invitation", or the web page), which sets the new password, lifts a lockout and ends every
 session. Suspended, deactivated and archived accounts cannot be brought back this way. Audited
 `account.password_reset_issued` (person or platform) and `account.password_reset`. No migration.
+
+---
+
+**AD-81 — Every module is on the phone too**
+
+*Status.* Decided by the owner, 2026-09-14 ("all modules for phone too"; R63, OD-MOB-1).
+Supersedes AD-32 ("mobile reads; the desktop console writes") and extends AD-79. AD-24 stands: two
+clients on one API, one set of business rules. The web console stays for wide work.
+
+*Decision.* Each back-office module the web console has comes to the college app, on the same
+endpoints and permissions, each action present only with its permission and checked again by the
+server. The Super Admin's platform modules come to the Super Admin app (AD-72). Order, one slice
+each: ADM-3 programs, academic years and terms; ADM-4 courses and curriculum versions; ADM-5 rooms;
+ADM-6 sections and members; ADM-7 offerings, teachers and enrolments; ADM-8 timetable slots,
+non-teaching days and sessions; ADM-9 students (list, detail, status, placements); ADM-10 access
+(grant and revoke roles) and the college profile and branding; ADM-11 verification and corrections
+of attendance and marks; SAM-2b plan and branding; SAM-3 platform accounts and audit.
+
+*Unchanged.* Offline stays limited to the field operations already approved (AD-9, AD-58, AD-59):
+back-office writes on the phone are online only, and say so when the network is gone.
+
+*Built.* ADM-3 (2026-09-14): programs, academic years and terms, `lib/features/academic/`.

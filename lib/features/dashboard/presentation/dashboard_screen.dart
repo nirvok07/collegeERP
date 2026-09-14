@@ -601,6 +601,17 @@ class _AdminModules extends StatelessWidget {
           refresh: false,
         ),
       ],
+      // ADM-3 (AD-81): programs, and the calendar for whoever may see sections.
+      if (authority.can('person.read'))
+        (
+          title: authority.can('section.read') ? 'Academic setup' : 'Programs',
+          subtitle: o == null ? 'Programs and calendar' : '${o.programs} programs',
+          icon: Icons.school_rounded,
+          color: AppColors.success,
+          route: Routes.academic,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: true,
+        ),
       (
         title: 'Profile',
         subtitle: 'Your details and password',
@@ -661,8 +672,8 @@ class _AdminModules extends StatelessWidget {
             color: theme.colorScheme.surfaceContainerLow,
             bordered: false,
             child: Text(
-              'Coming next to the app: programs, sections and courses, the timetable and the student list. '
-              'Until then they are on the web console.',
+              'Coming next to the app: courses and curriculum, rooms, sections, the timetable and the '
+              'student list. Until then they are on the web console.',
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),

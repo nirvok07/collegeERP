@@ -15,7 +15,7 @@ void main() {
   test('a code is suggested from the name, in the server shape', () {
     expect(suggestCode('Computer Science & Engineering'), 'computer-science-engineering');
     expect(suggestCode('  North Campus  '), 'north-campus');
-    expect(suggestCode('A' * 40).length, lessThanOrEqualTo(32));
+    expect(suggestCode('A' * 40).length, lessThanOrEqualTo(31), reason: 'the server allows 31');
   });
 
   Future<void> pump(WidgetTester tester, Set<String> permissions, _FakeOrganisation repo) async {

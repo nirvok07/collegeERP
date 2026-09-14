@@ -22,6 +22,7 @@ import '../security/app_lock.dart';
 import '../security/local_auth_unlock.dart';
 import '../../features/account/change_password.dart';
 import '../../features/dashboard/data/overview_api.dart';
+import '../../features/academic/data/academic_api.dart';
 
 final locator = GetIt.instance;
 
@@ -58,5 +59,6 @@ void configureDependencies() {
     // BIO-1: the phone's own lock, asked on every open of a signed-in app.
     ..registerLazySingleton<DeviceUnlock>(LocalAuthUnlock.new)
     ..registerLazySingleton(() => AccountApi(locator<ApiClient>()))
-    ..registerLazySingleton<OverviewRepository>(() => OverviewApi(locator<ApiClient>()));
+    ..registerLazySingleton<OverviewRepository>(() => OverviewApi(locator<ApiClient>()))
+    ..registerLazySingleton<AcademicRepository>(() => AcademicApi(locator<ApiClient>()));
 }

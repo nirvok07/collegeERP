@@ -29,7 +29,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
-- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ✅ tests; 🔍 on the phone; ADM-3 programs, ADM-4 sections and courses, ADM-5 timetable, ADM-6 students ❌
+- College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ✅ tests; 🔍 on the phone; ADM-4…ADM-11 ❌ (AD-81: every module on the phone)
 - Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
@@ -38,6 +38,14 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): AD-81 recorded (owner: "all modules for phone too"; OD-MOB-1 resolved) and
+ADM-3 ✅: "Academic setup" on the phone (`lib/features/academic/`), Programs tab (by department; add
+with department, code, award, duration, semesters/annual; archive) and Calendar tab (years with
+terms; add year June–May by default, add the next term by default); `department.manage` /
+`term.manage`; calendar read only with `section.read`. Dashboard tile "Academic setup". No server
+change. Tested: Flutter 206/206 (found and fixed a crash sorting a constant list when the calendar
+is not readable), analyze clean, APK builds. Not tested: on the phone.
+
 Just done (2026-09-14): ADM-2 ✅ and PW-1 ✅ (AD-79, AD-80; R69, R70; `2f6852b`).
 - ADM-2: Organisation on the phone adds campuses (FAB), opens every campus (even empty) to add
   departments, renames and archives with a reason; each action only with `campus.manage` /
@@ -148,10 +156,12 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ADM-3: the College Admin creates programs on the phone
-- **Why next:** R66; admitting a student needs a program, and programs are still web-only.
-- **Then:** ADM-4 sections and courses with their teachers (answers OD-MOB-2 in
-  part), ADM-5 timetable, ADM-6 students; then ST-1 below.
+### NEXT SLICE — ADM-4: courses and curriculum versions on the phone (AD-81)
+- **Why next:** sections and offerings need a program's published curriculum; courses and
+  curriculum versions are still web-only.
+- **Then:** ADM-5 rooms, ADM-6 sections and members (answers OD-MOB-2 in part), ADM-7 offerings,
+  teachers and enrolments, ADM-8 timetable, ADM-9 students, ADM-10 access and college profile,
+  ADM-11 verification and corrections; SAM-2b and SAM-3 in the Super Admin app; ST-1 below.
 
 ### LATER — ST-1: student accounts and "My attendance" on mobile
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype
@@ -178,7 +188,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
 | OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
-| OD-MOB-1 | Should every module be on mobile too (R63)? | Mobile has teaching, attendance, marks and onboarding; curriculum, sections, timetable planning, verification and platform are web-only (AD-24, AD-32) | Mobile scope | Keep the split; move chosen modules | Partly resolved by AD-79: the College Admin's modules move (ADM-1…6); the rest open |
+| OD-MOB-1 | Should every module be on mobile too (R63)? | — | Mobile scope | — | ✅ Resolved as AD-81: every module, one slice at a time |
 | OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | Different modules, permissions and screens | M3/M4 on mobile | Sections; timetable slots and sessions; both | Open |
 | OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
 | OD-PW-1 | How does a college user who forgot their password get back in (R69)? | — | Identity, security | — | ✅ Resolved as AD-80: option (a), one-time reset code; emailed link later with an email provider |

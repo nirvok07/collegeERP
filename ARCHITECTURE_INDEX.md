@@ -6,7 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-80) | `docs/blueprint/adr.md` |
+| Decisions (AD-1…AD-81) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R64) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
@@ -124,3 +124,4 @@ shows its shape.
 | AD-78 | The phone's own lock guards every open of a signed-in app (both apps) | Active; OD-BIO-1 to confirm |
 | AD-79 | College Admin's own dashboard and modules on the phone (amends AD-32); change password | Active; ADM-1, ADM-2 built; ADM-3…6 next |
 | AD-80 | Forgotten password: one-time reset code from an account manager or the Super Admin; no email | Active; PW-1 built |
+| AD-81 | Every module on the phone too (supersedes AD-32); back-office writes online only | Active; ADM-3…11, SAM-2b, SAM-3 |

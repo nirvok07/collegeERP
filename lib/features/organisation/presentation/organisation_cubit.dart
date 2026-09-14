@@ -81,8 +81,8 @@ class OrganisationCubit extends Cubit<OrganisationState> {
 }
 
 /// A code suggested from the name, in the server's shape: lowercase letters,
-/// numbers and hyphens, at most 32 characters.
+/// numbers and hyphens, at most 31 characters (the server's pattern, `[a-z0-9][a-z0-9-]{0,30}`).
 String suggestCode(String name) {
   final slug = name.trim().toLowerCase().replaceAll(RegExp('[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
-  return slug.length > 32 ? slug.substring(0, 32).replaceAll(RegExp(r'-+$'), '') : slug;
+  return slug.length > 31 ? slug.substring(0, 31).replaceAll(RegExp(r'-+$'), '') : slug;
 }
