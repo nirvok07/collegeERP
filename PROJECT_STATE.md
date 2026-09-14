@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ADM-10 ✅ (AD-81). Access on the phone (`lib/features/access/`): People →
+Just done (2026-09-14): ADM-10 ✅ (AD-81; `d558b20`). Access on the phone (`lib/features/access/`): People →
 a person → "Manage access" lists their roles and scopes (needs `audit.read`, as the list is the
 college's assignments); with `role.assign`, give a college-wide role not already held or a
 department role in a chosen department, and remove one with a reason; the server's refusals (own
@@ -282,6 +282,8 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+d558b20 Build ADM-10: access and the college profile on the phone (AD-81)
+f054e4d Record the ADM-9 commit in the tracker
 e956717 Build ADM-9: students on the phone (AD-81)
 927424c Record the ADM-8 commit in the tracker
 4103271 Build ADM-8: the timetable, classes and non-teaching days on the phone (AD-81)
