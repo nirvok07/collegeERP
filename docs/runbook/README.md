@@ -4,6 +4,8 @@ How to get every part of this project running on a development machine, from an 
 college set up on a phone. Each part has its own page; this page is the order to read them in and
 a quick start for someone who has done it before.
 
+**New here, or the app says "unable to connect"? Read [Start here](START-HERE.md) first:** one page, A to Z.
+
 | # | Page | What it covers |
 |---|---|---|
 | 1 | [Prerequisites](01-prerequisites.md) | Tools and versions to install once |
