@@ -38,7 +38,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
-Just done (2026-09-14): ST-1 ✅ (AD-69, R72). Students on the phone. Server: `POST
+Just done (2026-09-14): ST-1 ✅ (AD-69, R72; `688696b`). Students on the phone. Server: `POST
 /v1/students/:id/access` issues a one-time code (12 characters, 7 days; a reset for an active student,
 24 hours), creating the student's account on first issue (a seat); `POST /v1/auth/student-activate`
 redeems it only with that student's enrolment number; `/auth/me` carries `student`; `GET
@@ -330,6 +330,9 @@ Supabase (AD-68): stale untracked schema, to be rebuilt with all of `001`–`023
 
 ## 4. Commits (newest first)
 ```
+688696b Build ST-1: students sign in with their enrolment number and see their attendance (AD-69)
+4924220 Add the runbook, and take a real database URL out of .env.example
+5c1c541 Record the SAM-3 commit in the tracker
 c549779 Build SAM-3: platform accounts, the audit and invitations in the Super Admin app (AD-72, AD-81)
 cba69d7 Record the SAM-2b commit in the tracker
 258940a Build SAM-2b: plan, seats and branding in the Super Admin app (AD-72, AD-81)
