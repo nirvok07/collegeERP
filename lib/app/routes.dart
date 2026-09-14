@@ -20,9 +20,6 @@ import '../features/teaching/presentation/my_teaching_screen.dart';
 import 'account_screen.dart';
 import '../core/session/authority.dart';
 import '../core/session/college_brand.dart';
-import '../features/auth/presentation/accept_invitation_screen.dart';
-import '../features/auth/presentation/student_activation_screen.dart';
-import '../features/account/change_password_screen.dart';
 import '../features/onboarding/domain/onboarding.dart';
 import '../features/onboarding/presentation/admit_student_screen.dart';
 import '../features/onboarding/presentation/appoint_teacher_screen.dart';
@@ -51,9 +48,6 @@ abstract final class Routes {
   static const registers = '/registers';
   static const verifyMarks = '/verify-marks';
   static const account = '/account';
-  static const acceptInvitation = '/accept-invitation';
-  static const studentActivation = '/student-activation';
-  static const changePassword = '/account/password';
 
   // ONB-1: the College Admin's onboarding (AD-76).
   static const onboarding = '/onboarding';
@@ -84,12 +78,6 @@ class ManageArgs {
   const ManageArgs({required this.authority, this.college});
   final Authority authority;
   final CollegeBrand? college;
-}
-
-/// ACC-1: the college chosen on the first screen, whose invitation this is.
-class AcceptInvitationArgs {
-  const AcceptInvitationArgs({required this.college});
-  final CollegeBrand college;
 }
 
 /// One typed argument class per route that needs arguments, never a raw map.
@@ -180,16 +168,6 @@ abstract final class AppRouter {
         return _page(settings, const VerifyMarksScreen());
       case Routes.account:
         return _page(settings, const AccountScreen());
-      case Routes.changePassword:
-        return _page(settings, const ChangePasswordScreen());
-      case Routes.acceptInvitation:
-        final args = settings.arguments;
-        if (args is! AcceptInvitationArgs) return _unknown(settings);
-        return _page(settings, AcceptInvitationScreen(college: args.college));
-      case Routes.studentActivation:
-        final args = settings.arguments;
-        if (args is! AcceptInvitationArgs) return _unknown(settings);
-        return _page(settings, StudentActivationScreen(college: args.college));
       case Routes.onboarding:
         final args = settings.arguments;
         if (args is! OnboardingArgs) return _unknown(settings);

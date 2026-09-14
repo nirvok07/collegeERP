@@ -2,7 +2,6 @@ import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/widgets/screen_state.dart';
 import 'package:college_erp/features/people/data/people_api.dart';
 import 'package:college_erp/features/people/domain/person.dart';
-import 'package:college_erp/features/people/domain/reset_code.dart';
 import 'package:college_erp/features/people/presentation/people_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -24,9 +23,6 @@ class _FakePeople implements PeopleApi {
 
   @override
   Future<Result<List<Person>>> list({String? search}) async => Ok(List.of(people));
-
-  @override
-  Future<Result<ResetCode>> issueReset(String personId) => throw UnimplementedError();
 }
 
 void main() {

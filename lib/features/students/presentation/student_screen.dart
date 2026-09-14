@@ -45,39 +45,36 @@ class _StudentView extends StatelessWidget {
   final bool canGiveAccess;
   final CollegeBrand? college;
 
-  /// ST-1: issues the code and shows it once, to print or send. A second
-  /// code replaces the first; for a student already signed up it resets
-  /// their password.
+  /// AD-82: gives the student an account (a seat), so they can sign in with a
+  /// code sent to their mobile or email on record. Nothing is handed over.
   Future<void> _access(BuildContext context, Student student) async {
     final cubit = context.read<StudentCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final result = await cubit.issueAccess();
     if (!context.mounted) return;
-    final code = result.valueOrNull;
-    if (code == null) {
+    final access = result.valueOrNull;
+    if (access == null) {
       messenger.showSnackBar(SnackBar(content: Text(result.failureOrNull?.message ?? 'That did not work.')));
       return;
     }
-    final message = code.message(student: student, collegeCode: college?.code, collegeName: college?.name);
+    final collegeName = college?.name ?? 'your college';
+    final collegeCode = college?.code;
+    final message = 'Hello ${student.fullName}, you can now use the $collegeName app. '
+        'Open it${collegeCode == null ? '' : ', enter the college code $collegeCode'}, '
+        'then your enrolment number ${student.enrolmentNumber}. '
+        'A sign-in code comes to your mobile or email on record.';
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(code.isReset ? 'Password reset code' : 'App access code'),
+        title: Text(access.isReset ? 'Already has app access' : 'App access given'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: SelectableText(
-                code.code,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 2),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
             SelectableText(message),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Shown only once. ${code.isReset ? 'Their current password works until they use it.' : 'The account takes a seat.'}',
+              access.isReset ? 'They sign in with a code; nothing else is needed.' : 'The account takes a seat.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -203,7 +200,7 @@ class _StudentView extends StatelessWidget {
                             FilledButton.tonalIcon(
                               onPressed: () => _access(context, s),
                               icon: const Icon(Icons.phone_iphone_rounded),
-                              label: const Text('App access code'),
+                              label: const Text('Give app access'),
                             ),
                         ],
                       ),

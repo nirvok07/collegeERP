@@ -37,6 +37,33 @@ class AuthSession {
   }
 }
 
+/// AD-82: where a code went, said the same way whether or not anyone has the
+/// identifier: the email typed, the mobile typed, or what the college has on
+/// record for an enrolment number.
+enum CodeDestination { email, mobile, record }
+
+/// A code has been asked for; this is the handle to answer it with.
+class CodeChallenge {
+  const CodeChallenge({required this.token, required this.destination, required this.expiresAt});
+
+  final String token;
+  final CodeDestination destination;
+  final DateTime expiresAt;
+
+  static CodeChallenge fromJson(dynamic json) {
+    final map = json as Map;
+    return CodeChallenge(
+      token: map['challenge_token'] as String,
+      destination: switch (map['destination']) {
+        'mobile' => CodeDestination.mobile,
+        'record' => CodeDestination.record,
+        _ => CodeDestination.email,
+      },
+      expiresAt: DateTime.parse(map['expires_at'] as String),
+    );
+  }
+}
+
 /// Authentication calls, which are the only ones made without a bearer token
 /// and therefore do not go through ApiClient's renew-first path.
 class AuthApi {
@@ -52,23 +79,28 @@ class AuthApi {
 
   final Dio _dio;
 
-  Future<Result<AuthSession>> signIn({
+  /// AD-82: sign-in is a code sent to the person's email or mobile (a student
+  /// may type their enrolment number). There is no password.
+  Future<Result<CodeChallenge>> requestCode({required String institutionCode, required String identifier}) =>
+      _post('/v1/auth/otp/request', {'institution_code': institutionCode, 'identifier': identifier}, CodeChallenge.fromJson);
+
+  Future<Result<AuthSession>> verifyCode({
     required String institutionCode,
-    required String identifier,
-    required String password,
+    required String challenge,
+    required String code,
   }) =>
-      _call('/v1/auth/login', {
-        'institution_code': institutionCode,
-        'identifier': identifier,
-        'password': password,
-      });
+      _post(
+        '/v1/auth/otp/verify',
+        {'institution_code': institutionCode, 'challenge_token': challenge, 'code': code},
+        AuthSession.fromJson,
+      );
 
   /// Mobile sends the token in the body. There is no cookie jar to rely on, and
   /// the backend accepts either transport against the same rotation rules.
   Future<Result<AuthSession>> refresh(String refreshToken) =>
-      _call('/v1/auth/refresh', {'refresh_token': refreshToken});
+      _post('/v1/auth/refresh', {'refresh_token': refreshToken}, AuthSession.fromJson);
 
-  /// AD-70: the college behind a code, before anybody signs in.
+  /// AD-71: the college behind a code, before anybody signs in.
   Future<Result<CollegeBrand>> lookupCollege(String code) async {
     Response<dynamic> response;
     try {
@@ -79,48 +111,6 @@ class AuthApi {
     return parseEnvelope(response.statusCode ?? 0, response.data, CollegeBrand.fromJson);
   }
 
-  /// A college invitation: the person sets their own password; nobody else,
-  /// the platform included, ever knows it.
-  Future<Result<void>> acceptInvitation({
-    required String institutionCode,
-    required String token,
-    required String password,
-  }) async {
-    Response<dynamic> response;
-    try {
-      response = await _dio.post<dynamic>('/v1/auth/accept-invite', data: {
-        'institution_code': institutionCode,
-        'token': token,
-        'password': password,
-      });
-    } on DioException {
-      return const Err(Failure.network);
-    }
-    return parseEnvelope(response.statusCode ?? 0, response.data, (_) {});
-  }
-
-  /// ST-1 (AD-69): a student sets their password with the college code, their
-  /// enrolment number and the one-time code their college gave them.
-  Future<Result<void>> activateStudent({
-    required String institutionCode,
-    required String enrolmentNumber,
-    required String code,
-    required String password,
-  }) async {
-    Response<dynamic> response;
-    try {
-      response = await _dio.post<dynamic>('/v1/auth/student-activate', data: {
-        'institution_code': institutionCode,
-        'enrolment_number': enrolmentNumber,
-        'code': code,
-        'password': password,
-      });
-    } on DioException {
-      return const Err(Failure.network);
-    }
-    return parseEnvelope(response.statusCode ?? 0, response.data, (_) {});
-  }
-
   Future<void> signOut(String refreshToken) async {
     try {
       await _dio.post<dynamic>('/v1/auth/logout', data: {'refresh_token': refreshToken});
@@ -129,13 +119,13 @@ class AuthApi {
     }
   }
 
-  Future<Result<AuthSession>> _call(String path, Map<String, Object?> body) async {
+  Future<Result<T>> _post<T>(String path, Map<String, Object?> body, T Function(dynamic) parse) async {
     Response<dynamic> response;
     try {
       response = await _dio.post<dynamic>(path, data: body);
     } on DioException {
       return const Err(Failure.network);
     }
-    return parseEnvelope(response.statusCode ?? 0, response.data, AuthSession.fromJson);
+    return parseEnvelope(response.statusCode ?? 0, response.data, parse);
   }
 }

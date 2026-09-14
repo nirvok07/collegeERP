@@ -1,55 +1,15 @@
-import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
 import 'package:college_erp/core/session/college_brand.dart';
-import 'package:college_erp/features/auth/presentation/student_activation_screen.dart';
 import 'package:college_erp/features/student/data/my_attendance.dart';
 import 'package:college_erp/features/student/presentation/student_home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// ST-1 (AD-69): a student's sign-up and home. What matters: an incomplete
-/// activation never reaches the server, the right values do, and the home
-/// shows attendance by course with a course below 75% called out.
+/// ST-1: a student's home. A student signs in with their enrolment number and
+/// a code (AD-82); what matters here is that the home shows attendance by
+/// course, with a course below 75% called out.
 void main() {
-  group('activation', () {
-    late List<String> sent;
-    StudentActivationCubit cubit({Failure? refuse}) {
-      sent = [];
-      return StudentActivationCubit(
-        ({required institutionCode, required enrolmentNumber, required code, required password}) async {
-          sent.add('$institutionCode/$enrolmentNumber/$code');
-          return refuse == null ? const Ok(null) : Err(refuse);
-        },
-        'sunrise',
-      );
-    }
-
-    test('an incomplete form is refused on the phone', () async {
-      final c = cubit();
-      await c.submit(enrolment: '', code: 'ABCD-EFGH-JKLM', password: 'student-pass-1', again: 'student-pass-1');
-      expect(c.state.failure?.message, 'Enter your enrolment number.');
-      await c.submit(enrolment: 'CSE26-001', code: 'ABCD', password: 'student-pass-1', again: 'student-pass-1');
-      expect(c.state.failure?.message, contains('12-character code'));
-      await c.submit(enrolment: 'CSE26-001', code: 'abcdefghjklm', password: 'short1', again: 'short1');
-      expect(c.state.failure?.message, contains('ten characters'));
-      await c.submit(enrolment: 'CSE26-001', code: 'abcd efgh jklm', password: 'student-pass-1', again: 'student-pass-2');
-      expect(c.state.failure?.message, 'The passwords do not match.');
-      expect(sent, isEmpty);
-    });
-
-    test('the right values reach the server; its refusal is shown', () async {
-      final c = cubit();
-      await c.submit(enrolment: ' CSE26-001 ', code: 'abcd-efgh-jklm', password: 'student-pass-1', again: 'student-pass-1');
-      expect(sent, ['sunrise/CSE26-001/abcd-efgh-jklm']);
-      expect(c.state.done, isTrue);
-
-      final refused = cubit(refuse: const Failure(code: FailureCode.unauthenticated, message: 'This code is no longer valid. Ask for a new one.'));
-      await refused.submit(enrolment: 'CSE26-001', code: 'ABCD-EFGH-JKLM', password: 'student-pass-1', again: 'student-pass-1');
-      expect(refused.state.failure?.message, 'This code is no longer valid. Ask for a new one.');
-    });
-  });
-
   testWidgets('the home shows attendance by course, and a course below 75% stands out', (tester) async {
     await tester.pumpWidget(MaterialApp(
       home: StudentHomeScreen(

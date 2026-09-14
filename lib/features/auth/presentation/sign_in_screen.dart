@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../app/routes.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
+import '../../../core/network/auth_api.dart';
 import '../../../core/session/college_brand.dart';
 import '../../../core/session/session_manager.dart';
 import '../../../core/widgets/college_logo.dart';
 import 'sign_in_cubit.dart';
 
-/// Sign in to the college chosen on the first screen (AD-70). Mobile-first: one
-/// scrollable column that survives the keyboard, large touch targets, and the
-/// college's own name and logo at the top.
+/// Sign in to the college chosen on the first screen (AD-70), by a one-time
+/// code to the person's email or mobile (AD-82). Two steps in one scrollable
+/// column that survives the keyboard, the college's own name and logo on top.
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key, required this.college, required this.onChangeCollege});
+  const SignInScreen({super.key, required this.college, required this.onChangeCollege, this.session});
 
   final CollegeBrand college;
   final VoidCallback onChangeCollege;
+
+  /// Tests supply their own; the app uses the one in the locator.
+  final SessionManager? session;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -24,17 +28,22 @@ class SignInScreen extends StatefulWidget {
 
 class _SignInScreenState extends State<SignInScreen> {
   final _identifier = TextEditingController();
-  final _password = TextEditingController();
-  final _passwordFocus = FocusNode();
-  bool _obscure = true;
+  final _code = TextEditingController();
 
   @override
   void dispose() {
     _identifier.dispose();
-    _password.dispose();
-    _passwordFocus.dispose();
+    _code.dispose();
     super.dispose();
   }
+
+  /// Where the code went, in words that say nothing about whether the
+  /// identifier exists.
+  String _where(SignInState state) => switch (state.challenge?.destination) {
+        CodeDestination.mobile => 'by WhatsApp or SMS to ${state.identifier}',
+        CodeDestination.record => 'to the mobile or email your college has on record',
+        _ => 'to ${state.identifier}',
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -42,19 +51,17 @@ class _SignInScreenState extends State<SignInScreen> {
     final scheme = theme.colorScheme;
 
     return BlocProvider(
-      create: (_) => SignInCubit(locator<SessionManager>()),
+      create: (_) => SignInCubit(widget.session ?? locator<SessionManager>(), widget.college.code),
       child: Scaffold(
         body: SafeArea(
-          child: BlocBuilder<SignInCubit, SignInState>(
+          child: BlocConsumer<SignInCubit, SignInState>(
+            listenWhen: (a, b) => a.step != b.step || a.notice != b.notice,
+            listener: (context, state) {
+              if (state.step == SignInStep.code) _code.clear();
+            },
             builder: (context, state) {
-              final fieldErrors = state.failure?.fieldErrors ?? const {};
-              // A problem with the college itself has no field on this screen,
-              // so it is shown in the banner rather than lost.
-              final bannerMessage = state.failure != null &&
-                      !fieldErrors.containsKey('identifier') &&
-                      !fieldErrors.containsKey('password')
-                  ? state.failure!.message
-                  : null;
+              final cubit = context.read<SignInCubit>();
+              final codeStep = state.step == SignInStep.code;
               return SingleChildScrollView(
                 // The keyboard must never hide the field being typed into.
                 padding: EdgeInsets.only(
@@ -74,85 +81,74 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Sign in to continue',
+                      codeStep ? 'Enter the 6-digit code sent ${_where(state)}' : 'Sign in with a code sent to your email or mobile',
                       style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                     ),
                     const SizedBox(height: AppSpacing.xl),
 
-                    if (bannerMessage != null)
+                    if (state.failure != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.base),
-                        child: _Banner(message: bannerMessage),
+                        child: _Banner(message: state.failure!.message),
+                      ),
+                    if (state.notice != null && state.failure == null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.base),
+                        child: Text(state.notice!, style: theme.textTheme.bodySmall?.copyWith(color: scheme.primary)),
                       ),
 
-                    TextField(
-                      controller: _identifier,
-                      textInputAction: TextInputAction.next,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: 'Email or enrolment number',
-                        errorText: fieldErrors['identifier'],
-                      ),
-                      onSubmitted: (_) => _passwordFocus.requestFocus(),
-                    ),
-                    const SizedBox(height: AppSpacing.base),
-
-                    TextField(
-                      controller: _password,
-                      focusNode: _passwordFocus,
-                      obscureText: _obscure,
-                      textInputAction: TextInputAction.done,
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        errorText: fieldErrors['password'],
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(() => _obscure = !_obscure),
-                          icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                          tooltip: _obscure ? 'Show password' : 'Hide password',
+                    if (!codeStep) ...[
+                      TextField(
+                        controller: _identifier,
+                        autofocus: true,
+                        textInputAction: TextInputAction.done,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        autofillHints: const [AutofillHints.email, AutofillHints.telephoneNumber],
+                        decoration: const InputDecoration(
+                          labelText: 'Email or mobile number',
+                          helperText: 'Students can also use their enrolment number.',
                         ),
+                        onSubmitted: (_) => cubit.requestCode(_identifier.text),
                       ),
-                      onSubmitted: (_) => _submit(context),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-
-                    FilledButton(
-                      onPressed: state.submitting ? null : () => _submit(context),
-                      child: state.submitting
-                          ? const SizedBox(
-                              width: 20, height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Sign in'),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: state.submitting ? null : () => _forgot(context),
-                        child: const Text('Forgot password?'),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton(
+                        onPressed: state.submitting ? null : () => cubit.requestCode(_identifier.text),
+                        child: state.submitting ? const _Spinner() : const Text('Send code'),
                       ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: state.submitting
-                          ? null
-                          : () => Navigator.of(context).pushNamed(
-                                Routes.acceptInvitation,
-                                arguments: AcceptInvitationArgs(college: widget.college),
-                              ),
-                      icon: const Icon(Icons.mark_email_read_outlined),
-                      label: const Text('I have an invitation'),
-                    ),
-                    // ST-1 (AD-69): students sign up with the code their college gave them.
-                    TextButton.icon(
-                      onPressed: state.submitting
-                          ? null
-                          : () => Navigator.of(context).pushNamed(
-                                Routes.studentActivation,
-                                arguments: AcceptInvitationArgs(college: widget.college),
-                              ),
-                      icon: const Icon(Icons.school_outlined),
-                      label: const Text('Student? Activate your account'),
-                    ),
+                    ] else ...[
+                      TextField(
+                        controller: _code,
+                        autofocus: true,
+                        textAlign: TextAlign.center,
+                        keyboardType: TextInputType.number,
+                        autofillHints: const [AutofillHints.oneTimeCode],
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
+                        style: theme.textTheme.headlineSmall?.copyWith(letterSpacing: 8, fontWeight: FontWeight.w600),
+                        decoration: const InputDecoration(labelText: 'Code', counterText: ''),
+                        onSubmitted: (_) => cubit.submitCode(_code.text),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton(
+                        onPressed: state.submitting ? null : () => cubit.submitCode(_code.text),
+                        child: state.submitting ? const _Spinner() : const Text('Sign in'),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: state.submitting ? null : cubit.changeIdentifier,
+                            child: const Text('Change'),
+                          ),
+                          const Spacer(),
+                          TextButton(
+                            onPressed: state.submitting ? null : () => cubit.requestCode(state.identifier, again: true),
+                            child: const Text('Send a new code'),
+                          ),
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.base),
                     TextButton.icon(
                       onPressed: state.submitting ? null : widget.onChangeCollege,
                       icon: const Icon(Icons.swap_horiz_rounded),
@@ -167,36 +163,14 @@ class _SignInScreenState extends State<SignInScreen> {
       ),
     );
   }
+}
 
-  /// AD-80: nothing is emailed, so a forgotten password comes back with a
-  /// one-time code from someone who manages accounts at the college.
-  Future<void> _forgot(BuildContext context) async {
-    final hasCode = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Forgot your password?'),
-        content: const Text(
-          'Ask your college administrator for a password reset code. They issue it from People in the app.\n\n'
-          'If you are the administrator, ask another administrator, or Nirvok support.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Close')),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('I have a code')),
-        ],
-      ),
-    );
-    if (hasCode != true || !context.mounted) return;
-    await Navigator.of(context).pushNamed(Routes.acceptInvitation, arguments: AcceptInvitationArgs(college: widget.college));
-  }
+class _Spinner extends StatelessWidget {
+  const _Spinner();
 
-  void _submit(BuildContext context) {
-    FocusScope.of(context).unfocus();
-    context.read<SignInCubit>().submit(
-          institutionCode: widget.college.code,
-          identifier: _identifier.text,
-          password: _password.text,
-        );
-  }
+  @override
+  Widget build(BuildContext context) =>
+      const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
 }
 
 class _Banner extends StatelessWidget {

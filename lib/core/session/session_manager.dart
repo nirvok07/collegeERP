@@ -105,16 +105,19 @@ class SessionManager {
     return renew();
   }
 
-  Future<Result<void>> signIn({
+  /// AD-82: asks for a code to the person's email or mobile. Nothing about the
+  /// session changes until the code is answered.
+  Future<Result<CodeChallenge>> requestCode({required String institutionCode, required String identifier}) =>
+      _api.requestCode(institutionCode: institutionCode, identifier: identifier);
+
+  /// AD-82: the code opens the session, which is then kept and renewed exactly
+  /// like any other (AD-25).
+  Future<Result<void>> signInWithCode({
     required String institutionCode,
-    required String identifier,
-    required String password,
+    required String challenge,
+    required String code,
   }) async {
-    final result = await _api.signIn(
-      institutionCode: institutionCode,
-      identifier: identifier,
-      password: password,
-    );
+    final result = await _api.verifyCode(institutionCode: institutionCode, challenge: challenge, code: code);
     return result.when(
       ok: (session) async {
         await _adopt(session);

@@ -77,15 +77,14 @@ class _Store implements SessionStore {
 
 class _AuthApi implements AuthApi {
   @override
-  Future<Result<void>> activateStudent({
-    required String institutionCode,
-    required String enrolmentNumber,
-    required String code,
-    required String password,
-  }) async => const Err(Failure.unknown);
-
+  Future<Result<CodeChallenge>> requestCode({required String institutionCode, required String identifier}) async =>
+      const Err(Failure.unknown);
   @override
-  Future<Result<AuthSession>> signIn({required String institutionCode, required String identifier, required String password}) async =>
+  Future<Result<AuthSession>> verifyCode({
+    required String institutionCode,
+    required String challenge,
+    required String code,
+  }) async =>
       const Err(Failure.unknown);
   @override
   Future<Result<AuthSession>> refresh(String refreshToken) async => Ok(session());
@@ -93,12 +92,6 @@ class _AuthApi implements AuthApi {
   Future<void> signOut(String refreshToken) async {}
   @override
   Future<Result<CollegeBrand>> lookupCollege(String code) async => const Err(Failure.unknown);
-  @override
-  Future<Result<void>> acceptInvitation({
-    required String institutionCode,
-    required String token,
-    required String password,
-  }) async => const Err(Failure.unknown);
 }
 
 class _Colleges implements CollegesRepository {

@@ -12,7 +12,6 @@ import '../data/people_api.dart';
 import '../domain/person.dart';
 import 'people_cubit.dart';
 import 'person_sheet.dart';
-import 'reset_code_screen.dart';
 import '../../access/presentation/access_screen.dart';
 
 /// People, for touch.
@@ -22,10 +21,10 @@ import '../../access/presentation/access_screen.dart';
 class PeopleScreen extends StatelessWidget {
   const PeopleScreen({super.key, this.authority, this.college});
 
-  /// AD-80: decides whether "Reset password" is offered; the server decides again.
+  /// Decides which actions are offered; the server decides again.
   final Authority? authority;
 
-  /// For the reset message.
+  /// The college these people belong to.
   final CollegeBrand? college;
 
   @override
@@ -57,25 +56,12 @@ class _PeopleViewState extends State<_PeopleView> {
     super.dispose();
   }
 
-  static const _resettable = {'invited', 'active', 'locked'};
-
-  /// Someone else's account that can come back with a code; never your own,
-  /// which is Change password in your Profile.
-  bool _canReset(Person person) {
-    final authority = widget.authority;
-    if (authority == null || !authority.can('account.manage')) return false;
-    if (!_resettable.contains(person.accountStatus)) return false;
-    final me = authority.loginIdentifier?.toLowerCase();
-    return me == null || person.email?.toLowerCase() != me;
-  }
-
   /// The access list reads the college's assignments, which is `audit.read`.
   bool get _canSeeAccess => widget.authority?.can('audit.read') ?? false;
 
   void _open(Person person) => showPersonSheet(
     context,
     person,
-    onReset: _canReset(person) ? () => _reset(person) : null,
     onAccess: _canSeeAccess
         ? () => Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => AccessScreen(
@@ -86,40 +72,6 @@ class _PeopleViewState extends State<_PeopleView> {
             ))
         : null,
   );
-
-  Future<void> _reset(Person person) async {
-    final invitation = person.accountStatus == 'invited';
-    final go = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(invitation ? 'Send ${person.fullName} a new invitation?' : 'Reset ${person.fullName}\'s password?'),
-        content: Text(
-          invitation
-              ? 'The earlier invitation stops working. You get a new one to hand over.'
-              : 'You get a one-time code to hand to them. Their current password keeps working until they use it; '
-                  'then they are signed out on every device.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(invitation ? 'New invitation' : 'Get reset code'),
-          ),
-        ],
-      ),
-    );
-    if (go != true || !mounted) return;
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final result = await locator<PeopleApi>().issueReset(person.id);
-    if (!mounted) return;
-    result.when(
-      ok: (code) => navigator.push(MaterialPageRoute<void>(
-        builder: (_) => ResetCodeScreen(code: code, name: person.fullName, college: widget.college),
-      )),
-      err: (failure) => messenger.showSnackBar(SnackBar(content: Text(failure.message))),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

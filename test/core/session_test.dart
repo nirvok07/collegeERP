@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// The rule under test, identical to the web client's: the user is not signed
 /// out while still working. Only an unrenewable session, an explicit sign-out
-/// or a revoked credential ends one.
+/// or a revoked credential ends one. A session opens with a code (AD-82).
 class _FakeStore implements SessionStore {
   String? token;
   String? institution;
@@ -34,14 +34,6 @@ class _FakeStore implements SessionStore {
 }
 
 class _FakeAuthApi implements AuthApi {
-  @override
-  Future<Result<void>> activateStudent({
-    required String institutionCode,
-    required String enrolmentNumber,
-    required String code,
-    required String password,
-  }) async => const Err(Failure.unknown);
-
   _FakeAuthApi(this.response);
 
   Result<AuthSession> response;
@@ -56,10 +48,14 @@ class _FakeAuthApi implements AuthApi {
       );
 
   @override
-  Future<Result<AuthSession>> signIn({
+  Future<Result<CodeChallenge>> requestCode({required String institutionCode, required String identifier}) async =>
+      Ok(CodeChallenge(token: 'challenge', destination: CodeDestination.email, expiresAt: DateTime.now()));
+
+  @override
+  Future<Result<AuthSession>> verifyCode({
     required String institutionCode,
-    required String identifier,
-    required String password,
+    required String challenge,
+    required String code,
   }) async =>
       response;
 
@@ -74,19 +70,15 @@ class _FakeAuthApi implements AuthApi {
 
   @override
   Future<Result<CollegeBrand>> lookupCollege(String code) async => const Err(Failure.unknown);
-
-  @override
-  Future<Result<void>> acceptInvitation({
-    required String institutionCode,
-    required String token,
-    required String password,
-  }) async => const Err(Failure.unknown);
 }
 
 void main() {
   late _FakeStore store;
   late _FakeAuthApi api;
   late SessionManager session;
+
+  Future<Result<void>> signIn({String institution = 'c'}) =>
+      session.signInWithCode(institutionCode: institution, challenge: 'challenge', code: '123456');
 
   setUp(() {
     store = _FakeStore();
@@ -100,7 +92,7 @@ void main() {
     store.token = 'stored-refresh-token';
     api.response = const Err(Failure.network);
     expect(await session.restore(), isFalse);
-    expect(session.renewalPending, isTrue, reason: 'the shell waits instead of asking for a password');
+    expect(session.renewalPending, isTrue, reason: 'the shell waits instead of asking to sign in');
     expect(store.token, 'stored-refresh-token', reason: 'nothing is cleared while offline');
 
     api.response = Ok(_FakeAuthApi.session());
@@ -116,18 +108,31 @@ void main() {
     expect(session.renewalPending, isFalse);
   });
 
-  test('signing in keeps the access token in memory and the refresh token in storage', () async {
-    final result = await session.signIn(
-      institutionCode: 'sunrise', identifier: 'asha@sunrise.edu', password: 'pw',
-    );
+  test('asking for a code changes nothing about the session', () async {
+    final asked = await session.requestCode(institutionCode: 'sunrise', identifier: 'asha@sunrise.edu');
+    expect(asked.isOk, isTrue);
+    expect(session.actor, isNull);
+    expect(store.token, isNull);
+  });
+
+  test('signing in with a code keeps the access token in memory and the refresh token in storage', () async {
+    final result = await signIn(institution: 'sunrise');
     expect(result.isOk, isTrue);
     expect(session.accessToken, isNotNull);
     expect(store.token, startsWith('refresh-'));
     expect(session.actor?.fullName, 'Asha Rao');
   });
 
+  test('a refused code signs nobody in and stores nothing', () async {
+    api.response = const Err(Failure(code: FailureCode.unauthenticated, message: 'That code is not correct.'));
+    final result = await signIn();
+    expect(result.failureOrNull?.message, 'That code is not correct.');
+    expect(session.actor, isNull);
+    expect(store.token, isNull);
+  });
+
   test('remembers the institution code, which is not a secret', () async {
-    await session.signIn(institutionCode: 'sunrise', identifier: 'a', password: 'b');
+    await signIn(institution: 'sunrise');
     expect(store.institution, 'sunrise');
   });
 
@@ -144,7 +149,7 @@ void main() {
   });
 
   test('a network failure does NOT sign the user out', () async {
-    await session.signIn(institutionCode: 'c', identifier: 'a', password: 'b');
+    await signIn();
     final events = <SessionEvent>[];
     session.events.listen(events.add);
 
@@ -158,7 +163,7 @@ void main() {
   });
 
   test('a server outage does NOT sign the user out', () async {
-    await session.signIn(institutionCode: 'c', identifier: 'a', password: 'b');
+    await signIn();
     final events = <SessionEvent>[];
     session.events.listen(events.add);
 
@@ -170,7 +175,7 @@ void main() {
   });
 
   test('signs out only when the server refuses the renewal', () async {
-    await session.signIn(institutionCode: 'c', identifier: 'a', password: 'b');
+    await signIn();
     final events = <SessionEvent>[];
     session.events.listen(events.add);
 
@@ -184,7 +189,7 @@ void main() {
   });
 
   test('collapses concurrent renewals into one request', () async {
-    await session.signIn(institutionCode: 'c', identifier: 'a', password: 'b');
+    await signIn();
     api.refreshCalls = 0;
 
     await Future.wait([session.renew(), session.renew(), session.renew()]);
@@ -193,12 +198,12 @@ void main() {
 
   test('reports an expired access token as absent, so callers renew first', () async {
     api.response = Ok(_FakeAuthApi.session(validFor: const Duration(seconds: -1)));
-    await session.signIn(institutionCode: 'c', identifier: 'a', password: 'b');
+    await signIn();
     expect(session.accessToken, isNull);
   });
 
   test('explicit sign-out clears the device and tells the server', () async {
-    await session.signIn(institutionCode: 'c', identifier: 'a', password: 'b');
+    await signIn();
     await session.signOut();
     expect(session.actor, isNull);
     expect(store.token, isNull);
