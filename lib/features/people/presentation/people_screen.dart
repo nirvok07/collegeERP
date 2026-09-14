@@ -5,6 +5,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/session/college_brand.dart';
+import '../../../core/session/session_manager.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../data/people_api.dart';
@@ -30,7 +31,7 @@ class PeopleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => PeopleCubit(locator<PeopleApi>())..load(),
+      create: (_) => PeopleCubit(locator<PeopleApi>(), selfId: locator<SessionManager>().actor?.id)..load(),
       child: _PeopleView(authority: authority, college: college),
     );
   }

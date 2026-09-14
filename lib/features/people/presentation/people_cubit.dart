@@ -38,9 +38,13 @@ class PeopleState {
 }
 
 class PeopleCubit extends Cubit<PeopleState> {
-  PeopleCubit(this._api) : super(const PeopleState());
+  PeopleCubit(this._api, {String? selfId}) : _selfId = selfId, super(const PeopleState());
 
   final PeopleApi _api;
+
+  /// The signed-in person. They manage everyone else here; their own details
+  /// live in Profile, so they are not listed among the people they manage.
+  final String? _selfId;
 
   Future<void> load({bool refresh = false}) async {
     emit(state.copyWith(
@@ -52,11 +56,14 @@ class PeopleCubit extends Cubit<PeopleState> {
     if (isClosed) return;
 
     result.when(
-      ok: (people) => emit(state.copyWith(
-        status: people.isEmpty ? LoadStatus.empty : LoadStatus.success,
-        people: people,
-        clearFailure: true,
-      )),
+      ok: (all) {
+        final people = _selfId == null ? all : all.where((p) => p.id != _selfId).toList();
+        emit(state.copyWith(
+          status: people.isEmpty ? LoadStatus.empty : LoadStatus.success,
+          people: people,
+          clearFailure: true,
+        ));
+      },
       // A refresh failure keeps what is on screen; only a cold load surrenders
       // the whole surface to an error state.
       err: (failure) => emit(state.copyWith(
