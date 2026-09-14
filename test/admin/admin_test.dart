@@ -77,6 +77,14 @@ class _Store implements SessionStore {
 
 class _AuthApi implements AuthApi {
   @override
+  Future<Result<void>> activateStudent({
+    required String institutionCode,
+    required String enrolmentNumber,
+    required String code,
+    required String password,
+  }) async => const Err(Failure.unknown);
+
+  @override
   Future<Result<AuthSession>> signIn({required String institutionCode, required String identifier, required String password}) async =>
       const Err(Failure.unknown);
   @override

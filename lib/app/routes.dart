@@ -21,6 +21,7 @@ import 'account_screen.dart';
 import '../core/session/authority.dart';
 import '../core/session/college_brand.dart';
 import '../features/auth/presentation/accept_invitation_screen.dart';
+import '../features/auth/presentation/student_activation_screen.dart';
 import '../features/account/change_password_screen.dart';
 import '../features/onboarding/domain/onboarding.dart';
 import '../features/onboarding/presentation/admit_student_screen.dart';
@@ -51,6 +52,7 @@ abstract final class Routes {
   static const verifyMarks = '/verify-marks';
   static const account = '/account';
   static const acceptInvitation = '/accept-invitation';
+  static const studentActivation = '/student-activation';
   static const changePassword = '/account/password';
 
   // ONB-1: the College Admin's onboarding (AD-76).
@@ -184,6 +186,10 @@ abstract final class AppRouter {
         final args = settings.arguments;
         if (args is! AcceptInvitationArgs) return _unknown(settings);
         return _page(settings, AcceptInvitationScreen(college: args.college));
+      case Routes.studentActivation:
+        final args = settings.arguments;
+        if (args is! AcceptInvitationArgs) return _unknown(settings);
+        return _page(settings, StudentActivationScreen(college: args.college));
       case Routes.onboarding:
         final args = settings.arguments;
         if (args is! OnboardingArgs) return _unknown(settings);

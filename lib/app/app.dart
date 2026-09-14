@@ -17,6 +17,7 @@ import '../core/session/session_manager.dart';
 import '../core/session/session_store.dart';
 import '../features/auth/presentation/sign_in_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
+import '../features/student/presentation/student_home_screen.dart';
 import '../core/network/auth_api.dart';
 import '../core/session/college_brand.dart';
 import '../features/auth/presentation/college_code_screen.dart';
@@ -294,6 +295,8 @@ class _HomeShell extends StatelessWidget {
     }
     final hasSurface =
         authority.can('session.read') || authority.can('offering.read') || authority.can('person.read');
+    // ST-1: a student's home is their own attendance, whatever roles they lack.
+    if (authority.student != null) return StudentHomeScreen(authority: authority, college: college);
     if (!authority.hasAccess && !hasSurface) {
       // Normal on a first day: the account works, nobody has granted it
       // anything yet. A designed state, not an error (AD-18).

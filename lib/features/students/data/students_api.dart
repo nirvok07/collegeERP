@@ -42,6 +42,9 @@ abstract interface class StudentsRepository {
 
   /// For naming the sections in a student's history.
   Future<Result<List<Section>>> sections();
+
+  /// ST-1 (AD-69): a one-time code for the student's own sign-in.
+  Future<Result<StudentAccessCode>> issueAccess(String id);
 }
 
 class StudentsApi implements StudentsRepository {
@@ -68,6 +71,10 @@ class StudentsApi implements StudentsRepository {
   @override
   Future<Result<List<Program>>> programs() =>
       _client.get('/v1/programs', (data) => (data as List).map(Program.fromJson).toList());
+
+  @override
+  Future<Result<StudentAccessCode>> issueAccess(String id) =>
+      _client.post('/v1/students/${_enc(id)}/access', const <String, Object?>{}, StudentAccessCode.fromJson);
 
   @override
   Future<Result<List<Section>>> sections() =>

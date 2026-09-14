@@ -175,7 +175,12 @@ class _StudentsViewState extends State<_StudentsView> {
                         trailing: f.status == null ? StatusChip(label: Student.statusLabel(s.status), tone: studentTone(s.status)) : null,
                         onTap: () async {
                           await Navigator.of(context).push(MaterialPageRoute<void>(
-                            builder: (_) => StudentScreen(studentId: s.id, repository: cubit.repository, authority: widget.authority),
+                            builder: (_) => StudentScreen(
+                              studentId: s.id,
+                              repository: cubit.repository,
+                              authority: widget.authority,
+                              college: widget.college,
+                            ),
                           ));
                           if (context.mounted) await cubit.load();
                         },

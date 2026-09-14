@@ -34,6 +34,14 @@ class _FakeStore implements SessionStore {
 }
 
 class _FakeAuthApi implements AuthApi {
+  @override
+  Future<Result<void>> activateStudent({
+    required String institutionCode,
+    required String enrolmentNumber,
+    required String code,
+    required String password,
+  }) async => const Err(Failure.unknown);
+
   _FakeAuthApi(this.response);
 
   Result<AuthSession> response;

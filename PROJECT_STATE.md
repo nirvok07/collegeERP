@@ -32,12 +32,23 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - College Admin on the phone (ADM, R66, AD-79): ADM-1 ✅ admin dashboard and change password; ADM-2 ✅ campuses and departments (add, rename, archive); ADM-3 ✅ programs, academic years and terms; ADM-4 ✅ courses and curriculum versions; ADM-5 ✅ rooms; ADM-6 ✅ sections and members; ADM-7 ✅ course offerings, teachers, enrolments; ADM-8 ✅ timetable, classes, non-teaching days; ADM-9 ✅ students; ADM-10 ✅ access and college profile; ADM-11 ✅ registers and mark verification, corrections; ✅ tests; 🔍 on the phone. Every college module is on the phone (AD-81); Super Admin app SAM-2b ✅ plan, seats, branding; SAM-3 ✅ platform accounts, audit, invitation acceptance. Every module is on the phone
 - Forgotten password (PW-1, R69, AD-80): ✅ reset codes from People (app) and from the Super Admin app; redeemed in the app and on the web; ✅ tests; 🔍 on the phone; web People has no reset button yet
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
-- Student role and student experience: ❌ (the prototype's attendance %, fees and circulars screens depend on it)
+- Student sign-in and "My attendance" (ST-1, AD-69, R72): ✅ server, ✅ app, ✅ tests; 🔍 on the phone; fees (D1) and circulars (no module) ❌
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 
 ### CURRENT SLICE
+Just done (2026-09-14): ST-1 ✅ (AD-69, R72). Students on the phone. Server: `POST
+/v1/students/:id/access` issues a one-time code (12 characters, 7 days; a reset for an active student,
+24 hours), creating the student's account on first issue (a seat); `POST /v1/auth/student-activate`
+redeems it only with that student's enrolment number; `/auth/me` carries `student`; `GET
+/v1/me/attendance` counts submitted registers only (`identity/application/student-access.ts`,
+`enrolment/infrastructure/student-self.ts`, `tests/student-access.test.ts`). App: Students → a student
+→ "App access code" (message to print or send); sign-in → "Student? Activate your account"; a
+student's home is "My attendance" by course with a 75% warning (`lib/features/student/`). Tested:
+server 431/431 plus the new 4 (435 in the next full run), Flutter 244/244, analyze clean, both APKs
+build. Not tested: on the phone.
+
 Also (2026-09-14): the runbook, `docs/runbook/` (prerequisites, database, server, web console,
 mobile apps, first college end to end, tests and builds, troubleshooting), asked for by the owner;
 the root README points to it. Found and fixed: `server/.env.example` held a real Supabase database
@@ -256,11 +267,12 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
-### NEXT SLICE — ST-1: student accounts and "My attendance" on the phone
-- **Why next:** every administrative module is on the phone; the student is the one actor with no
-  way in. Decided in AD-69 (enrolment number + one-time code, a seat each).
-- **Owner to confirm (OD-AD72-1):** retire the web platform console now that the Super Admin app
-  covers it (AD-72 said so at parity). The college web console stays (AD-81).
+### NEXT SLICE — validate on the phone, end to end (runbook 06)
+- **Why next:** every module is built and unit-tested but none has been opened on a real phone since
+  ADM-1. One pass of `docs/runbook/06-first-college.md` against a running server, both apps, records
+  what works and what breaks before more is built.
+- **Then:** a student's marks and timetable (their other self-scoped reads); fees (D1) and circulars
+  need their modules specified first. OD-AD72-1 (retire the web platform console) awaits the owner.
 
 ### LATER — ST-1 detail
 - **Why next:** the owner asked to complete the app from the prototype, and all three prototype

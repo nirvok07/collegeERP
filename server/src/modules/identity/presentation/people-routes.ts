@@ -9,6 +9,7 @@ import {
   assignRole, invitePerson, listAssignments, listPeople, revokeAssignment, type Actor,
 } from '../application/manage-people.ts';
 import { issuePasswordReset } from '../application/password-reset.ts';
+import { issueStudentAccess } from '../application/student-access.ts';
 
 const SCOPE_TYPES = ['institution', 'campus', 'department', 'program', 'section', 'committee', 'self'] as const;
 
@@ -133,6 +134,27 @@ export async function registerPeopleRoutes(app: FastifyInstance, c: Container) {
       kind: result.value.kind,
       token: result.value.token,
       expires_at: result.value.expiresAt.toISOString(),
+      delivery: 'pending',
+    }, 201);
+  });
+
+  /*
+   * ST-1 (AD-69): app access for a student, from their record. Returns a
+   * one-time activation code, once, to print or hand over. The account it
+   * creates takes a seat (AD-65).
+   */
+  app.post('/students/:id/access', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'student.manage', institutionScope()))) return reply;
+    if (!(await requirePermission(c, req, reply, 'account.manage', institutionScope()))) return reply;
+    const id = (req.params as { id: string }).id;
+    if (!z.string().uuid().safeParse(id).success) return sendFailure(reply, fail('NOT_FOUND', 'That student was not found.'));
+    const result = await issueStudentAccess(c.studentAccess, actorOf(req), { studentId: id });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, {
+      kind: result.value.kind,
+      code: result.value.code,
+      expires_at: result.value.expiresAt.toISOString(),
+      login_identifier: result.value.loginIdentifier,
       delivery: 'pending',
     }, 201);
   });

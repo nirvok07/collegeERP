@@ -12,6 +12,8 @@ import type {
 import { TenantAccessGate } from './infrastructure/http/tenant-access.ts';
 import type { LifecycleDeps } from './modules/institution/application/manage-lifecycle.ts';
 import type { PasswordResetDeps } from './modules/identity/application/password-reset.ts';
+import type { StudentAccessDeps } from './modules/identity/application/student-access.ts';
+import { PgStudentSelfReader } from './modules/enrolment/infrastructure/student-self.ts';
 import type { ChangePasswordDeps } from './modules/identity/application/change-password.ts';
 import type { PlatformAuditDeps } from './modules/institution/application/platform-audit.ts';
 import type { Config } from './config/config.ts';
@@ -100,6 +102,8 @@ export interface Container {
   refreshSession: RefreshSessionDeps;
   changePassword: ChangePasswordDeps;
   passwordReset: PasswordResetDeps & { uow: PgUnitOfWork };
+  studentAccess: StudentAccessDeps;
+  studentSelf: PgStudentSelfReader;
   managePeople: ManagePeopleDeps;
   manageDevices: ManageDevicesDeps;
   roleDefinitions: PgRoleDefinitionRepository;
@@ -221,6 +225,8 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       platformMfa,
     },
     acceptInvitation: { uow, invitations, accounts, credentials, refreshTokens, audit, hasher, tokens, clock, ids },
+    studentAccess: { uow, students: studentRepository, accounts, invitations, audit, ids, clock, tokens },
+    studentSelf: new PgStudentSelfReader(),
     passwordReset: {
       uow, accounts, invitations, assignments, audit, ids, clock, tokens,
       invitationTtlHours: config.INVITATION_TTL_HOURS,

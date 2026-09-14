@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { attendancePercent } from '../../enrolment/infrastructure/student-self.ts';
 import { z } from 'zod';
 import type { Container } from '../../../container.ts';
 import { sendFailure, sendOk, sendResult } from '../../../infrastructure/http/server.ts';
@@ -180,6 +181,40 @@ export async function registerAttendanceRoutes(app: FastifyInstance, c: Containe
     return sendResult(reply, await correctMark(c.attendance, actorOf(req), {
       recordId, toState: parsed.data.state as AttendanceState, reason: parsed.data.reason,
     }));
+  });
+
+  /**
+   * ST-1: a student's own attendance, course by course, from submitted
+   * registers only. Self-scoped: the student is the signed-in person, never a
+   * parameter, so nobody reads another student's attendance through here.
+   */
+  app.get('/me/attendance', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const personId = req.actor.sub;
+    const { student, courses } = await c.uow.run(req.actor.tenantId, async (tx) => ({
+      student: await c.studentSelf.whoAmI(tx, personId),
+      courses: await c.studentSelf.attendance(tx, personId),
+    }));
+    if (!student) return sendFailure(reply, fail('FORBIDDEN', 'Only students have their own attendance.'));
+    const totals = courses.reduce(
+      (t, x) => ({
+        present: t.present + x.present, late: t.late + x.late, absent: t.absent + x.absent,
+        excused: t.excused + x.excused, total: t.total + x.total,
+      }),
+      { present: 0, late: 0, absent: 0, excused: 0, total: 0 },
+    );
+    return sendOk(reply, {
+      overall: { ...totals, percent: attendancePercent(totals) },
+      courses: courses.map((x) => ({
+        offering_id: x.offeringId,
+        course: { code: x.courseCode, title: x.courseTitle },
+        component: x.component,
+        present: x.present, late: x.late, absent: x.absent, excused: x.excused, total: x.total,
+        percent: attendancePercent(x),
+      })),
+    });
   });
 
   /* -------------------------------------------------------------- overview */

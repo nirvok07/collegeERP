@@ -103,6 +103,11 @@ class _FakeStudents implements StudentsRepository {
   Future<Result<List<Program>>> programs() async => const Ok([]);
 
   @override
+  Future<Result<StudentAccessCode>> issueAccess(String id) async => Ok(StudentAccessCode(
+        kind: 'activation', code: 'ABCD-EFGH-JKLM', expiresAt: DateTime.utc(2026, 9, 21), loginIdentifier: 'cse26001',
+      ));
+
+  @override
   Future<Result<List<Section>>> sections() async => const Ok([
         Section(
           id: 'x1', label: 'A', status: 'active', termNumber: 1, programId: 'p1', programName: 'BTech CSE',

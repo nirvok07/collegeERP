@@ -115,6 +115,8 @@ class StudentCubit extends Cubit<StudentState> {
     ));
   }
 
+  Future<Result<StudentAccessCode>> issueAccess() => _repository.issueAccess(studentId);
+
   Future<Failure?> setStatus(String to, {String? reason}) async {
     final failure = (await _repository.setStatus(studentId, to, reason: reason?.trim())).failureOrNull;
     if (failure == null && !isClosed) await load();

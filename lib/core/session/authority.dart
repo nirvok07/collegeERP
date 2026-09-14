@@ -25,6 +25,41 @@ class RoleGrant {
   };
 }
 
+/// ST-1: the signed-in person is a student. Their own screens follow from
+/// this, self-scoped, not from a role.
+class StudentInfo {
+  const StudentInfo({
+    required this.id,
+    required this.enrolmentNumber,
+    required this.programName,
+    required this.status,
+    this.sectionLabel,
+    this.sectionTermNumber,
+  });
+
+  final String id;
+  final String enrolmentNumber;
+  final String programName;
+  final String status;
+  final String? sectionLabel;
+  final int? sectionTermNumber;
+
+  String get placement =>
+      sectionLabel == null ? programName : '$programName · term $sectionTermNumber · section $sectionLabel';
+
+  static StudentInfo? fromJson(Object? json) {
+    if (json is! Map) return null;
+    return StudentInfo(
+      id: json['id'] as String,
+      enrolmentNumber: json['enrolment_number'] as String? ?? '',
+      programName: json['program_name'] as String? ?? '',
+      status: json['status'] as String? ?? 'enrolled',
+      sectionLabel: json['section_label'] as String?,
+      sectionTermNumber: (json['section_term_number'] as num?)?.toInt(),
+    );
+  }
+}
+
 /// What the signed-in person may do, as the server resolves it.
 ///
 /// Read from `/v1/auth/me` rather than inferred from a role name held on the
@@ -39,7 +74,11 @@ class Authority {
     this.fullName,
     this.loginIdentifier,
     this.roles = const [],
+    this.student,
   });
+
+  /// Present only when the signed-in person is a student (ST-1).
+  final StudentInfo? student;
 
   static const none = Authority(permissions: <String>{}, hasAccess: false);
 
@@ -64,6 +103,7 @@ class Authority {
       hasAccess: map['has_access'] as bool? ?? false,
       fullName: map['full_name'] as String?,
       loginIdentifier: map['login_identifier'] as String?,
+      student: StudentInfo.fromJson(map['student']),
       roles: ((map['assignments'] as List?) ?? const [])
           .map((a) => RoleGrant(roleKey: '${(a as Map)['role_key']}', scopeType: '${a['scope_type']}'))
           .toList(),

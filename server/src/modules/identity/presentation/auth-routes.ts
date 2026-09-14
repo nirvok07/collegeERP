@@ -14,6 +14,7 @@ import {
 } from '../application/platform-mfa.ts';
 import { endSession, refreshSession } from '../application/refresh-session.ts';
 import { changePassword } from '../application/change-password.ts';
+import { normaliseActivationCode, studentLoginIdentifier } from '../application/student-access.ts';
 import { registerDevice, revokeDevicesForAccount } from '../application/manage-devices.ts';
 
 const platformLogin = z.object({
@@ -24,6 +25,12 @@ const platformLogin = z.object({
 const challengeBody = z.object({ challenge_token: z.string().min(10).max(200) });
 const codeBody = challengeBody.extend({ code: z.string().max(12) });
 const platformAccept = z.object({ token: z.string().min(10).max(200), password: z.string().min(1).max(200) });
+const studentActivateBody = z.object({
+  institution_code: z.string().min(1).max(64),
+  enrolment_number: z.string().min(1).max(40),
+  code: z.string().min(1).max(40),
+  password: z.string().min(1).max(200),
+});
 const passwordBody = z.object({
   current_password: z.string().min(1).max(200),
   new_password: z.string().min(1).max(200),
@@ -150,6 +157,31 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     });
     if (!result.ok) return sendFailure(reply, result.error);
     return sendOk(reply, { account_id: result.value.accountId });
+  });
+
+  /**
+   * ST-1 (AD-69): a student activates with the college code, their enrolment
+   * number and the one-time code from their college, and sets a password. The
+   * code opens only the account of that enrolment number; one answer for every
+   * wrong combination. A later code redeems a forgotten password the same way.
+   */
+  app.post('/auth/student-activate', async (req, reply) => {
+    const parsed = studentActivateBody.safeParse(req.body);
+    if (!parsed.success) {
+      return sendFailure(reply, fail('VALIDATION_FAILED', 'Enter your enrolment number, the code and a new password.'));
+    }
+    const invalid = fail('UNAUTHENTICATED', 'This code is no longer valid. Ask for a new one.');
+    const tenantId = await resolveTenantId(c, parsed.data.institution_code);
+    if (!tenantId) return sendFailure(reply, invalid);
+    const loginIdentifier = studentLoginIdentifier(parsed.data.enrolment_number);
+    const result = await acceptInvitation(c.acceptInvitation, {
+      tenantId,
+      token: normaliseActivationCode(parsed.data.code),
+      password: parsed.data.password,
+      loginIdentifier,
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, { activated: true, login_identifier: loginIdentifier });
   });
 
   /**
@@ -305,6 +337,7 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
     const who = await c.uow.run(tenantId, async (tx) => ({
       person: await c.managePeople.persons.findById(tx, personId),
       account: accountId ? await c.managePeople.accounts.findById(tx, accountId) : null,
+      student: await c.studentSelf.whoAmI(tx, personId),
     }));
     return sendOk(reply, {
       actor_type: 'person',
@@ -312,6 +345,16 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
       tenant_id: req.actor.tenantId,
       full_name: who.person?.fullName ?? null,
       login_identifier: who.account?.loginIdentifier ?? null,
+      // ST-1: present only for a student. Their own surfaces follow from being
+      // the student, self-scoped, never from a role.
+      student: who.student && {
+        id: who.student.id,
+        enrolment_number: who.student.enrolmentNumber,
+        status: who.student.status,
+        program_name: who.student.programName,
+        section_label: who.student.sectionLabel,
+        section_term_number: who.student.sectionTermNumber,
+      },
       permissions: [...c.authority.permissions(authority)].sort(),
       assignments: authority.assignments.map((a) => ({
         role_key: a.roleKey,

@@ -32,6 +32,7 @@ import '../../features/students/data/students_api.dart';
 import '../../features/access/data/access_api.dart';
 import '../../features/college/college_profile.dart';
 import '../../features/review/data/review_api.dart';
+import '../../features/student/data/my_attendance.dart';
 
 final locator = GetIt.instance;
 
@@ -78,5 +79,6 @@ void configureDependencies() {
     ..registerLazySingleton<StudentsRepository>(() => StudentsApi(locator<ApiClient>()))
     ..registerLazySingleton<AccessRepository>(() => AccessApi(locator<ApiClient>()))
     ..registerLazySingleton<CollegeProfileRepository>(() => CollegeProfileApi(locator<ApiClient>()))
-    ..registerLazySingleton<ReviewRepository>(() => ReviewApi(locator<ApiClient>()));
+    ..registerLazySingleton<ReviewRepository>(() => ReviewApi(locator<ApiClient>()))
+    ..registerLazySingleton<StudentSelfRepository>(() => StudentSelfApi(locator<ApiClient>()));
 }

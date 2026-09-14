@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/design/tokens.dart';
 import '../../../core/session/authority.dart';
+import '../../../core/session/college_brand.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
@@ -14,25 +16,85 @@ import 'students_screen.dart' show studentTone;
 /// One student: the record, a change of status, and every section they have
 /// been in. A status change that ends their places says so before it happens.
 class StudentScreen extends StatelessWidget {
-  const StudentScreen({super.key, required this.studentId, required this.repository, this.authority});
+  const StudentScreen({super.key, required this.studentId, required this.repository, this.authority, this.college});
 
   final String studentId;
   final StudentsRepository repository;
   final Authority? authority;
 
+  /// For the access message: the college code the student types first.
+  final CollegeBrand? college;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => StudentCubit(repository, studentId, sections: authority?.can('section.read') ?? false)..load(),
-      child: _StudentView(canManage: authority?.can('student.manage') ?? false),
+      child: _StudentView(
+        canManage: authority?.can('student.manage') ?? false,
+        canGiveAccess: (authority?.can('student.manage') ?? false) && (authority?.can('account.manage') ?? false),
+        college: college,
+      ),
     );
   }
 }
 
 class _StudentView extends StatelessWidget {
-  const _StudentView({required this.canManage});
+  const _StudentView({required this.canManage, this.canGiveAccess = false, this.college});
 
   final bool canManage;
+  final bool canGiveAccess;
+  final CollegeBrand? college;
+
+  /// ST-1: issues the code and shows it once, to print or send. A second
+  /// code replaces the first; for a student already signed up it resets
+  /// their password.
+  Future<void> _access(BuildContext context, Student student) async {
+    final cubit = context.read<StudentCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await cubit.issueAccess();
+    if (!context.mounted) return;
+    final code = result.valueOrNull;
+    if (code == null) {
+      messenger.showSnackBar(SnackBar(content: Text(result.failureOrNull?.message ?? 'That did not work.')));
+      return;
+    }
+    final message = code.message(student: student, collegeCode: college?.code, collegeName: college?.name);
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(code.isReset ? 'Password reset code' : 'App access code'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: SelectableText(
+                code.code,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700, letterSpacing: 2),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SelectableText(message),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Shown only once. ${code.isReset ? 'Their current password works until they use it.' : 'The account takes a seat.'}',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: message));
+              messenger.showSnackBar(const SnackBar(content: Text('Message copied')));
+            },
+            child: const Text('Copy message'),
+          ),
+          FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done')),
+        ],
+      ),
+    );
+  }
 
   Future<void> _changeStatus(BuildContext context, Student student) async {
     final cubit = context.read<StudentCubit>();
@@ -125,15 +187,25 @@ class _StudentView extends StatelessWidget {
                     fact('Section', s.placement),
                     if (s.email != null) fact('Email', s.email!),
                     if (s.statusReason != null) fact('Status note', s.statusReason!),
-                    if (canManage) ...[
+                    if (canManage || canGiveAccess) ...[
                       const SizedBox(height: AppSpacing.md),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _changeStatus(context, s),
-                          icon: const Icon(Icons.swap_horiz_rounded),
-                          label: const Text('Change status'),
-                        ),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: [
+                          if (canManage)
+                            OutlinedButton.icon(
+                              onPressed: () => _changeStatus(context, s),
+                              icon: const Icon(Icons.swap_horiz_rounded),
+                              label: const Text('Change status'),
+                            ),
+                          if (canGiveAccess && (s.status == 'enrolled' || s.status == 'on_leave'))
+                            FilledButton.tonalIcon(
+                              onPressed: () => _access(context, s),
+                              icon: const Icon(Icons.phone_iphone_rounded),
+                              label: const Text('App access code'),
+                            ),
+                        ],
                       ),
                     ],
                     const Divider(height: AppSpacing.xl),

@@ -71,6 +71,41 @@ class Student {
   }
 }
 
+/// ST-1 (AD-69): a student's one-time code, shown once, to print or send.
+class StudentAccessCode {
+  const StudentAccessCode({required this.kind, required this.code, required this.expiresAt, required this.loginIdentifier});
+
+  /// `activation` the first time; `reset` once the student has an account.
+  final String kind;
+  final String code;
+  final DateTime expiresAt;
+  final String loginIdentifier;
+
+  bool get isReset => kind == 'reset';
+
+  String message({required Student student, String? collegeCode, String? collegeName}) {
+    final t = expiresAt.toLocal();
+    return '${isReset ? 'Password reset' : 'App access'} for ${student.fullName}'
+        '${collegeName == null ? '' : ' at $collegeName'}.\n'
+        '${collegeCode == null ? '' : 'College code: $collegeCode\n'}'
+        'Enrolment number: ${student.enrolmentNumber}\n'
+        '${isReset ? 'Reset' : 'Activation'} code: $code\n'
+        'Valid until: ${t.day}/${t.month}/${t.year}\n'
+        'Open the College app, enter the college code, tap "Student? Activate your account", '
+        'enter your enrolment number and this code, and set your own password.';
+  }
+
+  static StudentAccessCode fromJson(dynamic json) {
+    final m = json as Map;
+    return StudentAccessCode(
+      kind: m['kind'] as String? ?? 'activation',
+      code: m['code'] as String,
+      expiresAt: DateTime.parse(m['expires_at'] as String),
+      loginIdentifier: m['login_identifier'] as String? ?? '',
+    );
+  }
+}
+
 /// A time in one section, so a mid-term move stays explicable.
 class Placement {
   const Placement({required this.id, required this.sectionId, required this.validFrom, this.validTo, this.endReason});

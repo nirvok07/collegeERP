@@ -55,6 +55,9 @@ Error codes the client handles explicitly: `UNAUTHENTICATED`, `TOKEN_EXPIRED`,
 | GET | `/college/overview` | The college's counts for the admin dashboard; `institution.read` (AD-79) |
 | POST | `/people/:id/password-reset` | A one-time reset code (or a fresh invitation) for someone else's account; `account.manage` (AD-80) |
 | POST | `/institutions/:id/administrator-reset` | Platform: a reset code for one of a college's administrators, by `email` (AD-80) |
+| POST | `/students/:id/access` | A student's one-time activation (or reset) code; `student.manage` and `account.manage` (AD-69) |
+| POST | `/auth/student-activate` | A student sets a password with college code, enrolment number and code (AD-69) |
+| GET | `/me/attendance` | The signed-in student's attendance by course, from submitted registers (AD-69) |
 
 Access token lives 15 minutes. Refresh token lives 30 days and rotates on every use. Reuse of
 a consumed refresh token revokes the whole family and forces re-login, which is the standard

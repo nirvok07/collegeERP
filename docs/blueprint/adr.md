@@ -1490,6 +1490,16 @@ external service, so the owner runs or approves it.
 *For ST-1's design.* Code lifetime and attempt limits; reissue revokes the previous code; the
 student role grants only self-scoped reads.
 
+*Built as ST-1 (2026-09-14).* `POST /v1/students/:id/access` (`student.manage` and `account.manage`)
+creates the student's account on first issue, sign-in name the enrolment number in lower case, and
+returns a code of 12 characters from 32 without 0/O or 1/I (60 bits, shown `XXXX-XXXX-XXXX`), valid
+7 days, hash-only in `invitation_tokens`; a later issue revokes the earlier code, and for an active
+student it is a password reset valid 24 hours (as AD-80). `POST /v1/auth/student-activate` redeems it
+only for the account of the enrolment number typed with it, one answer for every wrong combination.
+The code's length stands in for an attempt limit. No student role: `/auth/me` carries `student` and
+`GET /v1/me/attendance` is self-scoped, from submitted registers only; present and late count as
+attended and excused absences are left out of the count.
+
 ---
 
 **AD-70 — The app starts with the college code; the college's name, logo and colour dress everything after it**

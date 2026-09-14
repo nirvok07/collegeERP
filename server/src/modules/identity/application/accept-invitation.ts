@@ -31,7 +31,11 @@ const REDEEMABLE = new Set(['invited', 'active', 'locked']);
 
 export async function acceptInvitation(
   deps: AcceptInvitationDeps,
-  input: { tenantId: string; token: string; password: string },
+  input: {
+    tenantId: string; token: string; password: string;
+    /** ST-1: a student's code only opens the account of the enrolment number typed with it. */
+    loginIdentifier?: string;
+  },
 ): Promise<Result<{ accountId: string; reset: boolean }>> {
   const problem = validatePassword(input.password);
   if (problem) {
@@ -49,7 +53,8 @@ export async function acceptInvitation(
     }
 
     const account = await deps.accounts.findById(tx, invitation.accountId);
-    if (!account || !REDEEMABLE.has(account.status)) {
+    const wrongPerson = input.loginIdentifier !== undefined && account?.loginIdentifier !== input.loginIdentifier;
+    if (!account || !REDEEMABLE.has(account.status) || wrongPerson) {
       return Err(fail('UNAUTHENTICATED', 'This code is no longer valid. Ask for a new one.'));
     }
     const reset = account.status !== 'invited';

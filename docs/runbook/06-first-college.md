@@ -51,14 +51,25 @@ copy and send yourself (for example on WhatsApp).
    Excused), save, and **submit** the register. Works offline.
 3. **Courses** → a course → an assessment → record when it was held, enter marks, submit.
 
-## D. Checking the work (College app, administrator)
+## D. A student (College app)
+
+1. The administrator opens **Students** → the student → **App access code**, and gives the student
+   the message (print it or send it). The code works once and lasts a week; issuing another replaces
+   it. The account takes a seat.
+2. The student opens the College app, enters the college code, taps **Student? Activate your
+   account**, and enters their enrolment number, the code and a new password.
+3. They sign in with their **enrolment number** and password. Their home is **My attendance**, by
+   course, counted from submitted registers; a course below 75% is called out.
+4. A student who forgets their password gets a new code the same way; it resets the password.
+
+## E. Checking the work (College app, administrator)
 
 - **Registers**: a day's classes, which registers are submitted, and counts. A submitted register
   can be corrected per student, with a reason.
 - **Verify marks**: submitted mark sheets to verify, and corrections with a reason.
 - **Students**: every student's record, status (on leave, withdrawn, graduated) and section history.
 
-## E. When someone forgets a password
+## F. When someone forgets a password
 
 - A teacher or staff member: an administrator opens **People** → the person → **Reset password**,
   and sends them the code. They use **Forgot password?** (or **I have an invitation**) in the app.

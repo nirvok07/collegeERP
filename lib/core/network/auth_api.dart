@@ -99,6 +99,28 @@ class AuthApi {
     return parseEnvelope(response.statusCode ?? 0, response.data, (_) {});
   }
 
+  /// ST-1 (AD-69): a student sets their password with the college code, their
+  /// enrolment number and the one-time code their college gave them.
+  Future<Result<void>> activateStudent({
+    required String institutionCode,
+    required String enrolmentNumber,
+    required String code,
+    required String password,
+  }) async {
+    Response<dynamic> response;
+    try {
+      response = await _dio.post<dynamic>('/v1/auth/student-activate', data: {
+        'institution_code': institutionCode,
+        'enrolment_number': enrolmentNumber,
+        'code': code,
+        'password': password,
+      });
+    } on DioException {
+      return const Err(Failure.network);
+    }
+    return parseEnvelope(response.statusCode ?? 0, response.data, (_) {});
+  }
+
   Future<void> signOut(String refreshToken) async {
     try {
       await _dio.post<dynamic>('/v1/auth/logout', data: {'refresh_token': refreshToken});

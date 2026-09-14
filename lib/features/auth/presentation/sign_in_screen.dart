@@ -142,6 +142,17 @@ class _SignInScreenState extends State<SignInScreen> {
                       icon: const Icon(Icons.mark_email_read_outlined),
                       label: const Text('I have an invitation'),
                     ),
+                    // ST-1 (AD-69): students sign up with the code their college gave them.
+                    TextButton.icon(
+                      onPressed: state.submitting
+                          ? null
+                          : () => Navigator.of(context).pushNamed(
+                                Routes.studentActivation,
+                                arguments: AcceptInvitationArgs(college: widget.college),
+                              ),
+                      icon: const Icon(Icons.school_outlined),
+                      label: const Text('Student? Activate your account'),
+                    ),
                     TextButton.icon(
                       onPressed: state.submitting ? null : widget.onChangeCollege,
                       icon: const Icon(Icons.swap_horiz_rounded),
