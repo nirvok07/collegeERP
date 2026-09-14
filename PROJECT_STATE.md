@@ -47,6 +47,9 @@ sign-out/replay revoked nothing. Migration 026 adds `migrator_resolves` (SELECT)
 `migrator_revokes` (UPDATE) policies; applied to Supabase. New session test removes the migrator's
 BYPASSRLS and proves renew + sign-out (failed with 401 before 026, passes after). Server 432/432.
 🔍 NEEDS VALIDATION: a college user on the phone still signed in after 15+ minutes.
+Session length (2026-09-14, user request): refresh window 30 → 365 days, still sliding (AD-25
+amended): anyone who opens the app within a year of last use never signs in again. Sign-out,
+suspension, deactivation and replay still end a session. Applies to platform sessions too.
 UX (2026-09-14, user request): "Add program" on the phone opens as a bottom sheet instead of a
 dialog (drag handle, lifts above the keyboard, full-width Cancel / Add program). Same fields,
 validation and cubit call. Widget test asserts the sheet; Flutter 244/244. Other add forms

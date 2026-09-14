@@ -393,6 +393,12 @@ from the moment of renewal rather than from sign-in. Presenting an already-consu
 replay or theft, so the whole family is revoked and the event is audited. Renewal also re-checks
 account status, which is how a suspension reaches an already-signed-in user.
 
+*Amendment, 2026-09-14.* The sliding window is 365 days (was 30), at the owner's request: once
+signed in, a person signs out only by choice. Opening the app renews, so only a full year without
+opening it ends a session. Tokens still expire and rotate; sign-out, suspension, deactivation and
+replay detection still end a session at once. A college device is a personal phone, and a lost
+phone is handled by sign-out or suspension, not by a short window.
+
 ---
 
 **AD-26 — Web keeps the refresh token in an httpOnly cookie and the access token in memory**

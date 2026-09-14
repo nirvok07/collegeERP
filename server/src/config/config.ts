@@ -10,7 +10,8 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
-  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
+  /** Sliding (AD-25): counted from the last renewal, so a year of not opening the app. */
+  REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(365),
   INVITATION_TTL_HOURS: z.coerce.number().int().positive().default(72),
   /** Migrations own the schema; the application never does. */
   MIGRATION_DATABASE_URL: z.string().min(1),

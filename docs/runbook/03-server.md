@@ -25,7 +25,7 @@ Then fill it in. **Never commit `server/.env`**, and never put a real password i
 | `SECRET_SEALING_KEY_ID` | no (default `k1`) | A label for the key, so it can be rotated |
 | `CORS_ORIGINS` | no (default `http://localhost:5173,http://localhost:4173`) | Browser origins allowed to call the API; the web console's address |
 | `INVITATION_TTL_HOURS` | no (default 72) | How long invitations last |
-| `ACCESS_TOKEN_TTL_SECONDS`, `REFRESH_TOKEN_TTL_DAYS` | no (900, 30) | Session lengths |
+| `ACCESS_TOKEN_TTL_SECONDS`, `REFRESH_TOKEN_TTL_DAYS` | no (900, 365) | Session lengths; the 365 days slide from the last use |
 
 Without `SECRET_SEALING_KEY`, outside production, the server uses a publicly known development key
 and prints a warning. That is fine on a laptop and refused in production.

@@ -59,7 +59,8 @@ Error codes the client handles explicitly: `UNAUTHENTICATED`, `TOKEN_EXPIRED`,
 | POST | `/auth/student-activate` | A student sets a password with college code, enrolment number and code (AD-69) |
 | GET | `/me/attendance` | The signed-in student's attendance by course, from submitted registers (AD-69) |
 
-Access token lives 15 minutes. Refresh token lives 30 days and rotates on every use. Reuse of
+Access token lives 15 minutes. Refresh token lives 365 days from its last renewal (sliding, so
+a user who opens the app within a year never signs in again) and rotates on every use. Reuse of
 a consumed refresh token revokes the whole family and forces re-login, which is the standard
 defence against token theft.
 
