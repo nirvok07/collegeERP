@@ -19,6 +19,7 @@ import '../features/organisation/presentation/organisation_screen.dart';
 import '../features/people/presentation/people_screen.dart';
 import '../features/teaching/presentation/my_teaching_screen.dart';
 import 'account_screen.dart';
+import 'settings_screen.dart';
 import '../core/session/authority.dart';
 import '../core/session/college_brand.dart';
 import '../features/onboarding/domain/onboarding.dart';
@@ -52,6 +53,9 @@ abstract final class Routes {
 
   /// CAL-1: arguments are `true` when this person may add and remove holidays.
   static const calendar = '/calendar';
+
+  /// SET-1: where the dashboard's profile icon now leads.
+  static const settings = '/settings';
 
   // ONB-1: the College Admin's onboarding (AD-76).
   static const onboarding = '/onboarding';
@@ -174,6 +178,8 @@ abstract final class AppRouter {
         return _page(settings, const AccountScreen());
       case Routes.calendar:
         return _page(settings, AcademicCalendarScreen(canManage: settings.arguments == true));
+      case Routes.settings:
+        return _page(settings, const SettingsScreen());
       case Routes.onboarding:
         final args = settings.arguments;
         if (args is! OnboardingArgs) return _unknown(settings);

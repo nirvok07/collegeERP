@@ -62,10 +62,11 @@ class _StudentHomeView extends StatelessWidget {
               ],
             ),
             actions: [
+              // SET-1: settings, with the profile inside.
               IconButton(
-                tooltip: 'Profile',
-                icon: const Icon(Icons.account_circle_rounded),
-                onPressed: () => Navigator.of(context).pushNamed(Routes.account),
+                tooltip: 'Settings',
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => Navigator.of(context).pushNamed(Routes.settings),
               ),
             ],
           ),

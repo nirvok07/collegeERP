@@ -303,7 +303,7 @@ void main() {
 
       expect(find.text('Sunrise College'), findsOneWidget, reason: 'the college, in the header');
       expect(find.textContaining('Good '), findsNothing, reason: 'no greeting on the dashboard');
-      expect(find.byTooltip('Profile'), findsOneWidget, reason: 'personal details live in the Profile');
+      expect(find.byTooltip('Settings'), findsOneWidget, reason: 'SET-1: settings, with the profile inside');
       expect(find.text('1 class is waiting to be marked'), findsOneWidget);
       expect(find.text('Now'), findsOneWidget);
       expect(find.text('Compiler Design'), findsOneWidget);

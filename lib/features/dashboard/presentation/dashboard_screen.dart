@@ -102,7 +102,7 @@ class _DashboardView extends StatelessWidget {
               courses: _teaching && !_admin,
               tiles: _admin ? 6 : _tileCount,
               college: college,
-              onProfile: () => _open(context, Routes.account, refresh: false),
+              onProfile: () => _open(context, Routes.settings, refresh: false),
             ),
             LoadStatus.failure => SafeArea(
               child: ErrorView(failure: state.failure!, onRetry: () => cubit.load()),
@@ -116,7 +116,7 @@ class _DashboardView extends StatelessWidget {
                     college: college,
                     showDay: _schedule,
                     refreshing: state.status == LoadStatus.refreshing,
-                    onProfile: () => _open(context, Routes.account, refresh: false),
+                    onProfile: () => _open(context, Routes.settings, refresh: false),
                     onWaiting: () => _open(context, Routes.schedule),
                     admin: _admin,
                     overview: state.overview,
@@ -556,7 +556,8 @@ class _DashboardHeader extends StatelessWidget {
         ],
       ),
       actions: [
-        IconButton(tooltip: 'Profile', icon: const Icon(Icons.account_circle_outlined), onPressed: onProfile),
+        // SET-1: settings where the profile icon was; the profile is one tap inside.
+        IconButton(tooltip: 'Settings', icon: const Icon(Icons.settings_outlined), onPressed: onProfile),
       ],
       bottom: refreshing
           ? const PreferredSize(preferredSize: Size.fromHeight(2), child: LinearProgressIndicator(minHeight: 2))

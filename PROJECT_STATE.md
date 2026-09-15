@@ -75,6 +75,18 @@ Owner requests, 2026-09-15 (in order of build):
   card on the student home. Server 468/468 (+6), Flutter 281/281 (+4). The Timetable's Holidays tab
   still edits the same rows (one source of truth; the tab may later just link here).
   🔍 NEEDS VALIDATION on the phone.
+- CAL-2 ✅ (owner, 2026-09-15) the calendar is not tied to semesters, and carries events. Migration
+  030 `calendar_events` (title, date, optional start/end time = full day when absent, note; removed is
+  marked, never deleted; RLS; applied to Supabase). `POST|PATCH|DELETE /v1/calendar/events` (term.manage,
+  audited `calendar.event_added|changed|removed`); `GET /v1/calendar` returns `events` (server still
+  returns `periods`, the phone ignores them). An event does not close the day (classes still
+  generated). Phone: term tint, term line and Terms list removed; events drawn as a dot, listed with
+  "All day" or "11 AM – 2 PM"; "Add" sheet chooses Holiday or Event; tapping an event edits it.
+  Server 475/475 (+4), Flutter 287/287.
+- SET-1 ✅ Settings where the profile icon was (dashboard header, student home): Profile, App lock
+  and Sign-in (informational: AD-78 lock always on, AD-82 codes), changes waiting to send, Sign out
+  (confirmed). Admin tile grid keeps its Profile tile. Flutter test +1.
+  🔍 NEEDS VALIDATION on the phone for both.
 - Staff attendance (AD-83): SA-A1 ✅ campus attendance area: migration 029 (fence lat/long/radius on
   `campuses`, all three or none, radius 25–2000 m); `PATCH|DELETE /v1/campuses/:id/fence` (campus.manage,
   audited `campus.fence_set|cleared`; 0,0 and out-of-range refused); `GET /v1/campuses` returns
