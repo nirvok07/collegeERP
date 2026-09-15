@@ -12,7 +12,7 @@ import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts
 import type {
   FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeRequestRecord, FeeRequestRepository,
   FeeStructureRepository, InvoiceRecord, InvoiceRepository, PaymentMethod, PaymentRecord,
-  PaymentRepository, ReceiptRecord,
+  PaymentRepository, ReceiptRecord, StudentSummary,
 } from './ports.ts';
 
 export interface FeesActor {
@@ -300,6 +300,14 @@ export async function listStructureInvoices(
   deps: FeesDeps, actor: FeesActor, structureId: string,
 ): Promise<InvoiceRecord[]> {
   return deps.uow.run(actor.tenantId, (tx) => deps.invoices.listByStructure(tx, structureId));
+}
+
+/** A Cashier or Accountant's own way to find a student, having no `student.read`. */
+export async function searchFeeStudents(
+  deps: FeesDeps, actor: FeesActor, query: string,
+): Promise<StudentSummary[]> {
+  if (query.trim().length < 2) return [];
+  return deps.uow.run(actor.tenantId, (tx) => deps.invoices.searchStudents(tx, query.trim()));
 }
 
 /* --------------------------------------------------------- fines & late fees */

@@ -121,10 +121,20 @@ export interface FeeRequestRepository {
   list(tx: Tx, filter: { studentId?: string | null; status?: FeeRequestStatus | null }): Promise<FeeRequestRecord[]>;
 }
 
+export interface StudentSummary {
+  id: string;
+  fullName: string;
+  enrolmentNumber: string;
+  programName: string;
+}
+
 export interface InvoiceRepository {
   /** Every currently enrolled student of a program (FEE-2 §4: a structure
    * is program + year only, so this is who it invoices). */
   enrolledStudentIds(tx: Tx, programId: string): Promise<string[]>;
+  /** A Cashier or Accountant has no `student.read`; this is their own,
+   * fee-scoped way to find who they are collecting from or fining. */
+  searchStudents(tx: Tx, query: string): Promise<StudentSummary[]>;
   existsFor(tx: Tx, studentId: string, instalmentId: string): Promise<boolean>;
   create(tx: Tx, input: {
     id: string; tenantId: string; studentId: string; feeStructureId: string;

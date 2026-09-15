@@ -603,3 +603,32 @@ describe('FEE-5: fines, late fees and waivers', () => {
     assert.match(refused.json().error.message, /concession instead/);
   });
 });
+
+describe('a Cashier or Accountant finds a student without student.read', () => {
+  it('searches by name or enrolment number, and needs at least two characters', async () => {
+    const s = await feeSetup();
+    const cashier = await appoint(s.code, s.admin, {
+      name: 'Rohit Nair', email: `rohit@${s.code}.edu`, roleKey: 'cashier', scopeType: 'institution',
+    });
+    await post('/v1/students', s.admin, {
+      full_name: 'Nisha Kumar', email: `nisha@${s.code}.edu`,
+      enrolment_number: 'CSE2026-001', program_id: s.program, admitted_on: '2026-06-01',
+    });
+
+    const byName = (await get('/v1/fees/students?q=Nisha', cashier)).json().data;
+    assert.equal(byName.length, 1);
+    assert.equal(byName[0].enrolment_number, 'CSE2026-001');
+
+    const byNumber = (await get('/v1/fees/students?q=CSE2026', cashier)).json().data;
+    assert.equal(byNumber.length, 1);
+
+    const tooShort = (await get('/v1/fees/students?q=N', cashier)).json().data;
+    assert.deepEqual(tooShort, []);
+
+    const teacher = await appoint(s.code, s.admin, {
+      name: 'Meera Iyer', email: `meera@${s.code}.edu`,
+      roleKey: 'faculty', scopeType: 'department', scopeRefId: s.department,
+    });
+    assert.equal((await get('/v1/fees/students?q=Nisha', teacher)).statusCode, 403);
+  });
+});

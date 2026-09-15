@@ -10,7 +10,7 @@ import {
   createDraftStructure, createFeeHead, generateInvoices, listFeeHeads, listFeeRequests,
   listStructureInvoices, listStructures, listStudentInvoices, listStudentPayments,
   publishStructure, raiseFine, readStructure, recordPayment, rejectRequest, requestConcession,
-  requestWaiver, withdrawRequest, type FeesActor,
+  requestWaiver, searchFeeStudents, withdrawRequest, type FeesActor,
 } from '../application/manage-fees.ts';
 import type {
   FeeHeadRecord, FeeRequestRecord, FeeStructureRecord, InvoiceRecord, PaymentRecord,
@@ -96,6 +96,15 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
   const canCollect = (req: never, reply: never) => requirePermission(c, req, reply, 'fee.collect', institutionScope());
 
   /* ------------------------------------------------------------------ heads */
+
+  app.get('/fees/students', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const q = (req.query as { q?: string }).q ?? '';
+    const rows = await searchFeeStudents(c.fees, actorOf(req), q);
+    return sendOk(reply, rows.map((r) => ({
+      id: r.id, full_name: r.fullName, enrolment_number: r.enrolmentNumber, program_name: r.programName,
+    })));
+  });
 
   app.get('/fees/heads', async (req, reply) => {
     if (!(await canRead(req as never, reply as never))) return reply;

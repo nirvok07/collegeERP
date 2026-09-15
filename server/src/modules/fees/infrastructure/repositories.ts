@@ -3,7 +3,7 @@ import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
   AllocationRecord, FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord,
   FeeRequestRecord, FeeRequestRepository, FeeStructureRecord, FeeStructureRepository,
-  InvoiceRecord, InvoiceRepository, PaymentRecord, PaymentRepository, ReceiptRecord,
+  InvoiceRecord, InvoiceRepository, PaymentRecord, PaymentRepository, ReceiptRecord, StudentSummary,
 } from '../application/ports.ts';
 
 function toHead(r: any): FeeHeadRecord {
@@ -199,6 +199,22 @@ export class PgInvoiceRepository implements InvoiceRepository {
       [programId],
     );
     return rows.map((r: any) => r.id);
+  }
+
+  async searchStudents(tx: Tx, query: string): Promise<StudentSummary[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT s.id, per.full_name, s.enrolment_number, p.name AS program_name
+         FROM students s
+         JOIN persons per ON per.id = s.person_id
+         JOIN programs p ON p.id = s.program_id
+        WHERE s.status = 'enrolled'
+          AND (per.full_name ILIKE '%' || $1 || '%' OR s.enrolment_number ILIKE '%' || $1 || '%')
+        ORDER BY per.full_name LIMIT 20`,
+      [query],
+    );
+    return rows.map((r: any) => ({
+      id: r.id, fullName: r.full_name, enrolmentNumber: r.enrolment_number, programName: r.program_name,
+    }));
   }
 
   async existsFor(tx: Tx, studentId: string, instalmentId: string): Promise<boolean> {
