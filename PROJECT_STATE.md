@@ -165,6 +165,20 @@ Owner requests, 2026-09-15 (in order of build):
     list and student records carry the mobile. Server 457/457 (+7), Flutter 273/273 (+3).
   - Docs ✅ runbook START-HERE, 01, 06 and 09 describe code sign-in; 04 (web console) still passwords
     until OTP-5.
+- WID-2 ✅ (web dashboard arrangement; owner asked why the web console "isn't arranged well, unlike
+  mobile"; root cause: no web home landing — the shell landed on the first nav tab) `fd5e671`:
+  the web console is now dashboard-first. Home is the first signed-in tab for a college person;
+  `DashboardPage` mirrors the mobile dashboard — an admin stat band from `/v1/college/overview`
+  (staff, students, departments, teaching setup, pending-invitations chip), a teacher week panel
+  from `/me/sessions` + `/me/teaching` (today's classes, a week-ahead sequential-bar chart using
+  the new data-viz palette, my courses), and a permission-gated module grid whose gate mirrors
+  `sectionsFor()` exactly. `AppShell` exposes a `ShellNav` context so a tile switches the active
+  tab without threading callbacks. Data-viz palette (sequential + diverging, light + dark) added
+  to `design/tokens.css`. Wired in the pre-staged `motion-one.ts` by typing its bezier easing as a
+  tuple and using motion 13's `EffectTransition`, so the whole `tsc` build is green. No server
+  change. Web tests 189 (+7: module-grid gate contract, overview/courses/week read mapping);
+  `tsc -b` + `vite build` clean. 🔍 NEEDS VALIDATION in a browser (sign in as College Admin and as a
+  teacher; tiles switch sections).
 - 🚫 GO-LIVE BLOCKER (AD-82): no WhatsApp/SMS senders; `OTP_FIXED_CODE=123456` lets anyone who knows
   a mobile number sign in as that person (and anyone, by email too, when SMTP is unset). Must be
   removed before any real college uses the system.
