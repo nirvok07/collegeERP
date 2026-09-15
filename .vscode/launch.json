@@ -1,0 +1,21 @@
+{
+  // ENV-3: each launch first makes sure the dev server is up and the USB phone
+  // can reach it (scripts/dev-up.sh).
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "College app",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "preLaunchTask": "Dev server: start"
+    },
+    {
+      "name": "Super Admin app",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main_admin.dart",
+      "preLaunchTask": "Dev server: start"
+    }
+  ]
+}

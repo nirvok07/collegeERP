@@ -1,0 +1,28 @@
+{
+  // ENV-3: the dev server starts by itself when this folder opens and before
+  // every app launch. VS Code asks once to allow automatic tasks: choose Allow.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev server: start",
+      "type": "shell",
+      "command": "./scripts/dev-up.sh",
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "silent", "panel": "dedicated", "close": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev server: stop",
+      "type": "shell",
+      "command": "./scripts/dev-down.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Dev server: show log",
+      "type": "shell",
+      "command": "tail -n 50 -f server/dev-server.log",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}
