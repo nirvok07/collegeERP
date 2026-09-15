@@ -31,6 +31,7 @@ enum _Phase { restoring, signedOut, signedIn }
 
 class _AdminAppState extends State<AdminApp> {
   final _session = adminLocator<SessionManager>();
+  final _navigator = GlobalKey<NavigatorState>();
   StreamSubscription<SessionEvent>? _subscription;
 
   _Phase _phase = _Phase.restoring;
@@ -84,6 +85,8 @@ class _AdminAppState extends State<AdminApp> {
 
   void _onSessionEvent(SessionEvent event) {
     if (!mounted) return;
+    // A pushed screen would otherwise stay on top of the sign-in screen.
+    if (event is SignedOut) _navigator.currentState?.popUntil((route) => route.isFirst);
     setState(() {
       switch (event) {
         case SignedIn():
@@ -125,6 +128,7 @@ class _AdminAppState extends State<AdminApp> {
     return MaterialApp(
       title: 'Super Admin',
       debugShowCheckedModeBanner: false,
+      navigatorKey: _navigator,
       theme: AppTheme.light(accent: AppColors.ink),
       themeMode: ThemeMode.light,
       onGenerateRoute: AdminRouter.onGenerateRoute,

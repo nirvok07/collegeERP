@@ -10,7 +10,7 @@ import '../domain/onboarding.dart';
 import 'onboarding_cubits.dart';
 
 /// Appointing a teacher (ONB-1): name, email, the department they teach in.
-/// The result is an invitation to hand over; nobody else knows their password.
+/// They sign in with a code sent to that email or mobile (AD-82).
 class AppointTeacherScreen extends StatelessWidget {
   const AppointTeacherScreen({super.key, required this.args, this.repository});
 
@@ -155,7 +155,7 @@ class _TeacherFormState extends State<_TeacherForm> {
                       onPressed: state.submitting ? null : () => _submit(context),
                       child: state.submitting
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Appoint and invite'),
+                          : const Text('Appoint'),
                     ),
                   ],
                 ),

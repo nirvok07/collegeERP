@@ -859,7 +859,7 @@ class _AdminPanel extends StatelessWidget {
                     const SizedBox(width: AppSpacing.sm),
                     Flexible(
                       child: Text(
-                        pending == 1 ? '1 invitation not accepted yet' : '$pending invitations not accepted yet',
+                        pending == 1 ? '1 person has not signed in yet' : '$pending people have not signed in yet',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(color: Colors.white),

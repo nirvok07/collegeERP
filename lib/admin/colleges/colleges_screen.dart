@@ -5,6 +5,7 @@ import '../../core/design/tokens.dart';
 import '../../core/session/college_brand.dart';
 import '../../core/session/session_manager.dart';
 import '../../core/widgets/college_logo.dart';
+import '../../core/widgets/confirm_sign_out.dart';
 import '../../core/widgets/screen_state.dart';
 import '../../core/widgets/status_chip.dart';
 import '../admin_locator.dart';
@@ -81,7 +82,9 @@ class _CollegesView extends StatelessWidget {
               IconButton(
                 tooltip: 'Sign out',
                 icon: const Icon(Icons.logout_rounded),
-                onPressed: () => adminLocator<SessionManager>().signOut(),
+                onPressed: () async {
+                  if (await confirmSignOut(context)) await adminLocator<SessionManager>().signOut();
+                },
               ),
             ],
           ),

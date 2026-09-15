@@ -67,23 +67,15 @@ class TeacherInput {
   };
 }
 
-/// The one moment a teacher's invitation exists outside the server.
+/// An appointed teacher. The server still returns an invitation; since AD-82
+/// the first sign-in code activates the account, so it is not used here.
 class AppointedTeacher {
-  const AppointedTeacher({required this.personId, required this.invitationToken, required this.expiresAt});
+  const AppointedTeacher({required this.personId});
 
   final String personId;
-  final String invitationToken;
-  final DateTime expiresAt;
 
-  static AppointedTeacher fromJson(dynamic json) {
-    final map = json as Map;
-    final invitation = map['invitation'] as Map;
-    return AppointedTeacher(
-      personId: map['person_id'] as String,
-      invitationToken: invitation['token'] as String,
-      expiresAt: DateTime.parse(invitation['expires_at'] as String),
-    );
-  }
+  static AppointedTeacher fromJson(dynamic json) =>
+      AppointedTeacher(personId: (json as Map)['person_id'] as String);
 }
 
 /// A student record: no login yet. Once given app access, the student signs

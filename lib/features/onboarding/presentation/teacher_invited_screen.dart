@@ -4,26 +4,21 @@ import 'package:flutter/services.dart';
 import '../../../app/routes.dart';
 import '../../../core/design/tokens.dart';
 
-/// The one time a teacher's invitation exists outside the server. Nothing is
-/// emailed yet, so the College Admin hands it over (AD-75).
+/// A teacher is appointed. There is nothing secret to hand over: they sign in
+/// with a code sent to their own email or mobile (AD-82), and their first
+/// sign-in activates the account. The message only tells them where to go.
 class TeacherInvitedScreen extends StatelessWidget {
   const TeacherInvitedScreen({super.key, required this.args});
 
   final TeacherInvitedArgs args;
 
-  static String _date(DateTime at) {
-    final t = at.toLocal();
-    return '${t.day}/${t.month}/${t.year}';
-  }
-
-  /// Everything the teacher needs, as one message to paste anywhere.
+  /// How to get in, as one message to paste anywhere.
   static String message(TeacherInvitedArgs a) {
     final college = a.college;
-    return 'You are invited to teach${college == null ? '' : ' at ${college.name}'}.\n'
+    return 'You are appointed to teach${college == null ? '' : ' at ${college.name}'}.\n'
         '${college == null ? '' : 'College code: ${college.code}\n'}'
-        'Invitation code: ${a.teacher.invitationToken}\n'
-        'Valid until: ${_date(a.teacher.expiresAt)}\n'
-        'Open the College app, enter the college code, tap "I have an invitation" and set your own password.';
+        'Open the College app, enter the college code, then your email or mobile number. '
+        'A sign-in code will be sent to you.';
   }
 
   @override
@@ -43,8 +38,8 @@ class TeacherInvitedScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Nothing is emailed yet. Send them this invitation yourself, for example on WhatsApp. '
-            'They set their own password with it.',
+            'They can sign in now with a code sent to their email or mobile. '
+            'You can send them this message so they know where to go.',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -67,12 +62,6 @@ class TeacherInvitedScreen extends StatelessWidget {
             },
             icon: const Icon(Icons.copy_all_rounded),
             label: const Text('Copy message for the teacher'),
-          ),
-          const SizedBox(height: AppSpacing.base),
-          Text(
-            'Shown only once. The invitation is not an authenticator key.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: AppSpacing.xl),
           FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Done')),

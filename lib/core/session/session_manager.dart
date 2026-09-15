@@ -144,10 +144,10 @@ class SessionManager {
     _accessToken = null;
     _expiresAt = null;
     await _store.clear();
-    // Best effort: the local session has already gone, so a network failure
-    // here must not strand the user on a screen they have logically left.
-    if (token != null) await _api.signOut(token).catchError((_) {});
     _events.add(const SignedOut('user'));
+    // Best effort, and not waited for: the local session has already gone, so
+    // a slow or absent server must not hold the person on a screen they left.
+    if (token != null) unawaited(_api.signOut(token).catchError((_) {}));
   }
 
   /// Single-flight: many simultaneous rejections cause one renewal.

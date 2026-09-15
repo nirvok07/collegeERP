@@ -46,6 +46,15 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
   dates must hold its terms; term dates fixed once a section uses it; current year / year with terms
   / anything a section uses cannot be archived; program code, department, length fixed. Server +7
   tests (incl. 403 for a teacher), Flutter +2. 🔍 NEEDS VALIDATION on the phone.
+- FB-3 ✅ (2026-09-15) Sign out did nothing: Account is a pushed route and stayed above the sign-in
+  screen, and sign-out waited up to 45 s for the server. Now both apps pop to home on SignedOut, the
+  server revoke is not awaited, and every sign-out button (Account, No access, Super Admin colleges)
+  asks "Sign out?" first (`core/widgets/confirm_sign_out.dart`; unsent writes still named). Lock-screen
+  sign-out stays unconfirmed (it sits above the Navigator). Appoint teacher no longer shows an
+  invitation code: "Appoint", then a message with the college code saying a sign-in code comes;
+  dashboard says "N people have not signed in yet". Server still issues the unused invitation (OTP-5).
+  Flutter 277/277 (+4). 🔍 NEEDS VALIDATION on the phone.
+- FB-4 ❌ code field as six OTP boxes (both apps). FB-5 ❌ teacher dashboard like the admin's.
 - OTP sign-in 🟡 AD-82 approved (everyone incl. Super Admin; no passwords; fixed code 123456 on every
   server until go-live, risk accepted by owner). Slices, in order:
   - OTP-1 ✅ `adf1fe5` server: `/v1/auth/otp/request|verify` (college: email, mobile, enrolment no.)

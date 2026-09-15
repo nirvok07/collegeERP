@@ -29,7 +29,7 @@ class _Repo implements OnboardingRepository {
   @override
   Future<Result<AppointedTeacher>> appointTeacher(TeacherInput input) async {
     teachers.add(input);
-    return Ok(AppointedTeacher(personId: 'p9', invitationToken: 'tok-9', expiresAt: DateTime.utc(2026, 9, 21)));
+    return const Ok(AppointedTeacher(personId: 'p9'));
   }
   @override
   Future<Result<void>> admitStudent(StudentInput input) async {
@@ -70,12 +70,12 @@ void main() {
         .containsKey('phone'), isFalse);
   });
 
-  test('the invitation reads the server response', () {
+  test('the appointment reads the server response, and ignores its invitation (AD-82)', () {
     final t = AppointedTeacher.fromJson({
       'person_id': 'p1', 'account_id': 'a1',
       'invitation': {'token': 'tok', 'expires_at': '2026-09-21T10:00:00.000Z', 'delivery': 'pending'},
     });
-    expect(t.invitationToken, 'tok');
+    expect(t.personId, 'p1');
   });
 
   test('an incomplete teacher form never reaches the server', () async {
@@ -118,15 +118,16 @@ void main() {
     expect(find.text('Nisha Rao is admitted.'), findsOneWidget);
   });
 
-  test('the teacher message has the college code, the invitation and how to use it', () {
-    final text = TeacherInvitedScreen.message(TeacherInvitedArgs(
-      teacher: AppointedTeacher(personId: 'p', invitationToken: 'tok-9', expiresAt: DateTime.utc(2026, 9, 21)),
+  test('the teacher message has the college code and says a sign-in code comes; no invitation', () {
+    final text = TeacherInvitedScreen.message(const TeacherInvitedArgs(
+      teacher: AppointedTeacher(personId: 'p'),
       name: 'Ravi',
-      college: const CollegeBrand(code: 'iit-doon', name: 'IIT Doon'),
+      college: CollegeBrand(code: 'iit-doon', name: 'IIT Doon'),
     ));
     expect(text, contains('IIT Doon'));
     expect(text, contains('College code: iit-doon'));
-    expect(text, contains('Invitation code: tok-9'));
-    expect(text, contains('I have an invitation'));
+    expect(text, contains('sign-in code will be sent'));
+    expect(text, isNot(contains('nvitation')));
+    expect(text, isNot(contains('assword')));
   });
 }

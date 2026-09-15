@@ -33,6 +33,7 @@ class CollegeApp extends StatefulWidget {
 
 class _CollegeAppState extends State<CollegeApp> {
   final _session = locator<SessionManager>();
+  final _navigator = GlobalKey<NavigatorState>();
   StreamSubscription<SessionEvent>? _subscription;
 
   _Phase _phase = _Phase.restoring;
@@ -146,6 +147,9 @@ class _CollegeAppState extends State<CollegeApp> {
 
   void _onSessionEvent(SessionEvent event) {
     if (!mounted) return;
+    // Screens pushed over home (Account, People...) would otherwise stay on top
+    // of the sign-in screen, and signing out would look like it did nothing.
+    if (event is SignedOut) _navigator.currentState?.popUntil((route) => route.isFirst);
     setState(() {
       switch (event) {
         case SignedIn():
@@ -194,6 +198,7 @@ class _CollegeAppState extends State<CollegeApp> {
     return MaterialApp(
       title: 'College',
       debugShowCheckedModeBanner: false,
+      navigatorKey: _navigator,
       // Flutter's own Navigator with a central generator, per the client
       // architecture. The shell stays in `home`; pushes go through this.
       onGenerateRoute: AppRouter.onGenerateRoute,
