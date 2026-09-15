@@ -58,7 +58,11 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
   one invisible field over the boxes, so autofill/paste/backspace work); the last digit signs in, the
   button stays. Flutter 277/277 (sign-in test types into the boxes, checks one auto-submit).
   🔍 NEEDS VALIDATION on the phone (keyboard, SMS/email autofill).
-- FB-5 ❌ teacher dashboard like the admin's.
+- FB-5 ✅ (2026-09-15) a teacher's dashboard opens on the admin's two-column tile grid ("Your work":
+  Schedule "N to mark", Courses "N courses", People/Organisation with person.read, Verify marks for a
+  HoD, Onboarding when allowed, Profile), replacing the icon row; today's classes, week and courses
+  stay below. One `_ModuleGrid` draws both dashboards and both skeletons. Admin tiles no longer
+  mention passwords. Flutter 277/277. 🔍 NEEDS VALIDATION on the phone.
 - OTP sign-in 🟡 AD-82 approved (everyone incl. Super Admin; no passwords; fixed code 123456 on every
   server until go-live, risk accepted by owner). Slices, in order:
   - OTP-1 ✅ `adf1fe5` server: `/v1/auth/otp/request|verify` (college: email, mobile, enrolment no.)

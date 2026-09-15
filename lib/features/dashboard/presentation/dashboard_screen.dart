@@ -67,13 +67,15 @@ class _DashboardView extends StatelessWidget {
   /// teacher's with a button added.
   bool get _admin => authority.can('institution.manage');
 
-  /// How many shortcuts [_Shortcuts] will draw, so the skeleton draws as many.
-  int get _shortcutCount => [
+  /// How many tiles [_TeacherModules] will draw, so the skeleton draws as many.
+  int get _tileCount => [
     (authority.can('account.manage') && authority.can('role.assign')) || authority.can('student.manage'),
     authority.can('session.read'),
     authority.can('offering.read'),
     authority.can('person.read'),
     authority.can('person.read'),
+    authority.can('assessment.verify'),
+    true, // Profile
   ].where((shown) => shown).length;
 
   /// An administrator who also teaches keeps the teaching parts.
@@ -98,7 +100,7 @@ class _DashboardView extends StatelessWidget {
               admin: _admin,
               showDay: _schedule,
               courses: _teaching && !_admin,
-              shortcuts: _admin ? 0 : _shortcutCount,
+              tiles: _admin ? 6 : _tileCount,
               college: college,
               onProfile: () => _open(context, Routes.account, refresh: false),
             ),
@@ -144,9 +146,11 @@ class _DashboardView extends StatelessWidget {
                             open: (r, refresh, args) => _open(context, r, refresh: refresh, arguments: args),
                           )
                         else
-                          _Shortcuts(
+                          // FB-5: a teacher's dashboard is laid out like the admin's.
+                          _TeacherModules(
                             authority: authority,
                             college: college,
+                            summary: summary,
                             open: (r, refresh, args) => _open(context, r, refresh: refresh, arguments: args),
                           ),
                         if (_schedule && (!_admin || _teaches(summary))) ...[
@@ -210,7 +214,7 @@ class _DashboardSkeleton extends StatelessWidget {
     required this.admin,
     required this.showDay,
     required this.courses,
-    required this.shortcuts,
+    required this.tiles,
     required this.college,
     required this.onProfile,
   });
@@ -218,7 +222,7 @@ class _DashboardSkeleton extends StatelessWidget {
   final bool admin;
   final bool showDay;
   final bool courses;
-  final int shortcuts;
+  final int tiles;
   final CollegeBrand? college;
   final VoidCallback onProfile;
 
@@ -246,7 +250,7 @@ class _DashboardSkeleton extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(AppSpacing.base, AppSpacing.sm, AppSpacing.base, AppSpacing.xxl),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                if (admin) ...[
+                if (tiles > 0) ...[
                   const SizedBox(height: AppSpacing.lg),
                   const SkeletonBox(width: 180, height: 16),
                   const SizedBox(height: AppSpacing.sm),
@@ -258,7 +262,7 @@ class _DashboardSkeleton extends StatelessWidget {
                     crossAxisSpacing: AppSpacing.sm,
                     childAspectRatio: 1.55,
                     children: [
-                      for (var i = 0; i < 6; i++)
+                      for (var i = 0; i < tiles; i++)
                         _Panel(
                           padding: const EdgeInsets.all(AppSpacing.md),
                           child: Column(
@@ -274,28 +278,8 @@ class _DashboardSkeleton extends StatelessWidget {
                         ),
                     ],
                   ),
-                ] else ...[
-                  if (shortcuts > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.lg),
-                      child: Row(
-                        children: [
-                          for (var i = 0; i < shortcuts; i++)
-                            const Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                                child: Column(
-                                  children: [
-                                    SkeletonBox(width: 52, height: 52, radius: AppRadius.sheet),
-                                    SizedBox(height: AppSpacing.sm),
-                                    SkeletonBox(width: 44, height: 10),
-                                  ],
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                ],
+                if (!admin) ...[
                   if (showDay) ...[
                     const _SectionTitleSkeleton(),
                     _Panel(
@@ -888,11 +872,10 @@ class _AdminModules extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final canAppoint = authority.can('account.manage') && authority.can('role.assign');
     final canAdmit = authority.can('student.manage');
     final o = overview;
-    final tiles = <({String title, String subtitle, IconData icon, Color color, String route, Object? args, bool refresh})>[
+    final tiles = <_Tile>[
       if (canAppoint || canAdmit)
         (
           title: 'Onboarding',
@@ -906,7 +889,7 @@ class _AdminModules extends StatelessWidget {
       if (authority.can('person.read')) ...[
         (
           title: 'People',
-          subtitle: o == null ? 'Staff, access and passwords' : '${o.staff} staff',
+          subtitle: o == null ? 'Staff and access' : '${o.staff} staff',
           icon: Icons.people_rounded,
           color: AppColors.info,
           route: Routes.people,
@@ -1021,23 +1004,43 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),
-      (
-        title: 'Profile',
-        subtitle: 'Your details and password',
-        icon: Icons.account_circle_rounded,
-        color: AppColors.primary,
-        route: Routes.account,
-        args: null,
-        refresh: false,
-      ),
+      _profileTile,
     ];
 
+    return _ModuleGrid(title: 'Manage your college', tiles: tiles, open: open);
+  }
+}
+
+/// One tile of a dashboard's grid: what it opens, and a line of what is there.
+typedef _Tile = ({String title, String subtitle, IconData icon, Color color, String route, Object? args, bool refresh});
+
+const _Tile _profileTile = (
+  title: 'Profile',
+  subtitle: 'Your details and roles',
+  icon: Icons.account_circle_rounded,
+  color: AppColors.primary,
+  route: Routes.account,
+  args: null,
+  refresh: false,
+);
+
+/// The two-column grid both dashboards open on (ADM-1, FB-5).
+class _ModuleGrid extends StatelessWidget {
+  const _ModuleGrid({required this.title, required this.tiles, required this.open});
+
+  final String title;
+  final List<_Tile> tiles;
+  final void Function(String route, bool refresh, Object? arguments) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Manage your college', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: AppSpacing.sm),
           GridView.count(
             crossAxisCount: 2,
@@ -1103,21 +1106,13 @@ class _InlineError extends StatelessWidget {
 
 /* --------------------------------------------------------------- shortcuts */
 
-class _Shortcut {
-  const _Shortcut(this.label, this.icon, this.color, this.route, {this.refresh = true, this.arguments});
-  final String label;
-  final IconData icon;
-  final Color color;
-  final String route;
-  final bool refresh;
-  final Object? arguments;
-}
-
-/// Every surface this person can open, where the bottom navigation used to be.
-class _Shortcuts extends StatelessWidget {
-  const _Shortcuts({required this.authority, required this.open, this.college});
+/// FB-5: a teacher's dashboard opens on the same grid as the admin's, with
+/// their own work in it, each tile present only with its permission.
+class _TeacherModules extends StatelessWidget {
+  const _TeacherModules({required this.authority, required this.summary, required this.open, this.college});
 
   final Authority authority;
+  final DashboardSummary summary;
   final CollegeBrand? college;
   final void Function(String route, bool refresh, Object? arguments) open;
 
@@ -1125,81 +1120,75 @@ class _Shortcuts extends StatelessWidget {
   Widget build(BuildContext context) {
     final canAppoint = authority.can('account.manage') && authority.can('role.assign');
     final canAdmit = authority.can('student.manage');
-    final items = [
-      // ONB-1: first, because it is the College Admin's most frequent job.
+    final toMark = summary.needsMarking.length;
+    final courses = summary.courses.length;
+    final tiles = <_Tile>[
       if (canAppoint || canAdmit)
-        _Shortcut(
-          'Onboarding',
-          Icons.person_add_alt_1_rounded,
-          AppColors.success,
-          Routes.onboarding,
-          arguments: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
+        (
+          title: 'Onboarding',
+          subtitle: 'Appoint teachers, admit students',
+          icon: Icons.person_add_alt_1_rounded,
+          color: AppColors.success,
+          route: Routes.onboarding,
+          args: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
+          refresh: true,
         ),
       if (authority.can('session.read'))
-        const _Shortcut('Schedule', Icons.event_rounded, AppColors.primary, Routes.schedule),
+        (
+          title: 'Schedule',
+          subtitle: toMark == 0 ? 'Classes and attendance' : '$toMark to mark',
+          icon: Icons.event_rounded,
+          color: AppColors.primary,
+          route: Routes.schedule,
+          args: null,
+          refresh: true,
+        ),
       if (authority.can('offering.read'))
-        const _Shortcut('Courses', Icons.school_rounded, AppColors.success, Routes.teaching),
+        (
+          title: 'Courses',
+          subtitle: courses == 0 ? 'Assessments and marks' : '$courses ${courses == 1 ? 'course' : 'courses'}',
+          icon: Icons.school_rounded,
+          color: AppColors.success,
+          route: Routes.teaching,
+          args: null,
+          refresh: true,
+        ),
       // The organisation tree is read behind `person.read`, which is the
       // permission the campus and department endpoints actually require.
       if (authority.can('person.read')) ...[
-        _Shortcut(
-          'People',
-          Icons.people_rounded,
-          AppColors.info,
-          Routes.people,
+        (
+          title: 'People',
+          subtitle: 'Staff and access',
+          icon: Icons.people_rounded,
+          color: AppColors.info,
+          route: Routes.people,
+          args: ManageArgs(authority: authority, college: college),
           refresh: false,
-          arguments: ManageArgs(authority: authority, college: college),
         ),
-        _Shortcut(
-          'Organisation',
-          Icons.account_tree_rounded,
-          AppColors.warning,
-          Routes.organisation,
+        (
+          title: 'Organisation',
+          subtitle: 'Campuses and departments',
+          icon: Icons.account_tree_rounded,
+          color: AppColors.warning,
+          route: Routes.organisation,
+          args: ManageArgs(authority: authority, college: college),
           refresh: false,
-          arguments: ManageArgs(authority: authority, college: college),
         ),
       ],
+      // A Head of Department verifies the marks their teachers submit.
+      if (authority.can('assessment.verify'))
+        (
+          title: 'Verify marks',
+          subtitle: 'Submitted mark sheets',
+          icon: Icons.verified_rounded,
+          color: AppColors.success,
+          route: Routes.verifyMarks,
+          args: null,
+          refresh: false,
+        ),
+      _profileTile,
     ];
-    if (items.isEmpty) return const SizedBox.shrink();
-
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.lg),
-      child: Row(
-        children: [
-          for (final item in items)
-            Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.card),
-                onTap: () => open(item.route, item.refresh, item.arguments),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: item.color.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(AppRadius.sheet),
-                        ),
-                        child: Icon(item.icon, color: item.color),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        item.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelMedium,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
+    return _ModuleGrid(title: 'Your work', tiles: tiles, open: open);
   }
 }
 

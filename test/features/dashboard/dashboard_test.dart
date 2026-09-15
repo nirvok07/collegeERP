@@ -309,8 +309,13 @@ void main() {
       expect(find.text('Compiler Design'), findsOneWidget);
       expect(find.text('Teaching record'), findsOneWidget);
       expect(find.text('Week ahead'), findsOneWidget);
+      // FB-5: the same grid as the admin's, with their own work in it.
+      expect(find.text('Your work'), findsOneWidget);
+      expect(find.text('Manage your college'), findsNothing);
       expect(find.text('Schedule'), findsOneWidget);
       expect(find.text('Courses'), findsOneWidget);
+      expect(find.text('1 to mark'), findsOneWidget, reason: 'the tile says what is waiting');
+      expect(find.text('Profile'), findsOneWidget);
       // No person.read: the people and organisation surfaces are absent.
       expect(find.text('People'), findsNothing);
       expect(find.text('Organisation'), findsNothing);
@@ -413,7 +418,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Sunrise College'), findsOneWidget);
       expect(find.byType(SliverAppBar), findsOneWidget);
-      expect(find.byType(GridView), findsNothing, reason: 'a teacher has shortcuts, not the admin grid');
+      expect(find.byType(GridView), findsOneWidget, reason: "FB-5: a teacher's tiles are drawn in place, as the admin's");
       expect(find.byType(SkeletonBox), findsWidgets);
 
       delivery.complete();
