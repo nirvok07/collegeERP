@@ -1,6 +1,7 @@
 import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
+  CalendarEventFields, CalendarEventRecord, CalendarEventRepository,
   CalendarPeriod, Clash, NonTeachingDayRecord, NonTeachingDayRepository, RoomKind, RoomRecord,
   RoomRepository, SessionFilter, SessionRecord, SessionRepository, SlotRecord,
   SlotRepository, TeachingReachReader,
@@ -127,6 +128,70 @@ export class PgNonTeachingDayRepository implements NonTeachingDayRepository {
       kind: r.kind, id: r.id, name: r.name, yearName: r.year_name ?? null,
       startsOn: String(r.starts_on), endsOn: String(r.ends_on), isCurrent: Boolean(r.is_current),
     }));
+  }
+}
+
+/* --------------------------------------------------------- calendar events */
+
+const hhmm = (v: unknown) => (v == null ? null : String(v).slice(0, 5));
+
+function toEvent(r: any): CalendarEventRecord {
+  return {
+    id: r.id, title: r.title, onDate: String(r.on_date),
+    startsAt: hhmm(r.starts_at), endsAt: hhmm(r.ends_at), note: r.note ?? null,
+  };
+}
+
+export class PgCalendarEventRepository implements CalendarEventRepository {
+  async create(
+    tx: Tx, input: CalendarEventFields & { id: string; tenantId: string; createdBy: string },
+  ): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO calendar_events (id, tenant_id, title, on_date, starts_at, ends_at, note, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [input.id, input.tenantId, input.title, input.onDate, input.startsAt, input.endsAt, input.note, input.createdBy],
+    );
+  }
+
+  async find(tx: Tx, id: string): Promise<CalendarEventRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, title, on_date, starts_at, ends_at, note FROM calendar_events
+        WHERE id = $1 AND removed_at IS NULL`, [id],
+    );
+    return rows[0] ? toEvent(rows[0]) : null;
+  }
+
+  async update(tx: Tx, id: string, f: CalendarEventFields): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE calendar_events
+          SET title = $2, on_date = $3, starts_at = $4, ends_at = $5, note = $6, updated_at = now()
+        WHERE id = $1 AND removed_at IS NULL`,
+      [id, f.title, f.onDate, f.startsAt, f.endsAt, f.note],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async remove(tx: Tx, id: string, by: string): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE calendar_events SET removed_at = now(), removed_by = $2, updated_at = now()
+        WHERE id = $1 AND removed_at IS NULL`,
+      [id, by],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async list(
+    tx: Tx, range: { from?: string | null; to?: string | null },
+  ): Promise<CalendarEventRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, title, on_date, starts_at, ends_at, note FROM calendar_events
+        WHERE removed_at IS NULL
+          AND ($1::date IS NULL OR on_date >= $1::date)
+          AND ($2::date IS NULL OR on_date <= $2::date)
+        ORDER BY on_date, starts_at NULLS FIRST, title`,
+      [range.from ?? null, range.to ?? null],
+    );
+    return rows.map(toEvent);
   }
 }
 

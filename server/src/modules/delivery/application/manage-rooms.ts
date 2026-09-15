@@ -11,6 +11,7 @@ import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
+  CalendarEventFields, CalendarEventRecord, CalendarEventRepository,
   CalendarPeriod, NonTeachingDayRecord, NonTeachingDayRepository, RoomKind, RoomRecord, RoomRepository,
 } from './ports.ts';
 
@@ -23,6 +24,8 @@ export interface RoomDeps {
   uow: UnitOfWork;
   rooms: RoomRepository;
   days: NonTeachingDayRepository;
+  /** CAL-2: events on the academic calendar. */
+  events: CalendarEventRepository;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -187,14 +190,99 @@ export async function addNonTeachingDay(
   }
 }
 
-/** CAL-1: years, terms and holidays in a range, for anyone in the college. */
+/** CAL-1, CAL-2: holidays, events, years and terms in a range, for anyone in the college. */
 export function readCalendar(
   deps: RoomDeps, actor: DeliveryActor, range: { from?: string | null; to?: string | null },
-): Promise<{ holidays: NonTeachingDayRecord[]; periods: CalendarPeriod[] }> {
+): Promise<{ holidays: NonTeachingDayRecord[]; events: CalendarEventRecord[]; periods: CalendarPeriod[] }> {
   return deps.uow.run(actor.tenantId, async (tx) => ({
     holidays: await deps.days.list(tx, range),
+    events: await deps.events.list(tx, range),
     periods: await deps.days.periods(tx, range),
   }));
+}
+
+/* --------------------------------------------------------- calendar events */
+
+export interface CalendarEventInput {
+  title: string;
+  onDate: string;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  note?: string | null;
+}
+
+function checkEvent(input: CalendarEventInput): Result<CalendarEventFields> {
+  const invalid = (field: string, message: string) =>
+    Err(fail('VALIDATION_FAILED', message, { fieldErrors: { [field]: message } }));
+  const title = input.title.trim();
+  if (!title || title.length > 120) return invalid('title', 'Give the event a name, up to 120 characters.');
+  if (!datesBetween(input.onDate, input.onDate)) return invalid('on_date', 'That date does not exist.');
+  const startsAt = input.startsAt ?? null;
+  const endsAt = input.endsAt ?? null;
+  if ((startsAt === null) !== (endsAt === null)) {
+    return invalid('ends_at', 'Give both a start and an end time, or neither for a full day.');
+  }
+  if (startsAt !== null && endsAt !== null && endsAt <= startsAt) {
+    return invalid('ends_at', 'The end time must be after the start time.');
+  }
+  return Ok({ title, onDate: input.onDate, startsAt, endsAt, note: input.note?.trim() || null });
+}
+
+export async function addCalendarEvent(
+  deps: RoomDeps, actor: DeliveryActor, input: CalendarEventInput,
+): Promise<Result<{ id: string }>> {
+  const checked = checkEvent(input);
+  if (!checked.ok) return checked;
+  const id = deps.ids.next();
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    await deps.events.create(tx, { ...checked.value, id, tenantId: actor.tenantId, createdBy: actor.personId });
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'calendar.event_added', subjectType: 'calendar_event', subjectId: id,
+      after: { ...checked.value },
+    }, tx);
+    return Ok({ id });
+  });
+}
+
+export async function updateCalendarEvent(
+  deps: RoomDeps, actor: DeliveryActor, id: string, input: CalendarEventInput,
+): Promise<Result<{ id: string }>> {
+  const checked = checkEvent(input);
+  if (!checked.ok) return checked;
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const before = await deps.events.find(tx, id);
+    if (!before) return Err(fail('NOT_FOUND', 'That event was not found.'));
+    if (!(await deps.events.update(tx, id, checked.value))) {
+      return Err(fail('CONFLICT', 'That event was changed by someone else just now.'));
+    }
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'calendar.event_changed', subjectType: 'calendar_event', subjectId: id,
+      before: { ...before }, after: { ...checked.value },
+    }, tx);
+    return Ok({ id });
+  });
+}
+
+export async function removeCalendarEvent(
+  deps: RoomDeps, actor: DeliveryActor, id: string,
+): Promise<Result<{ id: string }>> {
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const before = await deps.events.find(tx, id);
+    if (!before || !(await deps.events.remove(tx, id, actor.personId))) {
+      return Err(fail('NOT_FOUND', 'That event was not found.'));
+    }
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'calendar.event_removed', subjectType: 'calendar_event', subjectId: id,
+      before: { title: before.title, date: before.onDate }, after: { removed: true },
+    }, tx);
+    return Ok({ id });
+  });
 }
 
 export function listNonTeachingDays(

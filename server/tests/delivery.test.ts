@@ -252,6 +252,62 @@ describe('CAL-1: the academic calendar module', () => {
   });
 });
 
+describe('CAL-2: events on the academic calendar', () => {
+  it('a full-day event and a timed one are added, read by a teacher, changed and removed', async () => {
+    const s = await deliverySetup();
+    const o = await s.offering('CS301', 'Operating Systems', 'os@delivery.edu');
+    const farewell = await post('/v1/calendar/events', s.token, { title: 'Farewell party', on_date: '2026-09-04' });
+    assert.equal(farewell.statusCode, 201, farewell.body);
+    const teachersDay = await post('/v1/calendar/events', s.token, {
+      title: "Teachers' Day celebration", on_date: '2026-09-05', starts_at: '11:00', ends_at: '14:00', note: 'Main hall',
+    });
+    assert.equal(teachersDay.statusCode, 201, teachersDay.body);
+
+    const read = (await get('/v1/calendar?from=2026-09-01&to=2026-09-30', o.teacher.token)).json().data;
+    assert.deepEqual(read.events.map((e: any) => [e.title, e.on_date, e.starts_at, e.ends_at]), [
+      ['Farewell party', '2026-09-04', null, null],
+      ["Teachers' Day celebration", '2026-09-05', '11:00', '14:00'],
+    ]);
+    assert.equal(read.events[1].note, 'Main hall');
+
+    const id = teachersDay.json().data.id;
+    assert.equal((await patch(`/v1/calendar/events/${id}`, s.token, {
+      title: "Teachers' Day", on_date: '2026-09-05', starts_at: '10:30', ends_at: '13:00',
+    })).statusCode, 200);
+    const changed = (await get('/v1/calendar', s.token)).json().data.events.find((e: any) => e.id === id);
+    assert.deepEqual([changed.title, changed.starts_at, changed.note], ["Teachers' Day", '10:30', null]);
+
+    assert.equal((await del(`/v1/calendar/events/${id}`, s.token)).statusCode, 200);
+    assert.equal((await del(`/v1/calendar/events/${id}`, s.token)).statusCode, 404, 'already removed');
+    assert.deepEqual((await get('/v1/calendar', s.token)).json().data.events.map((e: any) => e.title), ['Farewell party']);
+  });
+
+  it('an event does not close the day: classes are still generated on it', async () => {
+    const s = await deliverySetup();
+    await post('/v1/calendar/events', s.token, { title: 'Sports day', on_date: '2026-06-08' });
+    assert.equal((await get('/v1/non-teaching-days', s.token)).json().data.length, 0);
+  });
+
+  it('refuses half a time range, an end before the start, a missing name and an impossible date', async () => {
+    const s = await deliverySetup();
+    const add = (body: object) => post('/v1/calendar/events', s.token, { title: 'Fest', on_date: '2026-09-10', ...body });
+    assert.equal((await add({ starts_at: '11:00' })).statusCode, 422);
+    assert.equal((await add({ starts_at: '14:00', ends_at: '11:00' })).statusCode, 422);
+    assert.equal((await add({ title: '   ' })).statusCode, 422);
+    assert.equal((await add({ on_date: '2026-02-30' })).statusCode, 422);
+    assert.equal((await get('/v1/calendar', s.token)).json().data.events.length, 0);
+  });
+
+  it('only the College Admin adds, changes or removes events', async () => {
+    const s = await deliverySetup();
+    const o = await s.offering('CS301', 'Operating Systems', 'os@delivery.edu');
+    const id = (await post('/v1/calendar/events', s.token, { title: 'Fest', on_date: '2026-09-10' })).json().data.id;
+    assert.equal((await post('/v1/calendar/events', o.teacher.token, { title: 'Mine', on_date: '2026-09-11' })).statusCode, 403);
+    assert.equal((await patch(`/v1/calendar/events/${id}`, o.teacher.token, { title: 'X', on_date: '2026-09-10' })).statusCode, 403);
+    assert.equal((await del(`/v1/calendar/events/${id}`, o.teacher.token)).statusCode, 403);
+  });
+});
+
 describe('the weekly pattern is edited; the occurrences are facts', () => {
   it('refuses two slots for one course at the same hour on the same day', async () => {
     const s = await deliverySetup();

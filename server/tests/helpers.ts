@@ -53,6 +53,8 @@ export async function resetData(): Promise<void> {
       'assessment_mark_corrections', 'assessment_marks', 'assessment_components',
       // Delivery references offerings and rooms, so it goes before both.
       'class_sessions', 'timetable_slots', 'non_teaching_days',
+      // Calendar events (CAL-2) reference persons.
+      'calendar_events',
       // Enrolment references offerings, sections, students and persons.
       'offering_enrolments', 'section_memberships', 'students',
       // Teaching references courses and sections, so it goes before both.

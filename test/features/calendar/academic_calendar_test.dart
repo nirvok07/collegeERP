@@ -4,25 +4,20 @@ import 'package:college_erp/features/calendar/presentation/academic_calendar_scr
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// CAL-1: everyone sees the month, its holidays and term, and the breaks to
-/// come; only the College Admin adds and removes, a break of several days is
-/// one entry, and removing it removes every day.
+/// CAL-1, CAL-2: everyone sees the month, its holidays and events, and what
+/// is coming; nothing about terms. Only the College Admin adds, changes and
+/// removes; a break of several days is one entry and removing it removes
+/// every day.
 class _Repo implements CalendarRepository {
-  _Repo(this.holidays);
+  _Repo(this.holidays, [this.events = const []]);
   List<CalendarHoliday> holidays;
+  List<CalendarEvent> events;
   final added = <Map<String, String?>>[];
+  final savedEvents = <(EventDraft, String?)>[];
   final removed = <String>[];
 
   @override
-  Future<Result<AcademicCalendar>> read() async => Ok(AcademicCalendar(
-        holidays: holidays,
-        periods: [
-          CalendarPeriod(
-            isTerm: true, id: 't1', name: 'Semester 1', yearName: '2026-27',
-            startsOn: DateTime(2026, 6, 1), endsOn: DateTime(2026, 11, 30), isCurrent: true,
-          ),
-        ],
-      ));
+  Future<Result<AcademicCalendar>> read() async => Ok(AcademicCalendar(holidays: holidays, events: events));
 
   @override
   Future<Result<void>> addHoliday({required String from, String? to, required String label}) async {
@@ -36,6 +31,19 @@ class _Repo implements CalendarRepository {
     holidays = holidays.where((h) => h.id != id).toList();
     return const Ok(null);
   }
+
+  @override
+  Future<Result<void>> saveEvent(EventDraft draft, {String? id}) async {
+    savedEvents.add((draft, id));
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> removeEvent(String id) async {
+    removed.add(id);
+    events = events.where((e) => e.id != id).toList();
+    return const Ok(null);
+  }
 }
 
 List<CalendarHoliday> _diwali() => const [
@@ -45,33 +53,48 @@ List<CalendarHoliday> _diwali() => const [
       CalendarHoliday(id: 'g1', onDate: '2026-10-02', label: 'Gandhi Jayanti'),
     ];
 
+List<CalendarEvent> _events() => const [
+      CalendarEvent(id: 'e1', title: 'Farewell party', onDate: '2026-10-20'),
+      CalendarEvent(id: 'e2', title: "Teachers' Day celebration", onDate: '2026-10-22', startsAt: '11:00', endsAt: '14:00'),
+    ];
+
 /// A phone-shaped screen tall enough that the lists below the month are built.
 void _tallScreen(WidgetTester tester) {
-  tester.view.physicalSize = const Size(420, 2000);
+  tester.view.physicalSize = const Size(420, 2400);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 }
 
 void main() {
   test('consecutive days under one label are one break; a different label starts another', () {
-    final c = AcademicCalendar(holidays: _diwali(), periods: const []);
+    final c = AcademicCalendar(holidays: _diwali());
     expect(c.runs.map((r) => '${r.label}:${r.length}'), ['Gandhi Jayanti:1', 'Diwali break:3']);
     expect(c.runsIn(DateTime(2026, 11)).single.label, 'Diwali break', reason: 'a break spanning two months is in both');
     expect(c.upcoming(DateTime(2026, 10, 15)).single.label, 'Diwali break');
   });
 
-  testWidgets('a student sees the month, the term and what is coming, and cannot change it', (tester) async {
+  test('an event says when: all day, or its hours on a 12-hour clock', () {
+    expect(_events()[0].when, 'All day');
+    expect(_events()[1].when, '11 AM – 2 PM');
+    expect(twelveHour('00:30'), '12:30 AM');
+    expect(twelveHour('12:00'), '12 PM');
+  });
+
+  testWidgets('a student sees holidays and events, nothing about terms, and cannot change anything', (tester) async {
     _tallScreen(tester);
     await tester.pumpWidget(MaterialApp(
-      home: AcademicCalendarScreen(canManage: false, repository: _Repo(_diwali()), today: DateTime(2026, 10, 15)),
+      home: AcademicCalendarScreen(canManage: false, repository: _Repo(_diwali(), _events()), today: DateTime(2026, 10, 15)),
     ));
     await tester.pumpAndSettle();
     expect(find.text('October 2026'), findsOneWidget);
-    expect(find.text('Semester 1 · 2026-27'), findsWidgets);
     expect(find.text('Gandhi Jayanti'), findsOneWidget);
     expect(find.text('Diwali break'), findsWidgets);
-    expect(find.textContaining('3 days · In 15 days'), findsOneWidget);
-    expect(find.text('Add holiday'), findsNothing);
+    expect(find.textContaining('3 days · Holiday · In 15 days'), findsOneWidget);
+    expect(find.text('Farewell party'), findsWidgets);
+    expect(find.textContaining('11 AM – 2 PM'), findsWidgets);
+    expect(find.textContaining('Semester'), findsNothing);
+    expect(find.text('Terms'), findsNothing);
+    expect(find.text('Add'), findsNothing);
     expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
   });
 
@@ -82,7 +105,6 @@ void main() {
       home: AcademicCalendarScreen(canManage: true, repository: repo, today: DateTime(2026, 10, 15)),
     ));
     await tester.pumpAndSettle();
-    expect(find.text('Add holiday'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Remove Diwali break').first);
     await tester.pumpAndSettle();
@@ -93,14 +115,14 @@ void main() {
     expect(find.text('Diwali break'), findsNothing);
   });
 
-  testWidgets('adding a holiday sends its name and day, then shows its month', (tester) async {
+  testWidgets('adding a holiday sends its name and day', (tester) async {
     _tallScreen(tester);
     final repo = _Repo([]);
     await tester.pumpWidget(MaterialApp(
       home: AcademicCalendarScreen(canManage: true, repository: repo, today: DateTime(2026, 10, 15)),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Add holiday'));
+    await tester.tap(find.text('Add'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Foundation Day');
     await tester.tap(find.widgetWithText(FilledButton, 'Add holiday'));
@@ -108,5 +130,38 @@ void main() {
     expect(repo.added, [
       {'from': '2026-10-15', 'to': null, 'label': 'Foundation Day'},
     ]);
+  });
+
+  testWidgets('adding a full-day event, and changing a timed one', (tester) async {
+    _tallScreen(tester);
+    final repo = _Repo([], _events());
+    await tester.pumpWidget(MaterialApp(
+      home: AcademicCalendarScreen(canManage: true, repository: repo, today: DateTime(2026, 10, 15)),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add'));
+    await tester.pumpAndSettle();
+    // The sheet's choice, not the month's legend, which says "Event" too.
+    await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Event')));
+    await tester.pumpAndSettle();
+    expect(find.text('Announced to everyone; classes go on as usual.'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Name'), 'Annual fest');
+    await tester.tap(find.widgetWithText(FilledButton, 'Add event'));
+    await tester.pumpAndSettle();
+    final (added, addedId) = repo.savedEvents.single;
+    expect(addedId, isNull);
+    expect(added.toJson(), {'title': 'Annual fest', 'on_date': '2026-10-15', 'starts_at': null, 'ends_at': null, 'note': null});
+
+    // Tapping an event opens it for change, keeping its hours.
+    await tester.tap(find.text("Teachers' Day celebration").first);
+    await tester.pumpAndSettle();
+    expect(find.text('Change the event'), findsOneWidget);
+    expect(find.text('From 11 AM'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Save changes'));
+    await tester.pumpAndSettle();
+    final (changed, changedId) = repo.savedEvents.last;
+    expect(changedId, 'e2');
+    expect([changed.startsAt, changed.endsAt], ['11:00', '14:00']);
   });
 }

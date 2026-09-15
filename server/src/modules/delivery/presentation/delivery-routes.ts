@@ -6,8 +6,8 @@ import { requirePermission } from '../../../infrastructure/http/guards.ts';
 import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
-  addNonTeachingDay, archiveRoom, createRoom, listNonTeachingDays, listRooms, readCalendar,
-  removeNonTeachingDay, updateRoom, type DeliveryActor,
+  addCalendarEvent, addNonTeachingDay, archiveRoom, createRoom, listNonTeachingDays, listRooms, readCalendar,
+  removeCalendarEvent, removeNonTeachingDay, updateCalendarEvent, updateRoom, type DeliveryActor,
 } from '../application/manage-rooms.ts';
 import {
   addSlot, generateSessions, listSlots, removeSlot,
@@ -38,6 +38,14 @@ const roomPatch = z.object({
 /** CAL-1: `to_date` closes every day from `on_date` to it, under one label. */
 const dayBody = z.object({ on_date: isoDate, to_date: isoDate.optional(), label: z.string().min(1).max(80) });
 const rangeQuery = z.object({ from: isoDate.optional(), to: isoDate.optional() });
+/** CAL-2: no times is a full-day event. */
+const eventBody = z.object({
+  title: z.string().max(120),
+  on_date: isoDate,
+  starts_at: clockTime.nullable().optional(),
+  ends_at: clockTime.nullable().optional(),
+  note: z.string().max(500).nullable().optional(),
+});
 const slotBody = z.object({
   day_of_week: z.number().int().min(1).max(7),
   starts_at: clockTime,
@@ -155,6 +163,32 @@ export async function registerDeliveryRoutes(app: FastifyInstance, c: Container)
     }), 201);
   });
 
+  /* ------------------------------------------------ calendar events (CAL-2) */
+
+  const eventInput = (d: z.infer<typeof eventBody>) => ({
+    title: d.title, onDate: d.on_date, startsAt: d.starts_at ?? null, endsAt: d.ends_at ?? null, note: d.note ?? null,
+  });
+
+  app.post('/calendar/events', async (req, reply) => {
+    if (!(await canManageCalendar(req as never, reply as never))) return reply;
+    const parsed = eventBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await addCalendarEvent(c.rooms, actorOf(req), eventInput(parsed.data)), 201);
+  });
+
+  app.patch('/calendar/events/:id', async (req, reply) => {
+    if (!(await canManageCalendar(req as never, reply as never))) return reply;
+    const parsed = eventBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await updateCalendarEvent(
+      c.rooms, actorOf(req), (req.params as { id: string }).id, eventInput(parsed.data)));
+  });
+
+  app.delete('/calendar/events/:id', async (req, reply) => {
+    if (!(await canManageCalendar(req as never, reply as never))) return reply;
+    return sendResult(reply, await removeCalendarEvent(c.rooms, actorOf(req), (req.params as { id: string }).id));
+  });
+
   /**
    * CAL-1: the academic calendar (years, terms, holidays) for anyone signed in
    * to the college, students included. Nothing in it is personal, so it asks
@@ -171,6 +205,9 @@ export async function registerDeliveryRoutes(app: FastifyInstance, c: Container)
     });
     return sendOk(reply, {
       holidays: calendar.holidays.map((d) => ({ id: d.id, on_date: d.onDate, label: d.label })),
+      events: calendar.events.map((e) => ({
+        id: e.id, title: e.title, on_date: e.onDate, starts_at: e.startsAt, ends_at: e.endsAt, note: e.note,
+      })),
       periods: calendar.periods.map((p) => ({
         kind: p.kind, id: p.id, name: p.name, year_name: p.yearName,
         starts_on: p.startsOn, ends_on: p.endsOn, is_current: p.isCurrent,

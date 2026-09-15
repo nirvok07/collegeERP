@@ -72,7 +72,7 @@ import {
 } from './modules/teaching/infrastructure/repositories.ts';
 import type { OfferingDeps } from './modules/teaching/application/manage-offerings.ts';
 import {
-  PgNonTeachingDayRepository, PgRoomRepository, PgSessionRepository, PgSlotRepository,
+  PgCalendarEventRepository, PgNonTeachingDayRepository, PgRoomRepository, PgSessionRepository, PgSlotRepository,
   PgTeachingReachReader,
 } from './modules/delivery/infrastructure/repositories.ts';
 import type { RoomDeps } from './modules/delivery/application/manage-rooms.ts';
@@ -166,6 +166,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
   const termRepository = new PgTermRepository();
   const roomRepository = new PgRoomRepository();
   const nonTeachingDays = new PgNonTeachingDayRepository();
+  const calendarEvents = new PgCalendarEventRepository();
   const slotRepository = new PgSlotRepository();
   const sessionRepository = new PgSessionRepository();
   const studentRepository = new PgStudentRepository();
@@ -294,7 +295,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
     },
     // M4 reads M3 through its ports rather than keeping its own copy of who
     // teaches what: there is one statement of that, and it lives in M3.
-    rooms: { uow, audit, ids, clock, rooms: roomRepository, days: nonTeachingDays },
+    rooms: { uow, audit, ids, clock, rooms: roomRepository, days: nonTeachingDays, events: calendarEvents },
     timetable: {
       uow, audit, ids, clock,
       slots: slotRepository,

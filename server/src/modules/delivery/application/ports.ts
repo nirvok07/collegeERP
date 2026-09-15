@@ -50,6 +50,34 @@ export interface NonTeachingDayRepository {
   periods(tx: Tx, range: { from?: string | null; to?: string | null }): Promise<CalendarPeriod[]>;
 }
 
+/** CAL-2: an event on the calendar; it does not stop classes. */
+export interface CalendarEventRecord {
+  id: string;
+  title: string;
+  onDate: string;
+  /** 'HH:MM'; both null for a full-day event. */
+  startsAt: string | null;
+  endsAt: string | null;
+  note: string | null;
+}
+
+export interface CalendarEventFields {
+  title: string;
+  onDate: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  note: string | null;
+}
+
+export interface CalendarEventRepository {
+  create(tx: Tx, input: CalendarEventFields & { id: string; tenantId: string; createdBy: string }): Promise<void>;
+  find(tx: Tx, id: string): Promise<CalendarEventRecord | null>;
+  update(tx: Tx, id: string, fields: CalendarEventFields): Promise<boolean>;
+  /** Marked removed, never deleted. */
+  remove(tx: Tx, id: string, by: string): Promise<boolean>;
+  list(tx: Tx, range: { from?: string | null; to?: string | null }): Promise<CalendarEventRecord[]>;
+}
+
 /** CAL-1: an academic year or a term, as the calendar shows it. */
 export interface CalendarPeriod {
   kind: 'year' | 'term';
