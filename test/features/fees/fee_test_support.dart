@@ -231,6 +231,25 @@ class FakeFeesRepository implements FeesRepository {
       amountPaise: amountPaise, reference: reference, reversesPaymentId: null, reason: null, receivedAt: DateTime.now(),
     );
     payments.putIfAbsent(studentId, () => []).add(payment);
+
+    // Oldest due first, like the server: fill each due invoice until the
+    // payment runs out, marking a fully-covered one paid.
+    int remaining = amountPaise;
+    final List<FeeInvoice> due = List<FeeInvoice>.of(invoices[studentId] ?? const <FeeInvoice>[]);
+    due.sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    for (final FeeInvoice invoice in due) {
+      final int owed = invoice.amountPaise;
+      if (remaining <= 0 || !invoice.isDue) continue;
+      if (owed > remaining) continue;
+      remaining = remaining - owed;
+      final i = invoices[studentId]!.indexWhere((x) => x.id == invoice.id);
+      invoices[studentId]![i] = FeeInvoice(
+        id: invoice.id, studentId: invoice.studentId, studentName: invoice.studentName, enrolmentNumber: invoice.enrolmentNumber,
+        kind: invoice.kind, instalmentSeq: invoice.instalmentSeq, amountPaise: invoice.amountPaise, dueDate: invoice.dueDate,
+        status: 'paid', reason: invoice.reason,
+      );
+    }
+
     return Ok(RecordedPayment(
       payment: payment,
       receipt: FeeReceipt(id: 'rc${payment.id}', receiptNumber: payments[studentId]!.length, status: 'issued', issuedAt: DateTime.now()),

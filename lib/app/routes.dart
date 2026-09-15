@@ -9,6 +9,8 @@ import '../features/fees/presentation/fee_heads_screen.dart';
 import '../features/fees/presentation/fee_structures_screen.dart';
 import '../features/fees/presentation/fee_structure_detail_screen.dart';
 import '../features/fees/presentation/fee_requests_screen.dart';
+import '../features/fees/presentation/fee_student_search_screen.dart';
+import '../features/fees/presentation/student_fee_screen.dart';
 import '../features/sections/presentation/sections_screen.dart';
 import '../features/timetable/presentation/timetable_screen.dart';
 import '../features/students/presentation/students_screen.dart';
@@ -50,6 +52,8 @@ abstract final class Routes {
   static const feeStructures = '/fees/structures';
   static const feeStructureDetail = '/fees/structures/detail';
   static const feeRequests = '/fees/requests';
+  static const feeStudentSearch = '/fees/students/search';
+  static const studentFees = '/fees/students/detail';
   static const sections = '/sections';
   static const timetable = '/timetable';
   static const students = '/students';
@@ -172,6 +176,15 @@ abstract final class AppRouter {
         final args = settings.arguments;
         final canApprove = args is ManageArgs && args.authority.can('fee.approve');
         return _page(settings, FeeRequestsScreen(canApprove: canApprove));
+      case Routes.feeStudentSearch:
+        final args = settings.arguments;
+        final canCollect = args is ManageArgs && args.authority.can('fee.collect');
+        final canManage = args is ManageArgs && args.authority.can('fee.manage');
+        return _page(settings, FeeStudentSearchScreen(canCollect: canCollect, canManage: canManage));
+      case Routes.studentFees:
+        final args = settings.arguments;
+        if (args is! StudentFeeArgs) return _unknown(settings);
+        return _page(settings, StudentFeeScreen(args: args));
       case Routes.sections:
         final args = settings.arguments;
         return _page(settings, SectionsScreen(authority: args is ManageArgs ? args.authority : null));
