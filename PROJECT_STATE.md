@@ -170,29 +170,44 @@ Owner requests, 2026-09-15 (in order of build):
   removed before any real college uses the system.
 
 PLANNED from `feedbackchanges.md` (owner, 2026-09-15). ❌ NOT BUILT; build only when the owner says.
-Order: LK-1 → CR-1 → REF-1 → FEE-0…FEE-7.
+Order: LK-1 → CR-1 → REF-1 → FEE-0…FEE-8.
 - LK-1 App lock off/on in Settings (default on). Amends AD-78 ("always on"). Device-local flag in
   secure storage; turning off asks biometric first; off = no prompt on open/resume until turned on.
-  OD-LK-1: does sign-out reset it to on? (rec: yes).
+  OD-LK-1 ✅ owner: sign-out resets it to on.
 - CR-1 Pull-to-refresh-only reads on every screen. Amends AD-9 (saved-first + background refresh
   becomes saved-only; network on first open, pull, or after the user's own write). Generalises
   SET-1b via one helper in `core/saved_reads`; applied to the 7 saved-first screens and the OF-R2
-  back-office screens. Excluded: attendance/mark sheets (OF-R3). OD-CR-1: show "Updated 2 h ago"
-  (rec: yes, design system §7.6).
+  back-office screens. Excluded: attendance/mark sheets (OF-R3). OD-CR-1 ✅ owner: every screen
+  shows "Updated 2 h ago" (design system §7.6).
 - REF-1 College reference data in one place: departments, campuses, programs, years/terms, rooms,
   sections, fetched in one call at app open (new `GET /v1/reference`, ETag, 304 when unchanged),
   kept in saved reads, read by Appoint teacher, Onboard student and every picker; no per-form
   load. Refreshed at app open and on pull; a reference write refreshes it.
 - FEE (M11 Student Finance, D6). Pulled forward from Release two (docs/requirements.md D1).
-  FEE-0 module doc + ADRs (append-only ledger, integer paise, INR, gapless receipt numbers per
-  college, reversal never edit); FEE-1 fee heads + structures per program/year (publish);
-  FEE-2 invoices + instalments per student/term; FEE-3 concessions/waivers; FEE-4 counter
-  payments (cash/UPI/cheque/bank ref), allocation to oldest dues, receipts, cancellation by
-  reversal; FEE-5 student: dues, invoices, payments, receipt + statement PDF (view/print/share);
-  FEE-6 reports (daily collection, outstanding, defaulters), late fee rule; FEE-7 online gateway.
-  Online-only (AD-9: desk roles). OD-FEE-1 who collects (new Accounts/Cashier roles vs College
-  Admin permission); OD-FEE-2 gateway provider (defer FEE-7); OD-FEE-3 category/quota fees in v1?;
-  OD-FEE-4 concession approval (P1 approvals unspecified → permission-only for now?).
+  Online-only (AD-9: desk roles). Owner decisions 2026-09-15 (record as ADRs in FEE-0):
+  - OD-FEE-1 ✅ two new college roles (migration seeding them like 002): **Accountant** (fee heads,
+    structures, invoices, fines, concession/waiver requests, reports) and **Cashier** (record
+    counter payments, issue/cancel receipts only). College Admin appoints them; approves requests.
+  - OD-FEE-3 ✅ one structure per program + academic year; no category/quota in v1.
+  - OD-FEE-4 ✅ concessions: Accountant requests, College Admin approves/rejects; only an approved
+    one reduces dues. Fee-owned request state machine (requested → approved | rejected |
+    withdrawn), audited; not a general approvals engine (P1 stays unspecified).
+  - Late fee ✅ optional flat amount per structure, charged once an instalment is overdue.
+  - Fines ✅ Accountant raises a fine on a student (amount, reason). Late fees and fines can be
+    waived through the same request → Admin approval; a waiver is a credit entry, never a delete.
+  - OD-FEE-2 ✅ Razorpay, paid in a web page, not in-app billing: the app opens the payment page in
+    the browser (`url_launcher`); server creates the Razorpay order/payment link; the payment counts
+    only on the signed webhook (server verifies), which records payment + receipt; the app
+    refreshes on return. Assumption: Razorpay Payment Links (hosted page) unless the owner wants
+    our own checkout page. Needs a Razorpay merchant account and keys (owner).
+  Slices: FEE-0 module doc + ADRs (append-only ledger, integer paise, INR, gapless receipt numbers
+  per college, reversal never edit, roles, approvals); FEE-1 roles + fee heads + structures per
+  program/year with instalments, due dates, late fee (publish); FEE-2 invoices per student/term;
+  FEE-3 concession requests + Admin approval; FEE-4 counter payments (cash/UPI/cheque/bank ref),
+  allocation to oldest dues, receipts, cancellation by reversal; FEE-5 late fees + fines + waiver
+  requests; FEE-6 student: dues, invoices, payments, receipt + statement PDF (view/print/share;
+  new `pdf`/`printing` packages); FEE-7 Razorpay web payment + webhook; FEE-8 reports (daily
+  collection by cashier/mode, outstanding, defaulters, concession/waiver register).
 
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.
