@@ -10,8 +10,8 @@ import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
-  FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeStructureRepository,
-  InvoiceRecord, InvoiceRepository,
+  FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeRequestRecord, FeeRequestRepository,
+  FeeStructureRepository, InvoiceRecord, InvoiceRepository,
 } from './ports.ts';
 
 export interface FeesActor {
@@ -24,6 +24,7 @@ export interface FeesDeps {
   feeHeads: FeeHeadRepository;
   structures: FeeStructureRepository;
   invoices: InvoiceRepository;
+  requests: FeeRequestRepository;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -294,4 +295,103 @@ export async function listStructureInvoices(
   deps: FeesDeps, actor: FeesActor, structureId: string,
 ): Promise<InvoiceRecord[]> {
   return deps.uow.run(actor.tenantId, (tx) => deps.invoices.listByStructure(tx, structureId));
+}
+
+/* --------------------------------------------------------- concessions */
+
+/**
+ * FEE-3: the Accountant asks for a reduction on one invoice; only the
+ * College Admin's approval (fee.approve) makes it real (module doc §5).
+ */
+export async function requestConcession(
+  deps: FeesDeps, actor: FeesActor,
+  input: { invoiceId: string; amountPaise: number; reason: string },
+): Promise<Result<{ id: string }>> {
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const invoice = await deps.invoices.findById(tx, input.invoiceId);
+    if (!invoice) return Err(fail('NOT_FOUND', 'That invoice was not found.'));
+    if (invoice.status !== 'due') {
+      return Err(fail('CONFLICT', `This invoice is already ${invoice.status}; there is nothing left to reduce.`));
+    }
+    if (input.amountPaise > invoice.amountPaise) {
+      return Err(fail('VALIDATION_FAILED', 'The concession cannot be more than the invoice still asks for.'));
+    }
+    if (await deps.requests.hasOpenRequest(tx, input.invoiceId)) {
+      return Err(fail('CONFLICT', 'A request is already pending for this invoice.'));
+    }
+
+    const id = deps.ids.next();
+    await deps.requests.create(tx, {
+      id, tenantId: actor.tenantId, kind: 'concession', studentId: invoice.studentId,
+      invoiceId: input.invoiceId, amountPaise: input.amountPaise, reason: input.reason.trim(),
+      requestedBy: actor.personId,
+    });
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'fee.concession_requested', subjectType: 'fee_request', subjectId: id,
+      after: { invoiceId: input.invoiceId, amountPaise: input.amountPaise, reason: input.reason.trim() },
+    }, tx);
+    return Ok({ id });
+  }), 'That concession could not be requested.');
+}
+
+export async function withdrawRequest(
+  deps: FeesDeps, actor: FeesActor, id: string,
+): Promise<Result<{ withdrawn: true }>> {
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const withdrawn = await deps.requests.withdraw(tx, id, actor.personId);
+    if (!withdrawn) {
+      return Err(fail('CONFLICT', 'That request cannot be withdrawn: it is already decided, or is not yours.'));
+    }
+    return Ok({ withdrawn: true as const });
+  });
+}
+
+async function decideRequest(
+  deps: FeesDeps, actor: FeesActor,
+  input: { id: string; status: 'approved' | 'rejected'; reason: string | null },
+): Promise<Result<{ id: string; status: 'approved' | 'rejected' }>> {
+  const at = deps.clock.now();
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const request = await deps.requests.findById(tx, input.id);
+    if (!request) return Err(fail('NOT_FOUND', 'That request was not found.'));
+    if (request.status !== 'requested') return Err(fail('CONFLICT', `This request is already ${request.status}.`));
+
+    if (input.status === 'approved') {
+      const applied = await deps.invoices.reduceAmount(tx, request.invoiceId, request.amountPaise);
+      if (!applied) {
+        return Err(fail('CONFLICT',
+          'The invoice changed since this was requested and can no longer take this reduction.'));
+      }
+    }
+
+    const decided = await deps.requests.decide(tx, {
+      id: input.id, status: input.status, decidedBy: actor.personId, decidedAt: at, reason: input.reason,
+    });
+    if (!decided) return Err(fail('CONFLICT', 'That request was changed by someone else just now.'));
+
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: input.status === 'approved' ? 'fee.concession_approved' : 'fee.concession_rejected',
+      subjectType: 'fee_request', subjectId: input.id,
+      before: { status: 'requested' },
+      after: { status: input.status, reason: input.reason },
+    }, tx);
+
+    return Ok({ id: input.id, status: input.status });
+  });
+}
+
+export const approveRequest = (deps: FeesDeps, actor: FeesActor, input: { id: string; reason?: string | null }) =>
+  decideRequest(deps, actor, { id: input.id, status: 'approved', reason: input.reason ?? null });
+
+export const rejectRequest = (deps: FeesDeps, actor: FeesActor, input: { id: string; reason: string }) =>
+  decideRequest(deps, actor, { id: input.id, status: 'rejected', reason: input.reason });
+
+export async function listFeeRequests(
+  deps: FeesDeps, actor: FeesActor, filter: { studentId?: string | null; status?: FeeRequestRecord['status'] | null },
+): Promise<FeeRequestRecord[]> {
+  return deps.uow.run(actor.tenantId, (tx) => deps.requests.list(tx, filter));
 }

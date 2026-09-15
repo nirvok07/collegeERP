@@ -264,3 +264,90 @@ describe('FEE-2: invoices', () => {
     assert.match(refused.json().error.message, /published fee structure/);
   });
 });
+
+describe('FEE-3: concessions', () => {
+  async function invoicedStudent(s: Awaited<ReturnType<typeof feeSetup>>) {
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+      seq: 1, due_date: '2026-07-01',
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 1000000 });
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+
+    const studentId = (await post('/v1/students', s.admin, {
+      full_name: 'Nisha Kumar', email: `nisha@${s.code}.edu`,
+      enrolment_number: 'CSE2026-001', program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id;
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    const invoiceId = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0].id as string;
+    return { studentId, invoiceId };
+  }
+
+  it('an approved concession reduces the invoice; a rejected one does not', async () => {
+    const s = await feeSetup();
+    const accountant = await appoint(s.code, s.admin, {
+      name: 'Asha Rao', email: `asha@${s.code}.edu`, roleKey: 'accountant', scopeType: 'institution',
+    });
+    const { studentId, invoiceId } = await invoicedStudent(s);
+
+    const requested = await post('/v1/fees/concessions', accountant, {
+      invoice_id: invoiceId, amount_paise: 200000, reason: 'Sibling discount',
+    });
+    assert.equal(requested.statusCode, 201);
+    const requestId = requested.json().data.id as string;
+
+    assert.equal((await post('/v1/fees/concessions', accountant, {
+      invoice_id: invoiceId, amount_paise: 100000, reason: 'Another one',
+    })).statusCode, 409, 'only one open request per invoice');
+
+    // The Accountant cannot approve their own request: fee.approve is the
+    // College Admin's alone (module doc §5).
+    assert.equal((await post(`/v1/fees/requests/${requestId}/approve`, accountant)).statusCode, 403);
+
+    const approved = await post(`/v1/fees/requests/${requestId}/approve`, s.admin, { reason: 'Confirmed with accounts' });
+    assert.equal(approved.statusCode, 200);
+    assert.equal(approved.json().data.status, 'approved');
+
+    const invoice = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0];
+    assert.equal(invoice.amount_paise, 800000, '10,00,000 - 2,00,000');
+
+    assert.equal((await post(`/v1/fees/requests/${requestId}/approve`, s.admin)).statusCode, 409, 'already decided');
+  });
+
+  it('a rejected concession leaves the invoice untouched; a withdrawn one frees the invoice for a new request', async () => {
+    const s = await feeSetup();
+    const accountant = await appoint(s.code, s.admin, {
+      name: 'Asha Rao', email: `asha@${s.code}.edu`, roleKey: 'accountant', scopeType: 'institution',
+    });
+    const { invoiceId } = await invoicedStudent(s);
+
+    const rejectId = (await post('/v1/fees/concessions', accountant, {
+      invoice_id: invoiceId, amount_paise: 200000, reason: 'Try one',
+    })).json().data.id;
+    assert.equal((await post(`/v1/fees/requests/${rejectId}/reject`, s.admin, { reason: 'Not eligible' })).statusCode, 200);
+    assert.equal((await get(`/v1/fees/requests`, s.admin)).json().data[0].amount_paise, 200000);
+
+    const withdrawId = (await post('/v1/fees/concessions', accountant, {
+      invoice_id: invoiceId, amount_paise: 100000, reason: 'Try two',
+    })).json().data.id;
+    assert.equal((await post(`/v1/fees/requests/${withdrawId}/withdraw`, accountant)).statusCode, 200);
+
+    // The invoice is free again: a third request is not blocked by the
+    // withdrawn one, only a still-open one would be.
+    assert.equal((await post('/v1/fees/concessions', accountant, {
+      invoice_id: invoiceId, amount_paise: 50000, reason: 'Try three',
+    })).statusCode, 201);
+  });
+
+  it('refuses a concession larger than what the invoice still asks for', async () => {
+    const s = await feeSetup();
+    const { invoiceId } = await invoicedStudent(s);
+    const tooMuch = await post('/v1/fees/concessions', s.admin, {
+      invoice_id: invoiceId, amount_paise: 99999999, reason: 'Too generous',
+    });
+    assert.equal(tooMuch.statusCode, 422);
+  });
+});

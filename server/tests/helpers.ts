@@ -51,8 +51,9 @@ export async function resetData(): Promise<void> {
       'attendance_corrections', 'attendance_records', 'attendance_sheets',
       // Assessment references offerings and students, so it goes before both.
       'assessment_mark_corrections', 'assessment_marks', 'assessment_components',
-      // Invoices reference students, fee structures and instalments.
-      'invoices',
+      // Requests reference invoices; invoices reference students, fee
+      // structures and instalments.
+      'fee_requests', 'invoices',
       // Delivery references offerings and rooms, so it goes before both.
       'class_sessions', 'timetable_slots', 'non_teaching_days',
       // Calendar events (CAL-2) reference persons.

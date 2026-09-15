@@ -285,9 +285,23 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     invoices. Refuses a draft structure (422). `GET /v1/fees/structures/:id/invoices` and
     `GET /v1/fees/students/:id/invoices` (`fee.read`, so a Cashier reads but cannot generate).
     Server 481/481 (+3 in `tests/fees.test.ts`). `npm run typecheck` clean.
-  - FEE-3 ❌ concession requests + Admin approval; FEE-4 ❌
+  - FEE-3 ✅ (2026-09-15) concession requests + College Admin approval. Migration 033:
+    `fee_requests` (`kind` 'concession' now, 'waiver' from FEE-5 reusing the same table and state
+    machine per the module doc §5; requested → approved | rejected | withdrawn; a decision writes
+    `decided_by`/`decided_at` once, checked by constraint; at most one open request per invoice —
+    `fee_requests_one_open_uq`). `POST /v1/fees/concessions` (`fee.manage`: Accountant or College
+    Admin) refuses one over the invoice's remaining amount (422) or a second open request on the
+    same invoice (409). `POST /v1/fees/requests/:id/{approve,reject}` needs `fee.approve` —
+    **the College Admin alone**, not the Accountant who requested it, even though `college_admin`
+    also holds `fee.manage`; an approval reduces the invoice's `amount_paise`
+    (`InvoiceRepository.reduceAmount`, guarded by `status='due' AND amount_paise >= reduction` so a
+    stale request can't push it negative) and is irreversible; a rejection leaves the invoice
+    untouched. `POST /v1/fees/requests/:id/withdraw` (the Accountant, only their own, only while
+    `requested`) frees the invoice for a new request. `GET /v1/fees/requests` (`fee.read`,
+    optional `student_id`/`status` filter). Server 484/484 (+3). `npm run typecheck` clean.
+  - FEE-4 ❌
     counter payments (cash/UPI/cheque/bank ref), allocation to oldest dues, receipts, cancellation
-    by reversal; FEE-5 ❌ late fees + fines + waiver requests; FEE-6 ❌ student: dues, invoices,
+    by reversal; FEE-5 ❌ late fees + fines + waiver requests (reusing `fee_requests`); FEE-6 ❌ student: dues, invoices,
     payments, receipt + statement PDF (view/print/share; new `pdf`/`printing` packages); FEE-7 🚫
     BLOCKED — Razorpay web payment + webhook, TODO until the owner supplies a merchant account and
     API keys; FEE-8 ❌ reports (daily collection by cashier/mode, outstanding, defaulters,

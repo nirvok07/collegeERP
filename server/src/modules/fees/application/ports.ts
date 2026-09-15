@@ -84,6 +84,39 @@ export interface InvoiceRecord {
   status: InvoiceStatus;
 }
 
+export type FeeRequestKind = 'concession' | 'waiver';
+export type FeeRequestStatus = 'requested' | 'approved' | 'rejected' | 'withdrawn';
+
+export interface FeeRequestRecord {
+  id: string;
+  kind: FeeRequestKind;
+  studentId: string;
+  studentName: string;
+  invoiceId: string;
+  amountPaise: number;
+  reason: string;
+  status: FeeRequestStatus;
+  requestedBy: string;
+  requestedAt: Date;
+  decidedBy: string | null;
+  decidedAt: Date | null;
+  decisionReason: string | null;
+}
+
+export interface FeeRequestRepository {
+  create(tx: Tx, input: {
+    id: string; tenantId: string; kind: FeeRequestKind; studentId: string; invoiceId: string;
+    amountPaise: number; reason: string; requestedBy: string;
+  }): Promise<void>;
+  findById(tx: Tx, id: string): Promise<FeeRequestRecord | null>;
+  hasOpenRequest(tx: Tx, invoiceId: string): Promise<boolean>;
+  decide(tx: Tx, input: {
+    id: string; status: 'approved' | 'rejected'; decidedBy: string; decidedAt: Date; reason: string | null;
+  }): Promise<boolean>;
+  withdraw(tx: Tx, id: string, requestedBy: string): Promise<boolean>;
+  list(tx: Tx, filter: { studentId?: string | null; status?: FeeRequestStatus | null }): Promise<FeeRequestRecord[]>;
+}
+
 export interface InvoiceRepository {
   /** Every currently enrolled student of a program (FEE-2 §4: a structure
    * is program + year only, so this is who it invoices). */
@@ -93,6 +126,9 @@ export interface InvoiceRepository {
     id: string; tenantId: string; studentId: string; feeStructureId: string;
     instalmentId: string; amountPaise: number; dueDate: string;
   }): Promise<void>;
+  findById(tx: Tx, id: string): Promise<InvoiceRecord | null>;
   listByStudent(tx: Tx, studentId: string): Promise<InvoiceRecord[]>;
   listByStructure(tx: Tx, structureId: string): Promise<InvoiceRecord[]>;
+  /** A concession's effect (FEE-3): lowers what the invoice still asks for. */
+  reduceAmount(tx: Tx, id: string, byPaise: number): Promise<boolean>;
 }

@@ -1,8 +1,8 @@
 import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
-  FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord,
-  FeeStructureRecord, FeeStructureRepository, InvoiceRecord, InvoiceRepository,
+  FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeRequestRecord,
+  FeeRequestRepository, FeeStructureRecord, FeeStructureRepository, InvoiceRecord, InvoiceRepository,
 } from '../application/ports.ts';
 
 function toHead(r: any): FeeHeadRecord {
@@ -233,5 +233,93 @@ export class PgInvoiceRepository implements InvoiceRepository {
       [structureId],
     );
     return rows.map(toInvoice);
+  }
+
+  async findById(tx: Tx, id: string): Promise<InvoiceRecord | null> {
+    const { rows } = await clientOf(tx).query(`${INVOICE_SELECT} WHERE i.id=$1`, [id]);
+    return rows[0] ? toInvoice(rows[0]) : null;
+  }
+
+  async reduceAmount(tx: Tx, id: string, byPaise: number): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE invoices SET amount_paise = amount_paise - $2, updated_at=now(), version=version+1
+        WHERE id=$1 AND status='due' AND amount_paise >= $2`,
+      [id, byPaise],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+}
+
+function toFeeRequest(r: any): FeeRequestRecord {
+  return {
+    id: r.id, kind: r.kind, studentId: r.student_id, studentName: r.student_name,
+    invoiceId: r.invoice_id, amountPaise: Number(r.amount_paise), reason: r.reason, status: r.status,
+    requestedBy: r.requested_by, requestedAt: r.requested_at,
+    decidedBy: r.decided_by, decidedAt: r.decided_at, decisionReason: r.decision_reason,
+  };
+}
+
+const FEE_REQUEST_SELECT = `
+  SELECT r.id, r.kind, r.student_id, per.full_name AS student_name, r.invoice_id, r.amount_paise,
+         r.reason, r.status, r.requested_by, r.requested_at, r.decided_by, r.decided_at, r.decision_reason
+    FROM fee_requests r
+    JOIN students s ON s.id = r.student_id
+    JOIN persons per ON per.id = s.person_id`;
+
+export class PgFeeRequestRepository implements FeeRequestRepository {
+  async create(tx: Tx, input: {
+    id: string; tenantId: string; kind: string; studentId: string; invoiceId: string;
+    amountPaise: number; reason: string; requestedBy: string;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO fee_requests (id, tenant_id, kind, student_id, invoice_id, amount_paise, reason, requested_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+      [input.id, input.tenantId, input.kind, input.studentId, input.invoiceId,
+       input.amountPaise, input.reason, input.requestedBy],
+    );
+  }
+
+  async findById(tx: Tx, id: string): Promise<FeeRequestRecord | null> {
+    const { rows } = await clientOf(tx).query(`${FEE_REQUEST_SELECT} WHERE r.id=$1`, [id]);
+    return rows[0] ? toFeeRequest(rows[0]) : null;
+  }
+
+  async hasOpenRequest(tx: Tx, invoiceId: string): Promise<boolean> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT 1 FROM fee_requests WHERE invoice_id=$1 AND status='requested'`,
+      [invoiceId],
+    );
+    return rows.length > 0;
+  }
+
+  async decide(tx: Tx, input: {
+    id: string; status: string; decidedBy: string; decidedAt: Date; reason: string | null;
+  }): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE fee_requests SET status=$2, decided_by=$3, decided_at=$4, decision_reason=$5,
+              updated_at=now(), version=version+1
+        WHERE id=$1 AND status='requested'`,
+      [input.id, input.status, input.decidedBy, input.decidedAt, input.reason],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async withdraw(tx: Tx, id: string, requestedBy: string): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE fee_requests SET status='withdrawn', updated_at=now(), version=version+1
+        WHERE id=$1 AND status='requested' AND requested_by=$2`,
+      [id, requestedBy],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async list(tx: Tx, filter: { studentId?: string | null; status?: string | null }): Promise<FeeRequestRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `${FEE_REQUEST_SELECT}
+        WHERE ($1::uuid IS NULL OR r.student_id=$1) AND ($2::text IS NULL OR r.status=$2)
+        ORDER BY r.requested_at DESC`,
+      [filter.studentId ?? null, filter.status ?? null],
+    );
+    return rows.map(toFeeRequest);
   }
 }
