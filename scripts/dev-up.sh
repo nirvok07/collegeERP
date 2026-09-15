@@ -15,8 +15,10 @@ if healthy; then
   echo "Server already running on port $PORT."
 else
   echo "Starting the server on port $PORT..."
-  # Detached, so it keeps running after this task's terminal closes.
-  (cd "$ROOT/server" && PORT="$PORT" nohup npm run dev >"$LOG" 2>&1 &)
+  # A new session (setsid), so it survives this task's terminal closing: VS Code
+  # kills the task's whole process group, which nohup alone does not escape.
+  (cd "$ROOT/server" && PORT="$PORT" perl -MPOSIX -e 'setsid; exec @ARGV' npm run dev \
+    </dev/null >"$LOG" 2>&1 &)
   for _ in $(seq 1 60); do
     healthy && break
     sleep 1
