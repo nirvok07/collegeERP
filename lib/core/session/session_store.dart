@@ -83,9 +83,29 @@ class SessionStore {
     } catch (_) {}
   }
 
+  static const _appLockKey = 'college_erp.app_lock_enabled';
+
+  /// LK-1: on by default (AD-78); off only once the person turns it off in
+  /// Settings. Absent (never written, or wiped by [clear]) reads as on.
+  Future<bool> readAppLockEnabled() async {
+    try {
+      return await _storage.read(key: _appLockKey) != 'false';
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<void> writeAppLockEnabled(bool enabled) async {
+    try {
+      await _storage.write(key: _appLockKey, value: enabled.toString());
+    } catch (_) {}
+  }
+
   Future<void> clear() async {
     try {
       await _storage.delete(key: _refreshTokenKey);
+      // OD-LK-1: a sign-out puts the lock back on for whoever signs in next.
+      await _storage.delete(key: _appLockKey);
     } catch (_) {}
   }
 }

@@ -169,11 +169,24 @@ Owner requests, 2026-09-15 (in order of build):
   a mobile number sign in as that person (and anyone, by email too, when SMTP is unset). Must be
   removed before any real college uses the system.
 
-PLANNED from `feedbackchanges.md` (owner, 2026-09-15). ❌ NOT BUILT; build only when the owner says.
-Order: LK-1 → CR-1 → REF-1 → FEE-0…FEE-8.
-- LK-1 App lock off/on in Settings (default on). Amends AD-78 ("always on"). Device-local flag in
-  secure storage; turning off asks biometric first; off = no prompt on open/resume until turned on.
-  OD-LK-1 ✅ owner: sign-out resets it to on.
+From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 → REF-1 → FEE-0…FEE-8.
+- LK-1 ✅ (2026-09-15) App lock off/on in Settings (default on). Amends AD-78 ("always on").
+  `AppLockPreference` (`ValueNotifier<bool>`, `core/security/app_lock_preference.dart`) backed by a
+  new `SessionStore` key (`app_lock_enabled`, default true when absent); `SessionStore.clear()`
+  deletes it too, so OD-LK-1 (sign-out puts it back on) holds even across a restart. `app.dart`
+  wraps `AppLockGate` in a `ValueListenableBuilder` and skips it entirely when off; the `SignedOut`
+  event also calls `resetOnSignOut()` so the in-memory value flips at once, not just on next read.
+  Settings' static "App lock" row is now a `SwitchListTile`: turning it off asks the phone's own
+  check first (`DeviceUnlock.unlock`) since disabling the lock must sit behind the lock it removes;
+  turning it back on needs no check; a phone with no lock (`isAvailable() == false`) turns off
+  without asking, consistent with AppLockGate's own "no lock, no lock-out" rule. Found and fixed:
+  the preference's constructor read the store asynchronously and could silently overwrite an
+  explicit disable()/resetOnSignOut() that happened first — fixed with a `_settled` latch so the
+  first explicit value wins. Scope: the college app only; the Super Admin app's lock stays always-on
+  (no Settings surface exists there to add a switch to). Flutter 292/292 (+5: `AppLockPreference`
+  unit tests, two Settings widget tests for the switch). `flutter analyze` clean.
+  🔍 NEEDS VALIDATION on the phone (the biometric prompt on toggle, and that a phone with a broken
+  keystore still degrades to "on" rather than crashing).
 - CR-1 Pull-to-refresh-only reads on every screen. Amends AD-9 (saved-first + background refresh
   becomes saved-only; network on first open, pull, or after the user's own write). Generalises
   SET-1b via one helper in `core/saved_reads`; applied to the 7 saved-first screens and the OF-R2
@@ -195,19 +208,22 @@ Order: LK-1 → CR-1 → REF-1 → FEE-0…FEE-8.
   - Late fee ✅ optional flat amount per structure, charged once an instalment is overdue.
   - Fines ✅ Accountant raises a fine on a student (amount, reason). Late fees and fines can be
     waived through the same request → Admin approval; a waiver is a credit entry, never a delete.
-  - OD-FEE-2 ✅ Razorpay, paid in a web page, not in-app billing: the app opens the payment page in
+  - OD-FEE-2 ✅ design decided, build 🚫 BLOCKED (no Razorpay merchant account / API keys yet,
+    owner 2026-09-15): paid in a web page, not in-app billing — the app opens the payment page in
     the browser (`url_launcher`); server creates the Razorpay order/payment link; the payment counts
     only on the signed webhook (server verifies), which records payment + receipt; the app
     refreshes on return. Assumption: Razorpay Payment Links (hosted page) unless the owner wants
-    our own checkout page. Needs a Razorpay merchant account and keys (owner).
+    our own checkout page. FEE-7 stays a ❌ NOT BUILT TODO until the owner has the keys; every other
+    slice does not depend on it (counter payments cover collection without it).
   Slices: FEE-0 module doc + ADRs (append-only ledger, integer paise, INR, gapless receipt numbers
   per college, reversal never edit, roles, approvals); FEE-1 roles + fee heads + structures per
   program/year with instalments, due dates, late fee (publish); FEE-2 invoices per student/term;
   FEE-3 concession requests + Admin approval; FEE-4 counter payments (cash/UPI/cheque/bank ref),
   allocation to oldest dues, receipts, cancellation by reversal; FEE-5 late fees + fines + waiver
   requests; FEE-6 student: dues, invoices, payments, receipt + statement PDF (view/print/share;
-  new `pdf`/`printing` packages); FEE-7 Razorpay web payment + webhook; FEE-8 reports (daily
-  collection by cashier/mode, outstanding, defaulters, concession/waiver register).
+  new `pdf`/`printing` packages); FEE-7 🚫 BLOCKED — Razorpay web payment + webhook, TODO until the
+  owner supplies a merchant account and API keys; FEE-8 reports (daily collection by cashier/mode,
+  outstanding, defaulters, concession/waiver register) — does not need FEE-7.
 
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.

@@ -22,7 +22,10 @@ class _FakeStore implements SessionStore {
   @override
   Future<void> writeInstitutionCode(String code) async => institution = code;
   @override
-  Future<void> clear() async => token = null;
+  Future<void> clear() async {
+    token = null;
+    appLockEnabled = true;
+  }
 
   CollegeBrand? college;
   @override
@@ -31,6 +34,12 @@ class _FakeStore implements SessionStore {
   Future<void> writeCollege(CollegeBrand value) async => college = value;
   @override
   Future<void> clearCollege() async => college = null;
+
+  bool appLockEnabled = true;
+  @override
+  Future<bool> readAppLockEnabled() async => appLockEnabled;
+  @override
+  Future<void> writeAppLockEnabled(bool enabled) async => appLockEnabled = enabled;
 }
 
 class _FakeAuthApi implements AuthApi {

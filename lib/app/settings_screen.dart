@@ -3,12 +3,15 @@ import 'package:flutter/material.dart';
 import '../core/design/tokens.dart';
 import '../core/di/locator.dart';
 import '../core/outbox/offline_writes.dart';
+import '../core/security/app_lock.dart';
+import '../core/security/app_lock_preference.dart';
 import 'routes.dart';
 import 'sign_out.dart';
 
 /// SET-1: the app's settings, where the dashboard's profile icon was. Only
-/// what is true of this app: the profile, how it is locked (AD-78: always the
-/// phone's own lock), what has not reached the server yet, and signing out.
+/// what is true of this app: the profile, how it is locked (AD-78, LK-1:
+/// the phone's own lock, on by default and switchable here), what has not
+/// reached the server yet, and signing out.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -35,14 +38,10 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
-          const _Group(
+          _Group(
             title: 'Security',
             children: [
-              ListTile(
-                leading: Icon(Icons.lock_rounded),
-                title: Text('App lock'),
-                subtitle: Text("Your phone's screen lock or fingerprint opens this app every time."),
-              ),
+              const _AppLockTile(),
               ListTile(
                 leading: Icon(Icons.sms_rounded),
                 title: Text('Sign-in'),
@@ -80,6 +79,51 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// LK-1: on by default; turning it off asks the phone's own check first,
+/// since disabling the lock must sit behind the lock it removes.
+class _AppLockTile extends StatefulWidget {
+  const _AppLockTile();
+
+  @override
+  State<_AppLockTile> createState() => _AppLockTileState();
+}
+
+class _AppLockTileState extends State<_AppLockTile> {
+  bool _busy = false;
+
+  Future<void> _toggle(bool wantEnabled) async {
+    final preference = locator<AppLockPreference>();
+    if (wantEnabled) {
+      await preference.enable();
+      return;
+    }
+    setState(() => _busy = true);
+    final unlock = locator<DeviceUnlock>();
+    final available = await unlock.isAvailable();
+    final passed = !available || await unlock.unlock('Confirm to turn off App lock');
+    if (mounted) setState(() => _busy = false);
+    if (passed) await preference.disable();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: locator<AppLockPreference>(),
+      builder: (context, enabled, _) => SwitchListTile(
+        secondary: const Icon(Icons.lock_rounded),
+        title: const Text('App lock'),
+        subtitle: Text(
+          enabled
+              ? "Your phone's screen lock or fingerprint opens this app every time."
+              : 'Off. Signing out turns it back on.',
+        ),
+        value: enabled,
+        onChanged: _busy ? null : _toggle,
       ),
     );
   }

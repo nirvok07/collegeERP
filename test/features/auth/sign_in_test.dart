@@ -34,6 +34,10 @@ class _Store implements SessionStore {
   Future<void> writeCollege(CollegeBrand value) async {}
   @override
   Future<void> clearCollege() async {}
+  @override
+  Future<bool> readAppLockEnabled() async => true;
+  @override
+  Future<void> writeAppLockEnabled(bool enabled) async {}
 }
 
 class _Server implements AuthApi {

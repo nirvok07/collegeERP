@@ -23,6 +23,7 @@ import '../core/network/auth_api.dart';
 import '../core/session/college_brand.dart';
 import '../features/auth/presentation/college_code_screen.dart';
 import '../core/security/app_lock.dart';
+import '../core/security/app_lock_preference.dart';
 
 class CollegeApp extends StatefulWidget {
   const CollegeApp({super.key});
@@ -166,6 +167,8 @@ class _CollegeAppState extends State<CollegeApp> {
           _freshSignIn = false;
           _degradedMessage = null;
           _authority = null;
+          // OD-LK-1: back on for whoever signs in next on this phone.
+          locator<AppLockPreference>().resetOnSignOut();
           FirebaseServices.instance.identify(null);
         case SessionDegraded():
           // The session is intact and renewal is retrying. Say so, and leave the
@@ -182,16 +185,23 @@ class _CollegeAppState extends State<CollegeApp> {
     });
   }
 
-  /// BIO-1: every screen of a signed-in session sits behind the phone's lock.
-  Widget _lockWhenSignedIn(Widget content) => _phase != _Phase.signedIn
-      ? content
-      : AppLockGate(
-          unlock: locator<DeviceUnlock>(),
-          college: _college,
-          startLocked: !_freshSignIn,
-          onSignOut: () => unawaited(_session.signOut()),
-          child: content,
-        );
+  /// BIO-1: every screen of a signed-in session sits behind the phone's lock,
+  /// unless LK-1 has turned it off for this phone.
+  Widget _lockWhenSignedIn(Widget content) {
+    if (_phase != _Phase.signedIn) return content;
+    return ValueListenableBuilder<bool>(
+      valueListenable: locator<AppLockPreference>(),
+      builder: (context, enabled, _) => enabled
+          ? AppLockGate(
+              unlock: locator<DeviceUnlock>(),
+              college: _college,
+              startLocked: !_freshSignIn,
+              onSignOut: () => unawaited(_session.signOut()),
+              child: content,
+            )
+          : content,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
