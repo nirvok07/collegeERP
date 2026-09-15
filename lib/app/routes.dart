@@ -8,6 +8,7 @@ import '../features/rooms/presentation/rooms_screen.dart';
 import '../features/fees/presentation/fee_heads_screen.dart';
 import '../features/fees/presentation/fee_structures_screen.dart';
 import '../features/fees/presentation/fee_structure_detail_screen.dart';
+import '../features/fees/presentation/fee_requests_screen.dart';
 import '../features/sections/presentation/sections_screen.dart';
 import '../features/timetable/presentation/timetable_screen.dart';
 import '../features/students/presentation/students_screen.dart';
@@ -48,6 +49,7 @@ abstract final class Routes {
   static const feeHeads = '/fees/heads';
   static const feeStructures = '/fees/structures';
   static const feeStructureDetail = '/fees/structures/detail';
+  static const feeRequests = '/fees/requests';
   static const sections = '/sections';
   static const timetable = '/timetable';
   static const students = '/students';
@@ -166,6 +168,10 @@ abstract final class AppRouter {
         final args = settings.arguments;
         if (args is! FeeStructureDetailArgs) return _unknown(settings);
         return _page(settings, FeeStructureDetailScreen(args: args));
+      case Routes.feeRequests:
+        final args = settings.arguments;
+        final canApprove = args is ManageArgs && args.authority.can('fee.approve');
+        return _page(settings, FeeRequestsScreen(canApprove: canApprove));
       case Routes.sections:
         final args = settings.arguments;
         return _page(settings, SectionsScreen(authority: args is ManageArgs ? args.authority : null));
