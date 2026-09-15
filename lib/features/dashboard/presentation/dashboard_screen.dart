@@ -1014,6 +1014,48 @@ class _AdminModules extends StatelessWidget {
           args: null,
           refresh: false,
         ),
+      // M11: the Accountant composes fees, the Cashier collects them, and
+      // the College Admin holds every fee permission there is.
+      if (authority.can('fee.manage'))
+        (
+          title: 'Fee heads',
+          subtitle: 'What fees are for',
+          icon: Icons.receipt_long_rounded,
+          color: AppColors.info,
+          route: Routes.feeHeads,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
+      if (authority.can('fee.read'))
+        (
+          title: 'Fee structures',
+          subtitle: 'Instalments and fees, per program',
+          icon: Icons.request_quote_rounded,
+          color: AppColors.primary,
+          route: Routes.feeStructures,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
+      if (authority.can('fee.approve') || authority.can('fee.manage'))
+        (
+          title: 'Concessions & waivers',
+          subtitle: 'Requests awaiting a decision',
+          icon: Icons.fact_check_rounded,
+          color: AppColors.warning,
+          route: Routes.feeRequests,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
+      if (authority.can('fee.collect') || authority.can('fee.manage'))
+        (
+          title: 'Student fees',
+          subtitle: 'Find a student, collect a payment',
+          icon: Icons.payments_rounded,
+          color: AppColors.success,
+          route: Routes.feeStudentSearch,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
       // ADM-10 (AD-81): the college's name, logo and colour.
       if (authority.can('institution.read'))
         (
@@ -1204,6 +1246,47 @@ class _TeacherModules extends StatelessWidget {
           color: AppColors.success,
           route: Routes.verifyMarks,
           args: null,
+          refresh: false,
+        ),
+      // M11: the Accountant composes fees, the Cashier collects them.
+      if (authority.can('fee.manage'))
+        (
+          title: 'Fee heads',
+          subtitle: 'What fees are for',
+          icon: Icons.receipt_long_rounded,
+          color: AppColors.info,
+          route: Routes.feeHeads,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
+      if (authority.can('fee.read'))
+        (
+          title: 'Fee structures',
+          subtitle: 'Instalments and fees, per program',
+          icon: Icons.request_quote_rounded,
+          color: AppColors.primary,
+          route: Routes.feeStructures,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
+      if (authority.can('fee.approve') || authority.can('fee.manage'))
+        (
+          title: 'Concessions & waivers',
+          subtitle: 'Requests awaiting a decision',
+          icon: Icons.fact_check_rounded,
+          color: AppColors.warning,
+          route: Routes.feeRequests,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
+      if (authority.can('fee.collect') || authority.can('fee.manage'))
+        (
+          title: 'Student fees',
+          subtitle: 'Find a student, collect a payment',
+          icon: Icons.payments_rounded,
+          color: AppColors.success,
+          route: Routes.feeStudentSearch,
+          args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),
       // CAL-1: the college's holidays and terms.

@@ -319,8 +319,7 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     oldest-first allocation across a partial then a completing payment with gapless receipt numbers,
     cancelling reverses and un-pays without touching the receipt row and the next payment still gets
     the next number, an Accountant cannot collect and a teacher cannot even read). `npm run
-    typecheck` clean. No Flutter UI yet for any FEE slice — the Accountant/Cashier screens are a
-    later slice once the server surface for FEE-5/6 exists too.
+    typecheck` clean. Flutter UI followed once FEE-1..5 were all in place — see below.
   - FEE-5 ✅ (2026-09-15) fines, late fees, and waiving either. Migration 035 generalises
     `invoices` to carry a `kind` ('instalment' | 'fine' | 'late_fee'), makes `fee_structure_id`/
     `instalment_id` nullable, adds `reason`, and replaces the old (student, instalment) uniqueness
@@ -341,14 +340,33 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     constraint to take effect (`dropdb`/`createdb` + `npm run db:bootstrap`, since `migrate()`
     tracks applied filenames, not content) — noted here in case a similar edit-an-applied-migration
     situation recurs before this reaches Supabase.
-  - FEE-6 ❌ student: dues, invoices,
-    payments, receipt + statement PDF (view/print/share; new `pdf`/`printing` packages); FEE-7 🚫
-    BLOCKED — Razorpay web payment + webhook, TODO until the owner supplies a merchant account and
-    API keys; FEE-8 ❌ reports (daily collection by cashier/mode, outstanding, defaulters,
-    concession/waiver register) — does not need FEE-7. No Flutter UI yet for any FEE slice
-    (every FEE-1..5 endpoint is server-only so far; the Accountant/Cashier screens are their own
-    next slice once FEE-6's student-facing surface exists too, so both can be built against a
-    settled contract).
+  - Fee-scoped student search ✅ (2026-09-15): `GET /v1/fees/students?q=` (`fee.read`) — neither
+    Cashier nor Accountant holds `student.read`, so recording a payment or raising a fine had no
+    way to find who it was for. Returns only id/name/enrolment number/program. Server 493/493 (+1).
+  - **Flutter, Accountant/Cashier screens ✅ (2026-09-15)**, owner asked for mobile alongside the
+    server (`lib/features/fees/`): `FeesRepository`/`FeesApi` cover every FEE-1..5 endpoint plus the
+    student search. `FeeHeadsScreen` (`fee.manage` adds/archives). `FeeStructuresScreen` → create a
+    draft for a program + year, `FeeStructureDetailScreen` composes it (instalments, fees, optional
+    late fee), publishes it (irreversible, fixed after), generates invoices, charges an overdue
+    instalment's late fee. `FeeRequestsScreen` — `fee.approve` (College Admin, never the requesting
+    Accountant) decides concessions and waivers. `FeeStudentSearchScreen` (the fee-scoped search
+    above) → `StudentFeeScreen`: dues, invoices, payments; `fee.collect` records a payment
+    (server allocates oldest-due-first) and cancels one; `fee.manage` raises a fine and requests a
+    concession (an instalment) or a waiver (a fine/late fee). Dashboard tiles in both
+    `_AdminModules` and `_TeacherModules` (Accountant/Cashier aren't `institution.manage`, so they
+    land in the "your work" grid, which already hosts every non-admin permission-gated tile):
+    **Fee heads** (`fee.manage`), **Fee structures** (`fee.read`), **Concessions & waivers**
+    (`fee.approve` or `fee.manage`), **Student fees** (`fee.collect` or `fee.manage`) — a Cashier
+    sees only the last; an Accountant sees all four. `FakeFeesRepository`
+    (`test/features/fees/fee_test_support.dart`) implements the whole interface once, faithfully
+    enough to allocate a payment oldest-due-first itself, for every fee screen's test to share.
+    Flutter 311/311 (+18), `flutter analyze` clean.
+  - FEE-6 ❌ student's own dues/invoices/payments view (self-scoped, like `/v1/me/attendance`) +
+    receipt/statement PDF (view/print/share; new `pdf`/`printing` packages, mobile only — no server
+    work beyond the self-scoped read); FEE-7 🚫 BLOCKED — Razorpay web payment + webhook, TODO until
+    the owner supplies a merchant account and API keys; FEE-8 ❌ reports (daily collection by
+    cashier/mode, outstanding, defaulters, concession/waiver register), server + mobile — does not
+    need FEE-7.
 
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.

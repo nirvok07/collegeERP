@@ -372,6 +372,25 @@ void main() {
       expect(find.text("Today's classes"), findsNothing);
     });
 
+    testWidgets('M11: an Accountant and a Cashier see only their own fee tiles', (tester) async {
+      final accountant = DashboardCubit(
+        delivery: _FakeDelivery(const Ok([])), teaching: _FakeTeaching(const Ok([])), today: today, clock: () => '09:30',
+      );
+      await pump(tester, const Authority(permissions: {'fee.read', 'fee.manage'}, hasAccess: true), accountant);
+      expect(find.text('Fee heads'), findsOneWidget);
+      expect(find.text('Fee structures'), findsOneWidget);
+      expect(find.text('Concessions & waivers'), findsOneWidget, reason: 'fee.manage requests them, even without fee.approve');
+      expect(find.text('Student fees'), findsOneWidget, reason: 'fee.manage also raises fines');
+
+      final cashier = DashboardCubit(
+        delivery: _FakeDelivery(const Ok([])), teaching: _FakeTeaching(const Ok([])), today: today, clock: () => '09:30',
+      );
+      await pump(tester, const Authority(permissions: {'fee.read', 'fee.collect'}, hasAccess: true), cashier);
+      expect(find.text('Fee heads'), findsNothing, reason: 'a Cashier does not compose fee structures');
+      expect(find.text('Concessions & waivers'), findsNothing, reason: 'nor decide or request them');
+      expect(find.text('Student fees'), findsOneWidget, reason: 'fee.collect is what a Cashier is for');
+    });
+
     // UX-3: the first read's placeholder is the dashboard's own shape.
     Future<void> pumpLoading(WidgetTester tester, Authority authority, DashboardCubit cubit) async {
       tester.view.physicalSize = const Size(1080, 2340);
