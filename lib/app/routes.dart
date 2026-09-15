@@ -5,6 +5,9 @@ import '../features/academic/presentation/academic_screen.dart';
 import '../features/calendar/presentation/academic_calendar_screen.dart';
 import '../features/curriculum/presentation/curriculum_screen.dart';
 import '../features/rooms/presentation/rooms_screen.dart';
+import '../features/fees/presentation/fee_heads_screen.dart';
+import '../features/fees/presentation/fee_structures_screen.dart';
+import '../features/fees/presentation/fee_structure_detail_screen.dart';
 import '../features/sections/presentation/sections_screen.dart';
 import '../features/timetable/presentation/timetable_screen.dart';
 import '../features/students/presentation/students_screen.dart';
@@ -42,6 +45,9 @@ abstract final class Routes {
   static const academic = '/academic';
   static const curriculum = '/curriculum';
   static const rooms = '/rooms';
+  static const feeHeads = '/fees/heads';
+  static const feeStructures = '/fees/structures';
+  static const feeStructureDetail = '/fees/structures/detail';
   static const sections = '/sections';
   static const timetable = '/timetable';
   static const students = '/students';
@@ -150,6 +156,16 @@ abstract final class AppRouter {
       case Routes.rooms:
         final args = settings.arguments;
         return _page(settings, RoomsScreen(authority: args is ManageArgs ? args.authority : null));
+      case Routes.feeHeads:
+        final args = settings.arguments;
+        return _page(settings, FeeHeadsScreen(authority: args is ManageArgs ? args.authority : null));
+      case Routes.feeStructures:
+        final args = settings.arguments;
+        return _page(settings, FeeStructuresScreen(authority: args is ManageArgs ? args.authority : null));
+      case Routes.feeStructureDetail:
+        final args = settings.arguments;
+        if (args is! FeeStructureDetailArgs) return _unknown(settings);
+        return _page(settings, FeeStructureDetailScreen(args: args));
       case Routes.sections:
         final args = settings.arguments;
         return _page(settings, SectionsScreen(authority: args is ManageArgs ? args.authority : null));
