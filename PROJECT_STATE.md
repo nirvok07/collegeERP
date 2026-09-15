@@ -134,6 +134,17 @@ Owner requests, 2026-09-15 (in order of build):
     admit form asks for a mobile or email; appoint form says the email/mobile is where the code
     goes. Server 450/450, Flutter 270/270. Runbook 09 steps 7, 8 and 13 describe code sign-in.
     Platform accounts have no phone column: the Super Admin signs in by email only.
+    **Superseded by AD-85** (owner, 2026-09-15): a student's mobile-only path is retired; email is
+    now mandatory at admission and is what the sign-in code goes to. Server: `admitBody.email`
+    required (was optional); `admitStudent` takes a non-null `email`. The OTP-4 mobile-only test
+    replaced with one asserting admission without an email is refused (422) and sign-in is by
+    email. Every server test admitting a student without an email updated to give one
+    (`enrolment.test.ts`, `attendance.test.ts`, `assessment.test.ts`, `idempotency.test.ts`,
+    `student-access.test.ts`). Mobile stays as an optional extra contact field, still sent and
+    stored, just not a sign-in path of its own for a student. Flutter: `StudentInput`/
+    `studentFormError` require a valid email; `admit_student_screen.dart` asks for email before
+    the now-optional mobile. Runbook 06 and 09 updated. Server 475/475, Flutter 288/288.
+    🔍 NEEDS VALIDATION on the phone.
   - OTP-5 ❌ web console to codes; remove password endpoints; real WhatsApp / SMS senders.
   - OTP-7 ✅ `488d6b2` real email codes over SMTP (nodemailer; Gmail app password / Brevo / SES / Resend by
     config: `SMTP_HOST/PORT/SECURE/USER/PASS/FROM`). With SMTP set, email (college + Super Admin) gets a

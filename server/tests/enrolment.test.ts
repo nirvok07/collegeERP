@@ -81,8 +81,8 @@ async function enrolmentSetup(code = 'enrol-college') {
 
   async function admit(name: string, number: string) {
     const created = await post('/v1/students', token, {
-      full_name: name, enrolment_number: number, program_id: program,
-      admitted_on: '2026-06-01',
+      full_name: name, email: `${number.toLowerCase()}@test.edu`, enrolment_number: number,
+      program_id: program, admitted_on: '2026-06-01',
     });
     return created.json().data as { id: string; person_id: string };
   }
@@ -120,7 +120,7 @@ describe('a student record keys history without duplicating identity', () => {
     const s = await enrolmentSetup();
     await s.admit('Nisha Kumar', 'cse2026-001');
     const again = await post('/v1/students', s.token, {
-      full_name: 'Someone Else', enrolment_number: 'CSE2026-001',
+      full_name: 'Someone Else', email: 'someone-else@enrol.edu', enrolment_number: 'CSE2026-001',
       program_id: s.program, admitted_on: '2026-06-01',
     });
     assert.equal(again.statusCode, 409);

@@ -85,7 +85,8 @@ async function oneClass(code = 'idem-college') {
 
   const admit = async (name: string, number: string) => {
     const s = (await post('/v1/students', {
-      full_name: name, enrolment_number: number, program_id: program, admitted_on: '2026-06-01',
+      full_name: name, email: `${number.toLowerCase()}@test.edu`, enrolment_number: number,
+      program_id: program, admitted_on: '2026-06-01',
     })).json().data as { id: string };
     await post(`/v1/sections/${section}/members`, { student_id: s.id, from: '2026-06-01' });
     return s.id;

@@ -67,7 +67,8 @@ async function college() {
 
   async function admit(name: string, number: string) {
     const id = (await post('/v1/students', admin, {
-      full_name: name, enrolment_number: number, program_id: program, admitted_on: '2026-06-01',
+      full_name: name, email: `${number.toLowerCase()}@test.edu`, enrolment_number: number,
+      program_id: program, admitted_on: '2026-06-01',
     })).json().data.id as string;
     await post(`/v1/sections/${section}/members`, admin, { student_id: id, from: '2026-06-01' });
     return id;

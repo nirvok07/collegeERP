@@ -56,17 +56,24 @@ void main() {
     expect(teacherFormError(const TeacherInput(fullName: 'Ravi', email: 'nope', departmentId: 'd1')), contains('email'));
     expect(studentFormError(const StudentInput(fullName: 'Nisha', enrolmentNumber: ' ', programId: 'p1', admittedOn: '2026-09-14')),
         contains('enrolment'));
-    expect(studentFormError(const StudentInput(fullName: 'Nisha', enrolmentNumber: 'E1', programId: 'p1', admittedOn: '2026-09-14')), isNull);
-    expect(const StudentInput(fullName: 'Nisha', enrolmentNumber: ' E1 ', programId: 'p1', admittedOn: '2026-09-14').toJson()
-        .containsKey('email'), isFalse);
+    // AD-85: a student's sign-in code goes to their email, so it is mandatory.
+    expect(studentFormError(const StudentInput(fullName: 'Nisha', enrolmentNumber: 'E1', programId: 'p1', admittedOn: '2026-09-14')),
+        contains('email'));
+    expect(
+      studentFormError(const StudentInput(
+        fullName: 'Nisha', enrolmentNumber: 'E1', programId: 'p1', admittedOn: '2026-09-14', email: 'nisha@x.edu',
+      )),
+      isNull,
+    );
   });
 
-  test('OTP-4: a student\'s mobile is sent when given, for their sign-in code (AD-82)', () {
+  test("AD-85: a student's mobile is sent when given, but is an extra contact detail only", () {
     const withMobile = StudentInput(
-      fullName: 'Diya', enrolmentNumber: 'E2', programId: 'p1', admittedOn: '2026-09-14', phone: ' +91 91234 56789 ',
+      fullName: 'Diya', enrolmentNumber: 'E2', programId: 'p1', admittedOn: '2026-09-14',
+      email: 'diya@x.edu', phone: ' +91 91234 56789 ',
     );
     expect(withMobile.toJson()['phone'], '+91 91234 56789');
-    expect(const StudentInput(fullName: 'Diya', enrolmentNumber: 'E2', programId: 'p1', admittedOn: '2026-09-14').toJson()
+    expect(const StudentInput(fullName: 'Diya', enrolmentNumber: 'E2', programId: 'p1', admittedOn: '2026-09-14', email: 'diya@x.edu').toJson()
         .containsKey('phone'), isFalse);
   });
 
@@ -111,6 +118,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), 'Nisha Rao');
     await tester.enterText(find.byType(TextField).at(1), 'CSE2026-001');
+    await tester.enterText(find.byType(TextField).at(2), 'nisha@iit-doon.edu');
     await tester.tap(find.text('Admit student'));
     await tester.pumpAndSettle();
     expect(repo.students.single.programId, 'p1', reason: 'the only program is chosen for them');

@@ -167,7 +167,7 @@ describe('AD-82: a college signs in with a code', () => {
     assert.equal((await verify(c.code, asked.json().data.challenge_token)).statusCode, 200);
   });
 
-  it('OTP-4: a student admitted with only a mobile signs in with it', async () => {
+  it('AD-85: a student needs an email to be admitted; a mobile alone is not enough', async () => {
     const c = await college();
     const admin = await signIn(c.code, c.adminEmail);
     const campus = (await call('GET', '/v1/campuses', undefined, admin)).json().data[0].id;
@@ -175,17 +175,21 @@ describe('AD-82: a college signs in with a code', () => {
     const program = (await call('POST', '/v1/programs', {
       department_id: department, name: 'B.Sc Physics', code: 'bsc-phy', duration_years: 3, term_type: 'semester',
     }, admin)).json().data.id;
-    const student = (await call('POST', '/v1/students', {
+    const refused = await call('POST', '/v1/students', {
       full_name: 'Diya Patel', phone: '+91 91234 56789', enrolment_number: '2026PH10002',
+      program_id: program, admitted_on: '2026-07-20',
+    }, admin);
+    assert.equal(refused.statusCode, 422, 'no email, no admission');
+
+    const student = (await call('POST', '/v1/students', {
+      full_name: 'Diya Patel', email: `diya@${c.code}.edu`, phone: '+91 91234 56789', enrolment_number: '2026PH10002',
       program_id: program, admitted_on: '2026-07-20',
     }, admin)).json().data.id;
     assert.equal((await call('POST', `/v1/students/${student}/access`, undefined, admin)).statusCode, 201);
 
-    const byMobile = await ask(c.code, '9123456789');
-    assert.equal(byMobile.json().data.destination, 'mobile');
-    assert.equal((await verify(c.code, byMobile.json().data.challenge_token)).statusCode, 200);
-    const byNumber = await ask(c.code, '2026PH10002');
-    assert.equal((await verify(c.code, byNumber.json().data.challenge_token)).statusCode, 200, 'the code goes to the mobile on record');
+    const byEmail = await ask(c.code, `diya@${c.code}.edu`);
+    assert.equal(byEmail.json().data.destination, 'email');
+    assert.equal((await verify(c.code, byEmail.json().data.challenge_token)).statusCode, 200);
   });
 
   it('a college account cannot come in by the platform door, nor a platform one by the college door', async () => {

@@ -233,7 +233,7 @@ To see a teacher's side on your own phone, use an email you can sign in with for
 ### Step 8: Onboarding, Students
 
 **Onboarding** → **Onboard a student**. Program: B.Tech CSE, admitted on 20 Jul 2026. Give each
-student a **mobile number** or an email: that is where their sign-in code goes.
+student an **email**: that is where their sign-in code goes (AD-85; a mobile number is optional).
 
 | Enrolment number | Name | Section (Step 9) |
 |---|---|---|

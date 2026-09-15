@@ -5,8 +5,9 @@ running with migrations applied ([Server](03-server.md)), a platform Owner exist
 installed ([Mobile apps](05-mobile-apps.md)).
 
 Everyone signs in the same way (AD-82): their email or mobile number (a student may use their
-enrolment number), then a 6-digit code sent to it. There are no passwords and no invitations to
-accept. Until go-live nothing is sent and the code is always **123456**.
+enrolment number, and always has an email, AD-85), then a 6-digit code sent to it. There are no
+passwords and no invitations to accept. Until go-live nothing is sent and the code is always
+**123456**.
 
 ## A. The platform (Super Admin app)
 
@@ -33,7 +34,7 @@ accept. Until go-live nothing is sent and the code is always **123456**.
    | 4 | **Curriculum** → Courses | The course catalogue (codes such as `CS101`) |
    | 5 | **Curriculum** → Regulations | For each program: a regulation, its courses term by term, then **Publish** |
    | 6 | **Rooms** | Classrooms and labs, with seats |
-   | 7 | **Onboarding** | **Appoint a teacher** (department, Faculty or Head of Department; email and optional mobile). **Onboard a student** (enrolment number, program, admission date, and a mobile or email for their sign-in code). |
+   | 7 | **Onboarding** | **Appoint a teacher** (department, Faculty or Head of Department; email and optional mobile). **Onboard a student** (enrolment number, program, admission date, and an email for their sign-in code; mobile is optional). |
    | 8 | **Sections** | Add a section (program, term, label such as A). **Open** it, **Add students**, then **Start teaching**. |
    | 9 | Section → **Courses taught** | Add each course to the section. On the course: **Assign** its teacher, **Enrol section A**, then **Start teaching**. |
    | 10 | Course → **Weekly timetable** | Add its weekly slots (day, time, room), then **Generate the term's classes** (previewed first; clashes are listed and nothing is created until they are fixed) |
@@ -54,8 +55,8 @@ accept. Until go-live nothing is sent and the code is always **123456**.
 ## D. A student (College app)
 
 1. The administrator opens **Students** → the student → **Give app access**, and sends the student
-   the message. This creates their account, which takes a seat. The student needs a mobile or an
-   email on record: that is where their code goes.
+   the message. This creates their account, which takes a seat. Every student has an email on
+   record (AD-85): that is where their code goes.
 2. The student opens the College app, enters the college code, then their **enrolment number**
    (or mobile, or email) → **Send code** → the code.
 3. Their home is **My attendance**, by course, counted from submitted registers; a course below 75%

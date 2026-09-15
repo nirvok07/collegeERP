@@ -104,7 +104,8 @@ async function assessmentSetup(code = 'assess-college') {
 
   async function admit(name: string, number: string, sectionId: string, from = '2026-06-01') {
     const created = (await post('/v1/students', token, {
-      full_name: name, enrolment_number: number, program_id: program, admitted_on: '2026-06-01',
+      full_name: name, email: `${number.toLowerCase()}@test.edu`, enrolment_number: number,
+      program_id: program, admitted_on: '2026-06-01',
     })).json().data as { id: string };
     await post(`/v1/sections/${sectionId}/members`, token, { student_id: created.id, from });
     return created;

@@ -120,8 +120,8 @@ async function attendanceSetup(code = 'attend-college') {
 
   async function admit(name: string, number: string, sectionId: string) {
     const created = (await post('/v1/students', token, {
-      full_name: name, enrolment_number: number, program_id: program,
-      admitted_on: '2026-06-01',
+      full_name: name, email: `${number.toLowerCase()}@test.edu`, enrolment_number: number,
+      program_id: program, admitted_on: '2026-06-01',
     })).json().data as { id: string };
     await post(`/v1/sections/${sectionId}/members`, token, {
       student_id: created.id, from: '2026-06-01',
@@ -246,8 +246,8 @@ describe('marking a register', () => {
   it('refuses a student who was not enrolled in the course that day', async () => {
     const c = await oneClass();
     const outsider = (await post('/v1/students', c.token, {
-      full_name: 'Meera Das', enrolment_number: 'cse2026-009', program_id: c.program,
-      admitted_on: '2026-06-01',
+      full_name: 'Meera Das', email: 'meera-outsider@test.edu', enrolment_number: 'cse2026-009',
+      program_id: c.program, admitted_on: '2026-06-01',
     })).json().data;
 
     const marked = await put(`/v1/sessions/${c.session}/attendance`, c.token, {
@@ -260,8 +260,8 @@ describe('marking a register', () => {
   it('refuses a student enrolled only after the class happened', async () => {
     const c = await oneClass();
     const late = (await post('/v1/students', c.token, {
-      full_name: 'Late Joiner', enrolment_number: 'cse2026-010', program_id: c.program,
-      admitted_on: '2026-06-01',
+      full_name: 'Late Joiner', email: 'late-joiner@test.edu', enrolment_number: 'cse2026-010',
+      program_id: c.program, admitted_on: '2026-06-01',
     })).json().data;
     await post(`/v1/sections/${c.section}/members`, c.token, {
       student_id: late.id, from: '2026-07-01',
@@ -350,8 +350,8 @@ describe('two people on one register do not overwrite each other', () => {
   it('a whole batch fails together when one mark in it is wrong', async () => {
     const c = await oneClass();
     const outsider = (await post('/v1/students', c.token, {
-      full_name: 'Meera Das', enrolment_number: 'cse2026-009', program_id: c.program,
-      admitted_on: '2026-06-01',
+      full_name: 'Meera Das', email: 'meera-outsider@test.edu', enrolment_number: 'cse2026-009',
+      program_id: c.program, admitted_on: '2026-06-01',
     })).json().data;
 
     const marked = await put(`/v1/sessions/${c.session}/attendance`, c.token, {

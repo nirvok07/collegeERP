@@ -79,7 +79,8 @@ class AppointedTeacher {
 }
 
 /// A student record: no login yet. Once given app access, the student signs
-/// in with a code sent to this email or mobile (AD-82).
+/// in with a code sent to this email (AD-85); the mobile is an extra contact
+/// detail only.
 class StudentInput {
   const StudentInput({
     required this.fullName,
@@ -124,6 +125,7 @@ String? studentFormError(StudentInput input) {
   if (input.enrolmentNumber.trim().isEmpty) return 'Enter the enrolment number.';
   if (input.programId == null) return 'Choose the program.';
   if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(input.admittedOn)) return 'Choose the admission date.';
-  if (input.email.trim().isNotEmpty && !_email.hasMatch(input.email.trim())) return 'Check the email address.';
+  // AD-85: a student's sign-in code goes to their email, so it is mandatory.
+  if (!_email.hasMatch(input.email.trim())) return "Enter the student's email address.";
   return null;
 }

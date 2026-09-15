@@ -16,8 +16,9 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
 const admitBody = z.object({
   full_name: z.string().min(2).max(120),
-  email: z.string().email().max(254).nullable().optional(),
-  // OTP-4 (AD-82): where the student's sign-in code can go, with the email.
+  // AD-85: a student's sign-in code goes to their email, so it is mandatory.
+  email: z.string().email().max(254),
+  // An extra contact detail; no longer a sign-in path on its own (AD-85).
   phone: z.string().max(20).nullable().optional(),
   enrolment_number: z.string().min(1).max(40),
   program_id: z.string().uuid(),
@@ -101,7 +102,7 @@ export async function registerEnrolmentRoutes(app: FastifyInstance, c: Container
     if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
     return sendResult(reply, await admitStudent(c.enrolment, actorOf(req), {
       fullName: parsed.data.full_name,
-      email: parsed.data.email ?? null,
+      email: parsed.data.email,
       phone: parsed.data.phone ?? null,
       enrolmentNumber: parsed.data.enrolment_number,
       programId: parsed.data.program_id,
