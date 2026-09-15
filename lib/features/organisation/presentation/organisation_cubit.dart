@@ -78,6 +78,9 @@ class OrganisationCubit extends Cubit<OrganisationState> {
 
   Future<Failure?> archiveDepartment(String id, String reason) =>
       _write(_repository.archiveDepartment(id, reason.trim()));
+
+  /// SA-A1: sets or (null) removes a campus's attendance fence.
+  Future<Failure?> setFence(String campusId, CampusFence? fence) => _write(_repository.setFence(campusId, fence));
 }
 
 /// A code suggested from the name, in the server's shape: lowercase letters,

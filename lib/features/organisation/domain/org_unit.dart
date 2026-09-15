@@ -10,6 +10,7 @@ class Campus {
     required this.code,
     required this.isDefault,
     required this.departmentCount,
+    this.fence,
   });
 
   final String id;
@@ -18,13 +19,41 @@ class Campus {
   final bool isDefault;
   final int departmentCount;
 
+  /// SA-A1 (AD-83): where staff punch in and out; null when not set.
+  final CampusFence? fence;
+
   static Campus fromJson(Map json) => Campus(
         id: json['id'] as String,
         name: json['name'] as String,
         code: json['code'] as String,
         isDefault: json['is_default'] as bool? ?? false,
         departmentCount: json['department_count'] as int? ?? 0,
+        fence: CampusFence.fromJson(json['fence']),
       );
+}
+
+/// SA-A1: a circle around the campus's own location, radius in metres.
+class CampusFence {
+  const CampusFence({required this.latitude, required this.longitude, required this.radiusM});
+
+  final double latitude;
+  final double longitude;
+  final int radiusM;
+
+  static const minRadius = 25;
+  static const maxRadius = 2000;
+  static const defaultRadius = 200;
+
+  Map<String, Object> toJson() => {'latitude': latitude, 'longitude': longitude, 'radius_m': radiusM};
+
+  static CampusFence? fromJson(Object? json) {
+    if (json is! Map) return null;
+    return CampusFence(
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      radiusM: (json['radius_m'] as num).toInt(),
+    );
+  }
 }
 
 class Department {

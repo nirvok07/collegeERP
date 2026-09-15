@@ -13,7 +13,7 @@ import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
-  CampusRecord, CampusRepository, DepartmentRecord, DepartmentRepository,
+  CampusFence, CampusRecord, CampusRepository, DepartmentRecord, DepartmentRepository,
 } from './ports.ts';
 import { occupancyOfScope } from '../../identity/application/scope-capability.ts';
 
@@ -59,6 +59,51 @@ export function listDepartments(
   deps: ManageOrgDeps, actor: OrgActor, includeArchived = false,
 ): Promise<DepartmentRecord[]> {
   return deps.uow.run(actor.tenantId, (tx) => deps.departments.list(tx, includeArchived));
+}
+
+/* ---------------------------------------------------- attendance fence -- */
+
+/** SA-A1 (AD-83): the radius a fence may have, in metres. */
+export const FENCE_RADIUS_M = { min: 25, max: 2000 } as const;
+
+function fenceProblem(f: CampusFence): Result<CampusFence> {
+  const invalid = (field: string, message: string) =>
+    Err(fail('VALIDATION_FAILED', message, { fieldErrors: { [field]: message } }));
+  if (!(f.latitude >= -90 && f.latitude <= 90)) return invalid('latitude', 'Latitude is between -90 and 90.');
+  if (!(f.longitude >= -180 && f.longitude <= 180)) return invalid('longitude', 'Longitude is between -180 and 180.');
+  // 0,0 is what a phone reports when it has no fix, never a college.
+  if (f.latitude === 0 && f.longitude === 0) return invalid('latitude', 'That is not the campus location.');
+  if (!Number.isInteger(f.radiusM) || f.radiusM < FENCE_RADIUS_M.min || f.radiusM > FENCE_RADIUS_M.max) {
+    return invalid('radius_m', `The radius is ${FENCE_RADIUS_M.min} to ${FENCE_RADIUS_M.max} metres.`);
+  }
+  return Ok(f);
+}
+
+/**
+ * Sets a campus's attendance fence, or (null) removes it, after which nobody
+ * can punch in there. The centre is the campus's location, not a person's.
+ */
+export async function setCampusFence(
+  deps: ManageOrgDeps, actor: OrgActor, input: { id: string; fence: CampusFence | null },
+): Promise<Result<{ id: string }>> {
+  if (input.fence) {
+    const checked = fenceProblem(input.fence);
+    if (!checked.ok) return checked;
+  }
+  return deps.uow.run(actor.tenantId, async (tx) => {
+    const campus = await deps.campuses.findById(tx, input.id);
+    if (!campus || campus.status !== 'active') return Err(fail('NOT_FOUND', 'That campus was not found.'));
+    const changed = await deps.campuses.setFence(tx, input.id, input.fence);
+    if (!changed) return Err(fail('CONFLICT', 'That campus was changed by someone else just now.'));
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: input.fence ? 'campus.fence_set' : 'campus.fence_cleared',
+      subjectType: 'campus', subjectId: input.id, scopeType: 'campus', scopeRefId: input.id,
+      before: { fence: campus.fence }, after: { fence: input.fence },
+    }, tx);
+    return Ok({ id: input.id });
+  });
 }
 
 /* -------------------------------------------------------------- campus -- */

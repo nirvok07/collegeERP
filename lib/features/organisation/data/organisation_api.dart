@@ -11,6 +11,9 @@ abstract interface class OrganisationRepository {
   Future<Result<void>> renameDepartment(String id, String name);
   Future<Result<void>> archiveCampus(String id, String reason);
   Future<Result<void>> archiveDepartment(String id, String reason);
+
+  /// SA-A1 (AD-83): sets a campus's attendance fence, or (null) removes it.
+  Future<Result<void>> setFence(String campusId, CampusFence? fence);
 }
 
 class OrganisationApi implements OrganisationRepository {
@@ -61,4 +64,10 @@ class OrganisationApi implements OrganisationRepository {
   @override
   Future<Result<void>> archiveDepartment(String id, String reason) =>
       _client.post('/v1/departments/${Uri.encodeComponent(id)}/archive', {'reason': reason}, _ignore);
+
+  @override
+  Future<Result<void>> setFence(String campusId, CampusFence? fence) {
+    final path = '/v1/campuses/${Uri.encodeComponent(campusId)}/fence';
+    return fence == null ? _client.delete(path, _ignore) : _client.patch(path, fence.toJson(), _ignore);
+  }
 }

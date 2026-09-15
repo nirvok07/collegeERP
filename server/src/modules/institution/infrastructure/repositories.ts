@@ -1,7 +1,7 @@
 import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
-  CampusRecord, CampusRepository, DepartmentRecord, DepartmentRepository,
+  CampusFence, CampusRecord, CampusRepository, DepartmentRecord, DepartmentRepository,
   InstitutionRecord, InstitutionRepository,
 } from '../application/ports.ts';
 import type {
@@ -79,6 +79,7 @@ export class PgInstitutionRepository implements InstitutionRepository {
 /** Department counts come from the same query as the campus, never per row. */
 const CAMPUS_SELECT = `
   SELECT c.id, c.tenant_id, c.name, c.code, c.is_default, c.status, c.version,
+         c.fence_latitude, c.fence_longitude, c.fence_radius_m,
          (SELECT count(*)::int FROM departments d
            WHERE d.campus_id = c.id AND d.status = 'active') AS department_count
     FROM campuses c`;
@@ -128,6 +129,17 @@ export class PgCampusRepository implements CampusRepository {
               updated_at = now(), version = version + 1
         WHERE id = $1 AND status = 'active'`,
       [id, at, by],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async setFence(tx: Tx, id: string, fence: CampusFence | null): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE campuses
+          SET fence_latitude = $2, fence_longitude = $3, fence_radius_m = $4,
+              updated_at = now(), version = version + 1
+        WHERE id = $1 AND status = 'active'`,
+      [id, fence?.latitude ?? null, fence?.longitude ?? null, fence?.radiusM ?? null],
     );
     return (rowCount ?? 0) > 0;
   }
@@ -202,6 +214,9 @@ function toCampus(r: any): CampusRecord {
     id: r.id, tenantId: r.tenant_id, name: r.name, code: r.code,
     isDefault: r.is_default, status: r.status,
     departmentCount: r.department_count, version: r.version,
+    fence: r.fence_radius_m == null ? null : {
+      latitude: Number(r.fence_latitude), longitude: Number(r.fence_longitude), radiusM: r.fence_radius_m,
+    },
   };
 }
 

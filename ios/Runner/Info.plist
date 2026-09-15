@@ -66,5 +66,7 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Your location is checked against your campus when you punch in or out, and when an administrator sets the campus attendance area. It is not stored.</string>
 </dict>
 </plist>

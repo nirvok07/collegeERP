@@ -5,7 +5,7 @@ import { sendFailure, sendOk, sendResult } from '../../../infrastructure/http/se
 import { requirePermission, requirePlatformPermission } from '../../../infrastructure/http/guards.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
-  archiveCampus, archiveDepartment, createCampus, createDepartment,
+  archiveCampus, archiveDepartment, createCampus, createDepartment, setCampusFence,
   listCampuses, listDepartments, renameDepartment, type OrgActor,
 } from '../application/manage-org-units.ts';
 import { fail } from '../../../core/errors.ts';
@@ -41,6 +41,8 @@ const unitBody = z.object({
 const departmentBody = unitBody.extend({ campus_id: z.string().uuid() });
 const renameBody = z.object({ name: z.string().min(2).max(120) });
 const archiveBody = z.object({ reason: z.string().min(1).max(500) });
+/** SA-A1: ranges are the use case's to judge, so every client gets one message. */
+const fenceBody = z.object({ latitude: z.number(), longitude: z.number(), radius_m: z.number() });
 const auditQuery = z.object({
   college: z.string().uuid().optional(),
   action: z.string().regex(/^[a-z_]+(\.[a-z_]+)*$/).max(80).optional(),
@@ -127,6 +129,9 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
       id: campus.id, name: campus.name, code: campus.code,
       is_default: campus.isDefault, status: campus.status,
       department_count: campus.departmentCount,
+      fence: campus.fence
+        ? { latitude: campus.fence.latitude, longitude: campus.fence.longitude, radius_m: campus.fence.radiusM }
+        : null,
     })));
   });
 
@@ -146,6 +151,24 @@ export async function registerInstitutionRoutes(app: FastifyInstance, c: Contain
       id: (req.params as { id: string }).id, reason: parsed.data.reason,
     });
     return sendResult(reply, result);
+  });
+
+  /** SA-A1 (AD-83): the circle staff punch in and out inside, on this campus. */
+  app.patch('/campuses/:id/fence', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'campus.manage', institutionScope()))) return reply;
+    const parsed = fenceBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, validationFailure(parsed.error.issues));
+    return sendResult(reply, await setCampusFence(c.manageOrg, orgActor(req), {
+      id: (req.params as { id: string }).id,
+      fence: { latitude: parsed.data.latitude, longitude: parsed.data.longitude, radiusM: parsed.data.radius_m },
+    }));
+  });
+
+  app.delete('/campuses/:id/fence', async (req, reply) => {
+    if (!(await requirePermission(c, req, reply, 'campus.manage', institutionScope()))) return reply;
+    return sendResult(reply, await setCampusFence(c.manageOrg, orgActor(req), {
+      id: (req.params as { id: string }).id, fence: null,
+    }));
   });
 
   app.get('/departments', async (req, reply) => {

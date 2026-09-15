@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/error/failure.dart';
+import '../../../core/platform/current_location.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/organisation_api.dart';
@@ -21,12 +22,15 @@ import 'organisation_cubit.dart';
 /// archives them here; each action is present only with its permission, and
 /// the server checks again.
 class OrganisationScreen extends StatelessWidget {
-  const OrganisationScreen({super.key, this.authority, this.repository});
+  const OrganisationScreen({super.key, this.authority, this.repository, this.locate});
 
   final Authority? authority;
 
   /// Tests supply their own; the app uses the server.
   final OrganisationRepository? repository;
+
+  /// Tests supply a position; the app asks the phone.
+  final Locate? locate;
 
   @override
   Widget build(BuildContext context) {
@@ -35,16 +39,30 @@ class OrganisationScreen extends StatelessWidget {
       child: _OrganisationView(
         canCampus: authority?.can('campus.manage') ?? false,
         canDepartment: authority?.can('department.manage') ?? false,
+        locate: locate ?? currentLocation,
       ),
     );
   }
 }
 
 class _OrganisationView extends StatelessWidget {
-  const _OrganisationView({required this.canCampus, required this.canDepartment});
+  const _OrganisationView({required this.canCampus, required this.canDepartment, required this.locate});
 
   final bool canCampus;
   final bool canDepartment;
+  final Locate locate;
+
+  /// SA-A1 (AD-83): where staff of this campus may punch in and out.
+  Future<void> _setFence(BuildContext context, Campus campus) async {
+    final cubit = context.read<OrganisationCubit>();
+    final saved = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _FenceSheet(campus: campus, locate: locate, save: (fence) => cubit.setFence(campus.id, fence)),
+    );
+    if (saved != null && context.mounted) _say(context, saved);
+  }
 
   Future<void> _addCampus(BuildContext context) async {
     final cubit = context.read<OrganisationCubit>();
@@ -126,15 +144,19 @@ class _OrganisationView extends StatelessWidget {
                       ),
                       title: Text(campus.name),
                       subtitle: Text(
-                        departments.isEmpty
-                            ? 'No departments'
-                            : '${departments.length} ${departments.length == 1 ? 'department' : 'departments'}',
+                        '${departments.isEmpty ? 'No departments' : '${departments.length} ${departments.length == 1 ? 'department' : 'departments'}'}'
+                        ' · ${campus.fence == null ? 'No attendance area' : 'Attendance area ${campus.fence!.radiusM} m'}',
                       ),
-                      trailing: canCampus && !campus.isDefault
+                      trailing: canCampus
                           ? PopupMenuButton<String>(
                               tooltip: 'More for ${campus.name}',
-                              onSelected: (_) => _archiveCampus(context, campus),
-                              itemBuilder: (_) => const [PopupMenuItem(value: 'archive', child: Text('Archive'))],
+                              onSelected: (action) => action == 'fence'
+                                  ? _setFence(context, campus)
+                                  : _archiveCampus(context, campus),
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(value: 'fence', child: Text('Attendance area')),
+                                if (!campus.isDefault) const PopupMenuItem(value: 'archive', child: Text('Archive')),
+                              ],
                             )
                           : const Icon(Icons.chevron_right_rounded),
                       // Always open, even with no departments: that is where
@@ -154,6 +176,165 @@ class _OrganisationView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// SA-A1 (AD-83): the circle staff punch in and out inside. Standing on the
+/// campus, "Use my location" fills the centre; the coordinates can be typed too.
+class _FenceSheet extends StatefulWidget {
+  const _FenceSheet({required this.campus, required this.locate, required this.save});
+
+  final Campus campus;
+  final Locate locate;
+
+  /// Null when saved; the server's reason otherwise.
+  final Future<Failure?> Function(CampusFence? fence) save;
+
+  @override
+  State<_FenceSheet> createState() => _FenceSheetState();
+}
+
+class _FenceSheetState extends State<_FenceSheet> {
+  late final _latitude = TextEditingController(text: widget.campus.fence?.latitude.toString() ?? '');
+  late final _longitude = TextEditingController(text: widget.campus.fence?.longitude.toString() ?? '');
+  late double _radius = (widget.campus.fence?.radiusM ?? CampusFence.defaultRadius).toDouble();
+  bool _busy = false;
+  String? _error;
+  String? _fixNote;
+
+  @override
+  void dispose() {
+    _latitude.dispose();
+    _longitude.dispose();
+    super.dispose();
+  }
+
+  Future<void> _useMyLocation() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final fix = await widget.locate();
+      if (!mounted) return;
+      setState(() {
+        _latitude.text = fix.latitude.toStringAsFixed(6);
+        _longitude.text = fix.longitude.toStringAsFixed(6);
+        _fixNote = 'Your position, to within ${fix.accuracyM.round()} m.';
+      });
+    } on LocationUnavailable catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _submit(CampusFence? fence, String done) async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    final failure = await widget.save(fence);
+    if (!mounted) return;
+    if (failure == null) {
+      Navigator.of(context).pop(done);
+      return;
+    }
+    setState(() {
+      _busy = false;
+      _error = failure.message;
+    });
+  }
+
+  void _save() {
+    final lat = double.tryParse(_latitude.text.trim());
+    final lng = double.tryParse(_longitude.text.trim());
+    if (lat == null || lng == null) {
+      setState(() => _error = 'Use your location, or type the latitude and longitude.');
+      return;
+    }
+    _submit(CampusFence(latitude: lat, longitude: lng, radiusM: _radius.round()), 'Attendance area saved');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasFence = widget.campus.fence != null;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.base, 0, AppSpacing.base, MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Attendance area', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Staff of ${widget.campus.name} can punch in and out only inside this circle. '
+            'Stand in the middle of the campus and use your location.',
+            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+            ),
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _useMyLocation,
+            icon: const Icon(Icons.my_location_rounded),
+            label: const Text('Use my location'),
+          ),
+          if (_fixNote != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(_fixNote!, style: theme.textTheme.bodySmall),
+            ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _latitude,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: const InputDecoration(labelText: 'Latitude'),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: TextField(
+                  controller: _longitude,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                  decoration: const InputDecoration(labelText: 'Longitude'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text('Radius: ${_radius.round()} m', style: theme.textTheme.titleSmall),
+          Slider(
+            value: _radius,
+            min: CampusFence.minRadius.toDouble(),
+            max: 1000,
+            divisions: 39,
+            label: '${_radius.round()} m',
+            onChanged: _busy ? null : (v) => setState(() => _radius = v),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FilledButton(
+            onPressed: _busy ? null : _save,
+            child: _busy
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Text('Save attendance area'),
+          ),
+          if (hasFence)
+            TextButton(
+              onPressed: _busy ? null : () => _submit(null, 'Attendance area removed'),
+              child: Text('Remove it (nobody can punch in here)', style: TextStyle(color: theme.colorScheme.error)),
+            ),
+        ],
+      ),
     );
   }
 }

@@ -46,6 +46,15 @@ export interface CampusRecord {
   status: 'active' | 'archived';
   departmentCount: number;
   version: number;
+  /** SA-A1 (AD-83): where staff may punch in and out; null when not set. */
+  fence: CampusFence | null;
+}
+
+/** SA-A1: a circle around the campus's own location. */
+export interface CampusFence {
+  latitude: number;
+  longitude: number;
+  radiusM: number;
 }
 
 export interface DepartmentRecord {
@@ -68,6 +77,8 @@ export interface CampusRepository {
   list(tx: Tx, includeArchived: boolean): Promise<CampusRecord[]>;
   rename(tx: Tx, id: string, name: string): Promise<boolean>;
   archive(tx: Tx, id: string, by: string, at: Date): Promise<boolean>;
+  /** Sets or (null) clears the fence of an active campus. */
+  setFence(tx: Tx, id: string, fence: CampusFence | null): Promise<boolean>;
 }
 
 export interface DepartmentRepository {

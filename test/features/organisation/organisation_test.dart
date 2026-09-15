@@ -122,4 +122,7 @@ class _FakeOrganisation implements OrganisationRepository {
 
   @override
   Future<Result<void>> archiveDepartment(String id, String reason) async => const Ok(null);
+
+  @override
+  Future<Result<void>> setFence(String campusId, CampusFence? fence) async => const Ok(null);
 }

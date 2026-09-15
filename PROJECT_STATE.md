@@ -75,13 +75,25 @@ Owner requests, 2026-09-15 (in order of build):
   card on the student home. Server 468/468 (+6), Flutter 281/281 (+4). The Timetable's Holidays tab
   still edits the same rows (one source of truth; the tab may later just link here).
   🔍 NEEDS VALIDATION on the phone.
-- Staff attendance (AD-83): SA-A1 ❌ campus fence (lat/long/radius, "use my location"); SA-A2 ❌ punch
+- Staff attendance (AD-83): SA-A1 ✅ campus attendance area: migration 029 (fence lat/long/radius on
+  `campuses`, all three or none, radius 25–2000 m); `PATCH|DELETE /v1/campuses/:id/fence` (campus.manage,
+  audited `campus.fence_set|cleared`; 0,0 and out-of-range refused); `GET /v1/campuses` returns
+  `fence`. Flutter: Organisation → campus menu → "Attendance area" sheet ("Use my location" via
+  `geolocator`, typed lat/long, radius slider, remove); list shows "Attendance area 200 m";
+  `core/platform/current_location.dart` shared with punching; Android fine/coarse location, iOS
+  when-in-use text. Server 471/471 (+3), Flutter 284/284 (+3). 🔍 NEEDS VALIDATION on the phone
+  (real GPS fix, permission prompts). Migration 029 applied to Supabase 2026-09-15 (owner approved). SA-A2 ❌ punch
   in/out (online, server time, distance check, mock refused); SA-A3 ❌ my report with charts + admin
   view; SA-A4 ❌ forgotten punch → reason + time → admin approves/rejects; SA-A5 ❌ reminders as local
   notifications (backend push blocked, Drift 6).
 - LV-1 ❌ Leave management for teachers and students (sick, short leave, half day; reason; apply →
-  approve). OD-LV-1 open: who approves (HoD / College Admin / class teacher for students), quotas
-  per type, and whether approved student leave marks classes "excused".
+  approve). OD-LV-1 ✅ resolved by the owner 2026-09-15 (record as AD-84 when LV-1 starts): a
+  teacher's leave is approved by their HoD (College Admin when there is none), a student's by their
+  section's teacher; the College Admin can approve any; teachers have a yearly quota per type set by
+  the admin (balance shown), students none; a student's approved leave pre-fills their classes as
+  Excused on the register (teacher can still change it).
+- AD-83 note: `institutions.timezone` already exists (default Asia/Kolkata); the college day and the
+  late time use it, so AD-83's timezone assumption is not needed.
 - OTP sign-in 🟡 AD-82 approved (everyone incl. Super Admin; no passwords; fixed code 123456 on every
   server until go-live, risk accepted by owner). Slices, in order:
   - OTP-1 ✅ `adf1fe5` server: `/v1/auth/otp/request|verify` (college: email, mobile, enrolment no.)

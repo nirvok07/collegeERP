@@ -45,6 +45,63 @@ const post = (url: string, t: string, payload: unknown) =>
 const patch = (url: string, t: string, payload: unknown) =>
   harness.app.inject({ method: 'PATCH', url, headers: as(t), payload: payload as never }) as Promise<LightMyRequestResponse>;
 
+describe('SA-A1: a campus attendance fence (AD-83)', () => {
+  const del = (url: string, t: string) =>
+    harness.app.inject({ method: 'DELETE', url, headers: as(t) }) as Promise<LightMyRequestResponse>;
+  const fenceOf = async (t: string) => (await get('/v1/campuses', t)).json().data[0].fence;
+
+  it('is set, read back, replaced and removed by whoever manages campuses', async () => {
+    const c = await college();
+    const campus = (await get('/v1/campuses', c.token)).json().data[0].id as string;
+    assert.equal(await fenceOf(c.token), null, 'no fence until one is set');
+
+    const set = await patch(`/v1/campuses/${campus}/fence`, c.token, { latitude: 28.5456, longitude: 77.1926, radius_m: 200 });
+    assert.equal(set.statusCode, 200, set.body);
+    assert.deepEqual(await fenceOf(c.token), { latitude: 28.5456, longitude: 77.1926, radius_m: 200 });
+
+    await patch(`/v1/campuses/${campus}/fence`, c.token, { latitude: 28.5456, longitude: 77.1926, radius_m: 350 });
+    assert.equal((await fenceOf(c.token)).radius_m, 350);
+
+    assert.equal((await del(`/v1/campuses/${campus}/fence`, c.token)).statusCode, 200);
+    assert.equal(await fenceOf(c.token), null);
+  });
+
+  it('refuses a place that is not on Earth, 0,0, and a radius outside 25 to 2000 m', async () => {
+    const c = await college();
+    const campus = (await get('/v1/campuses', c.token)).json().data[0].id as string;
+    const set = (latitude: number, longitude: number, radius_m: number) =>
+      patch(`/v1/campuses/${campus}/fence`, c.token, { latitude, longitude, radius_m });
+    assert.equal((await set(91, 77, 200)).statusCode, 422);
+    assert.equal((await set(28, 181, 200)).statusCode, 422);
+    assert.equal((await set(0, 0, 200)).statusCode, 422);
+    const tiny = await set(28.5, 77.1, 10);
+    assert.equal(tiny.statusCode, 422);
+    assert.match(tiny.json().error.message, /25 to 2000 metres/);
+    assert.equal((await set(28.5, 77.1, 2001)).statusCode, 422);
+    assert.equal((await set(28.5, 77.1, 150.5)).statusCode, 422);
+    assert.equal(await fenceOf(c.token), null, 'nothing was saved');
+  });
+
+  it('only whoever manages campuses sets it', async () => {
+    const c = await college();
+    const campus = (await get('/v1/campuses', c.token)).json().data[0].id as string;
+    const invited = await post('/v1/people', c.token, {
+      full_name: 'Asha Menon', email: `asha@${c.code}.edu`, person_type: 'staff',
+    });
+    await harness.app.inject({
+      method: 'POST', url: '/v1/auth/accept-invite',
+      payload: { institution_code: c.code, token: invited.json().data.invitation.token, password: 'staff-strong-99' },
+    });
+    const staff = ((await harness.app.inject({
+      method: 'POST', url: '/v1/auth/login',
+      payload: { institution_code: c.code, identifier: `asha@${c.code}.edu`, password: 'staff-strong-99' },
+    })) as LightMyRequestResponse).json().data.access_token as string;
+
+    assert.equal((await patch(`/v1/campuses/${campus}/fence`, staff, { latitude: 28.5, longitude: 77.1, radius_m: 200 })).statusCode, 403);
+    assert.equal((await del(`/v1/campuses/${campus}/fence`, staff)).statusCode, 403);
+  });
+});
+
 describe('campuses', () => {
   it('provisioning leaves exactly one default campus', async () => {
     const c = await college();
