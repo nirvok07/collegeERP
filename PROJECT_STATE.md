@@ -63,7 +63,13 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
     admit form asks for a mobile or email; appoint form says the email/mobile is where the code
     goes. Server 450/450, Flutter 270/270. Runbook 09 steps 7, 8 and 13 describe code sign-in.
     Platform accounts have no phone column: the Super Admin signs in by email only.
-  - OTP-5 ❌ web console to codes; remove password endpoints; real email / WhatsApp / SMS senders.
+  - OTP-5 ❌ web console to codes; remove password endpoints; real WhatsApp / SMS senders.
+  - OTP-7 ✅ real email codes over SMTP (nodemailer; Gmail app password / Brevo / SES / Resend by
+    config: `SMTP_HOST/PORT/SECURE/USER/PASS/FROM`). With SMTP set, email (college + Super Admin) gets a
+    random code, sent, and 123456 does not open it; WhatsApp/SMS have no provider (owner's decision
+    2026-09-15) and keep the fixed code, nothing sent. No SMTP → every channel fixed, as before. Send
+    failures logged without code/address; answer unchanged (no existence disclosure). Server 462/462
+    (+5, `tests/otp-email.test.ts`). 🔍 NEEDS VALIDATION: a real email arriving via a real SMTP account.
   - OTP-6 ✅ `9b0199b` change a person's email or mobile: `PATCH /v1/people/:id/contact`
     (account.manage), from People and from a student's record. New address works at once, old one
     stops (staff sign-in name moves with the email; live codes cancelled); duplicates refused (mobile
@@ -71,8 +77,9 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
     list and student records carry the mobile. Server 457/457 (+7), Flutter 273/273 (+3).
   - Docs ✅ runbook START-HERE, 01, 06 and 09 describe code sign-in; 04 (web console) still passwords
     until OTP-5.
-- 🚫 GO-LIVE BLOCKER (AD-82): no real OTP senders; `OTP_FIXED_CODE=123456` lets anyone sign in as
-  anyone. Must be removed before any real college uses the system.
+- 🚫 GO-LIVE BLOCKER (AD-82): no WhatsApp/SMS senders; `OTP_FIXED_CODE=123456` lets anyone who knows
+  a mobile number sign in as that person (and anyone, by email too, when SMTP is unset). Must be
+  removed before any real college uses the system.
 
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.

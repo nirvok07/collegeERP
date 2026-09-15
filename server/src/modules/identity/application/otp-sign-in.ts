@@ -24,12 +24,13 @@ export type OtpChannel = 'email' | 'whatsapp' | 'sms';
 export type IdentifierKind = 'email' | 'phone' | 'enrolment';
 
 /**
- * Where a code goes. The real senders (email; WhatsApp falling back to SMS)
- * are AD-82's go-live blocker; the fallback is the sender's own concern.
+ * Where a code goes. A channel this can send gets a random code, sent; a
+ * channel it cannot (WhatsApp and SMS until go-live) gets the fixed code and
+ * nothing is sent (AD-82 as amended, OTP-7). WhatsApp's fallback to SMS is
+ * the sender's own concern.
  */
 export interface OtpSender {
-  /** False when nothing can be sent: every request is then refused alike. */
-  readonly ready: boolean;
+  canSend(channel: OtpChannel): boolean;
   send(input: { channel: OtpChannel; destination: string; code: string }): Promise<void>;
 }
 
@@ -88,7 +89,11 @@ export interface OtpDeps {
   /** AD-60: a suspended or closed college signs nobody in. */
   tenantAccess: { denialFor(tenantId: string): Promise<Failure | null> };
   sender: OtpSender;
-  /** AD-82: until go-live every code is this. Empty: real, random codes. */
+  /**
+   * AD-82: the code on every channel the sender cannot send (until go-live,
+   * WhatsApp and SMS; and email when no SMTP is configured). Empty: such a
+   * channel gets no code at all.
+   */
   fixedCode: string;
 }
 
@@ -130,7 +135,16 @@ const sameHash = (a: string, b: string) => a.length === b.length && timingSafeEq
 const destinationOf = (kind: IdentifierKind): CodeDestination =>
   kind === 'email' ? 'email' : kind === 'phone' ? 'mobile' : 'record';
 
-const newCode = (deps: OtpDeps) => deps.fixedCode || String(randomInt(0, 1_000_000)).padStart(6, '0');
+/** A random code for a channel that is really sent; else the fixed one; else none. */
+function codeFor(deps: OtpDeps, channel: OtpChannel): string | null {
+  if (deps.sender.canSend(channel)) return String(randomInt(0, 1_000_000)).padStart(6, '0');
+  return deps.fixedCode || null;
+}
+
+const CHANNELS: OtpChannel[] = ['email', 'whatsapp', 'sms'];
+
+/** Whether any code could reach anyone: a real channel, or the fixed code. */
+const canIssueAny = (deps: OtpDeps) => Boolean(deps.fixedCode) || CHANNELS.some((c) => deps.sender.canSend(c));
 
 const canSignIn = (a: { status: string; lockedUntil: Date | null }, at: Date) =>
   (a.status === 'active' || a.status === 'invited') && !(a.lockedUntil && a.lockedUntil.getTime() > at.getTime());
@@ -159,13 +173,15 @@ async function issueChallenge(
   const id = deps.ids.next();
   const { token, hash: tokenHash } = deps.tokens.issueOpaqueToken();
   const expiresAt = new Date(at.getTime() + OTP_TTL_SECONDS * 1000);
-  const code = input.owner ? newCode(deps) : null;
-  if (input.owner) await deps.otp.revokeLive(tx, input.owner, at);
+  const code = input.owner ? codeFor(deps, input.channel) : null;
+  // No way to reach them on this channel: answered exactly like a decoy.
+  const owner = code ? input.owner : null;
+  if (owner) await deps.otp.revokeLive(tx, owner, at);
   await deps.otp.create(tx, {
     id,
     tenantId: input.tenantId,
-    accountId: input.owner?.accountId ?? null,
-    platformAccountId: input.owner?.platformAccountId ?? null,
+    accountId: owner?.accountId ?? null,
+    platformAccountId: owner?.platformAccountId ?? null,
     identifierHash: input.identifierHash,
     channel: input.channel,
     tokenHash,
@@ -180,6 +196,8 @@ async function issueChallenge(
  * would say the identifier exists. The person asks again.
  */
 async function deliver(deps: OtpDeps, send: { channel: OtpChannel; destination: string }, code: string) {
+  // A channel with no sender uses the fixed code: there is nothing to send.
+  if (!deps.sender.canSend(send.channel)) return;
   try {
     await deps.sender.send({ ...send, code });
   } catch {
@@ -211,7 +229,7 @@ export async function requestCollegeCode(
   deps: OtpDeps,
   input: { tenantId: string; identifier: string },
 ): Promise<Result<CodeRequested>> {
-  if (!deps.fixedCode && !deps.sender.ready) return Err(fail('UNKNOWN', CANNOT_SEND));
+  if (!canIssueAny(deps)) return Err(fail('UNKNOWN', CANNOT_SEND));
   const at = deps.clock.now();
   const typed = classifyIdentifier(input.identifier);
   const identifierHash = sha256(`${typed.kind}:${typed.value}`);
@@ -296,7 +314,7 @@ export async function requestPlatformCode(
   deps: OtpDeps,
   input: { email: string },
 ): Promise<Result<CodeRequested>> {
-  if (!deps.fixedCode && !deps.sender.ready) return Err(fail('UNKNOWN', CANNOT_SEND));
+  if (!canIssueAny(deps)) return Err(fail('UNKNOWN', CANNOT_SEND));
   const at = deps.clock.now();
   const email = input.email.trim().toLowerCase();
   const identifierHash = sha256(`platform:${email}`);

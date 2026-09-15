@@ -23,6 +23,19 @@ const schema = z.object({
     .string()
     .refine((v) => v === '' || /^\d{6}$/.test(v), 'six digits, or empty for real codes')
     .default('123456'),
+  /**
+   * OTP-7: sign-in codes by email over SMTP (Gmail app password, Brevo, SES,
+   * Resend...). With SMTP_HOST and SMTP_FROM set, email codes are random and
+   * really sent; otherwise email uses the fixed code too. Mobile codes stay
+   * fixed until WhatsApp/SMS providers exist.
+   */
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  /** "true" for port 465; "false" (STARTTLS) for 587. */
+  SMTP_SECURE: z.enum(['true', 'false']).default('false'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
   /** Migrations own the schema; the application never does. */
   MIGRATION_DATABASE_URL: z.string().min(1),
   /**

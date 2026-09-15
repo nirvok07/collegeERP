@@ -7,7 +7,7 @@ import { sealerFor } from './config/config.ts';
 import { OtplibTotp } from './infrastructure/crypto/totp.ts';
 import type { PlatformMfaDeps } from './modules/identity/application/platform-mfa.ts';
 import type { OtpDeps } from './modules/identity/application/otp-sign-in.ts';
-import { FixedCodeSender, UnconfiguredSender } from './infrastructure/messaging/otp-senders.ts';
+import { NoMessageSender, SmtpEmailSender } from './infrastructure/messaging/otp-senders.ts';
 import type {
   ManagePlatformAccountsDeps, PlatformAuthorityReader,
 } from './modules/identity/application/manage-platform-accounts.ts';
@@ -220,8 +220,18 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       refreshTokens, loginAttempts, audit, tokens, ids, clock, tenantAccess,
       refreshTtlDays: config.REFRESH_TOKEN_TTL_DAYS,
       fixedCode: config.OTP_FIXED_CODE,
-      // AD-82: real senders (email; WhatsApp then SMS) are the go-live blocker.
-      sender: config.OTP_FIXED_CODE ? new FixedCodeSender() : new UnconfiguredSender(),
+      // OTP-7: email codes are real once SMTP is configured; WhatsApp and SMS
+      // have no provider yet and use the fixed code (AD-82's go-live blocker).
+      sender: config.SMTP_HOST && config.SMTP_FROM
+        ? new SmtpEmailSender(
+            {
+              host: config.SMTP_HOST, port: config.SMTP_PORT, secure: config.SMTP_SECURE === 'true',
+              user: config.SMTP_USER || undefined, pass: config.SMTP_PASS || undefined, from: config.SMTP_FROM,
+            },
+            // Never the code or the address: the provider's own error only.
+            (message) => console.warn(`Sign-in code email not sent: ${message}`),
+          )
+        : new NoMessageSender(),
     },
     lifecycle: {
       uow, institutions, audit, ids, clock,
