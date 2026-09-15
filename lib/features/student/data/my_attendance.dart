@@ -5,6 +5,7 @@ import '../../../core/error/result.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../fees/domain/fees.dart';
 
 /// ST-1: one course's attendance, or the total, from submitted registers.
 /// Present and late count as attended; excused absences are left out.
@@ -74,6 +75,24 @@ class MyAttendance {
   }
 }
 
+/// FEE-6: a student's own dues, invoices and payments.
+class MyFees {
+  const MyFees({required this.invoices, required this.payments});
+
+  final List<FeeInvoice> invoices;
+  final List<FeePayment> payments;
+
+  int get duePaise => invoices.where((i) => i.isDue).fold(0, (sum, i) => sum + i.amountPaise);
+
+  static MyFees fromJson(dynamic json) {
+    final m = json as Map;
+    return MyFees(
+      invoices: ((m['invoices'] as List?) ?? const []).map(FeeInvoice.fromJson).toList(),
+      payments: ((m['payments'] as List?) ?? const []).map(FeePayment.fromJson).toList(),
+    );
+  }
+}
+
 /// The student's own reads. The server derives who from the token; nothing
 /// here names a student.
 abstract interface class StudentSelfRepository {
@@ -81,6 +100,11 @@ abstract interface class StudentSelfRepository {
 
   /// CR-1b: when [myAttendance] was last saved.
   Future<DateTime?> myAttendanceSavedAt();
+
+  Future<Result<MyFees>> myFees();
+
+  /// CR-1b: when [myFees] was last saved.
+  Future<DateTime?> myFeesSavedAt();
 }
 
 class StudentSelfApi implements StudentSelfRepository {
@@ -92,6 +116,12 @@ class StudentSelfApi implements StudentSelfRepository {
 
   @override
   Future<DateTime?> myAttendanceSavedAt() => _client.savedAt('/v1/me/attendance');
+
+  @override
+  Future<Result<MyFees>> myFees() => _client.get('/v1/me/fees', MyFees.fromJson);
+
+  @override
+  Future<DateTime?> myFeesSavedAt() => _client.savedAt('/v1/me/fees');
 }
 
 class StudentHomeState {

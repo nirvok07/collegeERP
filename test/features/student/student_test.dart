@@ -29,6 +29,7 @@ void main() {
     expect(find.text('CS101 · Programming'), findsOneWidget);
     expect(find.text('PH101 · Physics'), findsOneWidget);
     expect(find.textContaining('below 75%'), findsOneWidget, reason: 'only Physics is short');
+    expect(find.text('My fees'), findsOneWidget);
   });
 }
 
@@ -44,4 +45,10 @@ class _FakeSelf implements StudentSelfRepository {
 
   @override
   Future<DateTime?> myAttendanceSavedAt() async => null;
+
+  @override
+  Future<Result<MyFees>> myFees() async => const Ok(MyFees(invoices: [], payments: []));
+
+  @override
+  Future<DateTime?> myFeesSavedAt() async => null;
 }

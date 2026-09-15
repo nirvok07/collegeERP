@@ -103,6 +103,18 @@ class _StudentHomeView extends StatelessWidget {
                         onTap: () => Navigator.of(context).pushNamed(Routes.calendar),
                       ),
                     ),
+                    const SizedBox(height: AppSpacing.sm),
+                    // M11 (FEE-6): what this student owes, and what they paid.
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        leading: const Icon(Icons.payments_outlined, color: AppColors.success),
+                        title: const Text('My fees'),
+                        subtitle: const Text('Dues, invoices and payments'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => Navigator.of(context).pushNamed(Routes.myFees),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.lg),
                     Text('By course', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: AppSpacing.sm),
