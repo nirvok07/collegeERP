@@ -1,8 +1,9 @@
 import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
-  FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeRequestRecord,
-  FeeRequestRepository, FeeStructureRecord, FeeStructureRepository, InvoiceRecord, InvoiceRepository,
+  AllocationRecord, FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord,
+  FeeRequestRecord, FeeRequestRepository, FeeStructureRecord, FeeStructureRepository,
+  InvoiceRecord, InvoiceRepository, PaymentRecord, PaymentRepository, ReceiptRecord,
 } from '../application/ports.ts';
 
 function toHead(r: any): FeeHeadRecord {
@@ -248,6 +249,30 @@ export class PgInvoiceRepository implements InvoiceRepository {
     );
     return (rowCount ?? 0) > 0;
   }
+
+  async listDueByStudent(tx: Tx, studentId: string): Promise<InvoiceRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `${INVOICE_SELECT} WHERE i.student_id=$1 AND i.status='due' ORDER BY i.due_date`,
+      [studentId],
+    );
+    return rows.map(toInvoice);
+  }
+
+  async markPaid(tx: Tx, id: string): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE invoices SET status='paid', updated_at=now(), version=version+1 WHERE id=$1 AND status='due'`,
+      [id],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async markDue(tx: Tx, id: string): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE invoices SET status='due', updated_at=now(), version=version+1 WHERE id=$1 AND status='paid'`,
+      [id],
+    );
+    return (rowCount ?? 0) > 0;
+  }
 }
 
 function toFeeRequest(r: any): FeeRequestRecord {
@@ -321,5 +346,129 @@ export class PgFeeRequestRepository implements FeeRequestRepository {
       [filter.studentId ?? null, filter.status ?? null],
     );
     return rows.map(toFeeRequest);
+  }
+}
+
+function toPayment(r: any): PaymentRecord {
+  return {
+    id: r.id, studentId: r.student_id, kind: r.kind, method: r.method, amountPaise: Number(r.amount_paise),
+    reference: r.reference, reversesPaymentId: r.reverses_payment_id, reason: r.reason,
+    receivedBy: r.received_by, receivedAt: r.received_at,
+  };
+}
+
+function toReceipt(r: any): ReceiptRecord {
+  return {
+    id: r.id, paymentId: r.payment_id, receiptNumber: Number(r.receipt_number), status: r.status,
+    issuedAt: r.issued_at, cancelledAt: r.cancelled_at, cancellationReason: r.cancellation_reason,
+  };
+}
+
+const PAYMENT_SELECT = `
+  SELECT id, student_id, kind, method, amount_paise, reference, reverses_payment_id, reason,
+         received_by, received_at
+    FROM payments`;
+
+export class PgPaymentRepository implements PaymentRepository {
+  async nextReceiptNumber(tx: Tx, tenantId: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `INSERT INTO fee_receipt_counters (tenant_id, next_number) VALUES ($1, 2)
+       ON CONFLICT (tenant_id) DO UPDATE SET next_number = fee_receipt_counters.next_number + 1
+       RETURNING next_number - 1 AS number`,
+      [tenantId],
+    );
+    return Number(rows[0].number);
+  }
+
+  async createPayment(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; kind: string; method: string;
+    amountPaise: number; reference: string | null; reversesPaymentId: string | null;
+    reason: string | null; receivedBy: string;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO payments
+         (id, tenant_id, student_id, kind, method, amount_paise, reference, reverses_payment_id, reason, received_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+      [input.id, input.tenantId, input.studentId, input.kind, input.method, input.amountPaise,
+       input.reference, input.reversesPaymentId, input.reason, input.receivedBy],
+    );
+  }
+
+  async findPayment(tx: Tx, id: string): Promise<PaymentRecord | null> {
+    const { rows } = await clientOf(tx).query(`${PAYMENT_SELECT} WHERE id=$1`, [id]);
+    return rows[0] ? toPayment(rows[0]) : null;
+  }
+
+  async reversalOf(tx: Tx, paymentId: string): Promise<PaymentRecord | null> {
+    const { rows } = await clientOf(tx).query(`${PAYMENT_SELECT} WHERE reverses_payment_id=$1`, [paymentId]);
+    return rows[0] ? toPayment(rows[0]) : null;
+  }
+
+  async addAllocation(tx: Tx, input: {
+    id: string; tenantId: string; paymentId: string; invoiceId: string; amountPaise: number;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO payment_allocations (id, tenant_id, payment_id, invoice_id, amount_paise)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [input.id, input.tenantId, input.paymentId, input.invoiceId, input.amountPaise],
+    );
+  }
+
+  async allocationsFor(tx: Tx, paymentId: string): Promise<AllocationRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT invoice_id, amount_paise FROM payment_allocations WHERE payment_id=$1`,
+      [paymentId],
+    );
+    return rows.map((r: any) => ({ invoiceId: r.invoice_id, amountPaise: Number(r.amount_paise) }));
+  }
+
+  async netPaidOnInvoice(tx: Tx, invoiceId: string): Promise<number> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT coalesce(sum(
+                CASE WHEN p.kind = 'payment' THEN a.amount_paise ELSE -a.amount_paise END
+              ), 0) AS net
+         FROM payment_allocations a JOIN payments p ON p.id = a.payment_id
+        WHERE a.invoice_id = $1`,
+      [invoiceId],
+    );
+    return Number(rows[0].net);
+  }
+
+  async createReceipt(tx: Tx, input: {
+    id: string; tenantId: string; paymentId: string; receiptNumber: number;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO receipts (id, tenant_id, payment_id, receipt_number) VALUES ($1,$2,$3,$4)`,
+      [input.id, input.tenantId, input.paymentId, input.receiptNumber],
+    );
+  }
+
+  async findReceiptByPayment(tx: Tx, paymentId: string): Promise<ReceiptRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, payment_id, receipt_number, status, issued_at, cancelled_at, cancellation_reason
+         FROM receipts WHERE payment_id=$1`,
+      [paymentId],
+    );
+    return rows[0] ? toReceipt(rows[0]) : null;
+  }
+
+  async cancelReceipt(tx: Tx, input: {
+    paymentId: string; cancelledBy: string; cancelledAt: Date; reason: string;
+  }): Promise<boolean> {
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE receipts SET status='cancelled', cancelled_at=$2, cancelled_by=$3, cancellation_reason=$4,
+              updated_at=now(), version=version+1
+        WHERE payment_id=$1 AND status='issued'`,
+      [input.paymentId, input.cancelledAt, input.cancelledBy, input.reason],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async listByStudent(tx: Tx, studentId: string): Promise<PaymentRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `${PAYMENT_SELECT} WHERE student_id=$1 ORDER BY received_at DESC`,
+      [studentId],
+    );
+    return rows.map(toPayment);
   }
 }

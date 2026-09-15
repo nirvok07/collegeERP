@@ -51,9 +51,10 @@ export async function resetData(): Promise<void> {
       'attendance_corrections', 'attendance_records', 'attendance_sheets',
       // Assessment references offerings and students, so it goes before both.
       'assessment_mark_corrections', 'assessment_marks', 'assessment_components',
-      // Requests reference invoices; invoices reference students, fee
-      // structures and instalments.
-      'fee_requests', 'invoices',
+      // Receipts and allocations reference payments; payments and requests
+      // reference invoices; invoices reference students, fee structures and
+      // instalments.
+      'receipts', 'payment_allocations', 'payments', 'fee_requests', 'invoices',
       // Delivery references offerings and rooms, so it goes before both.
       'class_sessions', 'timetable_slots', 'non_teaching_days',
       // Calendar events (CAL-2) reference persons.
@@ -66,6 +67,7 @@ export async function resetData(): Promise<void> {
       // Fee structure definitions reference programs and academic years
       // (invoices, which also reference students, are deleted earlier above).
       'fee_structure_lines', 'fee_structure_instalments', 'fee_structures', 'fee_heads',
+      'fee_receipt_counters',
       'sections', 'terms', 'academic_years',
       'programs', 'departments', 'rooms', 'campuses',
       'user_accounts', 'persons',

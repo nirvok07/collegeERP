@@ -299,9 +299,29 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     untouched. `POST /v1/fees/requests/:id/withdraw` (the Accountant, only their own, only while
     `requested`) frees the invoice for a new request. `GET /v1/fees/requests` (`fee.read`,
     optional `student_id`/`status` filter). Server 484/484 (+3). `npm run typecheck` clean.
-  - FEE-4 ❌
-    counter payments (cash/UPI/cheque/bank ref), allocation to oldest dues, receipts, cancellation
-    by reversal; FEE-5 ❌ late fees + fines + waiver requests (reusing `fee_requests`); FEE-6 ❌ student: dues, invoices,
+  - FEE-4 ✅ (2026-09-15) counter payments, allocation, receipts — the actual money ledger the
+    module doc's §3 invariants are about. Migration 034: `payments` (INSERT+SELECT only, no
+    UPDATE grant at all — the same enforcement as `audit_events`; `kind` 'payment' or 'reversal',
+    a reversal names what it reverses and why, amount always positive so a stray SUM never nets
+    two rows that were never meant to cancel out); `payment_allocations` (append-only, how a
+    payment or its reversal splits across invoices); `receipts` (status issued/cancelled, never
+    deleted, number never reissued); `fee_receipt_counters` (one gapless `bigint` sequence per
+    college, a number taken only when `POST /v1/fees/payments` actually issues a receipt, via one
+    `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` that serializes concurrent Cashiers on that
+    row). `recordPayment` allocates oldest-due-first (`InvoiceRepository.listDueByStudent`),
+    marking an invoice `paid` only once fully covered — partial payments are accepted and simply
+    leave it `due`; refuses (422) a student with nothing due, or an amount over their total current
+    dues (v1 boundary: no advance/credit balance concept yet). `cancelPayment` inserts a reversal
+    mirroring the original's allocations (never edits or deletes the original), moves any invoice
+    the payment had fully paid back to `due`, and flips the receipt to `cancelled` — its number is
+    never reused, a fresh payment gets the next one. `fee.collect` (Cashier or College Admin, not
+    the Accountant) records and cancels; `fee.read` lists. Server 487/487 (+3 in `tests/fees.test.ts`:
+    oldest-first allocation across a partial then a completing payment with gapless receipt numbers,
+    cancelling reverses and un-pays without touching the receipt row and the next payment still gets
+    the next number, an Accountant cannot collect and a teacher cannot even read). `npm run
+    typecheck` clean. No Flutter UI yet for any FEE slice — the Accountant/Cashier screens are a
+    later slice once the server surface for FEE-5/6 exists too.
+  - FEE-5 ❌ late fees + fines + waiver requests (reusing `fee_requests`); FEE-6 ❌ student: dues, invoices,
     payments, receipt + statement PDF (view/print/share; new `pdf`/`printing` packages); FEE-7 🚫
     BLOCKED — Razorpay web payment + webhook, TODO until the owner supplies a merchant account and
     API keys; FEE-8 ❌ reports (daily collection by cashier/mode, outstanding, defaulters,

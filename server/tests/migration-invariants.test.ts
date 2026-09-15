@@ -140,6 +140,16 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // FEE-3: withdrawing or deciding a request is a status change, not a
   // removal — the record of what was asked for survives regardless.
   fee_requests: 'INSERT+SELECT+UPDATE',
+
+  // FEE-4, the money ledger the module doc's append-only rule is actually
+  // about. No UPDATE on payments or their allocations, ever: a mistake is
+  // corrected by inserting a reversal, the same discipline as audit_events.
+  payments: 'INSERT+SELECT',
+  payment_allocations: 'INSERT+SELECT',
+  // A receipt's status does change (issued -> cancelled); the row itself
+  // is never deleted, and its number is never reissued.
+  receipts: 'INSERT+SELECT+UPDATE',
+  fee_receipt_counters: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

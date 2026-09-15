@@ -131,4 +131,63 @@ export interface InvoiceRepository {
   listByStructure(tx: Tx, structureId: string): Promise<InvoiceRecord[]>;
   /** A concession's effect (FEE-3): lowers what the invoice still asks for. */
   reduceAmount(tx: Tx, id: string, byPaise: number): Promise<boolean>;
+  /** Due invoices for a student, oldest due date first — the allocation order (FEE-4 §6). */
+  listDueByStudent(tx: Tx, studentId: string): Promise<InvoiceRecord[]>;
+  markPaid(tx: Tx, id: string): Promise<boolean>;
+  markDue(tx: Tx, id: string): Promise<boolean>;
+}
+
+export type PaymentMethod = 'cash' | 'upi' | 'cheque' | 'bank_transfer';
+export type PaymentKind = 'payment' | 'reversal';
+
+export interface PaymentRecord {
+  id: string;
+  studentId: string;
+  kind: PaymentKind;
+  method: PaymentMethod;
+  amountPaise: number;
+  reference: string | null;
+  reversesPaymentId: string | null;
+  reason: string | null;
+  receivedBy: string;
+  receivedAt: Date;
+}
+
+export interface AllocationRecord {
+  invoiceId: string;
+  amountPaise: number;
+}
+
+export interface ReceiptRecord {
+  id: string;
+  paymentId: string;
+  receiptNumber: number;
+  status: 'issued' | 'cancelled';
+  issuedAt: Date;
+  cancelledAt: Date | null;
+  cancellationReason: string | null;
+}
+
+export interface PaymentRepository {
+  nextReceiptNumber(tx: Tx, tenantId: string): Promise<number>;
+  createPayment(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; kind: PaymentKind; method: PaymentMethod;
+    amountPaise: number; reference: string | null; reversesPaymentId: string | null;
+    reason: string | null; receivedBy: string;
+  }): Promise<void>;
+  findPayment(tx: Tx, id: string): Promise<PaymentRecord | null>;
+  reversalOf(tx: Tx, paymentId: string): Promise<PaymentRecord | null>;
+  addAllocation(tx: Tx, input: {
+    id: string; tenantId: string; paymentId: string; invoiceId: string; amountPaise: number;
+  }): Promise<void>;
+  allocationsFor(tx: Tx, paymentId: string): Promise<AllocationRecord[]>;
+  /** Net paid so far on one invoice: payments minus reversals allocated to it. */
+  netPaidOnInvoice(tx: Tx, invoiceId: string): Promise<number>;
+
+  createReceipt(tx: Tx, input: { id: string; tenantId: string; paymentId: string; receiptNumber: number }): Promise<void>;
+  findReceiptByPayment(tx: Tx, paymentId: string): Promise<ReceiptRecord | null>;
+  cancelReceipt(tx: Tx, input: {
+    paymentId: string; cancelledBy: string; cancelledAt: Date; reason: string;
+  }): Promise<boolean>;
+  listByStudent(tx: Tx, studentId: string): Promise<PaymentRecord[]>;
 }

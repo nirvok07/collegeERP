@@ -6,12 +6,14 @@ import { requirePermission } from '../../../infrastructure/http/guards.ts';
 import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
-  addInstalment, addLine, approveRequest, archiveFeeHead, createDraftStructure, createFeeHead,
-  generateInvoices, listFeeHeads, listFeeRequests, listStructureInvoices, listStructures,
-  listStudentInvoices, publishStructure, readStructure, rejectRequest, requestConcession,
-  withdrawRequest, type FeesActor,
+  addInstalment, addLine, approveRequest, archiveFeeHead, cancelPayment, createDraftStructure,
+  createFeeHead, generateInvoices, listFeeHeads, listFeeRequests, listStructureInvoices,
+  listStructures, listStudentInvoices, listStudentPayments, publishStructure, readStructure,
+  recordPayment, rejectRequest, requestConcession, withdrawRequest, type FeesActor,
 } from '../application/manage-fees.ts';
-import type { FeeHeadRecord, FeeRequestRecord, FeeStructureRecord, InvoiceRecord } from '../application/ports.ts';
+import type {
+  FeeHeadRecord, FeeRequestRecord, FeeStructureRecord, InvoiceRecord, PaymentRecord,
+} from '../application/ports.ts';
 
 const headBody = z.object({
   name: z.string().min(2).max(120),
@@ -58,6 +60,20 @@ const concessionBody = z.object({
 const decisionBody = z.object({ reason: z.string().max(500).optional() });
 const rejectBody = z.object({ reason: z.string().min(1).max(500) });
 
+const paymentBody = z.object({
+  student_id: z.string().uuid(),
+  method: z.enum(['cash', 'upi', 'cheque', 'bank_transfer']),
+  amount_paise: z.number().int().positive(),
+  reference: z.string().max(80).optional(),
+});
+const cancelBody = z.object({ reason: z.string().min(1).max(500) });
+
+const serialisePayment = (p: PaymentRecord) => ({
+  id: p.id, student_id: p.studentId, kind: p.kind, method: p.method, amount_paise: p.amountPaise,
+  reference: p.reference, reverses_payment_id: p.reversesPaymentId, reason: p.reason,
+  received_by: p.receivedBy, received_at: p.receivedAt.toISOString(),
+});
+
 export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
   const actorOf = (req: { actor?: { sub: string; tenantId: string | null } }): FeesActor => ({
     tenantId: req.actor!.tenantId!,
@@ -73,6 +89,7 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
   const canRead = (req: never, reply: never) => requirePermission(c, req, reply, 'fee.read', institutionScope());
   const canManage = (req: never, reply: never) => requirePermission(c, req, reply, 'fee.manage', institutionScope());
   const canApprove = (req: never, reply: never) => requirePermission(c, req, reply, 'fee.approve', institutionScope());
+  const canCollect = (req: never, reply: never) => requirePermission(c, req, reply, 'fee.collect', institutionScope());
 
   /* ------------------------------------------------------------------ heads */
 
@@ -219,5 +236,42 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
     return sendResult(reply, await rejectRequest(c.fees, actorOf(req), {
       id: (req.params as { id: string }).id, reason: parsed.data.reason,
     }));
+  });
+
+  /* --------------------------------------------------------------- payments */
+
+  app.post('/fees/payments', async (req, reply) => {
+    if (!(await canCollect(req as never, reply as never))) return reply;
+    const parsed = paymentBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    const result = await recordPayment(c.fees, actorOf(req), {
+      studentId: parsed.data.student_id, method: parsed.data.method,
+      amountPaise: parsed.data.amount_paise, reference: parsed.data.reference ?? null,
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    const { payment, receipt, allocations } = result.value;
+    return sendOk(reply, {
+      payment: serialisePayment(payment),
+      receipt: {
+        id: receipt.id, receipt_number: receipt.receiptNumber, status: receipt.status,
+        issued_at: receipt.issuedAt.toISOString(),
+      },
+      allocations: allocations.map((a) => ({ invoice_id: a.invoiceId, amount_paise: a.amountPaise })),
+    }, 201);
+  });
+
+  app.post('/fees/payments/:id/cancel', async (req, reply) => {
+    if (!(await canCollect(req as never, reply as never))) return reply;
+    const parsed = cancelBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await cancelPayment(c.fees, actorOf(req), {
+      paymentId: (req.params as { id: string }).id, reason: parsed.data.reason,
+    }));
+  });
+
+  app.get('/fees/students/:id/payments', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const rows = await listStudentPayments(c.fees, actorOf(req), (req.params as { id: string }).id);
+    return sendOk(reply, rows.map(serialisePayment));
   });
 }

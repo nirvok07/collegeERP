@@ -95,6 +95,7 @@ import {
 } from './modules/curriculum/infrastructure/repositories.ts';
 import {
   PgFeeHeadRepository, PgFeeRequestRepository, PgFeeStructureRepository, PgInvoiceRepository,
+  PgPaymentRepository,
 } from './modules/fees/infrastructure/repositories.ts';
 import type { FeesDeps } from './modules/fees/application/manage-fees.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
@@ -353,6 +354,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       structures: new PgFeeStructureRepository(),
       invoices: new PgInvoiceRepository(),
       requests: new PgFeeRequestRepository(),
+      payments: new PgPaymentRepository(),
     },
     close: async () => {
       if (!pool) await dbPool.end();

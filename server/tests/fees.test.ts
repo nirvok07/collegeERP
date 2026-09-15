@@ -351,3 +351,113 @@ describe('FEE-3: concessions', () => {
     assert.equal(tooMuch.statusCode, 422);
   });
 });
+
+describe('FEE-4: payments', () => {
+  /** Two instalments of 5,00,000 paise each, one student, none paid yet. */
+  async function twoInstalments(s: Awaited<ReturnType<typeof feeSetup>>) {
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    for (const [seq, dueDate] of [[1, '2026-07-01'], [2, '2026-11-01']] as const) {
+      const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+        seq, due_date: dueDate,
+      })).json().data.id;
+      await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 500000 });
+    }
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+    const studentId = (await post('/v1/students', s.admin, {
+      full_name: 'Nisha Kumar', email: `nisha@${s.code}.edu`,
+      enrolment_number: 'CSE2026-001', program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id;
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    return studentId as string;
+  }
+
+  it('allocates to the oldest due instalment first, issues a receipt, and marks it paid once covered', async () => {
+    const s = await feeSetup();
+    const cashier = await appoint(s.code, s.admin, {
+      name: 'Rohit Nair', email: `rohit@${s.code}.edu`, roleKey: 'cashier', scopeType: 'institution',
+    });
+    const studentId = await twoInstalments(s);
+
+    const partial = await post('/v1/fees/payments', cashier, {
+      student_id: studentId, method: 'cash', amount_paise: 300000,
+    });
+    assert.equal(partial.statusCode, 201);
+    assert.equal(partial.json().data.receipt.receipt_number, 1);
+    assert.deepEqual(partial.json().data.allocations, [{ invoice_id: (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0].id, amount_paise: 300000 }]);
+
+    const stillDue = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data;
+    assert.equal(stillDue[0].status, 'due', 'partially paid, not yet fully covered');
+
+    const rest = await post('/v1/fees/payments', cashier, {
+      student_id: studentId, method: 'upi', amount_paise: 200000, reference: 'UTR123',
+    });
+    assert.equal(rest.json().data.receipt.receipt_number, 2, 'gapless, per college');
+
+    const afterFirstPaid = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data;
+    assert.equal(afterFirstPaid[0].status, 'paid');
+    assert.equal(afterFirstPaid[1].status, 'due', 'the second instalment is untouched');
+
+    const overpay = await post('/v1/fees/payments', cashier, {
+      student_id: studentId, method: 'cash', amount_paise: 999999999,
+    });
+    assert.equal(overpay.statusCode, 422);
+
+    const wholeSecond = await post('/v1/fees/payments', cashier, {
+      student_id: studentId, method: 'bank_transfer', amount_paise: 500000, reference: 'NEFT1',
+    });
+    assert.equal(wholeSecond.json().data.receipt.receipt_number, 3);
+    const allPaid = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data;
+    assert.ok(allPaid.every((i: { status: string }) => i.status === 'paid'));
+
+    assert.equal((await post('/v1/fees/payments', cashier, { student_id: studentId, method: 'cash', amount_paise: 1 })).statusCode, 422);
+  });
+
+  it('cancelling a payment reverses it and un-pays the invoice, without touching the receipt row', async () => {
+    const s = await feeSetup();
+    const cashier = await appoint(s.code, s.admin, {
+      name: 'Rohit Nair', email: `rohit@${s.code}.edu`, roleKey: 'cashier', scopeType: 'institution',
+    });
+    const studentId = await twoInstalments(s);
+    const paid = await post('/v1/fees/payments', cashier, { student_id: studentId, method: 'cash', amount_paise: 500000 });
+    const paymentId = paid.json().data.payment.id as string;
+    assert.equal((await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0].status, 'paid');
+
+    const cancelled = await post(`/v1/fees/payments/${paymentId}/cancel`, cashier, { reason: 'Cheque bounced' });
+    assert.equal(cancelled.statusCode, 200);
+    const reversalId = cancelled.json().data.reversalId as string;
+
+    assert.equal((await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0].status, 'due', 'reversed back to due');
+
+    const payments = (await get(`/v1/fees/students/${studentId}/payments`, s.admin)).json().data;
+    assert.equal(payments.length, 2, 'the original and its reversal, both kept');
+    assert.ok(payments.some((p: { id: string; kind: string }) => p.id === paymentId && p.kind === 'payment'));
+    assert.ok(payments.some((p: { id: string; kind: string }) => p.id === reversalId && p.kind === 'reversal'));
+
+    assert.equal((await post(`/v1/fees/payments/${paymentId}/cancel`, cashier, { reason: 'Again' })).statusCode, 409, 'already cancelled');
+
+    // A fresh payment for the same instalment gets the next receipt number,
+    // never reusing one — the reversal did not consume a number either.
+    const again = await post('/v1/fees/payments', cashier, { student_id: studentId, method: 'cash', amount_paise: 500000 });
+    assert.equal(again.json().data.receipt.receipt_number, 2);
+  });
+
+  it('an Accountant cannot collect; a teacher cannot even read payments', async () => {
+    const s = await feeSetup();
+    const studentId = await twoInstalments(s);
+    const accountant = await appoint(s.code, s.admin, {
+      name: 'Asha Rao', email: `asha@${s.code}.edu`, roleKey: 'accountant', scopeType: 'institution',
+    });
+    assert.equal((await post('/v1/fees/payments', accountant, {
+      student_id: studentId, method: 'cash', amount_paise: 100000,
+    })).statusCode, 403);
+
+    const teacher = await appoint(s.code, s.admin, {
+      name: 'Meera Iyer', email: `meera@${s.code}.edu`,
+      roleKey: 'faculty', scopeType: 'department', scopeRefId: s.department,
+    });
+    assert.equal((await get(`/v1/fees/students/${studentId}/payments`, teacher)).statusCode, 403);
+  });
+});

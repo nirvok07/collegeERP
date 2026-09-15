@@ -11,7 +11,8 @@ import type { AuditWriter, Clock, IdGenerator } from '../../../shared/applicatio
 import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
   FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeRequestRecord, FeeRequestRepository,
-  FeeStructureRepository, InvoiceRecord, InvoiceRepository,
+  FeeStructureRepository, InvoiceRecord, InvoiceRepository, PaymentMethod, PaymentRecord,
+  PaymentRepository, ReceiptRecord,
 } from './ports.ts';
 
 export interface FeesActor {
@@ -25,6 +26,7 @@ export interface FeesDeps {
   structures: FeeStructureRepository;
   invoices: InvoiceRepository;
   requests: FeeRequestRepository;
+  payments: PaymentRepository;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -394,4 +396,146 @@ export async function listFeeRequests(
   deps: FeesDeps, actor: FeesActor, filter: { studentId?: string | null; status?: FeeRequestRecord['status'] | null },
 ): Promise<FeeRequestRecord[]> {
   return deps.uow.run(actor.tenantId, (tx) => deps.requests.list(tx, filter));
+}
+
+/* ----------------------------------------------------------------- payments */
+
+export interface RecordedPayment {
+  payment: PaymentRecord;
+  receipt: ReceiptRecord;
+  allocations: { invoiceId: string; amountPaise: number }[];
+}
+
+/**
+ * FEE-4: a counter payment, allocated to the student's oldest due invoices
+ * first, with a receipt issued at the moment of recording (module doc §6).
+ * v1 boundary: a payment may not exceed the student's total current dues —
+ * there is no advance/credit balance yet.
+ */
+export async function recordPayment(
+  deps: FeesDeps, actor: FeesActor,
+  input: { studentId: string; method: PaymentMethod; amountPaise: number; reference: string | null },
+): Promise<Result<RecordedPayment>> {
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const due = await deps.invoices.listDueByStudent(tx, input.studentId);
+    const totalDue = due.reduce((sum, i) => sum + i.amountPaise, 0);
+    if (totalDue === 0) return Err(fail('VALIDATION_FAILED', 'This student has nothing due.'));
+    if (input.amountPaise > totalDue) {
+      return Err(fail('VALIDATION_FAILED',
+        `That is more than the ${totalDue} paise this student currently owes. Partial and exact payments are accepted; an advance balance is not, yet.`));
+    }
+
+    const paymentId = deps.ids.next();
+    await deps.payments.createPayment(tx, {
+      id: paymentId, tenantId: actor.tenantId, studentId: input.studentId, kind: 'payment',
+      method: input.method, amountPaise: input.amountPaise, reference: input.reference,
+      reversesPaymentId: null, reason: null, receivedBy: actor.personId,
+    });
+
+    const allocations = await allocate(deps, tx, actor.tenantId, paymentId, due, input.amountPaise);
+
+    const receiptNumber = await deps.payments.nextReceiptNumber(tx, actor.tenantId);
+    const receiptId = deps.ids.next();
+    await deps.payments.createReceipt(tx, {
+      id: receiptId, tenantId: actor.tenantId, paymentId, receiptNumber,
+    });
+
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'fee.payment_recorded', subjectType: 'payment', subjectId: paymentId,
+      after: {
+        studentId: input.studentId, method: input.method, amountPaise: input.amountPaise,
+        receiptNumber, invoices: allocations.map((a) => a.invoiceId),
+      },
+    }, tx);
+
+    const payment = await deps.payments.findPayment(tx, paymentId);
+    const receipt = await deps.payments.findReceiptByPayment(tx, paymentId);
+    return Ok({ payment: payment!, receipt: receipt!, allocations });
+  }), 'That payment could not be recorded.');
+}
+
+/** Splits amountPaise across due invoices, oldest first, marking each paid as it fills. */
+async function allocate(
+  deps: FeesDeps, tx: Tx, tenantId: string, paymentId: string,
+  due: InvoiceRecord[], amountPaise: number,
+): Promise<{ invoiceId: string; amountPaise: number }[]> {
+  const allocations: { invoiceId: string; amountPaise: number }[] = [];
+  let remaining = amountPaise;
+  for (const invoice of due) {
+    if (remaining <= 0) break;
+    const alreadyPaid = await deps.payments.netPaidOnInvoice(tx, invoice.id);
+    const stillOwed = invoice.amountPaise - alreadyPaid;
+    if (stillOwed <= 0) continue;
+    const take = Math.min(stillOwed, remaining);
+    await deps.payments.addAllocation(tx, {
+      id: deps.ids.next(), tenantId, paymentId, invoiceId: invoice.id, amountPaise: take,
+    });
+    allocations.push({ invoiceId: invoice.id, amountPaise: take });
+    remaining -= take;
+    if (take === stillOwed) await deps.invoices.markPaid(tx, invoice.id);
+  }
+  return allocations;
+}
+
+/**
+ * Cancels a payment by inserting a reversal that mirrors its allocations in
+ * reverse (module doc §3: never edit, never delete). Any invoice the
+ * original payment had fully paid moves back to due.
+ */
+export async function cancelPayment(
+  deps: FeesDeps, actor: FeesActor, input: { paymentId: string; reason: string },
+): Promise<Result<{ reversalId: string }>> {
+  const at = deps.clock.now();
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const payment = await deps.payments.findPayment(tx, input.paymentId);
+    if (!payment) return Err(fail('NOT_FOUND', 'That payment was not found.'));
+    if (payment.kind === 'reversal') return Err(fail('VALIDATION_FAILED', 'A reversal cannot itself be reversed.'));
+    if (await deps.payments.reversalOf(tx, input.paymentId)) {
+      return Err(fail('CONFLICT', 'That payment was already cancelled.'));
+    }
+
+    const receipt = await deps.payments.findReceiptByPayment(tx, input.paymentId);
+    if (!receipt || receipt.status !== 'issued') {
+      return Err(fail('CONFLICT', 'That payment has no active receipt to cancel.'));
+    }
+
+    const reversalId = deps.ids.next();
+    await deps.payments.createPayment(tx, {
+      id: reversalId, tenantId: actor.tenantId, studentId: payment.studentId, kind: 'reversal',
+      method: payment.method, amountPaise: payment.amountPaise, reference: payment.reference,
+      reversesPaymentId: payment.id, reason: input.reason.trim(), receivedBy: actor.personId,
+    });
+
+    const original = await deps.payments.allocationsFor(tx, payment.id);
+    for (const a of original) {
+      await deps.payments.addAllocation(tx, {
+        id: deps.ids.next(), tenantId: actor.tenantId, paymentId: reversalId,
+        invoiceId: a.invoiceId, amountPaise: a.amountPaise,
+      });
+      const net = await deps.payments.netPaidOnInvoice(tx, a.invoiceId);
+      const invoice = await deps.invoices.findById(tx, a.invoiceId);
+      if (invoice && invoice.status === 'paid' && net < invoice.amountPaise) {
+        await deps.invoices.markDue(tx, a.invoiceId);
+      }
+    }
+
+    await deps.payments.cancelReceipt(tx, {
+      paymentId: payment.id, cancelledBy: actor.personId, cancelledAt: at, reason: input.reason.trim(),
+    });
+
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'fee.payment_cancelled', subjectType: 'payment', subjectId: payment.id,
+      after: { reversalId, reason: input.reason.trim() },
+    }, tx);
+
+    return Ok({ reversalId });
+  }), 'That payment could not be cancelled.');
+}
+
+export async function listStudentPayments(deps: FeesDeps, actor: FeesActor, studentId: string) {
+  return deps.uow.run(actor.tenantId, (tx) => deps.payments.listByStudent(tx, studentId));
 }
