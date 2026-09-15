@@ -81,9 +81,10 @@ class MyScheduleCubit extends Cubit<MyScheduleState> {
   static const lookBackDays = 7;
   static const lookAheadDays = 14;
 
-  /// AD-9 (amended): what was saved first, then the server's answer.
+  /// CR-1 (AD-9 amended again): opens on what was saved; the network is asked
+  /// only when nothing was saved, or on an explicit refresh.
   Future<void> load({bool refresh = false}) async {
-    if (!refresh && await fromSaved(() => _read(refresh: false))) return _read(refresh: true);
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return;
     return _read(refresh: refresh);
   }
 

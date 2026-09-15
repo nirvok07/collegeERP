@@ -77,9 +77,10 @@ class CalendarCubit extends Cubit<CalendarState> {
 
   final CalendarRepository _repository;
 
-  /// AD-9 (amended): what was saved first, then the server's answer.
-  Future<void> load() async {
-    if (state.calendar == null) await fromSaved(_read);
+  /// CR-1 (AD-9 amended again): opens on what was saved; the network is asked
+  /// only when nothing was saved, or on an explicit refresh.
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
     return _read();
   }
 
@@ -187,7 +188,7 @@ class _CalendarView extends StatelessWidget {
             LoadStatus.loading => const _CalendarSkeleton(),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(AppSpacing.base, AppSpacing.sm, AppSpacing.base, 96),
                   children: [

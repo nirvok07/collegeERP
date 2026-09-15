@@ -187,11 +187,29 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
   unit tests, two Settings widget tests for the switch). `flutter analyze` clean.
   🔍 NEEDS VALIDATION on the phone (the biometric prompt on toggle, and that a phone with a broken
   keystore still degrades to "on" rather than crashing).
-- CR-1 Pull-to-refresh-only reads on every screen. Amends AD-9 (saved-first + background refresh
-  becomes saved-only; network on first open, pull, or after the user's own write). Generalises
-  SET-1b via one helper in `core/saved_reads`; applied to the 7 saved-first screens and the OF-R2
-  back-office screens. Excluded: attendance/mark sheets (OF-R3). OD-CR-1 ✅ owner: every screen
-  shows "Updated 2 h ago" (design system §7.6).
+- CR-1a ✅ (2026-09-15) the behaviour change, on the screens AD-9's saved-first mechanism already
+  covers: dashboard, my teaching, my schedule, student home ("My attendance"), the academic
+  calendar, and Profile (already done as SET-1b). Each `load({refresh})` used to show the saved
+  answer and then quietly ask the network anyway; now it asks only when nothing was saved, on an
+  explicit refresh (pull, or a caller passing `refresh: true` after its own write), or never for a
+  plain saved-only open. Student home and the calendar had no `refresh` parameter at all (`load()`
+  always hit the network); both gained one, and their `RefreshIndicator`s now pass `refresh: true`.
+  Fixed while at it: `saved_reads_test.dart`'s two "a screen" tests were asserting the very
+  behaviour just removed (a background refresh after a saved hit, and a plain open failing when
+  offline) — rewritten to assert CR-1's rule instead. Flutter 292/292, `flutter analyze` clean.
+  🔍 NEEDS VALIDATION on the phone.
+- CR-1b ❌ NOT BUILT — OD-CR-1's "Updated 2 h ago" freshness line. Kept out of CR-1a on purpose: it
+  needs `SavedRead.savedAt` plumbed out through `ApiClient` and every repository the 6 screens use
+  (`TeachingRepository`, `DeliveryRepository`, `CalendarRepository`, `StudentSelfRepository`,
+  `AuthorityApi`, and the dashboard's three concurrent reads, which have no single freshness to
+  show). A same-slice bundle would have meant touching every repository interface and its test
+  fakes for a UI polish item, when CR-1a's own behaviour change is what the owner asked for by
+  name. Do this as its own slice, after CR-1a is validated on the phone.
+- CR-1c ❌ NOT BUILT — OF-R2 (the back-office screens: people, organisation, students, sections,
+  offerings, rooms, timetable, access, college profile, review lists, platform screens) currently
+  have no saved-reads wiring at all, not even the old background-refresh version; giving them CR-1's
+  behaviour means building AD-9's saved-first mechanism into each for the first time, not just
+  changing one line in an existing `load()`. Larger than CR-1a; its own slice.
 - REF-1 College reference data in one place: departments, campuses, programs, years/terms, rooms,
   sections, fetched in one call at app open (new `GET /v1/reference`, ETag, 304 when unchanged),
   kept in saved reads, read by Appoint teacher, Onboard student and every picker; no per-form

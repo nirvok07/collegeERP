@@ -101,9 +101,10 @@ class StudentHomeCubit extends Cubit<StudentHomeState> {
 
   final StudentSelfRepository _repository;
 
-  /// AD-9 (amended): what was saved first, then the server's answer.
-  Future<void> load() async {
-    if (state.attendance == null) await fromSaved(_read);
+  /// CR-1 (AD-9 amended again): opens on what was saved; the network is asked
+  /// only when nothing was saved, or on an explicit refresh.
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
     return _read();
   }
 

@@ -233,8 +233,8 @@ void main() {
     });
   });
 
-  group('a screen', () {
-    test('opens on what was saved, then shows the fresh answer', () async {
+  group('a screen (CR-1: saved-only until an explicit refresh)', () {
+    test('opens on what was saved; only a pull to refresh asks the server again', () async {
       server.answer('/v1/me/attendance', attendance(6));
       final first = StudentHomeCubit(StudentSelfApi(client()));
       await first.load();
@@ -243,25 +243,26 @@ void main() {
 
       server.answer('/v1/me/attendance', attendance(9));
       final again = StudentHomeCubit(StudentSelfApi(client()));
-      final seen = <int>[];
-      final subscription = again.stream.listen((s) => seen.add(s.attendance!.overall.present));
       await again.load();
-      await pumpEventQueue();
+      expect(again.state.attendance!.overall.present, 6, reason: 'opening never asks the network on its own');
+      expect(server.asked, hasLength(1), reason: 'only the very first cubit ever asked');
 
-      expect(seen, [6, 9], reason: 'the saved answer at once, then the server');
-      await subscription.cancel();
+      await again.load(refresh: true);
+      expect(again.state.attendance!.overall.present, 9, reason: 'a refresh does ask, and shows what changed');
+      expect(server.asked, hasLength(2));
       await again.close();
     });
 
-    test('offline, it stays on what was saved and says why', () async {
+    test('offline, a refresh stays on what was saved and says why', () async {
       server.answer('/v1/me/attendance', attendance(6));
       final first = StudentHomeCubit(StudentSelfApi(client()));
       await first.load();
       await first.close();
 
-      server.offline = true;
       final again = StudentHomeCubit(StudentSelfApi(client()));
       await again.load();
+      server.offline = true;
+      await again.load(refresh: true);
 
       expect(again.state.status, LoadStatus.success);
       expect(again.state.attendance!.overall.present, 6);

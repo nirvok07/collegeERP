@@ -70,9 +70,11 @@ class DashboardCubit extends Cubit<DashboardState> {
   static const lookBackDays = 28;
   static const lookAheadDays = 7;
 
-  /// AD-9 (amended): what was saved first, then the server's answer.
+  /// CR-1 (AD-9 amended again): opens on what was saved, and asks the network
+  /// only when nothing was saved, on an explicit refresh, or after a write of
+  /// this screen's own data (the caller passes `refresh: true` for those too).
   Future<void> load({bool refresh = false}) async {
-    if (!refresh && await fromSaved(() => _read(refresh: false))) return _read(refresh: true);
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return;
     return _read(refresh: refresh);
   }
 

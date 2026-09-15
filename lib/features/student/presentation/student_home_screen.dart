@@ -74,7 +74,7 @@ class _StudentHomeView extends StatelessWidget {
             LoadStatus.loading => const _StudentHomeSkeleton(),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.base),
                   children: [
