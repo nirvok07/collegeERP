@@ -9,7 +9,10 @@ import { Err, Ok, type Result } from '../../../core/result.ts';
 import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
-import type { FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeStructureRepository } from './ports.ts';
+import type {
+  FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeStructureRepository,
+  InvoiceRecord, InvoiceRepository,
+} from './ports.ts';
 
 export interface FeesActor {
   tenantId: string;
@@ -20,6 +23,7 @@ export interface FeesDeps {
   uow: UnitOfWork;
   feeHeads: FeeHeadRepository;
   structures: FeeStructureRepository;
+  invoices: InvoiceRepository;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -225,4 +229,69 @@ export async function publishStructure(
 
     return Ok({ published: true as const });
   });
+}
+
+/* --------------------------------------------------------------- invoices */
+
+/**
+ * FEE-2: an invoice per enrolled student per instalment of a published
+ * structure. Idempotent — a student already invoiced for an instalment is
+ * skipped, so running this again after a new admission only invoices who is
+ * new, and never duplicates or edits an existing invoice.
+ */
+export async function generateInvoices(
+  deps: FeesDeps, actor: FeesActor, input: { structureId: string },
+): Promise<Result<{ generated: number; skipped: number }>> {
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const structure = await deps.structures.findById(tx, input.structureId);
+    if (!structure) return Err(fail('NOT_FOUND', 'That fee structure was not found.'));
+    if (structure.status !== 'published') {
+      return Err(fail('VALIDATION_FAILED', 'Only a published fee structure can be invoiced.'));
+    }
+
+    const instalments = await deps.structures.listInstalments(tx, structure.id);
+    const studentIds = await deps.invoices.enrolledStudentIds(tx, structure.programId);
+
+    let generated = 0;
+    let skipped = 0;
+    for (const studentId of studentIds) {
+      for (const instalment of instalments) {
+        if (await deps.invoices.existsFor(tx, studentId, instalment.id)) {
+          skipped += 1;
+          continue;
+        }
+        const lines = await deps.structures.listLines(tx, instalment.id);
+        const amountPaise = lines.reduce((sum, l) => sum + l.amountPaise, 0);
+        await deps.invoices.create(tx, {
+          id: deps.ids.next(), tenantId: actor.tenantId, studentId,
+          feeStructureId: structure.id, instalmentId: instalment.id,
+          amountPaise, dueDate: instalment.dueDate,
+        });
+        generated += 1;
+      }
+    }
+
+    if (generated > 0) {
+      await deps.audit.record({
+        correlationId: deps.ids.next(), tenantId: actor.tenantId,
+        actorType: 'person', actorId: actor.personId,
+        action: 'fee.invoices_generated', subjectType: 'fee_structure', subjectId: structure.id,
+        after: { generated, skipped, students: studentIds.length },
+      }, tx);
+    }
+
+    return Ok({ generated, skipped });
+  }), 'Invoices could not be generated.');
+}
+
+export async function listStudentInvoices(
+  deps: FeesDeps, actor: FeesActor, studentId: string,
+): Promise<InvoiceRecord[]> {
+  return deps.uow.run(actor.tenantId, (tx) => deps.invoices.listByStudent(tx, studentId));
+}
+
+export async function listStructureInvoices(
+  deps: FeesDeps, actor: FeesActor, structureId: string,
+): Promise<InvoiceRecord[]> {
+  return deps.uow.run(actor.tenantId, (tx) => deps.invoices.listByStructure(tx, structureId));
 }

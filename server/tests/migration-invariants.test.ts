@@ -133,6 +133,10 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   fee_structures: 'INSERT+SELECT+UPDATE',
   fee_structure_instalments: 'INSERT+SELECT+UPDATE',
   fee_structure_lines: 'INSERT+SELECT+UPDATE',
+  // FEE-2: a receivable, not the money ledger itself (that starts at FEE-4's
+  // payments/receipts), so it moves between due/paid/cancelled by UPDATE
+  // like a curriculum version does, rather than being append-only.
+  invoices: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

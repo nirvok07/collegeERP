@@ -6,10 +6,11 @@ import { requirePermission } from '../../../infrastructure/http/guards.ts';
 import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
-  addInstalment, addLine, archiveFeeHead, createDraftStructure, createFeeHead, listFeeHeads,
-  listStructures, publishStructure, readStructure, type FeesActor,
+  addInstalment, addLine, archiveFeeHead, createDraftStructure, createFeeHead, generateInvoices,
+  listFeeHeads, listStructureInvoices, listStructures, listStudentInvoices, publishStructure,
+  readStructure, type FeesActor,
 } from '../application/manage-fees.ts';
-import type { FeeHeadRecord, FeeStructureRecord } from '../application/ports.ts';
+import type { FeeHeadRecord, FeeStructureRecord, InvoiceRecord } from '../application/ports.ts';
 
 const headBody = z.object({
   name: z.string().min(2).max(120),
@@ -35,6 +36,11 @@ const serialiseStructure = (s: FeeStructureRecord) => ({
   id: s.id, program_id: s.programId, program_name: s.programName,
   academic_year_id: s.academicYearId, academic_year_name: s.academicYearName,
   status: s.status, published_at: s.publishedAt?.toISOString() ?? null,
+});
+const serialiseInvoice = (i: InvoiceRecord) => ({
+  id: i.id, student_id: i.studentId, student_name: i.studentName, enrolment_number: i.enrolmentNumber,
+  fee_structure_id: i.feeStructureId, instalment_id: i.instalmentId, instalment_seq: i.instalmentSeq,
+  amount_paise: i.amountPaise, due_date: i.dueDate, status: i.status,
 });
 
 export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
@@ -132,5 +138,26 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
   app.post('/fees/structures/:id/publish', async (req, reply) => {
     if (!(await canManage(req as never, reply as never))) return reply;
     return sendResult(reply, await publishStructure(c.fees, actorOf(req), { id: (req.params as { id: string }).id }));
+  });
+
+  /* --------------------------------------------------------------- invoices */
+
+  app.post('/fees/structures/:id/invoices', async (req, reply) => {
+    if (!(await canManage(req as never, reply as never))) return reply;
+    return sendResult(reply, await generateInvoices(c.fees, actorOf(req), {
+      structureId: (req.params as { id: string }).id,
+    }));
+  });
+
+  app.get('/fees/structures/:id/invoices', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const rows = await listStructureInvoices(c.fees, actorOf(req), (req.params as { id: string }).id);
+    return sendOk(reply, rows.map(serialiseInvoice));
+  });
+
+  app.get('/fees/students/:id/invoices', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const rows = await listStudentInvoices(c.fees, actorOf(req), (req.params as { id: string }).id);
+    return sendOk(reply, rows.map(serialiseInvoice));
   });
 }

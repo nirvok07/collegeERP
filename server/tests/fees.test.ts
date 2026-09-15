@@ -180,3 +180,87 @@ describe('FEE-1: fee structures', () => {
     assert.equal(republish.statusCode, 409);
   });
 });
+
+describe('FEE-2: invoices', () => {
+  /** A published structure with two instalments, and one admitted student. */
+  async function publishedStructure(s: Awaited<ReturnType<typeof feeSetup>>) {
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    for (const [seq, dueDate] of [[1, '2026-07-01'], [2, '2026-11-01']] as const) {
+      const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+        seq, due_date: dueDate,
+      })).json().data.id;
+      await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, {
+        fee_head_id: tuition, amount_paise: 2500000,
+      });
+    }
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+    return structureId as string;
+  }
+
+  async function admit(s: Awaited<ReturnType<typeof feeSetup>>, name: string, number: string) {
+    return (await post('/v1/students', s.admin, {
+      full_name: name, email: `${number.toLowerCase()}@${s.code}.edu`,
+      enrolment_number: number, program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id as string;
+  }
+
+  it('invoices every enrolled student once per instalment, and is safe to run again', async () => {
+    const s = await feeSetup();
+    const structureId = await publishedStructure(s);
+    const nisha = await admit(s, 'Nisha Kumar', 'CSE2026-001');
+    await admit(s, 'Rahul Verma', 'CSE2026-002');
+
+    const generated = await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    assert.equal(generated.statusCode, 200);
+    assert.deepEqual(generated.json().data, { generated: 4, skipped: 0 }, '2 students x 2 instalments');
+
+    const again = await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    assert.deepEqual(again.json().data, { generated: 0, skipped: 4 }, 'already invoiced, nothing duplicated');
+
+    const forNisha = (await get(`/v1/fees/students/${nisha}/invoices`, s.admin)).json().data;
+    assert.equal(forNisha.length, 2);
+    assert.equal(forNisha[0].amount_paise, 2500000);
+    assert.equal(forNisha[0].status, 'due');
+    assert.deepEqual(forNisha.map((i: { due_date: string }) => i.due_date), ['2026-07-01', '2026-11-01']);
+
+    const forStructure = (await get(`/v1/fees/structures/${structureId}/invoices`, s.admin)).json().data;
+    assert.equal(forStructure.length, 4);
+
+    // A later admission into the same program is picked up next time.
+    const later = await admit(s, 'Aditi Rao', 'CSE2026-003');
+    const topUp = await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    assert.deepEqual(topUp.json().data, { generated: 2, skipped: 4 });
+    assert.equal((await get(`/v1/fees/students/${later}/invoices`, s.admin)).json().data.length, 2);
+  });
+
+  it('a Cashier cannot generate invoices; a teacher cannot even read them', async () => {
+    const s = await feeSetup();
+    const structureId = await publishedStructure(s);
+    await admit(s, 'Nisha Kumar', 'CSE2026-001');
+
+    const cashier = await appoint(s.code, s.admin, {
+      name: 'Rohit Nair', email: `rohit@${s.code}.edu`, roleKey: 'cashier', scopeType: 'institution',
+    });
+    assert.equal((await post(`/v1/fees/structures/${structureId}/invoices`, cashier)).statusCode, 403);
+    assert.equal((await get(`/v1/fees/structures/${structureId}/invoices`, cashier)).statusCode, 200, 'a Cashier still reads them');
+
+    const teacher = await appoint(s.code, s.admin, {
+      name: 'Meera Iyer', email: `meera@${s.code}.edu`,
+      roleKey: 'faculty', scopeType: 'department', scopeRefId: s.department,
+    });
+    assert.equal((await get(`/v1/fees/structures/${structureId}/invoices`, teacher)).statusCode, 403);
+  });
+
+  it('refuses to invoice a draft structure', async () => {
+    const s = await feeSetup();
+    const draftId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const refused = await post(`/v1/fees/structures/${draftId}/invoices`, s.admin);
+    assert.equal(refused.statusCode, 422);
+    assert.match(refused.json().error.message, /published fee structure/);
+  });
+});

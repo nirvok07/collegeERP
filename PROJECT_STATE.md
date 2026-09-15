@@ -273,7 +273,19 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     Accountant manages heads and a duplicate code is refused, a Cashier reads but cannot manage
     and a teacher can do neither, a draft is refused an incomplete publish then published once
     complete and is immutable after). `npm run typecheck` clean.
-  - FEE-2 ❌ invoices per student/term; FEE-3 ❌ concession requests + Admin approval; FEE-4 ❌
+  - FEE-2 ✅ (2026-09-15) invoices generated from a published structure. Migration 032:
+    `invoices` (student × instalment, unique so regenerating never duplicates; `due`/`paid`/
+    `cancelled`; UPDATE allowed unlike the append-only ledger proper, since FEE-4's payments and
+    receipts are the actual money ledger and an invoice is only a receivable — same reasoning as
+    `fee_structures` itself and `curriculum_versions`). `POST /v1/fees/structures/:id/invoices`
+    (`fee.manage`) invoices every currently *enrolled* student of the structure's program — v1's
+    scope is program + year only (§4), so it does not filter by year-of-study — one invoice per
+    student per instalment, amount summed from that instalment's lines; idempotent (`{generated,
+    skipped}`), so a later admission is picked up by running it again without touching existing
+    invoices. Refuses a draft structure (422). `GET /v1/fees/structures/:id/invoices` and
+    `GET /v1/fees/students/:id/invoices` (`fee.read`, so a Cashier reads but cannot generate).
+    Server 481/481 (+3 in `tests/fees.test.ts`). `npm run typecheck` clean.
+  - FEE-3 ❌ concession requests + Admin approval; FEE-4 ❌
     counter payments (cash/UPI/cheque/bank ref), allocation to oldest dues, receipts, cancellation
     by reversal; FEE-5 ❌ late fees + fines + waiver requests; FEE-6 ❌ student: dues, invoices,
     payments, receipt + statement PDF (view/print/share; new `pdf`/`printing` packages); FEE-7 🚫

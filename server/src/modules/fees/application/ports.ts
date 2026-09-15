@@ -68,3 +68,31 @@ export interface FeeStructureRepository {
     id: string; tenantId: string; instalmentId: string; feeHeadId: string; amountPaise: number;
   }): Promise<void>;
 }
+
+export type InvoiceStatus = 'due' | 'paid' | 'cancelled';
+
+export interface InvoiceRecord {
+  id: string;
+  studentId: string;
+  studentName: string;
+  enrolmentNumber: string;
+  feeStructureId: string;
+  instalmentId: string;
+  instalmentSeq: number;
+  amountPaise: number;
+  dueDate: string;
+  status: InvoiceStatus;
+}
+
+export interface InvoiceRepository {
+  /** Every currently enrolled student of a program (FEE-2 §4: a structure
+   * is program + year only, so this is who it invoices). */
+  enrolledStudentIds(tx: Tx, programId: string): Promise<string[]>;
+  existsFor(tx: Tx, studentId: string, instalmentId: string): Promise<boolean>;
+  create(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; feeStructureId: string;
+    instalmentId: string; amountPaise: number; dueDate: string;
+  }): Promise<void>;
+  listByStudent(tx: Tx, studentId: string): Promise<InvoiceRecord[]>;
+  listByStructure(tx: Tx, structureId: string): Promise<InvoiceRecord[]>;
+}
