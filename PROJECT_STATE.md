@@ -64,7 +64,7 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
     goes. Server 450/450, Flutter 270/270. Runbook 09 steps 7, 8 and 13 describe code sign-in.
     Platform accounts have no phone column: the Super Admin signs in by email only.
   - OTP-5 ❌ web console to codes; remove password endpoints; real WhatsApp / SMS senders.
-  - OTP-7 ✅ real email codes over SMTP (nodemailer; Gmail app password / Brevo / SES / Resend by
+  - OTP-7 ✅ `488d6b2` real email codes over SMTP (nodemailer; Gmail app password / Brevo / SES / Resend by
     config: `SMTP_HOST/PORT/SECURE/USER/PASS/FROM`). With SMTP set, email (college + Super Admin) gets a
     random code, sent, and 123456 does not open it; WhatsApp/SMS have no provider (owner's decision
     2026-09-15) and keep the fixed code, nothing sent. No SMTP → every channel fixed, as before. Send
