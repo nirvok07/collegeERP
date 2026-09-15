@@ -97,6 +97,27 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
 
   /* ------------------------------------------------------------------ heads */
 
+  /*
+   * FEE-6: a student's own dues, invoices and payments. Self-scoped like
+   * `/me/attendance`: the student is the signed-in person, never a
+   * parameter, so nobody reads another student's fees through here.
+   */
+  app.get('/me/fees', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const personId = req.actor.sub;
+    const tenantId = req.actor.tenantId;
+    const student = await c.uow.run(tenantId, (tx) => c.studentSelf.whoAmI(tx, personId));
+    if (!student) return sendFailure(reply, fail('FORBIDDEN', 'Only students have their own fees.'));
+    const actor = { tenantId, personId };
+    const [invoices, payments] = await Promise.all([
+      listStudentInvoices(c.fees, actor, student.id),
+      listStudentPayments(c.fees, actor, student.id),
+    ]);
+    return sendOk(reply, { invoices: invoices.map(serialiseInvoice), payments: payments.map(serialisePayment) });
+  });
+
   app.get('/fees/students', async (req, reply) => {
     if (!(await canRead(req as never, reply as never))) return reply;
     const q = (req.query as { q?: string }).q ?? '';

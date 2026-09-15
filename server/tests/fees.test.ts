@@ -632,3 +632,45 @@ describe('a Cashier or Accountant finds a student without student.read', () => {
     assert.equal((await get('/v1/fees/students?q=Nisha', teacher)).statusCode, 403);
   });
 });
+
+describe('FEE-6: a student reads their own fees', () => {
+  it('sees their own invoices and payments, self-scoped like /me/attendance', async () => {
+    const s = await feeSetup();
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+      seq: 1, due_date: '2026-07-01',
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 500000 });
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+
+    const studentId = (await post('/v1/students', s.admin, {
+      full_name: 'Nisha Kumar', email: `nisha@${s.code}.edu`,
+      enrolment_number: 'CSE2026-001', program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id;
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    await post(`/v1/fees/payments`, s.admin, { student_id: studentId, method: 'cash', amount_paise: 500000 });
+
+    const issued = await post(`/v1/students/${studentId}/access`, s.admin);
+    const { code } = issued.json().data as { code: string };
+    await post('/v1/auth/student-activate', s.admin, {
+      institution_code: s.code, enrolment_number: 'CSE2026-001', code, password: 'nisha-strong-99',
+    });
+    const login = await post('/v1/auth/login', s.admin, {
+      institution_code: s.code, identifier: 'CSE2026-001', password: 'nisha-strong-99',
+    });
+    const studentToken = login.json().data.access_token as string;
+
+    const mine = await get('/v1/me/fees', studentToken);
+    assert.equal(mine.statusCode, 200);
+    assert.equal(mine.json().data.invoices.length, 1);
+    assert.equal(mine.json().data.invoices[0].status, 'paid');
+    assert.equal(mine.json().data.payments.length, 1);
+    assert.equal(mine.json().data.payments[0].amount_paise, 500000);
+
+    // Not another student's, and not a staff member's at all.
+    assert.equal((await get('/v1/me/fees', s.admin)).statusCode, 403);
+  });
+});
