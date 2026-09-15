@@ -210,10 +210,22 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
   have no saved-reads wiring at all, not even the old background-refresh version; giving them CR-1's
   behaviour means building AD-9's saved-first mechanism into each for the first time, not just
   changing one line in an existing `load()`. Larger than CR-1a; its own slice.
-- REF-1 College reference data in one place: departments, campuses, programs, years/terms, rooms,
-  sections, fetched in one call at app open (new `GET /v1/reference`, ETag, 304 when unchanged),
-  kept in saved reads, read by Appoint teacher, Onboard student and every picker; no per-form
-  load. Refreshed at app open and on pull; a reference write refreshes it.
+- REF-1 ✅ (2026-09-15) Appoint a teacher and Onboard a student, the two forms the owner named,
+  stop reloading their picker (departments / programs) on every visit. Scope narrowed from the
+  original sketch: no new `GET /v1/reference` aggregate endpoint. The existing per-resource
+  endpoints (`/v1/departments`, `/v1/programs`, …) already run through `ApiClient.get`, which
+  already saves every read (AD-9); a combined endpoint would need its own cross-module read model
+  (institution + curriculum + teaching + delivery, like `PgCollegeOverviewReader`) and its own
+  per-field permission logic, since departments need `person.read` and programs need a different
+  permission — real cost for no gain when CR-1's own mechanism already solves the actual complaint.
+  `AppointTeacherCubit.load`/`AdmitStudentCubit.load` gained a `refresh` parameter and the CR-1
+  saved-first pattern; a failed refresh keeps the form and its list, showing the inline warning
+  instead of replacing the screen. Both screens wrapped in `RefreshIndicator`. New test in
+  `saved_reads_test.dart` (opens on saved departments, only a pull asks again). Flutter 293/293,
+  `flutter analyze` clean. 🔍 NEEDS VALIDATION on the phone.
+  NOT in this slice: campuses, rooms, academic years/terms and sections, and every other picker
+  across the back-office screens — same CR-1c / OF-R2 boundary as before, since those screens have
+  no saved-reads wiring at all yet.
 - FEE (M11 Student Finance, D6). Pulled forward from Release two (docs/requirements.md D1).
   Online-only (AD-9: desk roles). Owner decisions 2026-09-15 (record as ADRs in FEE-0):
   - OD-FEE-1 ✅ two new college roles (migration seeding them like 002): **Accountant** (fee heads,

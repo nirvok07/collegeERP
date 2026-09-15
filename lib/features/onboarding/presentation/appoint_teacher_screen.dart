@@ -85,79 +85,82 @@ class _TeacherFormState extends State<_TeacherForm> {
                   body: 'A teacher belongs to a department. Add one in the web console under Organisation, then come back.',
                   icon: Icons.account_tree_outlined,
                 )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.base,
-                    AppSpacing.base,
-                    AppSpacing.base,
-                    MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
-                  ),
-                  children: [
-                    if (state.failure != null && fields.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.base),
-                        child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
-                      ),
-                    TextField(
-                      controller: _name,
-                      autofocus: true,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(labelText: 'Full name', hintText: 'Ravi Kumar', errorText: fields['full_name']),
+              : RefreshIndicator(
+                  onRefresh: () => cubit.load(refresh: true),
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.base,
+                      AppSpacing.base,
+                      AppSpacing.base,
+                      MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      controller: _email,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        hintText: 'ravi@college.edu',
-                        helperText: 'They sign in with a code sent to this email.',
-                        errorText: fields['email'],
+                    children: [
+                      if (state.failure != null && fields.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.base),
+                          child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
+                        ),
+                      TextField(
+                        controller: _name,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(labelText: 'Full name', hintText: 'Ravi Kumar', errorText: fields['full_name']),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      controller: _phone,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: 'Mobile number, optional',
-                        helperText: 'They can also sign in with a code sent here.',
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          hintText: 'ravi@college.edu',
+                          helperText: 'They sign in with a code sent to this email.',
+                          errorText: fields['email'],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    DropdownButtonFormField<String>(
-                      initialValue: _departmentId,
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Department'),
-                      items: [
-                        for (final d in state.options)
-                          DropdownMenuItem(
-                            value: d.id,
-                            child: Text(
-                              d.campusName.isEmpty ? d.name : '${d.name} · ${d.campusName}',
-                              overflow: TextOverflow.ellipsis,
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: _phone,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'Mobile number, optional',
+                          helperText: 'They can also sign in with a code sent here.',
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      DropdownButtonFormField<String>(
+                        initialValue: _departmentId,
+                        isExpanded: true,
+                        decoration: const InputDecoration(labelText: 'Department'),
+                        items: [
+                          for (final d in state.options)
+                            DropdownMenuItem(
+                              value: d.id,
+                              child: Text(
+                                d.campusName.isEmpty ? d.name : '${d.name} · ${d.campusName}',
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                      ],
-                      onChanged: (id) => setState(() => _departmentId = id),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      value: _asHead,
-                      onChanged: (v) => setState(() => _asHead = v),
-                      title: const Text('Head of the department'),
-                      subtitle: const Text('Also plans assessments and verifies marks for it.'),
-                    ),
-                    const SizedBox(height: AppSpacing.base),
-                    FilledButton(
-                      onPressed: state.submitting ? null : () => _submit(context),
-                      child: state.submitting
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Appoint'),
-                    ),
-                  ],
+                        ],
+                        onChanged: (id) => setState(() => _departmentId = id),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: _asHead,
+                        onChanged: (v) => setState(() => _asHead = v),
+                        title: const Text('Head of the department'),
+                        subtitle: const Text('Also plans assessments and verifies marks for it.'),
+                      ),
+                      const SizedBox(height: AppSpacing.base),
+                      FilledButton(
+                        onPressed: state.submitting ? null : () => _submit(context),
+                        child: state.submitting
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('Appoint'),
+                      ),
+                    ],
+                  ),
                 ),
         );
       },

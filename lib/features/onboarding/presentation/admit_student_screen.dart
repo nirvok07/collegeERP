@@ -102,96 +102,99 @@ class _StudentFormState extends State<_StudentForm> {
                   body: 'A student is admitted into a program. Add one in the web console under Curriculum, then come back.',
                   icon: Icons.menu_book_outlined,
                 )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.base,
-                    AppSpacing.base,
-                    AppSpacing.base,
-                    MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
-                  ),
-                  children: [
-                    if (state.failure != null && fields.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.base),
-                        child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
-                      ),
-                    TextField(
-                      controller: _name,
-                      autofocus: true,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: InputDecoration(labelText: 'Full name', hintText: 'Nisha Rao', errorText: fields['full_name']),
+              : RefreshIndicator(
+                  onRefresh: () => cubit.load(refresh: true),
+                  child: ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.base,
+                      AppSpacing.base,
+                      AppSpacing.base,
+                      MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      controller: _number,
-                      autocorrect: false,
-                      textCapitalization: TextCapitalization.characters,
-                      decoration: InputDecoration(
-                        labelText: 'Enrolment number',
-                        hintText: 'CSE2026-001',
-                        helperText: 'Unique in the college. The student can sign in with it.',
-                        errorText: fields['enrolment_number'] ?? fields['enrolmentNumber'],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    DropdownButtonFormField<String>(
-                      initialValue: _programId ?? (state.options.length == 1 ? state.options.first.id : null),
-                      isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Program'),
-                      items: [
-                        for (final p in state.options)
-                          DropdownMenuItem(value: p.id, child: Text(p.name, overflow: TextOverflow.ellipsis)),
-                      ],
-                      onChanged: (id) => setState(() => _programId = id),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    InkWell(
-                      onTap: _pickDate,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Admitted on',
-                          suffixIcon: Icon(Icons.calendar_month_rounded),
+                    children: [
+                      if (state.failure != null && fields.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.base),
+                          child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
                         ),
-                        child: Text(_admittedOn),
+                      TextField(
+                        controller: _name,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(labelText: 'Full name', hintText: 'Nisha Rao', errorText: fields['full_name']),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      controller: _email,
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        helperText: 'Their sign-in code goes here.',
-                        errorText: fields['email'],
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: _number,
+                        autocorrect: false,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: InputDecoration(
+                          labelText: 'Enrolment number',
+                          hintText: 'CSE2026-001',
+                          helperText: 'Unique in the college. The student can sign in with it.',
+                          errorText: fields['enrolment_number'] ?? fields['enrolmentNumber'],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      controller: _phone,
-                      keyboardType: TextInputType.phone,
-                      decoration: InputDecoration(
-                        labelText: 'Mobile number (optional)',
-                        hintText: '98765 43210',
-                        errorText: fields['phone'],
+                      const SizedBox(height: AppSpacing.md),
+                      DropdownButtonFormField<String>(
+                        initialValue: _programId ?? (state.options.length == 1 ? state.options.first.id : null),
+                        isExpanded: true,
+                        decoration: const InputDecoration(labelText: 'Program'),
+                        items: [
+                          for (final p in state.options)
+                            DropdownMenuItem(value: p.id, child: Text(p.name, overflow: TextOverflow.ellipsis)),
+                        ],
+                        onChanged: (id) => setState(() => _programId = id),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    FilledButton(
-                      onPressed: state.submitting
-                          ? null
-                          : () {
-                              // A single program is chosen for them.
-                              if (_programId == null && state.options.length == 1) {
-                                _programId = state.options.first.id;
-                              }
-                              _submit(context);
-                            },
-                      child: state.submitting
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Admit student'),
-                    ),
-                  ],
+                      const SizedBox(height: AppSpacing.md),
+                      InkWell(
+                        onTap: _pickDate,
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Admitted on',
+                            suffixIcon: Icon(Icons.calendar_month_rounded),
+                          ),
+                          child: Text(_admittedOn),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          helperText: 'Their sign-in code goes here.',
+                          errorText: fields['email'],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: _phone,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Mobile number (optional)',
+                          hintText: '98765 43210',
+                          errorText: fields['phone'],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton(
+                        onPressed: state.submitting
+                            ? null
+                            : () {
+                                // A single program is chosen for them.
+                                if (_programId == null && state.options.length == 1) {
+                                  _programId = state.options.first.id;
+                                }
+                                _submit(context);
+                              },
+                        child: state.submitting
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('Admit student'),
+                      ),
+                    ],
+                  ),
                 ),
         );
       },

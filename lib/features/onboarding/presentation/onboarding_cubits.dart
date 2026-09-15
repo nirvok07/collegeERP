@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../data/onboarding_api.dart';
 import '../domain/onboarding.dart';
 
@@ -44,13 +45,26 @@ class AppointTeacherCubit extends Cubit<OnboardingFormState<DepartmentOption>> {
 
   final OnboardingRepository _repository;
 
-  Future<void> load() async {
-    emit(state.copyWith(loading: true, clearLoadFailure: true));
+  /// REF-1 (AD-9 amended, CR-1): opens on what was saved; the department
+  /// list is asked of the network only when nothing was saved yet, or on an
+  /// explicit refresh — not on every visit to this form.
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return;
+    return _read(refresh: refresh);
+  }
+
+  Future<void> _read({required bool refresh}) async {
+    if (!refresh) emit(state.copyWith(loading: true, clearLoadFailure: true));
     final result = await _repository.departments();
     if (isClosed) return;
     result.when(
-      ok: (departments) => emit(state.copyWith(loading: false, options: departments)),
-      err: (f) => emit(state.copyWith(loading: false, loadFailure: f)),
+      ok: (departments) => emit(state.copyWith(loading: false, options: departments, clearLoadFailure: true, clearFailure: true)),
+      err: (f) => emit(
+        refresh
+            // A failed refresh keeps the form on screen with a warning.
+            ? state.copyWith(failure: f)
+            : state.copyWith(loading: false, loadFailure: f),
+      ),
     );
   }
 
@@ -82,13 +96,26 @@ class AdmitStudentCubit extends Cubit<OnboardingFormState<ProgramOption>> {
 
   final OnboardingRepository _repository;
 
-  Future<void> load() async {
-    emit(state.copyWith(loading: true, clearLoadFailure: true));
+  /// REF-1 (AD-9 amended, CR-1): opens on what was saved; the program list
+  /// is asked of the network only when nothing was saved yet, or on an
+  /// explicit refresh — not on every visit to this form.
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return;
+    return _read(refresh: refresh);
+  }
+
+  Future<void> _read({required bool refresh}) async {
+    if (!refresh) emit(state.copyWith(loading: true, clearLoadFailure: true));
     final result = await _repository.programs();
     if (isClosed) return;
     result.when(
-      ok: (programs) => emit(state.copyWith(loading: false, options: programs)),
-      err: (f) => emit(state.copyWith(loading: false, loadFailure: f)),
+      ok: (programs) => emit(state.copyWith(loading: false, options: programs, clearLoadFailure: true, clearFailure: true)),
+      err: (f) => emit(
+        refresh
+            // A failed refresh keeps the form on screen with a warning.
+            ? state.copyWith(failure: f)
+            : state.copyWith(loading: false, loadFailure: f),
+      ),
     );
   }
 
