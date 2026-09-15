@@ -27,6 +27,7 @@ import '../../features/dashboard/data/overview_api.dart';
 import '../../features/academic/data/academic_api.dart';
 import '../../features/curriculum/data/curriculum_api.dart';
 import '../../features/rooms/data/rooms_api.dart';
+import '../../features/fees/data/fees_api.dart';
 import '../../features/sections/data/sections_api.dart';
 import '../../features/offerings/data/offerings_api.dart';
 import '../../features/timetable/data/timetable_api.dart';
@@ -79,6 +80,7 @@ void configureDependencies() {
     ..registerLazySingleton<AcademicRepository>(() => AcademicApi(locator<ApiClient>()))
     ..registerLazySingleton<CurriculumRepository>(() => CurriculumApi(locator<ApiClient>()))
     ..registerLazySingleton<RoomsRepository>(() => RoomsApi(locator<ApiClient>()))
+    ..registerLazySingleton<FeesRepository>(() => FeesApi(locator<ApiClient>()))
     ..registerLazySingleton<SectionsRepository>(() => SectionsApi(locator<ApiClient>()))
     ..registerLazySingleton<OfferingsRepository>(() => OfferingsApi(locator<ApiClient>()))
     ..registerLazySingleton<TimetableRepository>(() => TimetableApi(locator<ApiClient>()))
