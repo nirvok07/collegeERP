@@ -88,6 +88,18 @@ class _StudentHomeView extends StatelessWidget {
                         child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
                       ),
                     _Overall(tally: state.attendance!.overall),
+                    const SizedBox(height: AppSpacing.md),
+                    // CAL-1: the college's holidays, read-only for a student.
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        leading: const Icon(Icons.calendar_month_rounded, color: AppColors.warning),
+                        title: const Text('Academic calendar'),
+                        subtitle: const Text('Holidays and terms'),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => Navigator.of(context).pushNamed(Routes.calendar),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.lg),
                     Text('By course', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: AppSpacing.sm),

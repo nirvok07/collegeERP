@@ -1,7 +1,7 @@
 import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
-  Clash, NonTeachingDayRecord, NonTeachingDayRepository, RoomKind, RoomRecord,
+  CalendarPeriod, Clash, NonTeachingDayRecord, NonTeachingDayRepository, RoomKind, RoomRecord,
   RoomRepository, SessionFilter, SessionRecord, SessionRepository, SlotRecord,
   SlotRepository, TeachingReachReader,
 } from '../application/ports.ts';
@@ -102,6 +102,31 @@ export class PgNonTeachingDayRepository implements NonTeachingDayRepository {
       `DELETE FROM non_teaching_days WHERE id = $1`, [id],
     );
     return (rowCount ?? 0) > 0;
+  }
+
+  async periods(
+    tx: Tx, range: { from?: string | null; to?: string | null },
+  ): Promise<CalendarPeriod[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT 'year' AS kind, y.id, y.name, NULL AS year_name, y.starts_on, y.ends_on, y.is_current
+         FROM academic_years y
+        WHERE y.status <> 'archived'
+          AND ($1::date IS NULL OR y.ends_on >= $1::date)
+          AND ($2::date IS NULL OR y.starts_on <= $2::date)
+       UNION ALL
+       SELECT 'term', t.id, t.name, y.name, t.starts_on, t.ends_on, y.is_current
+         FROM terms t
+         JOIN academic_years y ON y.id = t.academic_year_id
+        WHERE t.status <> 'archived'
+          AND ($1::date IS NULL OR t.ends_on >= $1::date)
+          AND ($2::date IS NULL OR t.starts_on <= $2::date)
+        ORDER BY starts_on, kind DESC`,
+      [range.from ?? null, range.to ?? null],
+    );
+    return rows.map((r) => ({
+      kind: r.kind, id: r.id, name: r.name, yearName: r.year_name ?? null,
+      startsOn: String(r.starts_on), endsOn: String(r.ends_on), isCurrent: Boolean(r.is_current),
+    }));
   }
 }
 

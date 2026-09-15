@@ -63,6 +63,25 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
   HoD, Onboarding when allowed, Profile), replacing the icon row; today's classes, week and courses
   stay below. One `_ModuleGrid` draws both dashboards and both skeletons. Admin tiles no longer
   mention passwords. Flutter 277/277. 🔍 NEEDS VALIDATION on the phone.
+
+Owner requests, 2026-09-15 (in order of build):
+- CAL-1 ✅ Academic calendar module: years, terms and holidays in one screen, managed by the College
+  Admin (term.manage), read by everyone signed in to the college incl. students. Reuses
+  `non_teaching_days` (AD-39/AD-46); no new table. Server ✅: `GET /v1/calendar?from&to` (college
+  session only, no permission), `POST /v1/non-teaching-days` takes `to_date` (range ≤ 60 days, all or
+  none, clashing day named). Flutter ✅ `features/calendar/`: month grid (holidays, term tint, today),
+  "In <month>" and "Coming up" (a break of several days is one entry, with a countdown), terms; the
+  College Admin adds a day or range and removes a whole break (confirmed). Tile on both dashboards,
+  card on the student home. Server 468/468 (+6), Flutter 281/281 (+4). The Timetable's Holidays tab
+  still edits the same rows (one source of truth; the tab may later just link here).
+  🔍 NEEDS VALIDATION on the phone.
+- Staff attendance (AD-83): SA-A1 ❌ campus fence (lat/long/radius, "use my location"); SA-A2 ❌ punch
+  in/out (online, server time, distance check, mock refused); SA-A3 ❌ my report with charts + admin
+  view; SA-A4 ❌ forgotten punch → reason + time → admin approves/rejects; SA-A5 ❌ reminders as local
+  notifications (backend push blocked, Drift 6).
+- LV-1 ❌ Leave management for teachers and students (sick, short leave, half day; reason; apply →
+  approve). OD-LV-1 open: who approves (HoD / College Admin / class teacher for students), quotas
+  per type, and whether approved student leave marks classes "excused".
 - OTP sign-in 🟡 AD-82 approved (everyone incl. Super Admin; no passwords; fixed code 123456 on every
   server until go-live, risk accepted by owner). Slices, in order:
   - OTP-1 ✅ `adf1fe5` server: `/v1/auth/otp/request|verify` (college: email, mobile, enrolment no.)

@@ -917,6 +917,16 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: true,
         ),
+      // CAL-1: holidays and terms, which the College Admin keeps.
+      (
+        title: 'Academic calendar',
+        subtitle: 'Holidays and terms',
+        icon: Icons.calendar_month_rounded,
+        color: AppColors.warning,
+        route: Routes.calendar,
+        args: authority.can('term.manage'),
+        refresh: false,
+      ),
       // ADM-4 (AD-81): regulations and the course catalogue.
       if (authority.can('person.read'))
         (
@@ -1186,6 +1196,16 @@ class _TeacherModules extends StatelessWidget {
           args: null,
           refresh: false,
         ),
+      // CAL-1: the college's holidays and terms.
+      (
+        title: 'Academic calendar',
+        subtitle: 'Holidays and terms',
+        icon: Icons.calendar_month_rounded,
+        color: AppColors.warning,
+        route: Routes.calendar,
+        args: authority.can('term.manage'),
+        refresh: false,
+      ),
       _profileTile,
     ];
     return _ModuleGrid(title: 'Your work', tiles: tiles, open: open);

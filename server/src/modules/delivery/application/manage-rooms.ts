@@ -11,7 +11,7 @@ import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
-  NonTeachingDayRecord, NonTeachingDayRepository, RoomKind, RoomRecord, RoomRepository,
+  CalendarPeriod, NonTeachingDayRecord, NonTeachingDayRepository, RoomKind, RoomRecord, RoomRepository,
 } from './ports.ts';
 
 export interface DeliveryActor {
@@ -127,31 +127,74 @@ export async function archiveRoom(
 
 /* ------------------------------------------------------- non-teaching days */
 
+/** CAL-1: the most days one request may close, so a typo cannot close a year. */
+export const MAX_DAYS_AT_ONCE = 60;
+
+/** Every calendar date from [from] to [to], inclusive; null when either is not a real date or to < from. */
+export function datesBetween(from: string, to: string): string[] | null {
+  const parse = (d: string) => {
+    const at = new Date(`${d}T00:00:00Z`);
+    return Number.isNaN(at.getTime()) || at.toISOString().slice(0, 10) !== d ? null : at;
+  };
+  const start = parse(from);
+  const end = parse(to);
+  if (!start || !end || end < start) return null;
+  const dates: string[] = [];
+  for (const at = start; at <= end && dates.length <= MAX_DAYS_AT_ONCE; at.setUTCDate(at.getUTCDate() + 1)) {
+    dates.push(at.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+/**
+ * Closes one day, or (CAL-1) every day from [onDate] to [toDate] under one
+ * label: a Diwali break is one entry for the person typing it. All or none: if
+ * any day is already closed, nothing is added and that day is named.
+ */
 export async function addNonTeachingDay(
-  deps: RoomDeps, actor: DeliveryActor, input: { onDate: string; label: string },
-): Promise<Result<{ id: string }>> {
-  const id = deps.ids.next();
+  deps: RoomDeps, actor: DeliveryActor, input: { onDate: string; toDate?: string | null; label: string },
+): Promise<Result<{ id: string; ids: string[] }>> {
+  const dates = datesBetween(input.onDate, input.toDate ?? input.onDate);
+  if (!dates) return Err(fail('VALIDATION_FAILED', 'The last day cannot be before the first.'));
+  if (dates.length > MAX_DAYS_AT_ONCE) {
+    return Err(fail('VALIDATION_FAILED', `At most ${MAX_DAYS_AT_ONCE} days can be added at once.`));
+  }
+  const label = input.label.trim();
+  let current = dates[0]!;
   try {
     return await deps.uow.run(actor.tenantId, async (tx) => {
-      await deps.days.create(tx, {
-        id, tenantId: actor.tenantId, onDate: input.onDate,
-        label: input.label.trim(), createdBy: actor.personId,
-      });
-      await deps.audit.record({
-        correlationId: deps.ids.next(), tenantId: actor.tenantId,
-        actorType: 'person', actorId: actor.personId,
-        action: 'calendar.day_closed', subjectType: 'non_teaching_day', subjectId: id,
-        after: { date: input.onDate, label: input.label.trim() },
-      }, tx);
-      return Ok({ id });
+      const ids: string[] = [];
+      for (const onDate of dates) {
+        current = onDate;
+        const id = deps.ids.next();
+        await deps.days.create(tx, { id, tenantId: actor.tenantId, onDate, label, createdBy: actor.personId });
+        await deps.audit.record({
+          correlationId: deps.ids.next(), tenantId: actor.tenantId,
+          actorType: 'person', actorId: actor.personId,
+          action: 'calendar.day_closed', subjectType: 'non_teaching_day', subjectId: id,
+          after: { date: onDate, label },
+        }, tx);
+        ids.push(id);
+      }
+      return Ok({ id: ids[0]!, ids });
     });
   } catch (e) {
     if (e instanceof AppException && e.code === 'CONFLICT') {
-      return Err(fail('CONFLICT', `${input.onDate} is already marked as a non-teaching day.`));
+      return Err(fail('CONFLICT', `${current} is already marked as a non-teaching day.`));
     }
     if (e instanceof AppException) return Err(fail(e.code, e.message));
     throw e;
   }
+}
+
+/** CAL-1: years, terms and holidays in a range, for anyone in the college. */
+export function readCalendar(
+  deps: RoomDeps, actor: DeliveryActor, range: { from?: string | null; to?: string | null },
+): Promise<{ holidays: NonTeachingDayRecord[]; periods: CalendarPeriod[] }> {
+  return deps.uow.run(actor.tenantId, async (tx) => ({
+    holidays: await deps.days.list(tx, range),
+    periods: await deps.days.periods(tx, range),
+  }));
 }
 
 export function listNonTeachingDays(

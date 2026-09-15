@@ -186,6 +186,72 @@ describe('the academic calendar decides which days can hold a class', () => {
   });
 });
 
+describe('CAL-1: the academic calendar module', () => {
+  it('closes a range of days under one label', async () => {
+    const s = await deliverySetup();
+    const created = await post('/v1/non-teaching-days', s.token, {
+      on_date: '2026-10-30', to_date: '2026-11-03', label: 'Diwali break',
+    });
+    assert.equal(created.statusCode, 201, created.body);
+    assert.equal(created.json().data.ids.length, 5);
+    const days = (await get('/v1/non-teaching-days?from=2026-10-01&to=2026-11-30', s.token)).json().data;
+    assert.deepEqual(days.map((d: any) => d.on_date), ['2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02', '2026-11-03']);
+    assert.ok(days.every((d: any) => d.label === 'Diwali break'));
+  });
+
+  it('adds all of a range or none of it, and names the day already closed', async () => {
+    const s = await deliverySetup();
+    await post('/v1/non-teaching-days', s.token, { on_date: '2026-11-01', label: 'Foundation Day' });
+    const clash = await post('/v1/non-teaching-days', s.token, {
+      on_date: '2026-10-30', to_date: '2026-11-03', label: 'Diwali break',
+    });
+    assert.equal(clash.statusCode, 409);
+    assert.match(clash.json().error.message, /2026-11-01/);
+    const days = (await get('/v1/non-teaching-days', s.token)).json().data;
+    assert.deepEqual(days.map((d: any) => d.label), ['Foundation Day'], 'nothing of the range was kept');
+  });
+
+  it('refuses a backwards range, an impossible date and more than 60 days', async () => {
+    const s = await deliverySetup();
+    const add = (on_date: string, to_date: string) =>
+      post('/v1/non-teaching-days', s.token, { on_date, to_date, label: 'Break' });
+    assert.equal((await add('2026-11-05', '2026-11-01')).statusCode, 422);
+    assert.equal((await add('2026-02-30', '2026-03-02')).statusCode, 422);
+    assert.equal((await add('2026-06-01', '2026-08-31')).statusCode, 422);
+    assert.equal((await get('/v1/non-teaching-days', s.token)).json().data.length, 0);
+  });
+
+  it('anyone signed in to the college reads it: years, terms and holidays; nobody else', async () => {
+    const s = await deliverySetup();
+    const o = await s.offering('CS301', 'Operating Systems', 'os@delivery.edu');
+    await post('/v1/non-teaching-days', s.token, { on_date: '2026-08-15', label: 'Independence Day' });
+
+    const read = await get('/v1/calendar?from=2026-08-01&to=2026-08-31', o.teacher.token);
+    assert.equal(read.statusCode, 200, 'a teacher without term.manage may read it');
+    const data = read.json().data;
+    assert.deepEqual(data.holidays.map((d: any) => [d.on_date, d.label]), [['2026-08-15', 'Independence Day']]);
+    assert.deepEqual(data.periods.map((p: any) => [p.kind, p.name]), [['year', '2026-27'], ['term', 'Semester 1']]);
+    assert.equal(data.periods[1].year_name, '2026-27');
+    assert.equal(data.periods[0].is_current, true);
+
+    // Outside the range, no holiday; still the year and term that span it.
+    assert.equal((await get('/v1/calendar?from=2026-09-01&to=2026-09-30', o.teacher.token)).json().data.holidays.length, 0);
+    // Only the administrator changes it.
+    assert.equal((await post('/v1/non-teaching-days', o.teacher.token, {
+      on_date: '2026-09-01', to_date: '2026-09-02', label: 'Break',
+    })).statusCode, 403);
+    assert.equal((await harness.app.inject({ method: 'GET', url: '/v1/calendar' })).statusCode, 401);
+    assert.equal((await get('/v1/calendar?from=01-08-2026', s.token)).statusCode, 422);
+  });
+
+  it('another college\'s holidays are not in it', async () => {
+    const a = await deliverySetup('calendar-a');
+    const b = await deliverySetup('calendar-b');
+    await post('/v1/non-teaching-days', a.token, { on_date: '2026-08-15', label: 'Only in A' });
+    assert.equal((await get('/v1/calendar', b.token)).json().data.holidays.length, 0);
+  });
+});
+
 describe('the weekly pattern is edited; the occurrences are facts', () => {
   it('refuses two slots for one course at the same hour on the same day', async () => {
     const s = await deliverySetup();

@@ -1815,3 +1815,41 @@ declined until go-live.
 a student take a mobile number (OTP-4). The web console keeps password sign-in until it moves to
 codes (OTP-5), when the password endpoints are removed. Sessions (AD-25, 365-day sliding) and seats
 are unchanged.
+
+**AD-83 — Staff attendance: geo-fenced punch in and out, online only, location checked and discarded**
+
+*Status.* Approved by the owner, 2026-09-15 (all four choices as recommended). New capability,
+built in slices SA-A1 to SA-A5. Not the student attendance of M6, which records classes.
+
+*Decision.*
+1. **Fence per campus.** A campus gets a latitude, longitude and radius (default 200 m), set by
+   whoever manages the college, typed or taken from "use my location" while standing there.
+   A campus without a fence cannot be punched at.
+2. **Online only.** A punch is accepted only when the phone reaches the server, and the server's
+   clock is the time. No offline queue (AD-81's online-only rule for back-office writes applies;
+   the phone's clock and a stale fix are never trusted).
+3. **Checked, then discarded.** The phone sends its position and accuracy; the server computes the
+   distance to the nearest fence of the person's college and accepts only inside it (a fix worse
+   than 100 m is refused as too vague). Stored: in or out, the campus, the distance and the
+   accuracy. The coordinates themselves are not stored. A position the phone reports as mocked is
+   refused.
+4. **Day rules.** One punch in and one punch out per person per college day. A day with a punch in
+   is Present; hours are out minus in; a punch in after the college's "late after" time (default
+   09:15) is Late; a day with no punch out is flagged "no punch out". No punch in: Absent (a
+   holiday from the academic calendar is neither).
+5. **Corrections are requests, never edits** (SA-A4). A person who forgot a punch gives a reason and
+   the time they mean; whoever manages the college approves or rejects; an approved request sets
+   that time with the approver and reason kept. The recorded punch is never overwritten silently.
+6. **Reminders** (SA-A5) are local notifications scheduled on the phone (no punch in by the
+   reminder time; no punch out by evening), because backend push delivery is blocked (Drift 6).
+7. **Reports.** Each person sees their own month, drawn (present/late/absent, hours by day);
+   whoever manages the college sees everyone's.
+
+*Why.* The owner's choices: a fence per campus fits colleges with several sites; discarding the
+coordinates keeps the personal data to what the rule needs; online only keeps time and place
+honest.
+
+*Consequences.* A person with location off, no network, or a vague fix cannot punch; the correction
+request is the way out. Timezone: the college day and the late time are read in Asia/Kolkata until
+a college has its own timezone (assumption, recorded). Leave management (applied leave, types,
+approval) is a separate decision.

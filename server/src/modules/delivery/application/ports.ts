@@ -46,6 +46,20 @@ export interface NonTeachingDayRepository {
   list(tx: Tx, range: { from?: string | null; to?: string | null }): Promise<NonTeachingDayRecord[]>;
   /** Removed rather than archived: nothing references a holiday. */
   remove(tx: Tx, id: string): Promise<boolean>;
+  /** CAL-1: the years and terms that overlap the range, archived ones left out. */
+  periods(tx: Tx, range: { from?: string | null; to?: string | null }): Promise<CalendarPeriod[]>;
+}
+
+/** CAL-1: an academic year or a term, as the calendar shows it. */
+export interface CalendarPeriod {
+  kind: 'year' | 'term';
+  id: string;
+  name: string;
+  /** The year a term belongs to; null for a year. */
+  yearName: string | null;
+  startsOn: string;
+  endsOn: string;
+  isCurrent: boolean;
 }
 
 /* --------------------------------------------------------- timetable slots */

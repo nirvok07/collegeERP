@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/design/tokens.dart';
 import '../features/academic/presentation/academic_screen.dart';
+import '../features/calendar/presentation/academic_calendar_screen.dart';
 import '../features/curriculum/presentation/curriculum_screen.dart';
 import '../features/rooms/presentation/rooms_screen.dart';
 import '../features/sections/presentation/sections_screen.dart';
@@ -48,6 +49,9 @@ abstract final class Routes {
   static const registers = '/registers';
   static const verifyMarks = '/verify-marks';
   static const account = '/account';
+
+  /// CAL-1: arguments are `true` when this person may add and remove holidays.
+  static const calendar = '/calendar';
 
   // ONB-1: the College Admin's onboarding (AD-76).
   static const onboarding = '/onboarding';
@@ -168,6 +172,8 @@ abstract final class AppRouter {
         return _page(settings, const VerifyMarksScreen());
       case Routes.account:
         return _page(settings, const AccountScreen());
+      case Routes.calendar:
+        return _page(settings, AcademicCalendarScreen(canManage: settings.arguments == true));
       case Routes.onboarding:
         final args = settings.arguments;
         if (args is! OnboardingArgs) return _unknown(settings);

@@ -6,8 +6,8 @@ import { requirePermission } from '../../../infrastructure/http/guards.ts';
 import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
-  addNonTeachingDay, archiveRoom, createRoom, listNonTeachingDays, listRooms, removeNonTeachingDay,
-  updateRoom, type DeliveryActor,
+  addNonTeachingDay, archiveRoom, createRoom, listNonTeachingDays, listRooms, readCalendar,
+  removeNonTeachingDay, updateRoom, type DeliveryActor,
 } from '../application/manage-rooms.ts';
 import {
   addSlot, generateSessions, listSlots, removeSlot,
@@ -35,7 +35,9 @@ const roomPatch = z.object({
   kind: z.enum(['classroom', 'lab', 'seminar', 'auditorium']),
   capacity: z.number().int().positive().max(2000).nullable().optional(),
 });
-const dayBody = z.object({ on_date: isoDate, label: z.string().min(1).max(80) });
+/** CAL-1: `to_date` closes every day from `on_date` to it, under one label. */
+const dayBody = z.object({ on_date: isoDate, to_date: isoDate.optional(), label: z.string().min(1).max(80) });
+const rangeQuery = z.object({ from: isoDate.optional(), to: isoDate.optional() });
 const slotBody = z.object({
   day_of_week: z.number().int().min(1).max(7),
   starts_at: clockTime,
@@ -149,8 +151,31 @@ export async function registerDeliveryRoutes(app: FastifyInstance, c: Container)
     const parsed = dayBody.safeParse(req.body);
     if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
     return sendResult(reply, await addNonTeachingDay(c.rooms, actorOf(req), {
-      onDate: parsed.data.on_date, label: parsed.data.label,
+      onDate: parsed.data.on_date, toDate: parsed.data.to_date ?? null, label: parsed.data.label,
     }), 201);
+  });
+
+  /**
+   * CAL-1: the academic calendar (years, terms, holidays) for anyone signed in
+   * to the college, students included. Nothing in it is personal, so it asks
+   * only for a college session, not a permission.
+   */
+  app.get('/calendar', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const parsed = rangeQuery.safeParse(req.query);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    const calendar = await readCalendar(c.rooms, actorOf(req), {
+      from: parsed.data.from ?? null, to: parsed.data.to ?? null,
+    });
+    return sendOk(reply, {
+      holidays: calendar.holidays.map((d) => ({ id: d.id, on_date: d.onDate, label: d.label })),
+      periods: calendar.periods.map((p) => ({
+        kind: p.kind, id: p.id, name: p.name, year_name: p.yearName,
+        starts_on: p.startsOn, ends_on: p.endsOn, is_current: p.isCurrent,
+      })),
+    });
   });
 
   app.delete('/non-teaching-days/:id', async (req, reply) => {

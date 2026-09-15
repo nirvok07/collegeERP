@@ -140,6 +140,21 @@ describe('student app access', () => {
   });
 });
 
+describe('CAL-1: the academic calendar', () => {
+  it('a student reads the college\'s holidays, and cannot add one', async () => {
+    const c = await college();
+    await post('/v1/non-teaching-days', c.admin, { on_date: '2026-08-15', label: 'Independence Day' });
+    const code = (await post(`/v1/students/${c.nisha}/access`, c.admin)).json().data.code;
+    await activate('CSE26-001', code, 'nisha-strong-99');
+    const nisha = (await login('CSE26-001', 'nisha-strong-99')).json().data.access_token as string;
+
+    const read = await get('/v1/calendar', nisha);
+    assert.equal(read.statusCode, 200, read.body);
+    assert.deepEqual(read.json().data.holidays.map((d: { label: string }) => d.label), ['Independence Day']);
+    assert.equal((await post('/v1/non-teaching-days', nisha, { on_date: '2026-08-16', label: 'Mine' })).statusCode, 403);
+  });
+});
+
 describe('my attendance', () => {
   it('counts submitted registers only, and only the student asking', async () => {
     const c = await college();

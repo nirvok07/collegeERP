@@ -16,6 +16,9 @@ Implementation numbers are a delivery stream mapped to blueprint modules (AD-44)
 | — | Mobile dashboard (MUX-1) | Home dashboard replacing bottom nav, light theme only, native charts (AD-67) | none | none | ✅ | `docs/blueprint/adr.md` AD-67 |
 | — | College Admin onboarding (ONB-1) | Appoint a teacher (Faculty/HoD in a department, invitation to share) and admit a student into a program, on the phone (AD-76) | existing | existing | ✅ | `docs/blueprint/adr.md` AD-76 |
 | — | College branding (BR-1) | Public lookup by code; logo URL and colour set by the platform and the College Admin; college-code-first app (AD-70) | ✅ | ✅ | ✅ | `docs/blueprint/adr.md` AD-70 |
+| — | Academic calendar (CAL-1) | Years, terms and holidays in one screen for everyone incl. students; College Admin adds a day or a range and removes a break; reuses M2's `non_teaching_days` (AD-39/46) | ✅ `GET /v1/calendar`, range add | none | ✅ | `docs/blueprint/adr.md` AD-39, AD-46 |
+| — | Staff attendance (SA-A1…A5) | Geo-fenced punch in/out per campus, reports with charts, forgotten-punch requests, local reminders | ❌ | ❌ | ❌ | `docs/blueprint/adr.md` AD-83 |
+| — | Leave management (LV-1) | Teachers and students apply (sick, short, half day) with a reason; approval | ❌ | ❌ | ❌ | OD-LV-1 open |
 | M10 | Examinations/results | Not started | — | — | — | Blocked on OD-1 |
 
 Code locations: server `server/src/modules/{assessment, attendance, curriculum, delivery, enrolment, identity, institution, teaching}`; web
