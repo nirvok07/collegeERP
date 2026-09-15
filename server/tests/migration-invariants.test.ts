@@ -124,6 +124,15 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // history: a server error releases a key and old outcomes expire, and nothing
   // references a row.
   idempotency_keys: 'DELETE+INSERT+SELECT+UPDATE',
+
+  // M11 Student Finance (FEE-1). No DELETE anywhere: a fee head is archived
+  // and a structure discarded, per the module's append-only ledger rule
+  // (docs/blueprint/modules/m11-student-finance.md §3) — nothing here is
+  // money yet, but the same discipline starts at the definitions.
+  fee_heads: 'INSERT+SELECT+UPDATE',
+  fee_structures: 'INSERT+SELECT+UPDATE',
+  fee_structure_instalments: 'INSERT+SELECT+UPDATE',
+  fee_structure_lines: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

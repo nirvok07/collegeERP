@@ -60,6 +60,8 @@ export async function resetData(): Promise<void> {
       // Teaching references courses and sections, so it goes before both.
       'instructor_assignments', 'course_offerings',
       'curriculum_entries', 'curriculum_versions', 'courses',
+      // Fees reference programs and academic years, so they go before both.
+      'fee_structure_lines', 'fee_structure_instalments', 'fee_structures', 'fee_heads',
       'sections', 'terms', 'academic_years',
       'programs', 'departments', 'rooms', 'campuses',
       'user_accounts', 'persons',

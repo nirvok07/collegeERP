@@ -15,6 +15,7 @@ import { registerDeliveryRoutes } from '../../modules/delivery/presentation/deli
 import { registerEnrolmentRoutes } from '../../modules/enrolment/presentation/enrolment-routes.ts';
 import { registerAttendanceRoutes } from '../../modules/attendance/presentation/attendance-routes.ts';
 import { registerAssessmentRoutes } from '../../modules/assessment/presentation/assessment-routes.ts';
+import { registerFeeRoutes } from '../../modules/fees/presentation/fee-routes.ts';
 import { registerPlatformAccountRoutes } from '../../modules/identity/presentation/platform-account-routes.ts';
 import { registerIdempotency } from './idempotency.ts';
 import type { AccessTokenClaims } from '../../shared/application/ports.ts';
@@ -150,6 +151,7 @@ export async function buildServer(container: Container): Promise<FastifyInstance
     await registerEnrolmentRoutes(v1, container);
     await registerAttendanceRoutes(v1, container);
     await registerAssessmentRoutes(v1, container);
+    await registerFeeRoutes(v1, container);
   }, { prefix: '/v1' });
 
   return app;

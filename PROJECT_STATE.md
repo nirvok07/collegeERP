@@ -250,15 +250,37 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     refreshes on return. Assumption: Razorpay Payment Links (hosted page) unless the owner wants
     our own checkout page. FEE-7 stays a ❌ NOT BUILT TODO until the owner has the keys; every other
     slice does not depend on it (counter payments cover collection without it).
-  Slices: FEE-0 module doc + ADRs (append-only ledger, integer paise, INR, gapless receipt numbers
-  per college, reversal never edit, roles, approvals); FEE-1 roles + fee heads + structures per
-  program/year with instalments, due dates, late fee (publish); FEE-2 invoices per student/term;
-  FEE-3 concession requests + Admin approval; FEE-4 counter payments (cash/UPI/cheque/bank ref),
-  allocation to oldest dues, receipts, cancellation by reversal; FEE-5 late fees + fines + waiver
-  requests; FEE-6 student: dues, invoices, payments, receipt + statement PDF (view/print/share;
-  new `pdf`/`printing` packages); FEE-7 🚫 BLOCKED — Razorpay web payment + webhook, TODO until the
-  owner supplies a merchant account and API keys; FEE-8 reports (daily collection by cashier/mode,
-  outstanding, defaulters, concession/waiver register) — does not need FEE-7.
+  Slices:
+  - FEE-0 ✅ (2026-09-15) module contract, no code:
+    `docs/blueprint/modules/m11-student-finance.md` — roles, ledger invariants (append-only,
+    integer paise, gapless per-college receipt numbers, a mistake is a reversal), fee structure
+    scope, the shared concession/waiver/fine approval state machine, and the FEE-7 payment design.
+    FEE-1 builds directly on it.
+  - FEE-1 ✅ (2026-09-15) roles, fee heads, fee structures. Migration 031: permissions
+    (`fee.read`, `fee.manage`, `fee.collect`, `fee.approve`); **Accountant** and **Cashier** system
+    role templates seeded the same way `college_admin`/`department_head`/`faculty` were (002);
+    `college_admin` granted every `fee.*` permission (same move as 014 did for `student.*`);
+    `fee_heads`, `fee_structures` (draft/published/superseded/discarded, one live per
+    program+year), `fee_structure_instalments` (seq, due date, optional flat late fee),
+    `fee_structure_lines` (head × amount within an instalment) — the same tenant-isolation RLS and
+    no-DELETE pattern as every other tenant-owned table. Server: `modules/fees/` (ports,
+    `manage-fees.ts`, Pg repositories, `fee-routes.ts`); `GET/POST /v1/fees/heads`,
+    `DELETE /v1/fees/heads/:id`, `GET/POST /v1/fees/structures`, `GET /v1/fees/structures/:id`,
+    `POST .../instalments`, `POST /v1/fees/instalments/:id/lines`,
+    `POST /v1/fees/structures/:id/publish` (refuses with no instalments, or an instalment with no
+    lines; irreversible once complete — same shape as curriculum's `publishVersion`). No invoices,
+    payments or money yet — FEE-2 and FEE-4. Server 478/478 (+3 in `tests/fees.test.ts`: an
+    Accountant manages heads and a duplicate code is refused, a Cashier reads but cannot manage
+    and a teacher can do neither, a draft is refused an incomplete publish then published once
+    complete and is immutable after). `npm run typecheck` clean.
+  - FEE-2 ❌ invoices per student/term; FEE-3 ❌ concession requests + Admin approval; FEE-4 ❌
+    counter payments (cash/UPI/cheque/bank ref), allocation to oldest dues, receipts, cancellation
+    by reversal; FEE-5 ❌ late fees + fines + waiver requests; FEE-6 ❌ student: dues, invoices,
+    payments, receipt + statement PDF (view/print/share; new `pdf`/`printing` packages); FEE-7 🚫
+    BLOCKED — Razorpay web payment + webhook, TODO until the owner supplies a merchant account and
+    API keys; FEE-8 ❌ reports (daily collection by cashier/mode, outstanding, defaulters,
+    concession/waiver register) — does not need FEE-7. No Flutter UI yet for any FEE slice
+    (FEE-1's endpoints are server-only so far; the Accountant/Cashier screens are FEE-2+ work).
 
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.

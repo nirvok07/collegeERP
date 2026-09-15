@@ -93,6 +93,10 @@ import type { AssessmentDeps } from './modules/assessment/application/manage-ass
 import {
   PgCourseRepository, PgCurriculumRepository, PgProgramRepository,
 } from './modules/curriculum/infrastructure/repositories.ts';
+import {
+  PgFeeHeadRepository, PgFeeStructureRepository,
+} from './modules/fees/infrastructure/repositories.ts';
+import type { FeesDeps } from './modules/fees/application/manage-fees.ts';
 import type { MediaStorage } from './shared/application/ports.ts';
 
 export interface Container {
@@ -123,6 +127,7 @@ export interface Container {
   enrolment: EnrolmentDeps;
   attendance: AttendanceDeps;
   assessment: AssessmentDeps;
+  fees: FeesDeps;
   institutions: PgInstitutionRepository;
   collegeOverview: PgCollegeOverviewReader;
   tenantAccess: TenantAccessGate;
@@ -341,6 +346,11 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       offerings: offeringRepository,
       enrolments: enrolmentRepository,
       reach: reachReader,
+    },
+    fees: {
+      uow, audit, ids, clock,
+      feeHeads: new PgFeeHeadRepository(),
+      structures: new PgFeeStructureRepository(),
     },
     close: async () => {
       if (!pool) await dbPool.end();
