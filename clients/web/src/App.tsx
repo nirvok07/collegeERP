@@ -18,6 +18,7 @@ import { DeliveryPage } from './features/delivery/DeliveryPage.tsx';
 import { StudentsPage } from './features/students/StudentsPage.tsx';
 import { AttendancePage } from './features/attendance/AttendancePage.tsx';
 import { AssessmentPage } from './features/assessment/AssessmentPage.tsx';
+import { DashboardPage } from './features/dashboard/DashboardPage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -173,6 +174,15 @@ function sectionsFor(
     return platform;
   }
   const items: NavItem[] = [];
+  // WID-2: a dashboard landing, mirroring the mobile app's dashboard-first
+  // home. Always the first tab for a college person; the dashboard internally
+  // gates the numbers and tiles it may read. Even with no other permission it
+  // still renders a helpful "no access yet" state rather than an empty tab.
+  items.push({
+    key: 'home',
+    label: 'Dashboard',
+    render: () => <DashboardPage permissions={permissions} api={api} />,
+  });
   if (permissions?.has('person.read')) {
     items.push({
       key: 'people',

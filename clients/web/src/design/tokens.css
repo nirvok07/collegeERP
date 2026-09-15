@@ -37,6 +37,17 @@
 
   --focus-ring: #4f46e5;
 
+  /* Data-viz palette — sequential (ordered data, low→high) and diverging
+     (positive ↔ negative, plus neutral). From docs/DESIGN_ENHANCEMENTS.md §1. */
+  --viz-seq-1: #eef2ff;
+  --viz-seq-2: #dbeafe;
+  --viz-seq-3: #93c5fd;   /* mid point */
+  --viz-seq-4: #60a5fa;
+  --viz-seq-5: #3b82f6;   /* full */
+  --viz-positive: #059669;
+  --viz-negative: #dc2626;
+  --viz-neutral: #f3f4f6;
+
   /* Spacing — 4pt scale (§7.4). */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -102,6 +113,14 @@
     --info-subtle: #082f49;
 
     --focus-ring: #818cf8;
+    --viz-seq-1: #1e1b4b;
+    --viz-seq-2: #312e81;
+    --viz-seq-3: #4338ca;
+    --viz-seq-4: #6366f1;
+    --viz-seq-5: #818cf8;
+    --viz-positive: #34d399;
+    --viz-negative: #f87171;
+    --viz-neutral: #262626;
     --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
     --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
@@ -132,6 +151,14 @@
   --info: #38bdf8;
   --info-subtle: #082f49;
   --focus-ring: #818cf8;
+    --viz-seq-1: #1e1b4b;
+    --viz-seq-2: #312e81;
+    --viz-seq-3: #4338ca;
+    --viz-seq-4: #6366f1;
+    --viz-seq-5: #818cf8;
+    --viz-positive: #34d399;
+    --viz-negative: #f87171;
+    --viz-neutral: #262626;
   --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
   --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);

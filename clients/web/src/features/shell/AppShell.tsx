@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { Button } from '../../components/index.tsx';
 import type { ApiClient } from '../../lib/api.ts';
 import type { Actor } from '../../lib/auth.ts';
@@ -8,6 +8,15 @@ export interface NavItem {
   key: string;
   label: string;
   render: () => ReactNode;
+}
+
+/**
+ * Lets a section (e.g. the dashboard's module grid) switch the active tab
+ * without owning the shell's state or threading callbacks through every screen.
+ */
+export const ShellNav = createContext<(key: string) => void>(() => {/* no-op outside shell */});
+export function useShellNav(): (key: string) => void {
+  return useContext(ShellNav);
 }
 
 /**
@@ -45,6 +54,7 @@ export function AppShell({
 
   return (
     <div className="shell">
+      <ShellNav.Provider value={setActive}>
       <header className="shell__bar">
         <div className="shell__brand">
           <span className="shell__mark" aria-hidden="true">C</span>
@@ -79,6 +89,7 @@ export function AppShell({
       <main className="page">
         <div className="shell__section" key={current?.key}>{current?.render()}</div>
       </main>
+      </ShellNav.Provider>
     </div>
   );
 }
