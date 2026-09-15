@@ -69,7 +69,8 @@ class _DashboardView extends StatelessWidget {
 
   /// How many tiles [_TeacherModules] will draw, so the skeleton draws as many.
   int get _tileCount => [
-    (authority.can('account.manage') && authority.can('role.assign')) || authority.can('student.manage'),
+    authority.can('account.manage') && authority.can('role.assign'),
+    authority.can('student.manage'),
     authority.can('session.read'),
     authority.can('offering.read'),
     authority.can('person.read'),
@@ -876,13 +877,23 @@ class _AdminModules extends StatelessWidget {
     final canAdmit = authority.can('student.manage');
     final o = overview;
     final tiles = <_Tile>[
-      if (canAppoint || canAdmit)
+      if (canAppoint)
         (
-          title: 'Onboarding',
-          subtitle: 'Appoint teachers, admit students',
-          icon: Icons.person_add_alt_1_rounded,
+          title: 'Appoint a teacher',
+          subtitle: 'Invite a teacher to a department',
+          icon: Icons.co_present_rounded,
           color: AppColors.success,
-          route: Routes.onboarding,
+          route: Routes.appointTeacher,
+          args: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
+          refresh: true,
+        ),
+      if (canAdmit)
+        (
+          title: 'Onboard a student',
+          subtitle: 'Admit a student into a program',
+          icon: Icons.school_rounded,
+          color: AppColors.success,
+          route: Routes.admitStudent,
           args: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
           refresh: true,
         ),
@@ -1122,13 +1133,23 @@ class _TeacherModules extends StatelessWidget {
     final toMark = summary.needsMarking.length;
     final courses = summary.courses.length;
     final tiles = <_Tile>[
-      if (canAppoint || canAdmit)
+      if (canAppoint)
         (
-          title: 'Onboarding',
-          subtitle: 'Appoint teachers, admit students',
-          icon: Icons.person_add_alt_1_rounded,
+          title: 'Appoint a teacher',
+          subtitle: 'Invite a teacher to a department',
+          icon: Icons.co_present_rounded,
           color: AppColors.success,
-          route: Routes.onboarding,
+          route: Routes.appointTeacher,
+          args: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
+          refresh: true,
+        ),
+      if (canAdmit)
+        (
+          title: 'Onboard a student',
+          subtitle: 'Admit a student into a program',
+          icon: Icons.school_rounded,
+          color: AppColors.success,
+          route: Routes.admitStudent,
           args: OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college),
           refresh: true,
         ),

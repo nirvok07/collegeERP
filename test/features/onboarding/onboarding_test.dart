@@ -7,7 +7,6 @@ import 'package:college_erp/features/onboarding/domain/onboarding.dart';
 import 'package:college_erp/features/onboarding/presentation/admit_student_screen.dart';
 import 'package:college_erp/features/onboarding/presentation/appoint_teacher_screen.dart';
 import 'package:college_erp/features/onboarding/presentation/onboarding_cubits.dart';
-import 'package:college_erp/features/onboarding/presentation/onboarding_screen.dart';
 import 'package:college_erp/features/onboarding/presentation/teacher_invited_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,14 +94,6 @@ void main() {
     expect(await cubit.submit(const TeacherInput(fullName: 'Ravi', email: 'r@x.edu', departmentId: 'd1')), isNotNull);
     expect(repo.teachers, hasLength(1));
     await cubit.close();
-  });
-
-  testWidgets('the hub offers only what the role allows', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: OnboardingScreen(args: OnboardingArgs(canAppoint: false, canAdmit: true)),
-    ));
-    expect(find.text('Onboard a student'), findsOneWidget);
-    expect(find.text('Appoint a teacher'), findsNothing);
   });
 
   testWidgets('a college without departments is told where to add one', (tester) async {

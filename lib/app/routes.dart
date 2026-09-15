@@ -25,7 +25,6 @@ import '../core/session/college_brand.dart';
 import '../features/onboarding/domain/onboarding.dart';
 import '../features/onboarding/presentation/admit_student_screen.dart';
 import '../features/onboarding/presentation/appoint_teacher_screen.dart';
-import '../features/onboarding/presentation/onboarding_screen.dart';
 import '../features/onboarding/presentation/teacher_invited_screen.dart';
 
 /// Route names. No raw path string appears in a widget.
@@ -58,7 +57,6 @@ abstract final class Routes {
   static const settings = '/settings';
 
   // ONB-1: the College Admin's onboarding (AD-76).
-  static const onboarding = '/onboarding';
   static const appointTeacher = '/onboarding/teacher';
   static const admitStudent = '/onboarding/student';
   static const teacherInvited = '/onboarding/teacher/invited';
@@ -180,10 +178,6 @@ abstract final class AppRouter {
         return _page(settings, AcademicCalendarScreen(canManage: settings.arguments == true));
       case Routes.settings:
         return _page(settings, const SettingsScreen());
-      case Routes.onboarding:
-        final args = settings.arguments;
-        if (args is! OnboardingArgs) return _unknown(settings);
-        return _page(settings, OnboardingScreen(args: args));
       case Routes.appointTeacher:
         final args = settings.arguments;
         if (args is! OnboardingArgs) return _unknown(settings);

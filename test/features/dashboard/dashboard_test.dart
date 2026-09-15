@@ -359,7 +359,8 @@ void main() {
       expect(find.text('340'), findsOneWidget, reason: 'students, in the header');
       expect(find.text('2 people have not signed in yet'), findsOneWidget);
       expect(find.text('Manage your college'), findsOneWidget);
-      expect(find.text('Onboarding'), findsOneWidget);
+      expect(find.text('Appoint a teacher'), findsOneWidget);
+      expect(find.text('Onboard a student'), findsOneWidget);
       expect(find.text('12 staff'), findsOneWidget);
       expect(find.text('Teaching record'), findsNothing, reason: 'no teaching record for an admin who does not teach');
       expect(find.text("Today's classes"), findsNothing);

@@ -213,9 +213,9 @@ Dashboard → **Rooms** → **Add room**:
 | Hauz Khas | DOGRA-HALL | Dogra Hall | Auditorium | 600 |
 | Sonipat | SNP-LH-01 | Lecture Hall 1, Sonipat | Classroom | 100 |
 
-### Step 7: Onboarding, Teachers
+### Step 7: Appoint a teacher
 
-Dashboard → **Onboarding** → **Appoint a teacher**. There is no invitation to accept and no
+Dashboard → **Appoint a teacher**. There is no invitation to accept and no
 password (AD-82): the teacher opens the app, enters the college code, then their email (or the
 mobile you gave), and signs in with the code sent to it. Until go-live the code is always
 **123456** and nothing is actually sent.
@@ -230,9 +230,9 @@ mobile you gave), and signs in with the code sent to it. Until go-live the code 
 
 To see a teacher's side on your own phone, use an email you can sign in with for one of them.
 
-### Step 8: Onboarding, Students
+### Step 8: Onboard a student
 
-**Onboarding** → **Onboard a student**. Program: B.Tech CSE, admitted on 20 Jul 2026. Give each
+Dashboard → **Onboard a student**. Program: B.Tech CSE, admitted on 20 Jul 2026. Give each
 student an **email**: that is where their sign-in code goes (AD-85; a mobile number is optional).
 
 | Enrolment number | Name | Section (Step 9) |

@@ -97,6 +97,12 @@ Owner requests, 2026-09-15 (in order of build):
     and sign-out (`SavedReads.clear`), so nothing of it survives a logout. New test:
     `test/app/account_screen_test.dart` (first open asks once, a second open does not, a pull does).
     🔍 NEEDS VALIDATION on the phone.
+  - ONB-2 ✅ (owner, 2026-09-15) the Onboarding hub screen is gone: the admin and teacher dashboards
+    show **Appoint a teacher** and **Onboard a student** as their own tiles (each present only with
+    its own permission), opening `Routes.appointTeacher` / `Routes.admitStudent` directly.
+    `onboarding_screen.dart` and `Routes.onboarding` removed; nothing else referenced them.
+    Flutter 287/287 (the hub's own widget test removed, its permission-gating already covered by
+    the dashboard tests). 🔍 NEEDS VALIDATION on the phone.
 - Staff attendance (AD-83): SA-A1 ✅ campus attendance area: migration 029 (fence lat/long/radius on
   `campuses`, all three or none, radius 25–2000 m); `PATCH|DELETE /v1/campuses/:id/fence` (campus.manage,
   audited `campus.fence_set|cleared`; 0,0 and out-of-range refused); `GET /v1/campuses` returns

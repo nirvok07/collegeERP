@@ -34,11 +34,12 @@ passwords and no invitations to accept. Until go-live nothing is sent and the co
    | 4 | **Curriculum** → Courses | The course catalogue (codes such as `CS101`) |
    | 5 | **Curriculum** → Regulations | For each program: a regulation, its courses term by term, then **Publish** |
    | 6 | **Rooms** | Classrooms and labs, with seats |
-   | 7 | **Onboarding** | **Appoint a teacher** (department, Faculty or Head of Department; email and optional mobile). **Onboard a student** (enrolment number, program, admission date, and an email for their sign-in code; mobile is optional). |
-   | 8 | **Sections** | Add a section (program, term, label such as A). **Open** it, **Add students**, then **Start teaching**. |
-   | 9 | Section → **Courses taught** | Add each course to the section. On the course: **Assign** its teacher, **Enrol section A**, then **Start teaching**. |
-   | 10 | Course → **Weekly timetable** | Add its weekly slots (day, time, room), then **Generate the term's classes** (previewed first; clashes are listed and nothing is created until they are fixed) |
-   | 11 | **Timetable** → Holidays | Non-teaching days; generated classes skip them |
+   | 7 | **Appoint a teacher** | Department, Faculty or Head of Department; email and optional mobile |
+   | 8 | **Onboard a student** | Enrolment number, program, admission date, and an email for their sign-in code (mobile is optional) |
+   | 9 | **Sections** | Add a section (program, term, label such as A). **Open** it, **Add students**, then **Start teaching**. |
+   | 10 | Section → **Courses taught** | Add each course to the section. On the course: **Assign** its teacher, **Enrol section A**, then **Start teaching**. |
+   | 11 | Course → **Weekly timetable** | Add its weekly slots (day, time, room), then **Generate the term's classes** (previewed first; clashes are listed and nothing is created until they are fixed) |
+   | 12 | **Timetable** → Holidays | Non-teaching days; generated classes skip them |
 
 3. **People** lists everyone but you. Open a person to **Manage access** (roles by department or
    the whole college). There is no password to reset: they sign in with a code.
