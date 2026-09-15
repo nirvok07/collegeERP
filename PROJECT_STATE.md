@@ -169,6 +169,31 @@ Owner requests, 2026-09-15 (in order of build):
   a mobile number sign in as that person (and anyone, by email too, when SMTP is unset). Must be
   removed before any real college uses the system.
 
+PLANNED from `feedbackchanges.md` (owner, 2026-09-15). ❌ NOT BUILT; build only when the owner says.
+Order: LK-1 → CR-1 → REF-1 → FEE-0…FEE-7.
+- LK-1 App lock off/on in Settings (default on). Amends AD-78 ("always on"). Device-local flag in
+  secure storage; turning off asks biometric first; off = no prompt on open/resume until turned on.
+  OD-LK-1: does sign-out reset it to on? (rec: yes).
+- CR-1 Pull-to-refresh-only reads on every screen. Amends AD-9 (saved-first + background refresh
+  becomes saved-only; network on first open, pull, or after the user's own write). Generalises
+  SET-1b via one helper in `core/saved_reads`; applied to the 7 saved-first screens and the OF-R2
+  back-office screens. Excluded: attendance/mark sheets (OF-R3). OD-CR-1: show "Updated 2 h ago"
+  (rec: yes, design system §7.6).
+- REF-1 College reference data in one place: departments, campuses, programs, years/terms, rooms,
+  sections, fetched in one call at app open (new `GET /v1/reference`, ETag, 304 when unchanged),
+  kept in saved reads, read by Appoint teacher, Onboard student and every picker; no per-form
+  load. Refreshed at app open and on pull; a reference write refreshes it.
+- FEE (M11 Student Finance, D6). Pulled forward from Release two (docs/requirements.md D1).
+  FEE-0 module doc + ADRs (append-only ledger, integer paise, INR, gapless receipt numbers per
+  college, reversal never edit); FEE-1 fee heads + structures per program/year (publish);
+  FEE-2 invoices + instalments per student/term; FEE-3 concessions/waivers; FEE-4 counter
+  payments (cash/UPI/cheque/bank ref), allocation to oldest dues, receipts, cancellation by
+  reversal; FEE-5 student: dues, invoices, payments, receipt + statement PDF (view/print/share);
+  FEE-6 reports (daily collection, outstanding, defaulters), late fee rule; FEE-7 online gateway.
+  Online-only (AD-9: desk roles). OD-FEE-1 who collects (new Accounts/Cashier roles vs College
+  Admin permission); OD-FEE-2 gateway provider (defer FEE-7); OD-FEE-3 category/quota fees in v1?;
+  OD-FEE-4 concession approval (P1 approvals unspecified → permission-only for now?).
+
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.
 
