@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/design/tokens.dart';
 import '../core/di/locator.dart';
 import '../core/error/result.dart';
+import '../core/saved_reads/saved_reads.dart';
 import '../core/session/authority.dart';
 import '../core/session/college_brand.dart';
 import '../core/session/session_manager.dart';
@@ -12,8 +13,12 @@ import '../core/widgets/screen_state.dart';
 import 'sign_out.dart';
 
 /// The person's own details, and only here (UX-2): the dashboard no longer
-/// shows a name or an email. Read from the server (`/v1/auth/me`) so it says
-/// what is true now, not what the phone remembers.
+/// shows a name or an email.
+///
+/// Unlike the rest of the app's saved-first screens (AD-9 amended), this one
+/// does not refresh itself in the background: once shown, it opens on what
+/// was saved until the user pulls to refresh. The saved copy is cleared like
+/// every other one, at sign-in and sign-out (`SavedReads.clear`).
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
 
@@ -22,14 +27,31 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  late Future<(Result<Authority>, CollegeBrand?)> _load = _read();
+  late Future<(Result<Authority>, CollegeBrand?)> _load = _read(refresh: false);
 
-  Future<(Result<Authority>, CollegeBrand?)> _read() async {
+  Future<(Result<Authority>, CollegeBrand?)> _read({required bool refresh}) async {
+    if (!refresh) {
+      Result<Authority>? saved;
+      final hit = await fromSaved(() async {
+        saved = await locator<AuthorityApi>().mine();
+      });
+      if (hit && saved != null) {
+        return (saved!, await locator<SessionStore>().readCollege());
+      }
+    }
     final results = await Future.wait<Object?>([
       locator<AuthorityApi>().mine(),
       locator<SessionStore>().readCollege(),
     ]);
     return (results[0] as Result<Authority>, results[1] as CollegeBrand?);
+  }
+
+  Future<void> _refresh() async {
+    final next = _read(refresh: true);
+    setState(() {
+      _load = next;
+    });
+    await next;
   }
 
   @override
@@ -46,10 +68,13 @@ class _AccountScreenState extends State<AccountScreen> {
           if (authority == null) {
             return ErrorView(
               failure: result.failureOrNull!,
-              onRetry: () => setState(() => _load = _read()),
+              onRetry: () => setState(() => _load = _read(refresh: false)),
             );
           }
-          return _Profile(authority: authority, college: college);
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: _Profile(authority: authority, college: college),
+          );
         },
       ),
     );
@@ -69,6 +94,7 @@ class _Profile extends StatelessWidget {
     final name = authority.fullName ?? locator<SessionManager>().actor?.fullName ?? 'Signed in';
 
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(AppSpacing.base),
       children: [
         Container(

@@ -75,7 +75,6 @@ class _DashboardView extends StatelessWidget {
     authority.can('person.read'),
     authority.can('person.read'),
     authority.can('assessment.verify'),
-    true, // Profile
   ].where((shown) => shown).length;
 
   /// An administrator who also teaches keeps the teaching parts.
@@ -1015,7 +1014,6 @@ class _AdminModules extends StatelessWidget {
           args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),
-      _profileTile,
     ];
 
     return _ModuleGrid(title: 'Manage your college', tiles: tiles, open: open);
@@ -1024,16 +1022,6 @@ class _AdminModules extends StatelessWidget {
 
 /// One tile of a dashboard's grid: what it opens, and a line of what is there.
 typedef _Tile = ({String title, String subtitle, IconData icon, Color color, String route, Object? args, bool refresh});
-
-const _Tile _profileTile = (
-  title: 'Profile',
-  subtitle: 'Your details and roles',
-  icon: Icons.account_circle_rounded,
-  color: AppColors.primary,
-  route: Routes.account,
-  args: null,
-  refresh: false,
-);
 
 /// The two-column grid both dashboards open on (ADM-1, FB-5).
 class _ModuleGrid extends StatelessWidget {
@@ -1207,7 +1195,6 @@ class _TeacherModules extends StatelessWidget {
         args: authority.can('term.manage'),
         refresh: false,
       ),
-      _profileTile,
     ];
     return _ModuleGrid(title: 'Your work', tiles: tiles, open: open);
   }

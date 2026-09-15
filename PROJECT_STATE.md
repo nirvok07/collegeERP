@@ -85,8 +85,18 @@ Owner requests, 2026-09-15 (in order of build):
   Server 475/475 (+4), Flutter 287/287.
 - SET-1 ✅ Settings where the profile icon was (dashboard header, student home): Profile, App lock
   and Sign-in (informational: AD-78 lock always on, AD-82 codes), changes waiting to send, Sign out
-  (confirmed). Admin tile grid keeps its Profile tile. Flutter test +1.
-  🔍 NEEDS VALIDATION on the phone for both.
+  (confirmed). Flutter test +1. 🔍 NEEDS VALIDATION on the phone for both.
+  - SET-1a ✅ (owner, 2026-09-15) the admin and teacher dashboards no longer keep their own Profile
+    tile: Settings is the one door to it everywhere. `_profileTile` and its `_tileCount` entry
+    removed from `dashboard_screen.dart`; dashboard test updated to assert the tile's absence.
+    Flutter 288/288 (net +1 test file: `test/app/account_screen_test.dart`).
+  - SET-1b ✅ (owner, 2026-09-15) Profile (`account_screen.dart`) no longer refreshes itself on
+    every open, unlike the rest of AD-9 amended: it reads `/v1/auth/me` once, saves it (the existing
+    saved-reads mechanism), and every later open answers from that — a pull to refresh is the one
+    thing that asks again. The saved copy is cleared the same way every saved read is, at sign-in
+    and sign-out (`SavedReads.clear`), so nothing of it survives a logout. New test:
+    `test/app/account_screen_test.dart` (first open asks once, a second open does not, a pull does).
+    🔍 NEEDS VALIDATION on the phone.
 - Staff attendance (AD-83): SA-A1 ✅ campus attendance area: migration 029 (fence lat/long/radius on
   `campuses`, all three or none, radius 25–2000 m); `PATCH|DELETE /v1/campuses/:id/fence` (campus.manage,
   audited `campus.fence_set|cleared`; 0,0 and out-of-range refused); `GET /v1/campuses` returns

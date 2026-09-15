@@ -315,7 +315,8 @@ void main() {
       expect(find.text('Schedule'), findsOneWidget);
       expect(find.text('Courses'), findsOneWidget);
       expect(find.text('1 to mark'), findsOneWidget, reason: 'the tile says what is waiting');
-      expect(find.text('Profile'), findsOneWidget);
+      // Profile lives only in Settings now, not as its own tile.
+      expect(find.text('Profile'), findsNothing);
       // No person.read: the people and organisation surfaces are absent.
       expect(find.text('People'), findsNothing);
       expect(find.text('Organisation'), findsNothing);
