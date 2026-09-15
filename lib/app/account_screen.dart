@@ -9,6 +9,7 @@ import '../core/session/college_brand.dart';
 import '../core/session/session_manager.dart';
 import '../core/session/session_store.dart';
 import '../core/widgets/college_logo.dart';
+import '../core/widgets/saved_freshness.dart';
 import '../core/widgets/screen_state.dart';
 import 'sign_out.dart';
 
@@ -27,23 +28,27 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  late Future<(Result<Authority>, CollegeBrand?)> _load = _read(refresh: false);
+  late Future<(Result<Authority>, CollegeBrand?, DateTime?)> _load = _read(refresh: false);
 
-  Future<(Result<Authority>, CollegeBrand?)> _read({required bool refresh}) async {
+  Future<(Result<Authority>, CollegeBrand?, DateTime?)> _read({required bool refresh}) async {
     if (!refresh) {
       Result<Authority>? saved;
       final hit = await fromSaved(() async {
         saved = await locator<AuthorityApi>().mine();
       });
       if (hit && saved != null) {
-        return (saved!, await locator<SessionStore>().readCollege());
+        final college = await locator<SessionStore>().readCollege();
+        final updatedAt = await locator<AuthorityApi>().mineSavedAt();
+        return (saved!, college, updatedAt);
       }
     }
     final results = await Future.wait<Object?>([
       locator<AuthorityApi>().mine(),
       locator<SessionStore>().readCollege(),
     ]);
-    return (results[0] as Result<Authority>, results[1] as CollegeBrand?);
+    final result = results[0] as Result<Authority>;
+    final updatedAt = result.valueOrNull == null ? null : await locator<AuthorityApi>().mineSavedAt();
+    return (result, results[1] as CollegeBrand?, updatedAt);
   }
 
   Future<void> _refresh() async {
@@ -58,12 +63,12 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: FutureBuilder<(Result<Authority>, CollegeBrand?)>(
+      body: FutureBuilder<(Result<Authority>, CollegeBrand?, DateTime?)>(
         future: _load,
         builder: (context, snapshot) {
           final data = snapshot.data;
           if (data == null) return const SkeletonList(rows: 3, detailHeader: true, leading: SkeletonLeading.icon, subtitle: false);
-          final (result, college) = data;
+          final (result, college, updatedAt) = data;
           final authority = result.valueOrNull;
           if (authority == null) {
             return ErrorView(
@@ -73,7 +78,7 @@ class _AccountScreenState extends State<AccountScreen> {
           }
           return RefreshIndicator(
             onRefresh: _refresh,
-            child: _Profile(authority: authority, college: college),
+            child: _Profile(authority: authority, college: college, updatedAt: updatedAt),
           );
         },
       ),
@@ -82,10 +87,11 @@ class _AccountScreenState extends State<AccountScreen> {
 }
 
 class _Profile extends StatelessWidget {
-  const _Profile({required this.authority, required this.college});
+  const _Profile({required this.authority, required this.college, this.updatedAt});
 
   final Authority authority;
   final CollegeBrand? college;
+  final DateTime? updatedAt;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +103,7 @@ class _Profile extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(AppSpacing.base),
       children: [
+        if (updatedAt != null) SavedFreshness(at: updatedAt),
         Container(
           padding: const EdgeInsets.all(AppSpacing.base),
           decoration: BoxDecoration(

@@ -7,6 +7,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/session/college_brand.dart';
 import '../../../core/widgets/college_logo.dart';
+import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/my_attendance.dart';
 
@@ -78,6 +79,7 @@ class _StudentHomeView extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.base),
                   children: [
+                    if (state.updatedAt != null) SavedFreshness(at: state.updatedAt),
                     if (student != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),

@@ -8,6 +8,9 @@ import '../../../core/network/api_client.dart';
 abstract interface class CalendarRepository {
   Future<Result<AcademicCalendar>> read();
 
+  /// CR-1b: when [read] was last saved.
+  Future<DateTime?> readSavedAt();
+
   /// One day, or every day from [from] to [to] under one label (all or none).
   Future<Result<void>> addHoliday({required String from, String? to, required String label});
   Future<Result<void>> removeHoliday(String id);
@@ -25,6 +28,9 @@ class CalendarApi implements CalendarRepository {
 
   @override
   Future<Result<AcademicCalendar>> read() => _client.get('/v1/calendar', AcademicCalendar.fromJson);
+
+  @override
+  Future<DateTime?> readSavedAt() => _client.savedAt('/v1/calendar');
 
   @override
   Future<Result<void>> addHoliday({required String from, String? to, required String label}) => _client.post(

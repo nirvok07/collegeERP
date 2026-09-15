@@ -83,6 +83,9 @@ class _FakeDelivery implements DeliveryRepository {
   }
 
   @override
+  Future<DateTime?> mySessionsSavedAt({required String from, required String to}) async => null;
+
+  @override
   Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey}) async =>
       const Ok(null);
 }
@@ -97,6 +100,9 @@ class _FakeTeaching implements TeachingRepository {
     calls++;
     return result;
   }
+
+  @override
+  Future<DateTime?> myTeachingSavedAt() async => null;
 }
 
 const today = '2026-09-13';

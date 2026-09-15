@@ -81,6 +81,9 @@ class _FakeRepository implements DeliveryRepository {
   }
 
   @override
+  Future<DateTime?> mySessionsSavedAt({required String from, required String to}) async => null;
+
+  @override
   Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey}) async {
     marked.add(sessionId);
     keys.add(idempotencyKey);

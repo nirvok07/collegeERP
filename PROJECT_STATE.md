@@ -198,13 +198,18 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
   behaviour just removed (a background refresh after a saved hit, and a plain open failing when
   offline) — rewritten to assert CR-1's rule instead. Flutter 292/292, `flutter analyze` clean.
   🔍 NEEDS VALIDATION on the phone.
-- CR-1b ❌ NOT BUILT — OD-CR-1's "Updated 2 h ago" freshness line. Kept out of CR-1a on purpose: it
-  needs `SavedRead.savedAt` plumbed out through `ApiClient` and every repository the 6 screens use
-  (`TeachingRepository`, `DeliveryRepository`, `CalendarRepository`, `StudentSelfRepository`,
-  `AuthorityApi`, and the dashboard's three concurrent reads, which have no single freshness to
-  show). A same-slice bundle would have meant touching every repository interface and its test
-  fakes for a UI polish item, when CR-1a's own behaviour change is what the owner asked for by
-  name. Do this as its own slice, after CR-1a is validated on the phone.
+- CR-1b ✅ (2026-09-15) OD-CR-1's "Updated 2 h ago" freshness line. `ApiClient.savedAt(path)`
+  reads a saved entry's timestamp without touching the network; `SavedFreshness`
+  (`core/widgets/saved_freshness.dart`) is the shared "Updated …" widget, `freshnessLabel` its pure
+  formatter (just now / N m / N h / yesterday / N d / a date), unit-tested directly. Each of the 5
+  single-read screens gained a `lastSaved`-style method on its repository (`myTeachingSavedAt`,
+  `mySessionsSavedAt`, `readSavedAt`, `myAttendanceSavedAt`, `mineSavedAt` on `AuthorityApi`) and an
+  `updatedAt` field on its state, set after every successful read (saved-hit or live) and shown at
+  the top of the list. Every fake implementing these interfaces across the test suite updated to
+  match (additive methods only, no existing signature changed). The dashboard is excluded on
+  purpose: it combines three concurrent reads (sessions, teaching, overview) with no single
+  freshness to show honestly; giving it one needs its own design, not a bolt-on. Flutter 294/294
+  (+1: `saved_freshness_test.dart`), `flutter analyze` clean. 🔍 NEEDS VALIDATION on the phone.
 - CR-1c ❌ NOT BUILT — OF-R2 (the back-office screens: people, organisation, students, sections,
   offerings, rooms, timetable, access, college profile, review lists, platform screens) currently
   have no saved-reads wiring at all, not even the old background-refresh version; giving them CR-1's

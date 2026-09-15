@@ -22,6 +22,12 @@ class DeliveryApi implements DeliveryRepository {
       );
 
   @override
+  Future<DateTime?> mySessionsSavedAt({required String from, required String to}) => _client.savedAt(
+    '/v1/me/sessions?from=$from&to=$to',
+    saveAs: '/v1/me/sessions?days=${DateTime.parse(to).difference(DateTime.parse(from)).inDays}',
+  );
+
+  @override
   Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey}) =>
       _client.post(
         '/v1/sessions/$sessionId/complete',

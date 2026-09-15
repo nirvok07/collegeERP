@@ -17,6 +17,7 @@ class MyScheduleState {
     this.schedule = Schedule.empty,
     this.failure,
     this.marking,
+    this.updatedAt,
   });
 
   final LoadStatus status;
@@ -27,6 +28,9 @@ class MyScheduleState {
   /// the whole screen going blank.
   final String? marking;
 
+  /// CR-1b (OD-CR-1): when this schedule was last saved.
+  final DateTime? updatedAt;
+
   MyScheduleState copyWith({
     LoadStatus? status,
     Schedule? schedule,
@@ -34,11 +38,13 @@ class MyScheduleState {
     bool clearFailure = false,
     String? marking,
     bool clearMarking = false,
+    DateTime? updatedAt,
   }) => MyScheduleState(
     status: status ?? this.status,
     schedule: schedule ?? this.schedule,
     failure: clearFailure ? null : (failure ?? this.failure),
     marking: clearMarking ? null : (marking ?? this.marking),
+    updatedAt: updatedAt ?? this.updatedAt,
   );
 }
 
@@ -102,20 +108,26 @@ class MyScheduleCubit extends Cubit<MyScheduleState> {
     );
     if (isClosed) return;
 
-    result.when(
-      ok: (sessions) {
+    await result.when(
+      ok: (sessions) async {
         final schedule = buildSchedule(sessions, _today);
+        final updatedAt = await _repository.mySessionsSavedAt(
+          from: shiftDate(_today, -lookBackDays),
+          to: shiftDate(_today, lookAheadDays),
+        );
+        if (isClosed) return;
         emit(
           state.copyWith(
             status: schedule.isEmpty ? LoadStatus.empty : LoadStatus.success,
             schedule: schedule,
             clearFailure: true,
+            updatedAt: updatedAt,
           ),
         );
       },
       // A failed refresh keeps the day on screen. Losing today's classes
       // because one poll failed is worse than showing them with a warning.
-      err: (failure) => emit(
+      err: (failure) async => emit(
         state.copyWith(status: refresh ? LoadStatus.success : LoadStatus.failure, failure: failure),
       ),
     );

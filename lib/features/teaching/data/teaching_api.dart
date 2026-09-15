@@ -16,4 +16,7 @@ class TeachingApi implements TeachingRepository {
     '/v1/me/teaching',
     (data) => (data as List).map((json) => TeachingOffering.fromJson(json as Map)).toList(),
   );
+
+  @override
+  Future<DateTime?> myTeachingSavedAt() => _client.savedAt('/v1/me/teaching');
 }

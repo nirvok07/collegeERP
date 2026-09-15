@@ -41,4 +41,7 @@ class _FakeSelf implements StudentSelfRepository {
           {'course': {'code': 'PH101', 'title': 'Physics'}, 'component': 'lecture', 'present': 1, 'late': 1, 'absent': 2, 'excused': 0, 'total': 4, 'percent': 50},
         ],
       }));
+
+  @override
+  Future<DateTime?> myAttendanceSavedAt() async => null;
 }

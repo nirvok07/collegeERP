@@ -20,6 +20,9 @@ class _Repo implements CalendarRepository {
   Future<Result<AcademicCalendar>> read() async => Ok(AcademicCalendar(holidays: holidays, events: events));
 
   @override
+  Future<DateTime?> readSavedAt() async => null;
+
+  @override
   Future<Result<void>> addHoliday({required String from, String? to, required String label}) async {
     added.add({'from': from, 'to': to, 'label': label});
     return const Ok(null);

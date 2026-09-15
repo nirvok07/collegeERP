@@ -10,4 +10,7 @@ abstract interface class TeachingRepository {
   /// The signed-in person's own teaching. There is deliberately no parameter
   /// naming a person or a section: the server derives the set from the token.
   Future<Result<List<TeachingOffering>>> myTeaching();
+
+  /// CR-1b: when [myTeaching] was last saved, for the screen's freshness line.
+  Future<DateTime?> myTeachingSavedAt();
 }

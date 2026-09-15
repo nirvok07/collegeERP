@@ -442,6 +442,8 @@ class _Delivery implements DeliveryRepository {
   Future<Result<List<ClassSession>>> mySessions({required String from, required String to}) =>
       throw UnimplementedError();
   @override
+  Future<DateTime?> mySessionsSavedAt({required String from, required String to}) async => null;
+  @override
   Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey}) async {
     calls.add('taught $sessionId $idempotencyKey');
     return const Ok(null);

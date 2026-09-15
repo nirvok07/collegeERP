@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../domain/teaching_offering.dart';
 import '../domain/teaching_repository.dart';
@@ -85,6 +86,11 @@ class _TeachingList extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
         children: [
+          if (state.updatedAt != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
+              child: SavedFreshness(at: state.updatedAt),
+            ),
           if (state.failure != null)
             Container(
               margin: const EdgeInsets.all(AppSpacing.base),

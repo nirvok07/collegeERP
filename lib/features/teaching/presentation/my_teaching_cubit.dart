@@ -13,6 +13,7 @@ class MyTeachingState {
     this.past = const [],
     this.failure,
     this.showPast = false,
+    this.updatedAt,
   });
 
   final LoadStatus status;
@@ -27,6 +28,9 @@ class MyTeachingState {
   final Failure? failure;
   final bool showPast;
 
+  /// CR-1b (OD-CR-1): when this list was last saved, for "Updated 2 h ago".
+  final DateTime? updatedAt;
+
   MyTeachingState copyWith({
     LoadStatus? status,
     List<TeachingCohort>? cohorts,
@@ -34,12 +38,14 @@ class MyTeachingState {
     Failure? failure,
     bool clearFailure = false,
     bool? showPast,
+    DateTime? updatedAt,
   }) => MyTeachingState(
     status: status ?? this.status,
     cohorts: cohorts ?? this.cohorts,
     past: past ?? this.past,
     failure: clearFailure ? null : (failure ?? this.failure),
     showPast: showPast ?? this.showPast,
+    updatedAt: updatedAt ?? this.updatedAt,
   );
 }
 
@@ -66,22 +72,25 @@ class MyTeachingCubit extends Cubit<MyTeachingState> {
     final result = await _api.myTeaching();
     if (isClosed) return;
 
-    result.when(
-      ok: (offerings) {
+    await result.when(
+      ok: (offerings) async {
         final live = offerings.where((o) => !o.isOver).toList();
         final over = offerings.where((o) => o.isOver).toList();
+        final updatedAt = await _api.myTeachingSavedAt();
+        if (isClosed) return;
         emit(
           state.copyWith(
             status: offerings.isEmpty ? LoadStatus.empty : LoadStatus.success,
             cohorts: groupByCohort(live),
             past: over,
             clearFailure: true,
+            updatedAt: updatedAt,
           ),
         );
       },
       // A failed refresh keeps the timetable on screen. Losing it because one
       // poll failed is worse than showing it with a warning.
-      err: (failure) => emit(
+      err: (failure) async => emit(
         state.copyWith(status: refresh ? LoadStatus.success : LoadStatus.failure, failure: failure),
       ),
     );

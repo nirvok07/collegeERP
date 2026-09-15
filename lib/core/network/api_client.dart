@@ -101,6 +101,16 @@ class ApiClient {
     return result;
   }
 
+  /// CR-1b (OD-CR-1): when a read at [path] was last saved, for a screen's
+  /// "Updated 2 h ago" line. Null when nothing is saved yet, or there is no
+  /// saved-reads store (a test's fakes, or one that failed to open).
+  Future<DateTime?> savedAt(String path, {String? saveAs}) async {
+    final store = _saved();
+    final scope = _scope();
+    if (store == null || scope == null) return null;
+    return (await store.read(scope, saveAs ?? path))?.savedAt;
+  }
+
   Future<Result<T>> post<T>(
     String path,
     Object? body,

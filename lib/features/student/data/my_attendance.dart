@@ -78,6 +78,9 @@ class MyAttendance {
 /// here names a student.
 abstract interface class StudentSelfRepository {
   Future<Result<MyAttendance>> myAttendance();
+
+  /// CR-1b: when [myAttendance] was last saved.
+  Future<DateTime?> myAttendanceSavedAt();
 }
 
 class StudentSelfApi implements StudentSelfRepository {
@@ -86,14 +89,20 @@ class StudentSelfApi implements StudentSelfRepository {
 
   @override
   Future<Result<MyAttendance>> myAttendance() => _client.get('/v1/me/attendance', MyAttendance.fromJson);
+
+  @override
+  Future<DateTime?> myAttendanceSavedAt() => _client.savedAt('/v1/me/attendance');
 }
 
 class StudentHomeState {
-  const StudentHomeState({this.status = LoadStatus.loading, this.attendance, this.failure});
+  const StudentHomeState({this.status = LoadStatus.loading, this.attendance, this.failure, this.updatedAt});
 
   final LoadStatus status;
   final MyAttendance? attendance;
   final Failure? failure;
+
+  /// CR-1b (OD-CR-1): when this was last saved.
+  final DateTime? updatedAt;
 }
 
 class StudentHomeCubit extends Cubit<StudentHomeState> {
@@ -111,12 +120,17 @@ class StudentHomeCubit extends Cubit<StudentHomeState> {
   Future<void> _read() async {
     final result = await _repository.myAttendance();
     if (isClosed) return;
-    result.when(
-      ok: (a) => emit(StudentHomeState(status: LoadStatus.success, attendance: a)),
-      err: (f) => emit(StudentHomeState(
+    await result.when(
+      ok: (a) async {
+        final updatedAt = await _repository.myAttendanceSavedAt();
+        if (isClosed) return;
+        emit(StudentHomeState(status: LoadStatus.success, attendance: a, updatedAt: updatedAt));
+      },
+      err: (f) async => emit(StudentHomeState(
         status: state.attendance == null ? LoadStatus.failure : LoadStatus.success,
         attendance: state.attendance,
         failure: f,
+        updatedAt: state.updatedAt,
       )),
     );
   }

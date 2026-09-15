@@ -7,6 +7,7 @@ import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/saved_reads/saved_reads.dart';
+import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../academic/domain/academic.dart' show isoDate;
 import '../data/calendar_api.dart';
@@ -56,20 +57,35 @@ List<_Entry> _merge(List<HolidayRun> runs, List<CalendarEvent> events) =>
 /* ------------------------------------------------------------------ state */
 
 class CalendarState {
-  const CalendarState({required this.month, this.status = LoadStatus.loading, this.calendar, this.failure});
+  const CalendarState({
+    required this.month,
+    this.status = LoadStatus.loading,
+    this.calendar,
+    this.failure,
+    this.updatedAt,
+  });
 
   final DateTime month;
   final LoadStatus status;
   final AcademicCalendar? calendar;
   final Failure? failure;
 
-  CalendarState copyWith({DateTime? month, LoadStatus? status, AcademicCalendar? calendar, Failure? failure}) =>
-      CalendarState(
-        month: month ?? this.month,
-        status: status ?? this.status,
-        calendar: calendar ?? this.calendar,
-        failure: failure,
-      );
+  /// CR-1b (OD-CR-1): when this calendar was last saved.
+  final DateTime? updatedAt;
+
+  CalendarState copyWith({
+    DateTime? month,
+    LoadStatus? status,
+    AcademicCalendar? calendar,
+    Failure? failure,
+    DateTime? updatedAt,
+  }) => CalendarState(
+    month: month ?? this.month,
+    status: status ?? this.status,
+    calendar: calendar ?? this.calendar,
+    failure: failure,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
 }
 
 class CalendarCubit extends Cubit<CalendarState> {
@@ -87,9 +103,15 @@ class CalendarCubit extends Cubit<CalendarState> {
   Future<void> _read() async {
     final result = await _repository.read();
     if (isClosed) return;
-    result.when(
-      ok: (c) => emit(state.copyWith(status: LoadStatus.success, calendar: c)),
-      err: (f) => emit(state.copyWith(status: state.calendar == null ? LoadStatus.failure : LoadStatus.success, failure: f)),
+    await result.when(
+      ok: (c) async {
+        final updatedAt = await _repository.readSavedAt();
+        if (isClosed) return;
+        emit(state.copyWith(status: LoadStatus.success, calendar: c, updatedAt: updatedAt));
+      },
+      err: (f) async => emit(
+        state.copyWith(status: state.calendar == null ? LoadStatus.failure : LoadStatus.success, failure: f),
+      ),
     );
   }
 
@@ -192,6 +214,7 @@ class _CalendarView extends StatelessWidget {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(AppSpacing.base, AppSpacing.sm, AppSpacing.base, 96),
                   children: [
+                    if (state.updatedAt != null) SavedFreshness(at: state.updatedAt),
                     if (state.failure != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),

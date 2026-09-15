@@ -64,6 +64,9 @@ class _FakeRepository implements TeachingRepository {
     calls++;
     return result;
   }
+
+  @override
+  Future<DateTime?> myTeachingSavedAt() async => null;
 }
 
 void main() {

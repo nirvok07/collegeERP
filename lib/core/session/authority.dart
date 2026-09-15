@@ -116,4 +116,7 @@ class AuthorityApi {
   final ApiClient _client;
 
   Future<Result<Authority>> mine() => _client.get('/v1/auth/me', Authority.fromJson);
+
+  /// CR-1b: when [mine] was last saved.
+  Future<DateTime?> mineSavedAt() => _client.savedAt('/v1/auth/me');
 }
