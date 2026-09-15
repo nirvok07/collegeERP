@@ -176,18 +176,19 @@ export class PgFeeStructureRepository implements FeeStructureRepository {
 
 const INVOICE_SELECT = `
   SELECT i.id, i.student_id, per.full_name AS student_name, s.enrolment_number,
-         i.fee_structure_id, i.instalment_id, fsi.seq AS instalment_seq,
-         i.amount_paise, i.due_date, i.status
+         i.kind, i.fee_structure_id, i.instalment_id, fsi.seq AS instalment_seq,
+         i.amount_paise, i.due_date, i.status, i.reason
     FROM invoices i
     JOIN students s ON s.id = i.student_id
     JOIN persons per ON per.id = s.person_id
-    JOIN fee_structure_instalments fsi ON fsi.id = i.instalment_id`;
+    LEFT JOIN fee_structure_instalments fsi ON fsi.id = i.instalment_id`;
 
 function toInvoice(r: any): InvoiceRecord {
   return {
     id: r.id, studentId: r.student_id, studentName: r.student_name, enrolmentNumber: r.enrolment_number,
-    feeStructureId: r.fee_structure_id, instalmentId: r.instalment_id, instalmentSeq: r.instalment_seq,
-    amountPaise: Number(r.amount_paise), dueDate: `${r.due_date}`, status: r.status,
+    kind: r.kind, feeStructureId: r.fee_structure_id, instalmentId: r.instalment_id,
+    instalmentSeq: r.instalment_seq === null ? null : Number(r.instalment_seq),
+    amountPaise: Number(r.amount_paise), dueDate: `${r.due_date}`, status: r.status, reason: r.reason,
   };
 }
 
@@ -272,6 +273,44 @@ export class PgInvoiceRepository implements InvoiceRepository {
       [id],
     );
     return (rowCount ?? 0) > 0;
+  }
+
+  async createFine(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; amountPaise: number; reason: string; dueDate: string;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO invoices (id, tenant_id, student_id, kind, amount_paise, due_date, reason)
+       VALUES ($1,$2,$3,'fine',$4,$5,$6)`,
+      [input.id, input.tenantId, input.studentId, input.amountPaise, input.dueDate, input.reason],
+    );
+  }
+
+  async createLateFee(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; feeStructureId: string; instalmentId: string;
+    amountPaise: number; reason: string; dueDate: string;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO invoices (id, tenant_id, student_id, kind, fee_structure_id, instalment_id, amount_paise, due_date, reason)
+       VALUES ($1,$2,$3,'late_fee',$4,$5,$6,$7,$8)`,
+      [input.id, input.tenantId, input.studentId, input.feeStructureId, input.instalmentId,
+       input.amountPaise, input.dueDate, input.reason],
+    );
+  }
+
+  async hasLateFee(tx: Tx, studentId: string, instalmentId: string): Promise<boolean> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT 1 FROM invoices WHERE student_id=$1 AND instalment_id=$2 AND kind='late_fee'`,
+      [studentId, instalmentId],
+    );
+    return rows.length > 0;
+  }
+
+  async studentsStillDue(tx: Tx, instalmentId: string): Promise<string[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT student_id FROM invoices WHERE instalment_id=$1 AND kind='instalment' AND status='due'`,
+      [instalmentId],
+    );
+    return rows.map((r: any) => r.student_id);
   }
 }
 

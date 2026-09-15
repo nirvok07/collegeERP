@@ -6,10 +6,11 @@ import { requirePermission } from '../../../infrastructure/http/guards.ts';
 import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
-  addInstalment, addLine, approveRequest, archiveFeeHead, cancelPayment, createDraftStructure,
-  createFeeHead, generateInvoices, listFeeHeads, listFeeRequests, listStructureInvoices,
-  listStructures, listStudentInvoices, listStudentPayments, publishStructure, readStructure,
-  recordPayment, rejectRequest, requestConcession, withdrawRequest, type FeesActor,
+  addInstalment, addLine, applyLateFees, approveRequest, archiveFeeHead, cancelPayment,
+  createDraftStructure, createFeeHead, generateInvoices, listFeeHeads, listFeeRequests,
+  listStructureInvoices, listStructures, listStudentInvoices, listStudentPayments,
+  publishStructure, raiseFine, readStructure, recordPayment, rejectRequest, requestConcession,
+  requestWaiver, withdrawRequest, type FeesActor,
 } from '../application/manage-fees.ts';
 import type {
   FeeHeadRecord, FeeRequestRecord, FeeStructureRecord, InvoiceRecord, PaymentRecord,
@@ -42,8 +43,9 @@ const serialiseStructure = (s: FeeStructureRecord) => ({
 });
 const serialiseInvoice = (i: InvoiceRecord) => ({
   id: i.id, student_id: i.studentId, student_name: i.studentName, enrolment_number: i.enrolmentNumber,
-  fee_structure_id: i.feeStructureId, instalment_id: i.instalmentId, instalment_seq: i.instalmentSeq,
-  amount_paise: i.amountPaise, due_date: i.dueDate, status: i.status,
+  kind: i.kind, fee_structure_id: i.feeStructureId, instalment_id: i.instalmentId,
+  instalment_seq: i.instalmentSeq, amount_paise: i.amountPaise, due_date: i.dueDate,
+  status: i.status, reason: i.reason,
 });
 const serialiseRequest = (r: FeeRequestRecord) => ({
   id: r.id, kind: r.kind, student_id: r.studentId, student_name: r.studentName, invoice_id: r.invoiceId,
@@ -59,6 +61,8 @@ const concessionBody = z.object({
 });
 const decisionBody = z.object({ reason: z.string().max(500).optional() });
 const rejectBody = z.object({ reason: z.string().min(1).max(500) });
+const fineBody = z.object({ amount_paise: z.number().int().positive(), reason: z.string().min(1).max(500) });
+const waiverBody = z.object({ invoice_id: z.string().uuid(), reason: z.string().min(1).max(500) });
 
 const paymentBody = z.object({
   student_id: z.string().uuid(),
@@ -273,5 +277,32 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
     if (!(await canRead(req as never, reply as never))) return reply;
     const rows = await listStudentPayments(c.fees, actorOf(req), (req.params as { id: string }).id);
     return sendOk(reply, rows.map(serialisePayment));
+  });
+
+  /* --------------------------------------------------------- fines & waivers */
+
+  app.post('/fees/students/:id/fines', async (req, reply) => {
+    if (!(await canManage(req as never, reply as never))) return reply;
+    const parsed = fineBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await raiseFine(c.fees, actorOf(req), {
+      studentId: (req.params as { id: string }).id, amountPaise: parsed.data.amount_paise, reason: parsed.data.reason,
+    }), 201);
+  });
+
+  app.post('/fees/instalments/:id/late-fees', async (req, reply) => {
+    if (!(await canManage(req as never, reply as never))) return reply;
+    return sendResult(reply, await applyLateFees(c.fees, actorOf(req), {
+      instalmentId: (req.params as { id: string }).id,
+    }));
+  });
+
+  app.post('/fees/waivers', async (req, reply) => {
+    if (!(await canManage(req as never, reply as never))) return reply;
+    const parsed = waiverBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    return sendResult(reply, await requestWaiver(c.fees, actorOf(req), {
+      invoiceId: parsed.data.invoice_id, reason: parsed.data.reason,
+    }), 201);
   });
 }

@@ -32,6 +32,9 @@ export interface FeesDeps {
   clock: Clock;
 }
 
+/** A calendar date for today, in UTC, matching how every date here is stored. */
+const todayIso = (clock: Clock) => clock.now().toISOString().slice(0, 10);
+
 async function attempt<T>(run: () => Promise<Result<T>>, fallback: string): Promise<Result<T>> {
   try {
     return await run();
@@ -299,6 +302,82 @@ export async function listStructureInvoices(
   return deps.uow.run(actor.tenantId, (tx) => deps.invoices.listByStructure(tx, structureId));
 }
 
+/* --------------------------------------------------------- fines & late fees */
+
+/** FEE-5: a fine, charged directly — no approval needed to raise one (module doc §5). */
+export async function raiseFine(
+  deps: FeesDeps, actor: FeesActor, input: { studentId: string; amountPaise: number; reason: string },
+): Promise<Result<{ id: string }>> {
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const id = deps.ids.next();
+    await deps.invoices.createFine(tx, {
+      id, tenantId: actor.tenantId, studentId: input.studentId,
+      amountPaise: input.amountPaise, reason: input.reason.trim(), dueDate: todayIso(deps.clock),
+    });
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'fee.fine_raised', subjectType: 'invoice', subjectId: id,
+      after: { studentId: input.studentId, amountPaise: input.amountPaise, reason: input.reason.trim() },
+    }, tx);
+    return Ok({ id });
+  }), 'That fine could not be raised.');
+}
+
+/**
+ * FEE-5: charges the flat late fee on every student still owing on this
+ * instalment past its due date. Idempotent, like generateInvoices — a
+ * student already charged is skipped, never charged twice. v1 boundary: no
+ * scheduler exists in this codebase, so this is triggered by the
+ * Accountant (or, later, a real scheduler calling the same endpoint), not
+ * applied automatically at midnight.
+ */
+export async function applyLateFees(
+  deps: FeesDeps, actor: FeesActor, input: { instalmentId: string },
+): Promise<Result<{ applied: number; skipped: number }>> {
+  const today = todayIso(deps.clock);
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const instalment = await deps.structures.findInstalment(tx, input.instalmentId);
+    if (!instalment) return Err(fail('NOT_FOUND', 'That instalment was not found.'));
+    if (!instalment.lateFeePaise) {
+      return Err(fail('VALIDATION_FAILED', 'This instalment carries no late fee to apply.'));
+    }
+    if (instalment.dueDate >= today) {
+      return Err(fail('VALIDATION_FAILED', 'This instalment is not overdue yet.'));
+    }
+
+    const structure = await deps.structures.findById(tx, instalment.structureId);
+    if (!structure) return Err(fail('NOT_FOUND', 'That fee structure was not found.'));
+
+    const studentIds = await deps.invoices.studentsStillDue(tx, input.instalmentId);
+    let applied = 0;
+    let skipped = 0;
+    for (const studentId of studentIds) {
+      if (await deps.invoices.hasLateFee(tx, studentId, input.instalmentId)) {
+        skipped += 1;
+        continue;
+      }
+      await deps.invoices.createLateFee(tx, {
+        id: deps.ids.next(), tenantId: actor.tenantId, studentId, feeStructureId: structure.id,
+        instalmentId: input.instalmentId, amountPaise: instalment.lateFeePaise, dueDate: today,
+        reason: `Late fee: instalment ${instalment.seq} overdue since ${instalment.dueDate}`,
+      });
+      applied += 1;
+    }
+
+    if (applied > 0) {
+      await deps.audit.record({
+        correlationId: deps.ids.next(), tenantId: actor.tenantId,
+        actorType: 'person', actorId: actor.personId,
+        action: 'fee.late_fees_applied', subjectType: 'fee_structure_instalment', subjectId: input.instalmentId,
+        after: { applied, skipped },
+      }, tx);
+    }
+
+    return Ok({ applied, skipped });
+  }), 'Late fees could not be applied.');
+}
+
 /* --------------------------------------------------------- concessions */
 
 /**
@@ -338,6 +417,44 @@ export async function requestConcession(
   }), 'That concession could not be requested.');
 }
 
+/**
+ * FEE-5: waiving a fine or a late fee already charged, through the same
+ * approval shape as a concession. A waiver is always for the whole charge —
+ * there is no partial waiver in v1, matching how a fine or late fee is a
+ * single freeform amount rather than a bill with its own line items.
+ */
+export async function requestWaiver(
+  deps: FeesDeps, actor: FeesActor, input: { invoiceId: string; reason: string },
+): Promise<Result<{ id: string }>> {
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const invoice = await deps.invoices.findById(tx, input.invoiceId);
+    if (!invoice) return Err(fail('NOT_FOUND', 'That invoice was not found.'));
+    if (invoice.kind !== 'fine' && invoice.kind !== 'late_fee') {
+      return Err(fail('VALIDATION_FAILED', 'Only a fine or a late fee can be waived; an instalment takes a concession instead.'));
+    }
+    if (invoice.status !== 'due') {
+      return Err(fail('CONFLICT', `This is already ${invoice.status}; there is nothing left to waive.`));
+    }
+    if (await deps.requests.hasOpenRequest(tx, input.invoiceId)) {
+      return Err(fail('CONFLICT', 'A request is already pending for this invoice.'));
+    }
+
+    const id = deps.ids.next();
+    await deps.requests.create(tx, {
+      id, tenantId: actor.tenantId, kind: 'waiver', studentId: invoice.studentId,
+      invoiceId: input.invoiceId, amountPaise: invoice.amountPaise, reason: input.reason.trim(),
+      requestedBy: actor.personId,
+    });
+    await deps.audit.record({
+      correlationId: deps.ids.next(), tenantId: actor.tenantId,
+      actorType: 'person', actorId: actor.personId,
+      action: 'fee.waiver_requested', subjectType: 'fee_request', subjectId: id,
+      after: { invoiceId: input.invoiceId, amountPaise: invoice.amountPaise, reason: input.reason.trim() },
+    }, tx);
+    return Ok({ id });
+  }), 'That waiver could not be requested.');
+}
+
 export async function withdrawRequest(
   deps: FeesDeps, actor: FeesActor, id: string,
 ): Promise<Result<{ withdrawn: true }>> {
@@ -366,6 +483,10 @@ async function decideRequest(
         return Err(fail('CONFLICT',
           'The invoice changed since this was requested and can no longer take this reduction.'));
       }
+      // A full reduction (usually a waiver, but a 100% concession too) leaves
+      // nothing owed, which is what "paid" already means for an invoice.
+      const invoice = await deps.invoices.findById(tx, request.invoiceId);
+      if (invoice && invoice.amountPaise === 0) await deps.invoices.markPaid(tx, request.invoiceId);
     }
 
     const decided = await deps.requests.decide(tx, {
@@ -373,10 +494,11 @@ async function decideRequest(
     });
     if (!decided) return Err(fail('CONFLICT', 'That request was changed by someone else just now.'));
 
+    const verb = request.kind === 'waiver' ? 'waiver' : 'concession';
     await deps.audit.record({
       correlationId: deps.ids.next(), tenantId: actor.tenantId,
       actorType: 'person', actorId: actor.personId,
-      action: input.status === 'approved' ? 'fee.concession_approved' : 'fee.concession_rejected',
+      action: input.status === 'approved' ? `fee.${verb}_approved` : `fee.${verb}_rejected`,
       subjectType: 'fee_request', subjectId: input.id,
       before: { status: 'requested' },
       after: { status: input.status, reason: input.reason },

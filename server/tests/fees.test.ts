@@ -461,3 +461,145 @@ describe('FEE-4: payments', () => {
     assert.equal((await get(`/v1/fees/students/${studentId}/payments`, teacher)).statusCode, 403);
   });
 });
+
+describe('FEE-5: fines, late fees and waivers', () => {
+  async function admitted(s: Awaited<ReturnType<typeof feeSetup>>, name: string, number: string) {
+    return (await post('/v1/students', s.admin, {
+      full_name: name, email: `${number.toLowerCase()}@${s.code}.edu`,
+      enrolment_number: number, program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id as string;
+  }
+
+  it('a fine is charged directly, no approval needed', async () => {
+    const s = await feeSetup();
+    const accountant = await appoint(s.code, s.admin, {
+      name: 'Asha Rao', email: `asha@${s.code}.edu`, roleKey: 'accountant', scopeType: 'institution',
+    });
+    const studentId = await admitted(s, 'Nisha Kumar', 'CSE2026-001');
+
+    const raised = await post(`/v1/fees/students/${studentId}/fines`, accountant, {
+      amount_paise: 50000, reason: 'Library book not returned',
+    });
+    assert.equal(raised.statusCode, 201);
+
+    const invoices = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data;
+    assert.equal(invoices.length, 1);
+    assert.equal(invoices[0].kind, 'fine');
+    assert.equal(invoices[0].status, 'due');
+    assert.equal(invoices[0].reason, 'Library book not returned');
+
+    const teacher = await appoint(s.code, s.admin, {
+      name: 'Meera Iyer', email: `meera@${s.code}.edu`,
+      roleKey: 'faculty', scopeType: 'department', scopeRefId: s.department,
+    });
+    assert.equal((await post(`/v1/fees/students/${studentId}/fines`, teacher, {
+      amount_paise: 1000, reason: 'x',
+    })).statusCode, 403);
+  });
+
+  async function overdueInstalment(s: Awaited<ReturnType<typeof feeSetup>>, dueDate: string) {
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+      seq: 1, due_date: dueDate, late_fee_paise: 25000,
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 500000 });
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+    return instalmentId as string;
+  }
+
+  it('charges a flat late fee once per student on an overdue instalment, and is safe to run again', async () => {
+    const s = await feeSetup();
+    const instalmentId = await overdueInstalment(s, '2000-01-01');
+    const structureId = (await get('/v1/fees/structures', s.admin)).json().data[0].id;
+    const nisha = await admitted(s, 'Nisha Kumar', 'CSE2026-001');
+    await admitted(s, 'Rahul Verma', 'CSE2026-002');
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+
+    const applied = await post(`/v1/fees/instalments/${instalmentId}/late-fees`, s.admin);
+    assert.equal(applied.statusCode, 200);
+    assert.deepEqual(applied.json().data, { applied: 2, skipped: 0 });
+
+    const again = await post(`/v1/fees/instalments/${instalmentId}/late-fees`, s.admin);
+    assert.deepEqual(again.json().data, { applied: 0, skipped: 2 }, 'already charged, never twice');
+
+    const invoices = (await get(`/v1/fees/students/${nisha}/invoices`, s.admin)).json().data;
+    const lateFee = invoices.find((i: { kind: string }) => i.kind === 'late_fee');
+    assert.ok(lateFee, 'a late_fee invoice was created');
+    assert.equal(lateFee.amount_paise, 25000);
+  });
+
+  it('refuses to apply a late fee before the due date, or where none is configured', async () => {
+    const s = await feeSetup();
+    const notYetDue = await overdueInstalment(s, '2099-01-01');
+    await admitted(s, 'Nisha Kumar', 'CSE2026-001');
+    const tooSoon = await post(`/v1/fees/instalments/${notYetDue}/late-fees`, s.admin);
+    assert.equal(tooSoon.statusCode, 422);
+    assert.match(tooSoon.json().error.message, /not overdue/);
+
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Lab', code: 'lab' })).json().data.id;
+    const otherProgram = (await post('/v1/programs', s.admin, {
+      department_id: s.department, name: 'B.Sc Physics', code: 'bsc-phy', duration_years: 3, term_type: 'semester',
+    })).json().data.id;
+    const noLateFeeStructure = (await post('/v1/fees/structures', s.admin, {
+      program_id: otherProgram, academic_year_id: s.year,
+    })).json().data.id;
+    const noLateFeeInstalment = (await post(`/v1/fees/structures/${noLateFeeStructure}/instalments`, s.admin, {
+      seq: 1, due_date: '2000-01-01',
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${noLateFeeInstalment}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 100000 });
+    await post(`/v1/fees/structures/${noLateFeeStructure}/publish`, s.admin);
+
+    const noneConfigured = await post(`/v1/fees/instalments/${noLateFeeInstalment}/late-fees`, s.admin);
+    assert.equal(noneConfigured.statusCode, 422);
+    assert.match(noneConfigured.json().error.message, /carries no late fee/);
+  });
+
+  it('waives a fine through the College Admin\'s approval; rejects an instalment invoice', async () => {
+    const s = await feeSetup();
+    const accountant = await appoint(s.code, s.admin, {
+      name: 'Asha Rao', email: `asha@${s.code}.edu`, roleKey: 'accountant', scopeType: 'institution',
+    });
+    const studentId = await admitted(s, 'Nisha Kumar', 'CSE2026-001');
+    await post(`/v1/fees/students/${studentId}/fines`, accountant, { amount_paise: 50000, reason: 'Late ID card' });
+    const fineId = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0].id as string;
+
+    const requested = await post('/v1/fees/waivers', accountant, { invoice_id: fineId, reason: 'x' });
+    assert.equal(requested.statusCode, 201, 'a fine is a valid waiver target');
+    const requestId = requested.json().data.id as string;
+
+    assert.equal((await post(`/v1/fees/requests/${requestId}/approve`, accountant)).statusCode, 403, 'the Accountant cannot approve their own request');
+
+    const approved = await post(`/v1/fees/requests/${requestId}/approve`, s.admin);
+    assert.equal(approved.statusCode, 200);
+
+    const invoice = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0];
+    assert.equal(invoice.amount_paise, 0);
+    assert.equal(invoice.status, 'paid', 'a full waiver leaves nothing owed');
+  });
+
+  it('refuses a waiver on an ordinary instalment invoice', async () => {
+    const s = await feeSetup();
+    const { invoiceId } = await (async () => {
+      const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+      const structureId = (await post('/v1/fees/structures', s.admin, {
+        program_id: s.program, academic_year_id: s.year,
+      })).json().data.id;
+      const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+        seq: 1, due_date: '2026-07-01',
+      })).json().data.id;
+      await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 500000 });
+      await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+      const studentId = await admitted(s, 'Nisha Kumar', 'CSE2026-001');
+      await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+      const invoiceId = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0].id;
+      return { invoiceId };
+    })();
+
+    const refused = await post('/v1/fees/waivers', s.admin, { invoice_id: invoiceId, reason: 'x' });
+    assert.equal(refused.statusCode, 422);
+    assert.match(refused.json().error.message, /concession instead/);
+  });
+});

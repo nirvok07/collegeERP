@@ -321,12 +321,34 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     the next number, an Accountant cannot collect and a teacher cannot even read). `npm run
     typecheck` clean. No Flutter UI yet for any FEE slice — the Accountant/Cashier screens are a
     later slice once the server surface for FEE-5/6 exists too.
-  - FEE-5 ❌ late fees + fines + waiver requests (reusing `fee_requests`); FEE-6 ❌ student: dues, invoices,
+  - FEE-5 ✅ (2026-09-15) fines, late fees, and waiving either. Migration 035 generalises
+    `invoices` to carry a `kind` ('instalment' | 'fine' | 'late_fee'), makes `fee_structure_id`/
+    `instalment_id` nullable, adds `reason`, and replaces the old (student, instalment) uniqueness
+    with one index per kind so an instalment and its late fee can share an `instalment_id` without
+    colliding; also relaxes `amount_paise` from `> 0` to `>= 0` (found while testing: a full
+    waiver/concession reducing an invoice to nothing owed hit the old constraint with a raw 500).
+    `POST /v1/fees/students/:id/fines` (`fee.manage`) charges a fine directly — no approval to
+    *raise* one, only to waive it (module doc §5). `POST /v1/fees/instalments/:id/late-fees`
+    charges the instalment's flat late fee on every student still owing past its due date,
+    idempotent like `generateInvoices`; refuses one not yet overdue or with no late fee configured.
+    **v1 boundary, recorded rather than solved**: this codebase has no scheduler, so a late fee is
+    triggered by the Accountant, not applied automatically at midnight. `POST /v1/fees/waivers`
+    reuses FEE-3's `fee_requests` with `kind='waiver'`, restricted to a `fine`/`late_fee` invoice
+    (an instalment takes a concession instead, 422) and always for the *whole* charge — no partial
+    waiver in v1; approving now marks the invoice `paid` once it reaches exactly zero (also fixed
+    generically for concessions, so a 100% concession does the same). Server 492/492 (+5). `npm run
+    typecheck` clean. The dev/test databases needed a real rebuild for the relaxed CHECK
+    constraint to take effect (`dropdb`/`createdb` + `npm run db:bootstrap`, since `migrate()`
+    tracks applied filenames, not content) — noted here in case a similar edit-an-applied-migration
+    situation recurs before this reaches Supabase.
+  - FEE-6 ❌ student: dues, invoices,
     payments, receipt + statement PDF (view/print/share; new `pdf`/`printing` packages); FEE-7 🚫
     BLOCKED — Razorpay web payment + webhook, TODO until the owner supplies a merchant account and
     API keys; FEE-8 ❌ reports (daily collection by cashier/mode, outstanding, defaulters,
     concession/waiver register) — does not need FEE-7. No Flutter UI yet for any FEE slice
-    (FEE-1's endpoints are server-only so far; the Accountant/Cashier screens are FEE-2+ work).
+    (every FEE-1..5 endpoint is server-only so far; the Accountant/Cashier screens are their own
+    next slice once FEE-6's student-facing surface exists too, so both can be built against a
+    settled contract).
 
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.

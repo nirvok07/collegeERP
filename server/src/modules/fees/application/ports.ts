@@ -71,17 +71,21 @@ export interface FeeStructureRepository {
 
 export type InvoiceStatus = 'due' | 'paid' | 'cancelled';
 
+export type InvoiceKind = 'instalment' | 'fine' | 'late_fee';
+
 export interface InvoiceRecord {
   id: string;
   studentId: string;
   studentName: string;
   enrolmentNumber: string;
-  feeStructureId: string;
-  instalmentId: string;
-  instalmentSeq: number;
+  kind: InvoiceKind;
+  feeStructureId: string | null;
+  instalmentId: string | null;
+  instalmentSeq: number | null;
   amountPaise: number;
   dueDate: string;
   status: InvoiceStatus;
+  reason: string | null;
 }
 
 export type FeeRequestKind = 'concession' | 'waiver';
@@ -135,6 +139,19 @@ export interface InvoiceRepository {
   listDueByStudent(tx: Tx, studentId: string): Promise<InvoiceRecord[]>;
   markPaid(tx: Tx, id: string): Promise<boolean>;
   markDue(tx: Tx, id: string): Promise<boolean>;
+
+  /** FEE-5: a fine, charged directly, due today. */
+  createFine(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; amountPaise: number; reason: string; dueDate: string;
+  }): Promise<void>;
+  /** FEE-5: a late fee on one overdue instalment. */
+  createLateFee(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; feeStructureId: string; instalmentId: string;
+    amountPaise: number; reason: string; dueDate: string;
+  }): Promise<void>;
+  hasLateFee(tx: Tx, studentId: string, instalmentId: string): Promise<boolean>;
+  /** Students still owing on this instalment's own invoice, for late-fee application. */
+  studentsStillDue(tx: Tx, instalmentId: string): Promise<string[]>;
 }
 
 export type PaymentMethod = 'cash' | 'upi' | 'cheque' | 'bank_transfer';

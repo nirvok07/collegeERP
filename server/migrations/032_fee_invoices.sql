@@ -19,7 +19,9 @@ CREATE TABLE invoices (
   student_id        uuid NOT NULL REFERENCES students(id) ON DELETE RESTRICT,
   fee_structure_id  uuid NOT NULL REFERENCES fee_structures(id) ON DELETE RESTRICT,
   instalment_id     uuid NOT NULL REFERENCES fee_structure_instalments(id) ON DELETE RESTRICT,
-  amount_paise      bigint NOT NULL CHECK (amount_paise > 0),
+  -- Zero is reachable: a concession or waiver (FEE-3/FEE-5) can reduce this
+  -- to nothing owed, at which point the invoice is marked paid.
+  amount_paise      bigint NOT NULL CHECK (amount_paise >= 0),
   due_date          date NOT NULL,
   status            text NOT NULL DEFAULT 'due' CHECK (status IN ('due', 'paid', 'cancelled')),
   generated_at      timestamptz NOT NULL DEFAULT now(),
