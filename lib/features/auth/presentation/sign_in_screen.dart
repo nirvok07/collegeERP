@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/design/tokens.dart';
@@ -8,6 +7,7 @@ import '../../../core/network/auth_api.dart';
 import '../../../core/session/college_brand.dart';
 import '../../../core/session/session_manager.dart';
 import '../../../core/widgets/college_logo.dart';
+import '../../../core/widgets/otp_code_field.dart';
 import 'sign_in_cubit.dart';
 
 /// Sign in to the college chosen on the first screen (AD-70), by a one-time
@@ -117,16 +117,11 @@ class _SignInScreenState extends State<SignInScreen> {
                         child: state.submitting ? const _Spinner() : const Text('Send code'),
                       ),
                     ] else ...[
-                      TextField(
+                      // The last digit signs in; the button stays for a pasted code.
+                      OtpCodeField(
                         controller: _code,
-                        autofocus: true,
-                        textAlign: TextAlign.center,
-                        keyboardType: TextInputType.number,
-                        autofillHints: const [AutofillHints.oneTimeCode],
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-                        style: theme.textTheme.headlineSmall?.copyWith(letterSpacing: 8, fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(labelText: 'Code', counterText: ''),
-                        onSubmitted: (_) => cubit.submitCode(_code.text),
+                        enabled: !state.submitting,
+                        onCompleted: cubit.submitCode,
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       FilledButton(

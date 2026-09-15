@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/design/tokens.dart';
 import '../../core/network/auth_api.dart';
+import '../../core/widgets/otp_code_field.dart';
 import 'platform_auth_api.dart';
 import 'platform_sign_in_cubit.dart';
 
@@ -137,21 +137,9 @@ class _CodeField extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSubmitted;
 
+  /// The last digit signs in; the button stays for a pasted code.
   @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      autofocus: true,
-      textAlign: TextAlign.center,
-      keyboardType: TextInputType.number,
-      autofillHints: const [AutofillHints.oneTimeCode],
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-      textInputAction: TextInputAction.done,
-      style: Theme.of(context).textTheme.headlineSmall?.copyWith(letterSpacing: 8),
-      decoration: const InputDecoration(labelText: 'Code', counterText: ''),
-      onSubmitted: (_) => onSubmitted(),
-    );
-  }
+  Widget build(BuildContext context) => OtpCodeField(controller: controller, onCompleted: (_) => onSubmitted());
 }
 
 class _Banner extends StatelessWidget {

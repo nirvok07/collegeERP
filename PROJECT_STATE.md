@@ -54,7 +54,11 @@ Owner feedback, 2026-09-14 (`feedbackchanges.md`):
   invitation code: "Appoint", then a message with the college code saying a sign-in code comes;
   dashboard says "N people have not signed in yet". Server still issues the unused invitation (OTP-5).
   Flutter 277/277 (+4). 🔍 NEEDS VALIDATION on the phone.
-- FB-4 ❌ code field as six OTP boxes (both apps). FB-5 ❌ teacher dashboard like the admin's.
+- FB-4 ✅ (2026-09-15) the sign-in code is six boxes in both apps (`core/widgets/otp_code_field.dart`:
+  one invisible field over the boxes, so autofill/paste/backspace work); the last digit signs in, the
+  button stays. Flutter 277/277 (sign-in test types into the boxes, checks one auto-submit).
+  🔍 NEEDS VALIDATION on the phone (keyboard, SMS/email autofill).
+- FB-5 ❌ teacher dashboard like the admin's.
 - OTP sign-in 🟡 AD-82 approved (everyone incl. Super Admin; no passwords; fixed code 123456 on every
   server until go-live, risk accepted by owner). Slices, in order:
   - OTP-1 ✅ `adf1fe5` server: `/v1/auth/otp/request|verify` (college: email, mobile, enrolment no.)

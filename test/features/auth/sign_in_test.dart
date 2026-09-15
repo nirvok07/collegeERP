@@ -4,6 +4,7 @@ import 'package:college_erp/core/network/auth_api.dart';
 import 'package:college_erp/core/session/college_brand.dart';
 import 'package:college_erp/core/session/session_manager.dart';
 import 'package:college_erp/core/session/session_store.dart';
+import 'package:college_erp/core/widgets/otp_code_field.dart';
 import 'package:college_erp/features/auth/presentation/sign_in_cubit.dart';
 import 'package:college_erp/features/auth/presentation/sign_in_screen.dart';
 import 'package:flutter/material.dart';
@@ -150,9 +151,14 @@ void main() {
 
     expect(find.text('Enter the 6-digit code sent to admin@sunrise.edu'), findsOneWidget);
     expect(find.text('Send a new code'), findsOneWidget);
-    await tester.enterText(find.widgetWithText(TextField, 'Code'), '123456');
-    await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+    // FB-4: six boxes; typing the last digit signs in without a tap.
+    expect(find.byType(OtpCodeField), findsOneWidget);
+    await tester.enterText(find.byType(OtpCodeField), '123456');
     await tester.pumpAndSettle();
+    for (final digit in ['1', '2', '3', '4', '5', '6']) {
+      expect(find.text(digit), findsOneWidget, reason: 'each digit sits in its own box');
+    }
+    expect(server.codes, ['123456'], reason: 'signed in once, by the last digit');
     expect(session.actor?.id, 'p1');
 
     // The session schedules its next renewal; end it inside the test so no
