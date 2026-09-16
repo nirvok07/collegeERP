@@ -222,6 +222,19 @@ Owner requests, 2026-09-15 (in order of build):
   an explicit persisted chevron toggle (localStorage `shell:collapsed`); the full sidebar keeps
   labels at all desktop widths; only a deliberate toggle or a ≤768px off-canvas drawer hides them.
   Active accent uses `--gradient-primary`. Build green; 192 tests pass.
+- WEB-POLISH-4 ✅ (web: one premium light theme; dark toggle removed) `14831da`: owner asked to drop
+  the light/dark concept and ship one premium light look. Deletes the theme system (theme.ts + test),
+  the toggle, sun/moon icons and the main.tsx remembered-theme init; strips both dark token blocks so
+  the palette is always light regardless of OS; base.css forces `color-scheme: light`. Palette reworked
+  premium: white cards on a soft blue-violet canvas (#f5f6fb), cooler rails, deep indigo-black text
+  (#1b1c2b), indigo-tinted shadows. Build green; 189 tests.
+- WEB-POLISH-5 ✅ (web: always-visible collapse toggle, sidebar motion, tighter type) `7d28f02`:
+  owner reported the collapse toggle wasn't discoverable, the sidebar felt unanimated and the type
+  oversized. Collapse control moved from the sidebar footer into the top bar (always visible on
+  desktop); small screens keep the off-canvas drawer and hide the redundant control. Sidebar mounts
+  with the global stagger (`m-stagger`), and collapsing animates the grid columns (`--dur-panel`)
+  instead of snap-jumping. Type scale reined in: display 32→28, headline 24→20, title-lg 20→17,
+  title 16→15, label 14→13 (body stays 14). Build green; 189 tests.
 - 🚫 GO-LIVE BLOCKER (AD-82): no WhatsApp/SMS senders; `OTP_FIXED_CODE=123456` lets anyone who knows
   a mobile number sign in as that person (and anyone, by email too, when SMTP is unset). Must be
   removed before any real college uses the system.
