@@ -120,6 +120,12 @@
   animation: m-slide-from-end var(--sheet) both;
   will-change: transform;
 }
+/* Exit phase: slides back out the same edge, briefly. Reduced-motion collapses
+   it through the global 1ms override in motion.css. */
+.drawer.drawer--exit {
+  pointer-events: none;
+  animation: m-slide-out-end var(--dur-exit) var(--ease-in) both;
+}
 .drawer__head { display: flex; align-items: flex-start; justify-content: space-between;
   gap: var(--space-base); padding: var(--space-xl); border-bottom: 1px solid var(--outline); }
 .drawer__title { font: var(--text-title-lg); }

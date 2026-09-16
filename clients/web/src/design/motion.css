@@ -72,6 +72,11 @@
   from { transform: translate3d(0, 100%, 0); }
   to   { transform: none; }
 }
+/* Exit mirror: accelerates back out the same edge, shorter than the entrance. */
+@keyframes m-slide-out-end {
+  from { transform: none; }
+  to   { transform: translate3d(100%, 0, 0); }
+}
 @keyframes m-pulse-once {
   0%   { background-color: var(--primary-subtle); }
   100% { background-color: transparent; }
@@ -88,6 +93,7 @@
 
 /* Panels enter from the edge they will return to, preserving where they live. */
 .m-drawer { animation: m-slide-from-end var(--sheet) both; }
+.m-drawer-exit { animation: m-slide-out-end var(--dur-exit) var(--ease-in) both; }
 .m-bottom-sheet { animation: m-slide-from-bottom var(--sheet) both; }
 
 /*

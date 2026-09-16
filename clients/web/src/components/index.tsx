@@ -134,6 +134,24 @@ export function Drawer({
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const restoreTo = useRef<HTMLElement | null>(null);
+  // Plays the exit once before unmount: closing is dead time, so it is brief.
+  const [leaving, setLeaving] = useState(false);
+  const firstMount = useRef(true);
+
+  // On the open→closed edge we keep the drawer mounted long enough to slide
+  // back out, then unmount it. If it never opened (firstMount) it is simply
+  // absent — no exit for something that was never on screen.
+  useEffect(() => {
+    if (open) return;
+    if (firstMount.current) { firstMount.current = false; return; }
+    setLeaving(true);
+  }, [open]);
+
+  useEffect(() => {
+    if (!leaving) return;
+    const t = window.setTimeout(() => { setLeaving(false); }, 260);
+    return () => window.clearTimeout(t);
+  }, [leaving]);
 
   useEffect(() => {
     if (!open) return;
@@ -160,11 +178,11 @@ export function Drawer({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open && !leaving) return null;
   return (
     <>
-      <div className="scrim" onClick={onClose} aria-hidden="true" />
-      <div className="drawer" role="dialog" aria-modal="true" aria-label={title} ref={panel}>
+      {open && <div className="scrim" onClick={onClose} aria-hidden="true" />}
+      <div className={`drawer${leaving ? ' drawer--exit' : ''}`} role="dialog" aria-modal="true" aria-label={title} ref={panel}>
         <div className="drawer__head">
           <div>
             <h2 className="drawer__title">{title}</h2>
