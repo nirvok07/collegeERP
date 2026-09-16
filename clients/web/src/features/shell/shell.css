@@ -72,11 +72,6 @@
   color: inherit;
 }
 .shell__tab-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.shell__kbd {
-  padding: 0 5px; border-radius: 4px; background: var(--surface-variant);
-  color: var(--text-tertiary); font: var(--text-caption); font-family: ui-monospace, monospace;
-}
-.shell__tab--on .shell__kbd { background: var(--surface); }
 
 /* =====================================================================
    Main column: slim top bar + content
@@ -144,7 +139,6 @@
   .shell--collapsed .shell__tab { justify-content: center; padding: 0; width: 40px; height: 40px; margin: 0 auto; }
   .shell--collapsed .shell__tab--on::before { left: -8px; }
   .shell--collapsed .shell__tab-label,
-  .shell--collapsed .shell__kbd,
   .shell--collapsed .shell__scope,
   .shell--collapsed .shell__product { display: none; }
 }
@@ -179,6 +173,6 @@
   .shell__group-label { display: block; }
   .shell__tab { justify-content: flex-start; padding: 0 var(--space-sm); width: auto; height: auto; min-height: 36px; margin: 0; }
   .shell__tab--on::before { left: calc(-1 * var(--space-md)); }
-  .shell__tab-label, .shell__kbd { display: revert; }
+  .shell__tab-label { display: revert; }
   .shell__bar { padding: 0 var(--space-base); justify-content: flex-start; }
 }

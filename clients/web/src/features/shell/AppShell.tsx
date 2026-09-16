@@ -103,7 +103,7 @@ export function AppShell({
             {groups.map((group) => (
               <div className="shell__group" key={group.label}>
                 {group.label && <div className="shell__group-label">{group.label}</div>}
-                {group.items.map((item, i) => (
+                {group.items.map((item) => (
                   <button
                     key={item.key}
                     className={`shell__tab${item.key === current?.key ? ' shell__tab--on' : ''}`}
@@ -113,7 +113,6 @@ export function AppShell({
                   >
                     <span className="shell__tab-icon" aria-hidden="true">{item.icon}</span>
                     <span className="shell__tab-label">{item.label}</span>
-                    <kbd className="shell__kbd" aria-hidden="true">{i + 1}</kbd>
                   </button>
                 ))}
               </div>
