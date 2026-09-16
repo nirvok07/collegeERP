@@ -79,6 +79,7 @@ export function AttendancePage({ api }: { api: ApiClient }) {
 
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">Academic</p>
           <h1 className="page__title">Attendance</h1>
           <p className="page__sub">{rangeLabel(from, to)}</p>
         </div>

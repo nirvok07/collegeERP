@@ -107,6 +107,7 @@ export function DeliveryPage({ api, can }: { api: ApiClient; can: DeliveryPermis
 
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">Academic</p>
           <h1 className="page__title">Timetable</h1>
           <p className="page__sub">{rangeLabel(from, to)}</p>
         </div>

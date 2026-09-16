@@ -163,6 +163,7 @@ export function TeachingPage({ api, can }: { api: ApiClient; can: TeachingPermis
 
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">Academic</p>
           <h1 className="page__title">Teaching</h1>
           <p className="page__sub">
             {term

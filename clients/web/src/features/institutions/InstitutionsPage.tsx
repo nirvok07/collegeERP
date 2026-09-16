@@ -80,6 +80,7 @@ export function InstitutionsPage({ api, canManage = true }: { api: ApiClient; ca
       {status === 'refreshing' ? <RefreshBar /> : <div style={{ height: 2 }} />}
         <div className="page__head">
           <div>
+            <p className="page__eyebrow">Platform</p>
             <h1 className="page__title">Colleges</h1>
             <p className="page__sub">
               {status === 'loading' ? 'Loading' : `${rows.length} total`}

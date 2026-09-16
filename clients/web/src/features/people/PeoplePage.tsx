@@ -93,6 +93,7 @@ export function PeoplePage({ api, canManage }: { api: ApiClient; canManage: bool
 
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">People &amp; access</p>
           <h1 className="page__title">People</h1>
           <p className="page__sub">{status === 'loading' ? 'Loading' : `${rows.length} total`}</p>
         </div>

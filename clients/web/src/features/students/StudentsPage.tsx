@@ -104,6 +104,7 @@ export function StudentsPage({ api, can }: { api: ApiClient; can: StudentPermiss
 
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">Academic</p>
           <h1 className="page__title">Students</h1>
           <p className="page__sub">
             {phase === 'loading'

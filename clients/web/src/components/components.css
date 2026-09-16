@@ -66,6 +66,7 @@
 .table tbody tr:last-child td { border-bottom: none; }
 .table tbody tr { transition: background var(--dur-micro) var(--ease-sharp); }
 .table tbody tr:hover { background: var(--surface-hover); }
+.table tbody tr:focus-within { background: var(--surface-hover); }
 /* Row actions appear on hover but occupy their space always, so nothing reflows. */
 .table tbody .row-action { opacity: 0; transition: opacity var(--dur-micro) var(--ease-sharp); }
 .table tbody tr:hover .row-action,
@@ -159,10 +160,17 @@
 .page { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: var(--space-xl); }
 .page__head {
   display: flex; align-items: flex-end; justify-content: space-between;
-  gap: var(--space-base); margin-bottom: var(--space-lg); flex-wrap: wrap;
+  gap: var(--space-base); margin-bottom: var(--space-xl); flex-wrap: wrap;
+  padding-bottom: var(--space-lg); border-bottom: 1px solid var(--outline);
 }
-.page__title { font: var(--text-headline); }
-.page__sub { font: var(--text-body); color: var(--text-secondary); margin-top: var(--space-xs); }
+/* An optional kicker above the title (module / workspace name) gives a large
+   display title the context it needs without growing the headline (§7.3). */
+.page__eyebrow {
+  font: var(--text-caption); text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-tertiary); margin-bottom: var(--space-xs);
+}
+.page__title { font: var(--text-display); line-height: 1.15; }
+.page__sub { font: var(--text-body); color: var(--text-secondary); margin-top: var(--space-xs); max-width: 56ch; }
 .page__actions { display: flex; align-items: center; gap: var(--space-md); }
 
 .search {

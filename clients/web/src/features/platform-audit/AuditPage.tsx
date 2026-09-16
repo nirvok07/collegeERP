@@ -71,6 +71,7 @@ export function AuditPage({ api }: { api: ApiClient }) {
       {status === 'refreshing' ? <RefreshBar /> : <div style={{ height: 2 }} />}
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">Platform</p>
           <h1 className="page__title">Audit</h1>
           <p className="page__sub">What platform accounts did, newest first. A college's own activity is not shown.</p>
         </div>

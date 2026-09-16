@@ -52,6 +52,7 @@ export function AssessmentPage({ api }: { api: ApiClient }) {
       {phase === 'refreshing' ? <RefreshBar /> : <div className="refresh-bar__spacer" />}
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">Academic</p>
           <h1 className="page__title">Assessment</h1>
           <p className="page__sub">
             {phase === 'loading'

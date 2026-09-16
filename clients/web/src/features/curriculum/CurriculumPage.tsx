@@ -95,6 +95,7 @@ export function CurriculumPage({ api, canManage }: { api: ApiClient; canManage: 
 
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">Academic</p>
           <h1 className="page__title">Curriculum</h1>
           <p className="page__sub">
             {status === 'loading'

@@ -59,6 +59,7 @@ export function CollegePage({ api, canManage }: { api: ApiClient; canManage: boo
     <>
       <div className="page__head">
         <div>
+          <p className="page__eyebrow">College</p>
           <h1 className="page__title">College</h1>
           <p className="page__sub">
             {profile
