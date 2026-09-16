@@ -20,6 +20,7 @@ import { AttendancePage } from './features/attendance/AttendancePage.tsx';
 import { AssessmentPage } from './features/assessment/AssessmentPage.tsx';
 import { DashboardPage } from './features/dashboard/DashboardPage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
+import { MODULE_ICONS } from './features/shell/icons.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -152,16 +153,19 @@ function sectionsFor(
     const platform: NavItem[] = [];
     if (permissions?.has('platform.colleges.read')) {
       platform.push({
-        key: 'institutions', label: 'Colleges',
+        key: 'institutions', label: 'Colleges', section: 'Platform', icon: MODULE_ICONS.institutions,
         render: () => <InstitutionsPage api={api} canManage={permissions.has('platform.colleges.manage')} />,
       });
     }
     if (permissions?.has('platform.audit.read')) {
-      platform.push({ key: 'audit', label: 'Audit', render: () => <AuditPage api={api} /> });
+      platform.push({
+        key: 'audit', label: 'Audit', section: 'Platform', icon: MODULE_ICONS.audit,
+        render: () => <AuditPage api={api} />,
+      });
     }
     if (permissions?.has('platform.accounts.read')) {
       platform.push({
-        key: 'accounts', label: 'Accounts',
+        key: 'accounts', label: 'Accounts', section: 'Platform', icon: MODULE_ICONS.accounts,
         render: () => (
           <AccountsPage
             api={api}

@@ -17,6 +17,7 @@
 
   --background: #fafafa;       /* Neutral 50 */
   --surface: #ffffff;
+  --surface-side: #f4f4f5;     /* chrome: the navigation rail, distinct from content */
   --surface-variant: #f5f5f5;  /* Neutral 100 */
   --surface-hover: #fafafa;
   --outline: #e5e5e5;          /* Neutral 200 */
@@ -94,6 +95,7 @@
 
     --background: #0a0a0a;
     --surface: #171717;
+    --surface-side: #141414;
     --surface-variant: #262626;
     --surface-hover: #1f1f1f;
     --outline: #404040;
@@ -124,6 +126,7 @@
     --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
     --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
     --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
+    --shadow-elevate: 0 0 0 1px rgb(255 255 255 / 0.05), 0 8px 24px rgb(0 0 0 / 0.55);
   }
 }
 
@@ -162,5 +165,6 @@
   --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
   --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
+    --shadow-elevate: 0 0 0 1px rgb(255 255 255 / 0.05), 0 8px 24px rgb(0 0 0 / 0.55);
 }
 
