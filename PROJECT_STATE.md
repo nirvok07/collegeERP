@@ -188,6 +188,32 @@ Owner requests, 2026-09-15 (in order of build):
   change. Web tests 189 (+7: module-grid gate contract, overview/courses/week read mapping);
   `tsc -b` + `vite build` clean. 🔍 NEEDS VALIDATION in a browser (sign in as College Admin and as a
   teacher; tiles switch sections).
+- WEB-PREMIUM-1 ✅ (web left sidebar nav, owner asked to move modules to a side panel) `a515963`:
+  the module list moves from centred top tabs to a left sidebar. `.shell` becomes a 252px/1fr grid;
+  a sticky sidebar holds the brand header (gradient mark + product + scope) and grouped vertical nav
+  ("Modules" for a college person, "Platform" for platform items) with inline 20px stroke icons and
+  section eyebrows. Active item is never colour alone (§7.8): a 3px `--primary` accent bar + filled
+  fill + number kbd all persist. Responsive: ≥1024px pinned sidebar; 720–1024px collapses to a 64px
+  icon rail (labels hidden, aria-label kept); <720px becomes an off-canvas drawer toggled by a
+  hamburger with a scrim. Number-key switching, `ShellNav` context and dashboard `.go()` tiles
+  unchanged (they call `setActive`). `shell.css` gains `--surface-side` (chrome surface) and the
+  drawer exit work. `tsc -b` clean.
+- WEB-PREMIUM-2 ✅ (turn on the global motion system on the shared Drawer) `722fa38`: the shared
+  Drawer now closes with a brief slide back out the edge it entered from instead of an instant
+  unmount (its `leaving` state was declared but unwired; the exit keyframe didn't exist). Adds
+  `m-slide-out-end`, the `.drawer--exit` CSS and the JS exit phase (slide out, then unmount).
+  Reduced motion collapses it to a fade via motion.css's global override. The shell section entrance
+  (head rises, body staggers) already shipped in WEB-PREMIUM-1's shell.css. A `reveal.ts` JS wrapper
+  was proposed in the plan but skipped — the CSS already achieves the choreography on the global
+  system; a wrapper would be over-engineering (§17). Build + tests green.
+- WEB-PREMIUM-3 ✅ (premium colour & depth tokens) `6bc186e`: adds `--gradient-primary`(indigo→violet)
+  and `--chrome-gradient`(whisper tint) in light + both dark blocks, and defines `--shadow-elevate`
+  in light too (the sidebar already referenced it but it only elevated in dark). Sidebar brand mark
+  renders the gradient token; the rail layers the chrome tint over its solid surface; the dashboard
+  hero figure gets a gradient text fill guarded by `@supports` (falls back to solid primary). Now no
+  raw `linear-gradient` lives in components — gradients come from tokens. Build green; 192 passing
+  (only known pre-existing `motion.test.ts` jsdom `node:` failure remains). 🔍 NEEDS VALIDATION in a
+  browser: sidebar + motion + gradients in both themes at all breakpoints.
 - 🚫 GO-LIVE BLOCKER (AD-82): no WhatsApp/SMS senders; `OTP_FIXED_CODE=123456` lets anyone who knows
   a mobile number sign in as that person (and anyone, by email too, when SMTP is unset). Must be
   removed before any real college uses the system.
