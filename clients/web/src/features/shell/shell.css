@@ -4,6 +4,8 @@
   grid-template-columns: 252px 1fr;
   grid-template-rows: 1fr;
   grid-template-areas: "shell__side shell__main";
+  /* Collapsing animates the columns so the rail hugs in, not snap-jumps. */
+  transition: grid-template-columns var(--dur-panel) var(--ease-in-out);
 }
 
 /* =====================================================================
@@ -111,17 +113,17 @@
 .shell__section > *:nth-child(3) { animation-delay: calc(var(--stagger-step) * 4); }
 .shell__section > *:nth-child(n + 4) { animation-delay: 0ms; }
 
-/* ---- Collapse / expand toggle (desktop rails) -------------------------- */
-.shell__collapse {
+/* ---- Collapse / expand toggle (always visible in the top bar) ---------- */
+.shell__collapsebar {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; flex: none; align-self: flex-start;
-  margin: var(--space-sm) var(--space-sm) 0;
-  background: transparent; color: var(--text-tertiary);
+  width: 32px; height: 32px; flex: none; margin-right: auto;
+  background: transparent; color: var(--text-secondary);
   border: 1px solid transparent; border-radius: var(--radius-input);
   cursor: pointer;
   transition: background var(--state), color var(--state), border-color var(--state);
 }
-.shell__collapse:hover { background: var(--surface-variant); color: var(--primary); border-color: var(--outline); }
+.shell__collapsebar:hover { background: var(--surface-variant); color: var(--primary); border-color: var(--outline); }
+.shell__collapsebar:active { transform: scale(0.96); }
 
 /* =====================================================================
    Responsive: collapse is a choice; small screens go off-canvas.
@@ -145,7 +147,6 @@
   .shell--collapsed .shell__kbd,
   .shell--collapsed .shell__scope,
   .shell--collapsed .shell__product { display: none; }
-  .shell--collapsed .shell__collapse { align-self: center; margin: var(--space-sm) auto 0; }
 }
 
 /* Off-canvas: on small screens the whole sidebar becomes a drawer opened from
@@ -163,7 +164,9 @@
   }
   .shell__side--open { transform: none; }
   .shell__hamburger { display: inline-flex; }
-  .shell__collapse { display: none; }
+  /* The drawer replaces the collapse rail on small screens; the header
+     collapse control would be redundant there. */
+  .shell__collapsebar { display: none; }
   .shell__scrim {
     position: fixed; inset: 0; background: rgb(0 0 0 / 0.4); z-index: 25;
     animation: m-fade-in var(--enter) both;

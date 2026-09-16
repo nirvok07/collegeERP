@@ -97,7 +97,9 @@ export function AppShell({
             </div>
           </div>
 
-          <nav className="shell__nav">
+          {/* Groups and their items rise in one staggered pass on mount; the
+              global stagger caps the delay so a long list still lands quickly. */}
+          <nav className="shell__nav m-stagger">
             {groups.map((group) => (
               <div className="shell__group" key={group.label}>
                 {group.label && <div className="shell__group-label">{group.label}</div>}
@@ -117,16 +119,6 @@ export function AppShell({
               </div>
             ))}
           </nav>
-
-          <button
-            type="button"
-            className="shell__collapse"
-            onClick={toggleCollapsed}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <ChevronRight width={18} height={18} /> : <ChevronLeft width={18} height={18} />}
-          </button>
         </aside>
 
         <div className="shell__main">
@@ -138,6 +130,15 @@ export function AppShell({
               aria-label="Open sections"
             >
               <MenuIcon width={18} height={18} />
+            </button>
+            <button
+              type="button"
+              className="shell__collapsebar"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? <ChevronRight width={18} height={18} /> : <ChevronLeft width={18} height={18} />}
             </button>
             <div className="shell__actor">
               <span className="shell__name">{actor.fullName}</span>
