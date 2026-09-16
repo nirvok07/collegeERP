@@ -16,6 +16,9 @@
   display: flex; flex-direction: column;
   padding: var(--space-lg) var(--space-md);
   background: var(--surface-side);
+  /* A whisper of hue over the solid rail surface: the chrome-gradient is
+     semi-transparent, so surface-side still reads as the base. */
+  background-image: var(--chrome-gradient);
   border-right: 1px solid var(--outline);
   box-shadow: var(--shadow-elevate);
   z-index: 30;
@@ -28,7 +31,7 @@
 .shell__mark {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; flex: none; border-radius: 8px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  background: var(--gradient-primary);
   color: var(--on-primary); font: var(--text-title); font-weight: 700;
 }
 .shell__brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }

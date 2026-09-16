@@ -38,6 +38,12 @@
 
   --focus-ring: #4f46e5;
 
+  /* Gradients — the only gradients in the app, defined once here. Chrome and
+     hero surfaces can carry a whisper of hue; the brand mark gets the vivid
+     indigo→violet pair. */
+  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --chrome-gradient: linear-gradient(180deg, rgb(79 70 229 / 0.05) 0%, rgb(124 58 237 / 0.02) 100%);
+
   /* Data-viz palette — sequential (ordered data, low→high) and diverging
      (positive ↔ negative, plus neutral). From docs/DESIGN_ENHANCEMENTS.md §1. */
   --viz-seq-1: #eef2ff;
@@ -70,6 +76,7 @@
   --shadow-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
   --shadow-2: 0 4px 8px rgb(0 0 0 / 0.04), 0 2px 4px rgb(0 0 0 / 0.06);
   --shadow-3: 0 16px 32px rgb(0 0 0 / 0.10), 0 4px 8px rgb(0 0 0 / 0.06);
+  --shadow-elevate: 0 0 0 1px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.08);
 
   /* Type (§7.3). Inter, with a real fallback stack. */
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -115,6 +122,8 @@
     --info-subtle: #082f49;
 
     --focus-ring: #818cf8;
+    --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+    --chrome-gradient: linear-gradient(180deg, rgb(129 140 248 / 0.10) 0%, rgb(167 139 250 / 0.03) 100%);
     --viz-seq-1: #1e1b4b;
     --viz-seq-2: #312e81;
     --viz-seq-3: #4338ca;
@@ -154,6 +163,8 @@
   --info: #38bdf8;
   --info-subtle: #082f49;
   --focus-ring: #818cf8;
+  --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  --chrome-gradient: linear-gradient(180deg, rgb(129 140 248 / 0.10) 0%, rgb(167 139 250 / 0.03) 100%);
     --viz-seq-1: #1e1b4b;
     --viz-seq-2: #312e81;
     --viz-seq-3: #4338ca;

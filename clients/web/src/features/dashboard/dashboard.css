@@ -56,6 +56,15 @@
   font-weight: 600;
   color: var(--primary);
 }
+/* The hero figure gets a whisper of the brand gradient. Guarded so an engine
+   without background-clip:text falls back to solid primary — the numeral is a
+   real data point, never unreadable (§16). */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .dash__stat-value {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+}
 
 .dash__stat-label {
   font: var(--text-caption);
