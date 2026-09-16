@@ -165,6 +165,15 @@ Owner requests, 2026-09-15 (in order of build):
     list and student records carry the mobile. Server 457/457 (+7), Flutter 273/273 (+3).
   - Docs ✅ runbook START-HERE, 01, 06 and 09 describe code sign-in; 04 (web console) still passwords
     until OTP-5.
+- WEB-POLISH-1 ✅ (web dark-mode toggle + branded sign-in + token hygiene) `669c779`: the console
+  now has a theme toggle in the header (persists via localStorage, follows the OS until a choice);
+  a remembered theme applies from first paint (main.tsx init); sign-in is a token-driven split
+  panel (indigo brand hero left, the existing form card right; hero hides under 720px); raw
+  #6b7280/#fff in sign-in.css tokenised. 3 new theme tests. 192 passing; build clean. 🔍 browser.
+- WEB-POLISH-2 ✅ (shared page-header hierarchy + per-screen eyebrows) `45c35cd`: page titles move to
+  the display scale with an optional group eyebrow (People & access / Academic / College / Platform);
+  .page__head gets a bottom rule; table rows highlight on :focus-within. All 12 pages adopt it.
+  192 passing; build clean. 🔍 browser.
 - WID-2 ✅ (web dashboard arrangement; owner asked why the web console "isn't arranged well, unlike
   mobile"; root cause: no web home landing — the shell landed on the first nav tab) `fd5e671`:
   the web console is now dashboard-first. Home is the first signed-in tab for a college person;
