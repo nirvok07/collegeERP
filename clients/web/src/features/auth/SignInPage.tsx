@@ -21,17 +21,30 @@ export function SignInPage({ auth, onAcceptInvite }: { auth: AuthSession; onAcce
 
   return (
     <main className="signin">
-      <div className="signin__card">
-        <div className="signin__brand">
-          <span className="signin__mark" aria-hidden="true">C</span>
-          <div>
-            <h1 className="signin__title">College</h1>
-            <p className="signin__sub">{mode === 'college' ? 'Sign in to your college' : 'Platform administration'}</p>
+      <div className="signin__frame">
+        <aside className="signin__hero">
+          <span className="signin__hero-mark" aria-hidden="true">C</span>
+          <div className="signin__hero-text">
+            <h2 className="signin__hero-title">College</h2>
+            <p className="signin__hero-tag">
+              Your whole college in one console — people, teaching, attendance and results.
+            </p>
+          </div>
+        </aside>
+        <div className="signin__content">
+          <div className="signin__card">
+            <div className="signin__brand">
+              <span className="signin__mark" aria-hidden="true">C</span>
+              <div>
+                <h1 className="signin__title">College</h1>
+                <p className="signin__sub">{mode === 'college' ? 'Sign in to your college' : 'Platform administration'}</p>
+              </div>
+            </div>
+            {mode === 'college'
+              ? <CollegeSignIn auth={auth} onAcceptInvite={onAcceptInvite} onPlatform={() => setMode('platform')} />
+              : <PlatformSignIn auth={auth} onCollege={() => setMode('college')} />}
           </div>
         </div>
-        {mode === 'college'
-          ? <CollegeSignIn auth={auth} onAcceptInvite={onAcceptInvite} onPlatform={() => setMode('platform')} />
-          : <PlatformSignIn auth={auth} onCollege={() => setMode('college')} />}
       </div>
     </main>
   );

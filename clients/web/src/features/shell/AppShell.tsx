@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode, type SVGProps } from 'react';
 import { Button } from '../../components/index.tsx';
 import type { ApiClient } from '../../lib/api.ts';
 import type { Actor } from '../../lib/auth.ts';
+import { useTheme } from '../../design/theme.ts';
 import './shell.css';
 
 export interface NavItem {
@@ -80,6 +81,7 @@ export function AppShell({
 
         <div className="shell__actor">
           <span className="shell__name">{actor.fullName}</span>
+          <ThemeToggle />
           <Button variant="text" onClick={onSignOut}>Sign out</Button>
         </div>
       </header>
@@ -98,4 +100,38 @@ export function AppShell({
 export async function loadPermissions(api: ApiClient): Promise<Set<string>> {
   const result = await api.get<{ permissions: string[] }>('/v1/auth/me');
   return new Set(result.ok ? result.value.permissions : []);
+}
+
+/** Switches the console between light and dark; the choice persists (WEB-POLISH-1). */
+function ThemeToggle() {
+  const { theme, toggle } = useTheme();
+  const dark = theme === 'dark';
+  return (
+    <button
+      type="button"
+      className="shell__theme"
+      onClick={toggle}
+      aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={dark ? 'Light theme' : 'Dark theme'}
+    >
+      {dark ? <SunIcon width={16} height={16} /> : <MoonIcon width={16} height={16} />}
+    </button>
+  );
+}
+
+function SunIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4m11.4-11.4 1.4-1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function MoonIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...props}>
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" strokeLinejoin="round" />
+    </svg>
+  );
 }

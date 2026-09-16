@@ -2,11 +2,45 @@
   min-height: 100%; display: grid; place-items: center;
   padding: var(--space-xl); background: var(--background);
 }
+
+/* Split panel (WEB-POLISH-1): a brand hero on the left, the form card on the
+   right. Token-driven; the hero hides under 720px so the small screen keeps the
+   single compact card. */
+.signin__frame {
+  width: min(920px, 100%); min-height: min(560px, 100%);
+  display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  background: var(--surface); border: 1px solid var(--outline);
+  border-radius: var(--radius-sheet); box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+
+.signin__hero {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  gap: var(--space-lg); padding: var(--space-2xl);
+  background: linear-gradient(160deg, var(--primary-pressed), var(--primary) 60%, var(--primary-hover));
+  color: var(--on-primary);
+}
+
+.signin__hero-mark {
+  display: grid; place-items: center; width: 48px; height: 48px;
+  background: var(--on-primary); color: var(--primary);
+  border-radius: var(--radius-card); font: var(--text-display);
+}
+
+.signin__hero-text { display: grid; gap: var(--space-sm); }
+
+.signin__hero-title { font: var(--text-display); color: var(--on-primary); }
+
+.signin__hero-tag {
+  font: var(--text-body-lg); color: var(--on-primary);
+  opacity: 0.92; max-width: 30ch;
+}
+
+.signin__content { display: grid; place-items: center; padding: var(--space-2xl); }
+
 .signin__card {
   width: min(400px, 100%); display: flex; flex-direction: column; gap: var(--space-md);
-  padding: var(--space-2xl); background: var(--surface);
-  border: 1px solid var(--outline); border-radius: var(--radius-sheet);
-  box-shadow: var(--shadow-1);
+  background: var(--surface); padding: var(--space-2xl);
 }
 .signin__brand { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-sm); }
 .signin__mark {
@@ -23,7 +57,13 @@
 .enrol { display: flex; flex-direction: column; gap: var(--space-md); }
 .enrol__title { font: var(--text-title); margin: 0; }
 .enrol__sub, .enrol__hint { font: var(--text-body); color: var(--text-secondary); margin: 0; }
-.enrol__qr { display: flex; justify-content: center; padding: var(--space-sm); background: #fff; border-radius: var(--radius-input, 8px); min-height: 224px; align-items: center; }
-.enrol__qr-placeholder { color: #6b7280; font: var(--text-body); }
+.enrol__qr { display: flex; justify-content: center; padding: var(--space-sm); background: var(--surface); border: 1px solid var(--outline); border-radius: var(--radius-input); min-height: 224px; align-items: center; }
+.enrol__qr-placeholder { color: var(--text-tertiary); font: var(--text-body); }
 .enrol__manual summary { cursor: pointer; font: var(--text-body); color: var(--primary); }
 .enrol__key { display: block; margin-top: var(--space-sm); font-size: 1.05rem; letter-spacing: 0.08em; word-break: break-all; }
+
+@media (max-width: 720px) {
+  .signin__frame { grid-template-columns: 1fr; }
+  .signin__hero { display: none; }
+  .signin__content { padding: var(--space-lg); }
+}
