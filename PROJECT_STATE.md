@@ -214,6 +214,14 @@ Owner requests, 2026-09-15 (in order of build):
   raw `linear-gradient` lives in components — gradients come from tokens. Build green; 192 passing
   (only known pre-existing `motion.test.ts` jsdom `node:` failure remains). 🔍 NEEDS VALIDATION in a
   browser: sidebar + motion + gradients in both themes at all breakpoints.
+- WEB-POLISH-3 ✅ (sidebar items visible again + collapse/expand toggle) `afff5c6`: owner hit the
+  real page and reported (a) sidebar modules not showing and (b) no way to collapse/expand. Root
+  cause of (a): college module items had no `icon`/`section`, so the width-driven 64px rail showed
+  only blank squares. Fixed: every college item now carries `MODULE_ICONS.*` + `section:'Modules'`.
+  Root cause of (b): a 1024px breakpoint auto-collapsed the sidebar with no control. Replaced with
+  an explicit persisted chevron toggle (localStorage `shell:collapsed`); the full sidebar keeps
+  labels at all desktop widths; only a deliberate toggle or a ≤768px off-canvas drawer hides them.
+  Active accent uses `--gradient-primary`. Build green; 192 tests pass.
 - 🚫 GO-LIVE BLOCKER (AD-82): no WhatsApp/SMS senders; `OTP_FIXED_CODE=123456` lets anyone who knows
   a mobile number sign in as that person (and anyone, by email too, when SMTP is unset). Must be
   removed before any real college uses the system.
