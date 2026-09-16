@@ -103,15 +103,6 @@
 .shell__hamburger:hover { background: var(--surface-variant); color: var(--text-primary); }
 .shell__actor { display: flex; align-items: center; gap: var(--space-base); }
 .shell__name { font: var(--text-label); color: var(--text-primary); }
-.shell__theme {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; flex: none;
-  background: transparent; color: var(--text-secondary);
-  border: 1px solid transparent; border-radius: var(--radius-input);
-  cursor: pointer; transition: background var(--state), color var(--state), border-color var(--state);
-}
-.shell__theme:hover { background: var(--surface-variant); color: var(--text-primary); }
-.shell__theme:active { transform: scale(0.96); }
 
 /* ---- Content entrance (WEB-PREMIUM-2): head rises, then body staggers. ---- */
 .shell__section > .page__head { animation: m-rise-in var(--enter) both; }

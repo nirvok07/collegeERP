@@ -8,33 +8,35 @@
  * toggle wins in either direction.
  */
 :root {
-  /* Colour — roles, not hues. Components never name a hue. */
+  /* Colour — roles, not hues. Components never name a hue.
+     One premium light theme (§: the light/dark toggle is gone). White cards
+     sit on a soft blue-violet canvas; shadows carry a hint of the brand. */
   --primary: #4f46e5;          /* Indigo 600 */
   --primary-hover: #4338ca;
   --primary-pressed: #3730a3;
   --on-primary: #ffffff;
-  --primary-subtle: #eef2ff;
+  --primary-subtle: #eef1ff;
 
-  --background: #fafafa;       /* Neutral 50 */
+  --background: #f5f6fb;       /* soft cool canvas, feather of violet */
   --surface: #ffffff;
-  --surface-side: #f4f4f5;     /* chrome: the navigation rail, distinct from content */
-  --surface-variant: #f5f5f5;  /* Neutral 100 */
-  --surface-hover: #fafafa;
-  --outline: #e5e5e5;          /* Neutral 200 */
-  --outline-strong: #d4d4d4;
+  --surface-side: #eef0f8;     /* chrome: the navigation rail, distinct from content */
+  --surface-variant: #f2f4fa;  /* hover / inset fills */
+  --surface-hover: #eef0f7;
+  --outline: #e4e6f0;          /* hairline rules */
+  --outline-strong: #d2d5e4;
 
-  --text-primary: #171717;     /* Neutral 900 */
-  --text-secondary: #525252;   /* Neutral 600 */
-  --text-tertiary: #a3a3a3;
+  --text-primary: #1b1c2b;     /* deep indigo-black */
+  --text-secondary: #4b4d63;
+  --text-tertiary: #8f92a8;
 
-  --success: #059669;
-  --success-subtle: #ecfdf5;
+  --success: #0f9d6f;
+  --success-subtle: #eafaf3;
   --warning: #d97706;
   --warning-subtle: #fffbeb;
   --error: #dc2626;
   --error-subtle: #fef2f2;
-  --info: #0284c7;
-  --info-subtle: #f0f9ff;
+  --info: #0369a1;
+  --info-subtle: #f0f7fe;
 
   --focus-ring: #4f46e5;
 
@@ -42,7 +44,7 @@
      hero surfaces can carry a whisper of hue; the brand mark gets the vivid
      indigo→violet pair. */
   --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  --chrome-gradient: linear-gradient(180deg, rgb(79 70 229 / 0.05) 0%, rgb(124 58 237 / 0.02) 100%);
+  --chrome-gradient: linear-gradient(180deg, rgb(79 70 229 / 0.06) 0%, rgb(124 58 237 / 0.02) 100%);
 
   /* Data-viz palette — sequential (ordered data, low→high) and diverging
      (positive ↔ negative, plus neutral). From docs/DESIGN_ENHANCEMENTS.md §1. */
@@ -73,10 +75,10 @@
   --radius-pill: 999px;
 
   /* Elevation — soft, large radius, low opacity. */
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.06);
-  --shadow-2: 0 4px 8px rgb(0 0 0 / 0.04), 0 2px 4px rgb(0 0 0 / 0.06);
-  --shadow-3: 0 16px 32px rgb(0 0 0 / 0.10), 0 4px 8px rgb(0 0 0 / 0.06);
-  --shadow-elevate: 0 0 0 1px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-1: 0 1px 2px rgb(30 27 75 / 0.04), 0 1px 3px rgb(30 27 75 / 0.05);
+  --shadow-2: 0 2px 6px rgb(30 27 75 / 0.05), 0 6px 16px rgb(30 27 75 / 0.06);
+  --shadow-3: 0 12px 28px rgb(30 27 75 / 0.12), 0 4px 8px rgb(30 27 75 / 0.06);
+  --shadow-elevate: 0 0 0 1px rgb(30 27 75 / 0.04), 0 12px 28px rgb(30 27 75 / 0.10);
 
   /* Type (§7.3). Inter, with a real fallback stack. */
   --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -90,92 +92,5 @@
   --text-caption: 500 12px/1.4 var(--font);
 
   /* Motion tokens live in motion.css, the single source for animated values. */
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --primary: #818cf8;
-    --primary-hover: #a5b4fc;
-    --primary-pressed: #c7d2fe;
-    --on-primary: #1e1b4b;
-    --primary-subtle: #1e1b4b;
-
-    --background: #0a0a0a;
-    --surface: #171717;
-    --surface-side: #141414;
-    --surface-variant: #262626;
-    --surface-hover: #1f1f1f;
-    --outline: #404040;
-    --outline-strong: #525252;
-
-    --text-primary: #fafafa;
-    --text-secondary: #a3a3a3;
-    --text-tertiary: #737373;
-
-    --success: #34d399;
-    --success-subtle: #022c22;
-    --warning: #fbbf24;
-    --warning-subtle: #292524;
-    --error: #f87171;
-    --error-subtle: #2c0b0b;
-    --info: #38bdf8;
-    --info-subtle: #082f49;
-
-    --focus-ring: #818cf8;
-    --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
-    --chrome-gradient: linear-gradient(180deg, rgb(129 140 248 / 0.10) 0%, rgb(167 139 250 / 0.03) 100%);
-    --viz-seq-1: #1e1b4b;
-    --viz-seq-2: #312e81;
-    --viz-seq-3: #4338ca;
-    --viz-seq-4: #6366f1;
-    --viz-seq-5: #818cf8;
-    --viz-positive: #34d399;
-    --viz-negative: #f87171;
-    --viz-neutral: #262626;
-    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
-    --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
-    --shadow-elevate: 0 0 0 1px rgb(255 255 255 / 0.05), 0 8px 24px rgb(0 0 0 / 0.55);
-  }
-}
-
-:root[data-theme='dark'] {
-  --primary: #818cf8;
-  --primary-hover: #a5b4fc;
-  --primary-pressed: #c7d2fe;
-  --on-primary: #1e1b4b;
-  --primary-subtle: #1e1b4b;
-  --background: #0a0a0a;
-  --surface: #171717;
-  --surface-variant: #262626;
-  --surface-hover: #1f1f1f;
-  --outline: #404040;
-  --outline-strong: #525252;
-  --text-primary: #fafafa;
-  --text-secondary: #a3a3a3;
-  --text-tertiary: #737373;
-  --success: #34d399;
-  --success-subtle: #022c22;
-  --warning: #fbbf24;
-  --warning-subtle: #292524;
-  --error: #f87171;
-  --error-subtle: #2c0b0b;
-  --info: #38bdf8;
-  --info-subtle: #082f49;
-  --focus-ring: #818cf8;
-  --gradient-primary: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
-  --chrome-gradient: linear-gradient(180deg, rgb(129 140 248 / 0.10) 0%, rgb(167 139 250 / 0.03) 100%);
-    --viz-seq-1: #1e1b4b;
-    --viz-seq-2: #312e81;
-    --viz-seq-3: #4338ca;
-    --viz-seq-4: #6366f1;
-    --viz-seq-5: #818cf8;
-    --viz-positive: #34d399;
-    --viz-negative: #f87171;
-    --viz-neutral: #262626;
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-2: 0 4px 8px rgb(0 0 0 / 0.4);
-  --shadow-3: 0 16px 32px rgb(0 0 0 / 0.5);
-    --shadow-elevate: 0 0 0 1px rgb(255 255 255 / 0.05), 0 8px 24px rgb(0 0 0 / 0.55);
 }
 

@@ -1,6 +1,10 @@
 @import './tokens.css';
 @import './motion.css';
 
+/* One premium light theme (§: dark removed). Native controls and scrollbars
+   stay light even when the OS prefers dark, so nothing flickers to dark. */
+:root { color-scheme: light; }
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, #root { height: 100%; }
