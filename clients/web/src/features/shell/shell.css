@@ -39,7 +39,7 @@
 .shell__scope { font: var(--text-caption); color: var(--text-tertiary); }
 
 /* ---- Navigation list ----------------------------------------------------- */
-.shell__nav { display: flex; flex-direction: column; gap: var(--space-xl); overflow-y: auto; }
+.shell__nav { flex: 1; display: flex; flex-direction: column; gap: var(--space-xl); overflow-y: auto; }
 .shell__group { display: flex; flex-direction: column; gap: var(--space-xs); }
 .shell__group-label {
   font: var(--text-caption); text-transform: uppercase; letter-spacing: 0.06em;
@@ -63,7 +63,7 @@
 .shell__tab--on::before {
   content: ""; position: absolute; left: calc(-1 * var(--space-md));
   top: 8px; bottom: 8px; width: 3px; border-radius: 3px;
-  background: var(--primary);
+  background: var(--gradient-primary);
 }
 .shell__tab-icon {
   display: inline-flex; flex: none; width: 20px; height: 20px;
@@ -120,30 +120,48 @@
 .shell__section > *:nth-child(3) { animation-delay: calc(var(--stagger-step) * 4); }
 .shell__section > *:nth-child(n + 4) { animation-delay: 0ms; }
 
+/* ---- Collapse / expand toggle (desktop rails) -------------------------- */
+.shell__collapse {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; flex: none; align-self: flex-start;
+  margin: var(--space-sm) var(--space-sm) 0;
+  background: transparent; color: var(--text-tertiary);
+  border: 1px solid transparent; border-radius: var(--radius-input);
+  cursor: pointer;
+  transition: background var(--state), color var(--state), border-color var(--state);
+}
+.shell__collapse:hover { background: var(--surface-variant); color: var(--primary); border-color: var(--outline); }
+
 /* =====================================================================
-   Responsive: pinned rail -> icon rail -> off-canvas drawer
+   Responsive: collapse is a choice; small screens go off-canvas.
+   The full sidebar keeps its labels at every desktop width, so a module
+   never disappears on its own (earlier: a 1024px rail hid them).
    ===================================================================== */
 
-/* Icon rail: labels, product text and groups collapse; icons and badges remain,
-   so scanning speed and keyboard access are preserved. */
-@media (max-width: 1024px) {
-  .shell { grid-template-columns: 64px 1fr; grid-template-areas: "shell__side shell__main"; }
-  .shell__side { align-items: center; padding: var(--space-lg) var(--space-sm); }
-  .shell__brand { justify-content: center; padding: var(--space-xs) 0 var(--space-lg); }
-  .shell__brand-text { display: none; }
-  .shell__nav { width: 100%; align-items: stretch; }
-  .shell__group { align-items: center; }
-  .shell__group-label { display: none; }
-  .shell__tab { justify-content: center; padding: 0; width: 40px; height: 40px; margin: 0 auto; }
-  /* The accent bar moves to the inset edge so it stays visible on the rail. */
-  .shell__tab--on::before { left: -8px; }
-  .shell__tab-label, .shell__kbd { display: none; }
+/* Collapsed rail — only on wide screens where a rail earns its space. Scoped
+   to min-width so it can never fight the ≤768px off-canvas drawer. */
+@media (min-width: 769px) {
+  .shell.shell--collapsed { grid-template-columns: 64px 1fr; grid-template-areas: "shell__side shell__main"; }
+  .shell--collapsed .shell__side { align-items: center; padding: var(--space-lg) var(--space-sm); }
+  .shell--collapsed .shell__brand { justify-content: center; padding: var(--space-xs) 0 var(--space-lg); }
+  .shell--collapsed .shell__brand-text { display: none; }
+  .shell--collapsed .shell__nav { width: 100%; align-items: stretch; }
+  .shell--collapsed .shell__group { align-items: center; }
+  .shell--collapsed .shell__group-label { display: none; }
+  .shell--collapsed .shell__tab { justify-content: center; padding: 0; width: 40px; height: 40px; margin: 0 auto; }
+  .shell--collapsed .shell__tab--on::before { left: -8px; }
+  .shell--collapsed .shell__tab-label,
+  .shell--collapsed .shell__kbd,
+  .shell--collapsed .shell__scope,
+  .shell--collapsed .shell__product { display: none; }
+  .shell--collapsed .shell__collapse { align-self: center; margin: var(--space-sm) auto 0; }
 }
 
-/* Off-canvas: the rail becomes a drawer opened from a hamburger, so a small
-   screen keeps every module reachable without permanently sacrificing content. */
-@media (max-width: 720px) {
-  .shell { grid-template-columns: 1fr; grid-template-areas: "shell__main"; }
+/* Off-canvas: on small screens the whole sidebar becomes a drawer opened from
+   a hamburger. It is always full (labels restored) and its collapse rail is
+   bypassed, so every module stays legible. */
+@media (max-width: 768px) {
+  .shell, .shell.shell--collapsed { grid-template-columns: 1fr; grid-template-areas: "shell__main"; }
   .shell__side {
     position: fixed; inset-block: 0; inset-inline-start: 0;
     width: min(288px, 84vw);
@@ -154,6 +172,7 @@
   }
   .shell__side--open { transform: none; }
   .shell__hamburger { display: inline-flex; }
+  .shell__collapse { display: none; }
   .shell__scrim {
     position: fixed; inset: 0; background: rgb(0 0 0 / 0.4); z-index: 25;
     animation: m-fade-in var(--enter) both;
@@ -167,8 +186,5 @@
   .shell__tab { justify-content: flex-start; padding: 0 var(--space-sm); width: auto; height: auto; min-height: 36px; margin: 0; }
   .shell__tab--on::before { left: calc(-1 * var(--space-md)); }
   .shell__tab-label, .shell__kbd { display: revert; }
-}
-
-@media (max-width: 720px) {
   .shell__bar { padding: 0 var(--space-base); justify-content: flex-start; }
 }

@@ -44,11 +44,24 @@ export function AppShell({
 }) {
   const [active, setActive] = useState(items[0]?.key ?? '');
   const [navOpen, setNavOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('shell:collapsed') === '1'; } catch { return false; }
+  });
   const current = items.find((i) => i.key === active) ?? items[0];
 
   const select = (key: string) => {
     setActive(key);
     setNavOpen(false); // close the off-canvas drawer after a choice on narrow screens
+  };
+
+  // Collapsing is a choice, not a width side-effect (WEB-POLISH feedback: items
+  // used to vanish on laptop widths). It persists so the rail sticks between visits.
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem('shell:collapsed', next ? '1' : '0'); } catch { /* storage unavailable */ }
+      return next;
+    });
   };
 
   // Number keys jump between sections, faster than reaching for a mouse when
@@ -71,7 +84,7 @@ export function AppShell({
   const groups = groupSections(items);
 
   return (
-    <div className="shell">
+    <div className={`shell${collapsed ? ' shell--collapsed' : ''}`}>
       <ShellNav.Provider value={select}>
         {/* Off-canvas scrim (narrow screens): closes on scrim click, never on content. */}
         {navOpen && <div className="shell__scrim" onClick={() => setNavOpen(false)} aria-hidden="true" />}
@@ -105,6 +118,16 @@ export function AppShell({
               </div>
             ))}
           </nav>
+
+          <button
+            type="button"
+            className="shell__collapse"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <ChevronRight width={18} height={18} /> : <ChevronLeft width={18} height={18} />}
+          </button>
         </aside>
 
         <div className="shell__main">
@@ -196,6 +219,22 @@ function MoonIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} {...props}>
       <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ChevronLeft(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m15 6-6 6 6 6" />
+    </svg>
+  );
+}
+
+function ChevronRight(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m9 6 6 6-6 6" />
     </svg>
   );
 }

@@ -185,17 +185,23 @@ function sectionsFor(
   items.push({
     key: 'home',
     label: 'Dashboard',
+    section: 'Modules',
+    icon: MODULE_ICONS.home,
     render: () => <DashboardPage permissions={permissions} api={api} />,
   });
   if (permissions?.has('person.read')) {
     items.push({
       key: 'people',
       label: 'People',
+      section: 'Modules',
+      icon: MODULE_ICONS.people,
       render: () => <PeoplePage api={api} canManage={permissions.has('account.manage')} />,
     });
     items.push({
       key: 'organisation',
       label: 'Organisation',
+      section: 'Modules',
+      icon: MODULE_ICONS.organisation,
       render: () => (
         <OrganisationPage api={api} canManage={permissions.has('department.manage')} />
       ),
@@ -203,6 +209,8 @@ function sectionsFor(
     items.push({
       key: 'curriculum',
       label: 'Curriculum',
+      section: 'Modules',
+      icon: MODULE_ICONS.curriculum,
       render: () => (
         <CurriculumPage api={api} canManage={permissions.has('department.manage')} />
       ),
@@ -214,6 +222,8 @@ function sectionsFor(
     items.push({
       key: 'college',
       label: 'College',
+      section: 'Modules',
+      icon: MODULE_ICONS.college,
       render: () => <CollegePage api={api} canManage={permissions.has('institution.manage')} />,
     });
   }
@@ -223,6 +233,8 @@ function sectionsFor(
     items.push({
       key: 'teaching',
       label: 'Teaching',
+      section: 'Modules',
+      icon: MODULE_ICONS.teaching,
       render: () => (
         <TeachingPage
           api={api}
@@ -241,6 +253,8 @@ function sectionsFor(
     items.push({
       key: 'students',
       label: 'Students',
+      section: 'Modules',
+      icon: MODULE_ICONS.students,
       render: () => (
         <StudentsPage
           api={api}
@@ -259,6 +273,8 @@ function sectionsFor(
     items.push({
       key: 'timetable',
       label: 'Timetable',
+      section: 'Modules',
+      icon: MODULE_ICONS.timetable,
       render: () => (
         <DeliveryPage
           api={api}
@@ -275,6 +291,8 @@ function sectionsFor(
     items.push({
       key: 'attendance',
       label: 'Attendance',
+      section: 'Modules',
+      icon: MODULE_ICONS.attendance,
       // No permissions prop: what this reader may do with a register is stated
       // per register by the server, which resolves it against the cohort.
       render: () => <AttendancePage api={api} />,
@@ -286,6 +304,8 @@ function sectionsFor(
     items.push({
       key: 'assessment',
       label: 'Assessment',
+      section: 'Modules',
+      icon: MODULE_ICONS.assessment,
       render: () => <AssessmentPage api={api} />,
     });
   }
