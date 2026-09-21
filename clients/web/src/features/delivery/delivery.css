@@ -5,8 +5,9 @@
 .days__note { margin-top: var(--space-base); font: var(--text-caption); color: var(--text-tertiary); }
 
 .day {
-  background: var(--surface); border: 1px solid var(--outline);
-  border-radius: var(--radius-card); overflow: hidden;
+  background: var(--surface); border: 0;
+  border-radius: var(--nd-card-radius); overflow: hidden; box-shadow: var(--nd-card-shadow);
+
 }
 .day__head {
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-md);

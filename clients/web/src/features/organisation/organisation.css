@@ -1,8 +1,9 @@
 .org-tree { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-base); }
 
 .org-campus {
-  background: var(--surface); border: 1px solid var(--outline);
-  border-radius: var(--radius-card); overflow: hidden;
+  background: var(--surface); border: 0;
+  border-radius: var(--nd-card-radius); overflow: hidden; box-shadow: var(--nd-card-shadow);
+
 }
 .org-campus--archived { opacity: 0.6; }
 

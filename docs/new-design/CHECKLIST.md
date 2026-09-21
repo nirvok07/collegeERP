@@ -12,7 +12,7 @@ Status model per CLAUDE.md §3: ✅ DONE · 🟡 IN PROGRESS · ⚠️ PARTIAL �
 | ND-S4 `AppSheet` | ✅ code / 🔍 phone | `AppSheet` + `showAppSheet` (sheet <600dp, dialog ≥600dp); `showSubmitDialog` and 3 form dialogs moved; confirmations unchanged; sheet screenshot reviewed; 313 tests pass |
 | ND-S5 Pilot screen | ⚠️ | Admin dashboard: neutral ground, light header, summary card, tile pair, grouped row cards, skeleton; analyze clean, 17 dashboard tests pass, screenshot reviewed; 🔍 phone |
 | ND-S6 Mobile rollout | ✅ code / 🔍 phone | Theme ground neutral-50; ~75 ListTile rows in 37 screens → `AppListTile`; dashboard `_Panel` → `AppCard`; rosters one card; dividers between rows removed; skeleton rows are cards; 313 tests pass; not seen on a phone |
-| ND-S7 Web parity | ⚠️ | Tokens mirrored (`--nd-*`), dashboard cards and module rows, `--radius-sheet` 24; 202 web tests, typecheck, build pass; 🔍 not seen in a browser; other web screens' tables/forms not migrated |
+| ND-S7 Web parity | ✅ code / 🔍 browser | `--nd-*` tokens; all card surfaces borderless + soft shadow at 16; dashboard rows; drawer 480 with 24 inner radius; page header rule removed; 202 web tests, tsc, build pass; sign-in rendered in headless Chrome, signed-in screens not seen |
 | Docs (this folder) | ✅ | 2026-09-21 |
 
 ## Per-component definition of done

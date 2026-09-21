@@ -8,9 +8,10 @@
 
 .pane {
   background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: var(--radius-card);
-  overflow: hidden;
+  border: 0;
+  border-radius: var(--nd-card-radius);
+  overflow: hidden; box-shadow: var(--nd-card-shadow);
+
 }
 .pane__head {
   display: flex; align-items: center; justify-content: space-between;
@@ -70,8 +71,9 @@
 
 .terms { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-md); }
 .term {
-  background: var(--surface); border: 1px solid var(--outline);
-  border-radius: var(--radius-card); overflow: hidden;
+  background: var(--surface); border: 0;
+  border-radius: var(--nd-card-radius); overflow: hidden; box-shadow: var(--nd-card-shadow);
+
 }
 .term__head {
   display: flex; align-items: center; gap: var(--space-md);

@@ -3,9 +3,10 @@
 .register-row {
   display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;
   padding: var(--space-md) var(--space-base);
-  background: var(--surface); border: 1px solid var(--outline);
-  border-radius: var(--radius-card);
-  transition: background var(--dur-micro) var(--ease-sharp);
+  background: var(--surface); border: 0;
+  border-radius: var(--nd-card-radius);
+  transition: background var(--dur-micro) var(--ease-sharp); box-shadow: var(--nd-card-shadow);
+
 }
 .register-row:hover { background: var(--surface-hover); }
 

@@ -53,7 +53,7 @@
 .field--invalid .field__message { color: var(--error); }
 
 /* ---- Table ------------------------------------------------------------- */
-.table-wrap { overflow-x: auto; border: 1px solid var(--outline); border-radius: var(--radius-card); background: var(--surface); }
+.table-wrap { overflow-x: auto; border-radius: var(--nd-card-radius); background: var(--surface); box-shadow: var(--nd-card-shadow); }
 .table { width: 100%; border-collapse: collapse; }
 .table th {
   position: sticky; top: 0; z-index: 1; text-align: left;
@@ -114,8 +114,11 @@
 }
 .drawer {
   position: fixed; inset-block: 0; inset-inline-end: 0; z-index: 50;
-  width: min(520px, 100%); display: flex; flex-direction: column;
+  width: min(480px, 100%); display: flex; flex-direction: column;
   background: var(--surface); box-shadow: var(--shadow-3);
+  /* ND-D7: on desktop the sheet is a side panel with the sheet radius on its inner edge. */
+  border-start-start-radius: var(--nd-sheet-radius); border-end-start-radius: var(--nd-sheet-radius);
+  overflow: hidden;
   /* Enters from the edge it will return to, so its origin stays obvious. */
   animation: m-slide-from-end var(--sheet) both;
   will-change: transform;
@@ -134,7 +137,7 @@
 .drawer__foot { display: flex; gap: var(--space-md); justify-content: flex-end;
   padding: var(--space-base) var(--space-xl); border-top: 1px solid var(--outline); background: var(--surface); }
 @media (max-width: 600px) {
-  .drawer { width: 100%; }
+  .drawer { width: 100%; border-radius: 0; }
   .drawer__foot { position: sticky; bottom: 0; }
 }
 
@@ -167,7 +170,7 @@
 .page__head {
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: var(--space-base); margin-bottom: var(--space-xl); flex-wrap: wrap;
-  padding-bottom: var(--space-lg); border-bottom: 1px solid var(--outline);
+  padding-bottom: var(--space-xs);
 }
 /* An optional kicker above the title (module / workspace name) gives a large
    display title the context it needs without growing the headline (§7.3). */
