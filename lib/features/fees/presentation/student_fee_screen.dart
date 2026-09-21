@@ -5,6 +5,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
 import 'student_fee_cubit.dart';
@@ -236,8 +237,8 @@ class _StudentFeeView extends StatelessWidget {
                     Text('Invoices', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     if (state.invoices.isEmpty) const Padding(padding: EdgeInsets.all(AppSpacing.base), child: Text('No invoices yet.')),
                     for (final i in state.invoices)
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
+                      AppListTile(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         leading: Icon(i.isDue ? Icons.schedule_rounded : Icons.check_circle_outline, color: i.isDue ? AppColors.warning : AppColors.success),
                         title: Text(i.label),
                         subtitle: Text('${i.reason ?? 'Due ${i.dueDate}'} · ${i.status}'),
@@ -258,8 +259,8 @@ class _StudentFeeView extends StatelessWidget {
                     Text('Payments', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     if (state.payments.isEmpty) const Padding(padding: EdgeInsets.all(AppSpacing.base), child: Text('No payments yet.')),
                     for (final p in state.payments)
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
+                      AppListTile(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         leading: Icon(p.isReversal ? Icons.undo_rounded : Icons.payments_outlined, color: p.isReversal ? AppColors.error : null),
                         title: Text('${p.isReversal ? 'Reversal · ' : ''}${FeePayment.methodLabel(p.method)}'),
                         subtitle: Text(p.reference ?? p.reason ?? ''),

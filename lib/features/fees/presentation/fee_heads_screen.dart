@@ -6,6 +6,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
 import 'fee_heads_cubit.dart';
@@ -103,7 +104,7 @@ class _FeeHeadsView extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 88),
                   children: [
                     for (final head in state.heads)
-                      ListTile(
+                      AppListTile(
                         leading: const Icon(Icons.receipt_long_outlined),
                         title: Text(head.name),
                         subtitle: Text(head.code),

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/design/tokens.dart';
 import '../../core/session/college_brand.dart';
 import '../../core/session/session_manager.dart';
+import '../../core/widgets/app_list_tile.dart';
 import '../../core/widgets/college_logo.dart';
 import '../../core/widgets/confirm_sign_out.dart';
 import '../../core/widgets/screen_state.dart';
@@ -224,16 +225,13 @@ class _CollegeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        onTap: onTap,
-        leading: CollegeLogo(college: CollegeBrand(code: college.code, name: college.name), size: 40),
-        title: Text(college.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text('${college.code} · ${college.seatLimit} seats'),
-        trailing: StatusChip(label: statusLabel(college.status), tone: statusTone(college.status)),
-      ),
+    return AppListTile(
+      margin: const EdgeInsets.only(bottom: AppGeometry.gapIntra),
+      onTap: onTap,
+      leading: CollegeLogo(college: CollegeBrand(code: college.code, name: college.name), size: 40),
+      title: Text(college.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text('${college.code} · ${college.seatLimit} seats'),
+      trailing: StatusChip(label: statusLabel(college.status), tone: statusTone(college.status)),
     );
   }
 }

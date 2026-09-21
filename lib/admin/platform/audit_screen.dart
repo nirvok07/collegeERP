@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/design/tokens.dart';
 import '../../core/error/failure.dart';
 import '../../core/widgets/screen_state.dart';
+import '../../core/widgets/app_list_tile.dart';
 import '../admin_locator.dart';
 import '../colleges/college_models.dart';
 import '../colleges/colleges_api.dart';
@@ -175,7 +176,7 @@ class PlatformAuditScreen extends StatelessWidget {
                             : ListView(
                                 children: [
                                   for (final e in state.events)
-                                    ListTile(
+                                    AppListTile(
                                       title: Text(e.title),
                                       subtitle: Text([
                                         _when(e.at),

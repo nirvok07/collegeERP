@@ -5,6 +5,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/curriculum_api.dart';
 import '../domain/curriculum.dart';
 import 'curriculum_cubits.dart';
@@ -236,8 +237,8 @@ class _VersionView extends StatelessWidget {
                       if (term.courses.isEmpty)
                         Text('No courses yet', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                       for (final entry in term.courses)
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
+                        AppListTile(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
                           title: Text('${entry.code} · ${entry.title}'),
                           subtitle: Text(
                             '${creditsLabel(entry.credits)} · ${entry.requirement}'

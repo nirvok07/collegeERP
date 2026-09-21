@@ -7,6 +7,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../offerings/data/offerings_api.dart';
 import '../data/sections_api.dart';
 import '../domain/section.dart';
@@ -180,7 +181,7 @@ class _SectionsView extends StatelessWidget {
                         icon: Icons.groups_outlined,
                       ),
                     for (final s in shown)
-                      ListTile(
+                      AppListTile(
                         title: Text(s.title),
                         subtitle: Text([
                           s.termName,

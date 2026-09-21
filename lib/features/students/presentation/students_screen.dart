@@ -8,6 +8,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/session/college_brand.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/students_api.dart';
 import '../domain/student.dart';
 import 'student_screen.dart';
@@ -169,7 +170,7 @@ class _StudentsViewState extends State<_StudentsView> {
                         icon: Icons.school_outlined,
                       ),
                     for (final s in state.students)
-                      ListTile(
+                      AppListTile(
                         title: Text(s.fullName),
                         subtitle: Text('${s.enrolmentNumber} · ${s.programName} · ${s.placement}'),
                         trailing: f.status == null ? StatusChip(label: Student.statusLabel(s.status), tone: studentTone(s.status)) : null,

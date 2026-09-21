@@ -8,6 +8,7 @@ import '../../../core/session/college_brand.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/students_api.dart';
 import '../domain/student.dart';
 import 'students_cubits.dart';
@@ -248,7 +249,7 @@ class _StudentView extends StatelessWidget {
                         ],
                       ),
                     ],
-                    const Divider(height: AppSpacing.xl),
+                    const SizedBox(height: AppGeometry.gapGroup),
                     Text('Sections', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
                     if (state.placements.isEmpty)
                       Padding(
@@ -256,8 +257,8 @@ class _StudentView extends StatelessWidget {
                         child: Text('Never placed in a section.', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                       ),
                     for (final p in state.placements)
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
+                      AppListTile(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         leading: Icon(p.isCurrent ? Icons.radio_button_checked_rounded : Icons.history_rounded),
                         title: Text(state.sectionTitles[p.sectionId] ?? 'Section'),
                         subtitle: Text(

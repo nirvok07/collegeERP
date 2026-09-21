@@ -7,6 +7,7 @@ import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/saved_reads/saved_reads.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../academic/domain/academic.dart' show isoDate;
@@ -543,9 +544,8 @@ class _Line extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: ListTile(
+    return AppListTile(
+      margin: const EdgeInsets.only(bottom: AppGeometry.gapIntra),
         onTap: onTap,
         leading: Container(
           width: 44,
@@ -566,7 +566,6 @@ class _Line extends StatelessWidget {
         trailing: removeLabel == null
             ? null
             : IconButton(tooltip: removeLabel, icon: const Icon(Icons.delete_outline_rounded), onPressed: onRemove),
-      ),
     );
   }
 }

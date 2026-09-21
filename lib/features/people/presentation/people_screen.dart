@@ -9,6 +9,7 @@ import '../../../core/session/session_manager.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/people_api.dart';
 import '../domain/person.dart';
 import 'people_cubit.dart';
@@ -206,7 +207,7 @@ class _PeopleList extends StatelessWidget {
         // builder, not a mapped column: only visible rows are built, which is
         // what keeps a college of thousands scrolling at sixty frames.
         itemCount: people.length,
-        separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+        separatorBuilder: (_, _) => const SizedBox.shrink(),
         itemBuilder: (context, index) => _PersonRow(
           person: people[index],
           onOpen: onOpen,
@@ -229,7 +230,7 @@ class _PersonRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final row = ListTile(
+    final row = AppListTile(
       leading: CircleAvatar(
         backgroundColor: scheme.primaryContainer,
         child: Text(

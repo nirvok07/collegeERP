@@ -7,6 +7,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../academic/domain/academic.dart' show isoDate, shortDate;
 import '../../delivery/domain/class_session.dart';
 import '../data/timetable_api.dart';
@@ -235,7 +236,7 @@ class _TimetableView extends StatelessWidget {
                               ),
                             ),
                             for (final s in day.value)
-                              ListTile(
+                              AppListTile(
                                 title: Text('${s.timeLabel} · ${s.courseCode} · ${s.sectionLabel}'),
                                 subtitle: Text([s.whereLabel, s.teacherName ?? 'No teacher'].join(' · ')),
                                 trailing: canManage && s.allowedActions.contains('cancel')
@@ -273,7 +274,7 @@ class _TimetableView extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 88),
                               children: [
                                 for (final h in state.holidays)
-                                  ListTile(
+                                  AppListTile(
                                     leading: const Icon(Icons.event_busy_rounded),
                                     title: Text(h.label),
                                     subtitle: Text(dayLabel(h.onDate, today)),

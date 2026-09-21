@@ -6,6 +6,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../timetable/data/timetable_api.dart';
 import '../../timetable/presentation/offering_timetable.dart';
 import '../data/offerings_api.dart';
@@ -297,7 +298,7 @@ class _OfferingView extends StatelessWidget {
                           child: Text(o.activationBlocker!, style: theme.textTheme.bodySmall),
                         ),
                     ],
-                    const Divider(height: AppSpacing.xl),
+                    const SizedBox(height: AppGeometry.gapGroup),
                     Row(
                       children: [
                         Expanded(child: Text('Teachers', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
@@ -312,8 +313,8 @@ class _OfferingView extends StatelessWidget {
                     if (o.instructors.isEmpty)
                       Text('No teacher yet', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     for (final i in o.instructors)
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
+                      AppListTile(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         title: Text(i.fullName),
                         subtitle: Text(Instructor.roleLabel(i.role)),
                         trailing: canAssign && o.changeable
@@ -325,7 +326,7 @@ class _OfferingView extends StatelessWidget {
                             : null,
                       ),
                     if (timetable != null) ...[
-                      const Divider(height: AppSpacing.xl),
+                      const SizedBox(height: AppGeometry.gapGroup),
                       OfferingTimetable(
                         offeringId: o.id,
                         repository: timetable!,
@@ -333,7 +334,7 @@ class _OfferingView extends StatelessWidget {
                         changeable: o.changeable,
                       ),
                     ],
-                    const Divider(height: AppSpacing.xl),
+                    const SizedBox(height: AppGeometry.gapGroup),
                     Text(
                       'Students (${state.roster.length})',
                       style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -357,8 +358,8 @@ class _OfferingView extends StatelessWidget {
                     if (state.roster.isEmpty)
                       Text('Nobody enrolled yet', style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     for (final r in state.roster)
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
+                      AppListTile(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         title: Text(r.fullName),
                         subtitle: Text(r.enrolmentNumber),
                         trailing: canEnrol && o.changeable

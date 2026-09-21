@@ -5,6 +5,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../fees/domain/fees.dart';
 import '../data/my_attendance.dart';
 import 'my_fees_cubit.dart';
@@ -75,8 +76,8 @@ class _MyFeesView extends StatelessWidget {
                     if ((state.fees?.invoices ?? const []).isEmpty)
                       const Padding(padding: EdgeInsets.all(AppSpacing.base), child: Text('No invoices yet.')),
                     for (final i in state.fees?.invoices ?? const <FeeInvoice>[])
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
+                      AppListTile(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         leading: Icon(i.isDue ? Icons.schedule_rounded : Icons.check_circle_outline, color: i.isDue ? AppColors.warning : AppColors.success),
                         title: Text(i.label),
                         subtitle: Text('${i.reason ?? 'Due ${i.dueDate}'} · ${i.status}'),
@@ -87,8 +88,8 @@ class _MyFeesView extends StatelessWidget {
                     if ((state.fees?.payments ?? const []).isEmpty)
                       const Padding(padding: EdgeInsets.all(AppSpacing.base), child: Text('No payments yet.')),
                     for (final p in state.fees?.payments ?? const <FeePayment>[])
-                      ListTile(
-                        contentPadding: EdgeInsets.zero,
+                      AppListTile(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         leading: Icon(p.isReversal ? Icons.undo_rounded : Icons.payments_outlined, color: p.isReversal ? AppColors.error : null),
                         title: Text('${p.isReversal ? 'Reversal · ' : ''}${FeePayment.methodLabel(p.method)}'),
                         subtitle: Text(p.reference ?? p.reason ?? ''),

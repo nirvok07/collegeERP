@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/timetable_api.dart';
 import '../domain/timetable.dart';
 import 'timetable_cubits.dart';
@@ -165,8 +166,8 @@ class _OfferingTimetableView extends StatelessWidget {
                 style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             for (final slot in state.slots)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
+              AppListTile(
+                margin: const EdgeInsets.symmetric(vertical: 6),
                 leading: const Icon(Icons.event_repeat_rounded),
                 title: Text(slot.label),
                 trailing: canManage

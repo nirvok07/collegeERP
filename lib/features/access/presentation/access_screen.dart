@@ -7,6 +7,7 @@ import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../organisation/domain/org_unit.dart';
 import '../data/access_api.dart';
 
@@ -226,7 +227,7 @@ class _AccessView extends StatelessWidget {
                         icon: Icons.key_off_rounded,
                       ),
                     for (final g in state.grants)
-                      ListTile(
+                      AppListTile(
                         leading: const Icon(Icons.verified_user_rounded),
                         title: Text(g.roleName),
                         subtitle: Text([

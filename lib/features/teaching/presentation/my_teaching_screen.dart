@@ -6,6 +6,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../domain/teaching_offering.dart';
 import '../domain/teaching_repository.dart';
 import 'my_teaching_cubit.dart';
@@ -123,7 +124,7 @@ class _TeachingList extends StatelessWidget {
             _CohortCard(cohort: state.cohorts[i], index: i),
           if (state.past.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.base),
-            ListTile(
+            AppListTile(
               title: Text('Past teaching (${state.past.length})'),
               trailing: Icon(
                 state.showPast ? Icons.expand_less_rounded : Icons.expand_more_rounded,
@@ -199,7 +200,7 @@ class _OfferingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return ListTile(
+    return AppListTile(
       title: Row(
         children: [
           Expanded(

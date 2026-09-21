@@ -7,6 +7,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../sections/domain/section.dart';
 import '../../timetable/data/timetable_api.dart';
 import '../data/offerings_api.dart';
@@ -131,8 +132,8 @@ class _SectionOfferingsView extends StatelessWidget {
                 ),
               ),
             for (final o in state.offerings)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
+              AppListTile(
+                margin: const EdgeInsets.symmetric(vertical: 6),
                 title: Text('${o.title}${o.component == 'lecture' ? '' : ' (${Offering.componentLabel(o.component)})'}'),
                 subtitle: Text(o.instructors.isEmpty ? 'No teacher yet' : o.instructors.map((i) => i.fullName).join(', ')),
                 trailing: StatusChip(label: Offering.statusLabel(o.status), tone: offeringTone(o.status)),

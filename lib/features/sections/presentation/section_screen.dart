@@ -6,6 +6,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../offerings/data/offerings_api.dart';
 import '../../offerings/presentation/section_offerings.dart';
 import '../data/sections_api.dart';
@@ -240,9 +241,9 @@ class _SectionView extends StatelessWidget {
                         padding: const EdgeInsets.only(top: AppSpacing.sm),
                         child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
                       ),
-                    const Divider(height: AppSpacing.xl),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
+                    const SizedBox(height: AppGeometry.gapGroup),
+                    AppListTile(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
                       leading: const Icon(Icons.event_seat_rounded),
                       title: const Text('Capacity'),
                       subtitle: Text(section.capacity == null ? 'No limit' : '${section.capacity} seats'),
@@ -268,11 +269,11 @@ class _SectionView extends StatelessWidget {
                       ),
                     ],
                     if (offerings != null) ...[
-                      const Divider(height: AppSpacing.xl),
+                      const SizedBox(height: AppGeometry.gapGroup),
                       SectionOfferings(section: section, repository: offerings!, authority: authority),
                     ],
                     if (canSeeMembers) ...[
-                      const Divider(height: AppSpacing.xl),
+                      const SizedBox(height: AppGeometry.gapGroup),
                       Text(
                         '${state.members.length} ${state.members.length == 1 ? 'student' : 'students'}'
                         '${section.capacity == null ? '' : ' of ${section.capacity}'}',
@@ -289,8 +290,8 @@ class _SectionView extends StatelessWidget {
                           ),
                         ),
                       for (final m in state.members)
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
+                        AppListTile(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
                           title: Text(m.fullName),
                           subtitle: Text(m.enrolmentNumber),
                           trailing: canPlace

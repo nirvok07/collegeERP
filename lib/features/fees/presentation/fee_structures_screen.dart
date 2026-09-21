@@ -7,6 +7,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../academic/data/academic_api.dart';
 import '../data/fees_api.dart';
 import 'fee_structure_detail_screen.dart';
@@ -110,7 +111,7 @@ class _FeeStructuresView extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 88),
                   children: [
                     for (final s in state.structures)
-                      ListTile(
+                      AppListTile(
                         leading: Icon(
                           s.isPublished ? Icons.check_circle_outline : Icons.edit_note_rounded,
                           color: s.isPublished ? AppColors.success : AppColors.warning,

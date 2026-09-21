@@ -6,6 +6,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/rooms_api.dart';
 import '../domain/room.dart';
 import 'rooms_cubit.dart';
@@ -175,7 +176,7 @@ class _RoomsView extends StatelessWidget {
                               ),
                             ),
                             for (final room in entry.value)
-                              ListTile(
+                              AppListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: theme.colorScheme.secondaryContainer,
                                   child: Icon(

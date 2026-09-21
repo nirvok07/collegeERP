@@ -8,6 +8,7 @@ import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/curriculum_api.dart';
 import '../domain/curriculum.dart';
 import 'curriculum_cubits.dart';
@@ -189,7 +190,7 @@ class _RegulationsTab extends StatelessWidget {
                 ),
               ),
             for (final v in state.versions)
-              ListTile(
+              AppListTile(
                 title: Text(v.label),
                 subtitle: Text('${v.courseCount} courses · ${creditsLabel(v.totalCredits)} · ${v.totalTerms} terms'),
                 trailing: StatusChip(label: v.statusLabel, tone: versionTone(v.status)),
@@ -288,7 +289,7 @@ class _CoursesTabState extends State<_CoursesTab> {
               ),
             ),
           for (final c in shown)
-            ListTile(
+            AppListTile(
               title: Text('${c.code} · ${c.title}'),
               subtitle: Text(c.usedInVersions == 0
                   ? 'Not in any curriculum yet'

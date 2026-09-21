@@ -9,6 +9,7 @@ import '../../../core/session/college_brand.dart';
 import '../../../core/widgets/college_logo.dart';
 import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/my_attendance.dart';
 
 /// ST-1: a student's home. Their attendance first, because it is what they
@@ -93,27 +94,23 @@ class _StudentHomeView extends StatelessWidget {
                     _Overall(tally: state.attendance!.overall),
                     const SizedBox(height: AppSpacing.md),
                     // CAL-1: the college's holidays, read-only for a student.
-                    Card(
+                    AppListTile(
                       margin: EdgeInsets.zero,
-                      child: ListTile(
-                        leading: const Icon(Icons.calendar_month_rounded, color: AppColors.warning),
-                        title: const Text('Academic calendar'),
-                        subtitle: const Text('Holidays and terms'),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => Navigator.of(context).pushNamed(Routes.calendar),
-                      ),
+                      leading: const Icon(Icons.calendar_month_rounded, color: AppColors.warning),
+                      title: const Text('Academic calendar'),
+                      subtitle: const Text('Holidays and terms'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.of(context).pushNamed(Routes.calendar),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     // M11 (FEE-6): what this student owes, and what they paid.
-                    Card(
+                    AppListTile(
                       margin: EdgeInsets.zero,
-                      child: ListTile(
-                        leading: const Icon(Icons.payments_outlined, color: AppColors.success),
-                        title: const Text('My fees'),
-                        subtitle: const Text('Dues, invoices and payments'),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => Navigator.of(context).pushNamed(Routes.myFees),
-                      ),
+                      leading: const Icon(Icons.payments_outlined, color: AppColors.success),
+                      title: const Text('My fees'),
+                      subtitle: const Text('Dues, invoices and payments'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.of(context).pushNamed(Routes.myFees),
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     Text('By course', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),

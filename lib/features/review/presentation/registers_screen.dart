@@ -7,6 +7,7 @@ import '../../../core/error/failure.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../attendance/domain/attendance_sheet.dart';
 import '../../delivery/domain/class_session.dart';
 import '../data/review_api.dart';
@@ -146,7 +147,7 @@ class _RegistersView extends StatelessWidget {
                           if (state.registers.isEmpty)
                             const EmptyView(title: 'No classes this day', body: 'Choose another day.', icon: Icons.event_available_outlined),
                           for (final r in state.registers)
-                            ListTile(
+                            AppListTile(
                               title: Text('${r.startsAt} · ${r.courseCode} · ${r.sectionLabel}'),
                               subtitle: Text([
                                 r.teacherName ?? 'No teacher',
@@ -255,7 +256,7 @@ class RegisterReviewScreen extends StatelessWidget {
                           child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
                         ),
                       for (final s in r.sheet.students)
-                        ListTile(
+                        AppListTile(
                           title: Text(s.fullName),
                           subtitle: Text(s.enrolmentNumber),
                           trailing: Text(s.mark?.label ?? 'Not marked', style: theme.textTheme.labelLarge),

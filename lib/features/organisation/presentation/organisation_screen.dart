@@ -7,6 +7,7 @@ import '../../../core/error/failure.dart';
 import '../../../core/platform/current_location.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/organisation_api.dart';
 import '../domain/org_unit.dart';
 import 'organisation_cubit.dart';
@@ -128,12 +129,12 @@ class _OrganisationView extends StatelessWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.only(bottom: 88),
                   itemCount: tree!.campuses.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+                  separatorBuilder: (_, _) => const SizedBox.shrink(),
                   itemBuilder: (context, index) {
                     final campus = tree.campuses[index];
                     final departments = tree.departmentsOf(campus.id);
                     final scheme = Theme.of(context).colorScheme;
-                    return ListTile(
+                    return AppListTile(
                       leading: CircleAvatar(
                         backgroundColor: scheme.secondaryContainer,
                         child: Icon(
@@ -416,10 +417,10 @@ class _DepartmentsScreen extends StatelessWidget {
                   : ListView.separated(
                       padding: const EdgeInsets.only(bottom: 88),
                       itemCount: departments.length,
-                      separatorBuilder: (_, _) => const Divider(height: 1, indent: AppSpacing.base),
+                      separatorBuilder: (_, _) => const SizedBox.shrink(),
                       itemBuilder: (context, index) {
                         final department = departments[index];
-                        return ListTile(
+                        return AppListTile(
                           title: Text(department.name),
                           subtitle: Text(department.code),
                           trailing: canManage

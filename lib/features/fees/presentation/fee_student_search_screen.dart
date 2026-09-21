@@ -8,6 +8,7 @@ import '../../../core/di/locator.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
 import 'student_fee_screen.dart';
+import '../../../core/widgets/app_list_tile.dart';
 
 /// A Cashier or Accountant's own way to find a student, having no
 /// `student.read` (server-scoped to `fee.read`).
@@ -92,7 +93,7 @@ class _FeeStudentSearchScreenState extends State<FeeStudentSearchScreen> {
                   : ListView(
                       children: [
                         for (final s in _results)
-                          ListTile(
+                          AppListTile(
                             leading: const Icon(Icons.person_outline_rounded),
                             title: Text(s.fullName),
                             subtitle: Text('${s.enrolmentNumber} · ${s.programName}'),

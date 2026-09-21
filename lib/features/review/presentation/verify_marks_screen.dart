@@ -6,6 +6,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/error/failure.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../../assessment/domain/assessment.dart';
 import '../data/review_api.dart';
 
@@ -130,7 +131,7 @@ class VerifyMarksScreen extends StatelessWidget {
                             : ListView(
                                 children: [
                                   for (final c in state.sheets)
-                                    ListTile(
+                                    AppListTile(
                                       title: Text('${c.courseCode} · ${c.sectionLabel} · ${c.name}'),
                                       subtitle: Text('${c.markCount} marks, ${c.outOf}${c.heldOn == null ? '' : ' · held ${c.heldOn}'}'),
                                       trailing: const Icon(Icons.chevron_right_rounded),
@@ -270,7 +271,7 @@ class SheetReviewScreen extends StatelessWidget {
                           child: Text(state.failure!.message, style: TextStyle(color: theme.colorScheme.error)),
                         ),
                       for (final st in s.sheet.students)
-                        ListTile(
+                        AppListTile(
                           title: Text(st.fullName),
                           subtitle: Text(st.enrolmentNumber),
                           trailing: Text(

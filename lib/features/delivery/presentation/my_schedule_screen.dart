@@ -8,6 +8,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../domain/class_session.dart';
 import '../domain/delivery_repository.dart';
 import 'my_schedule_cubit.dart';
@@ -229,7 +230,7 @@ class _SessionRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final state = session.stateLabel(cubit.today);
 
-    return ListTile(
+    return AppListTile(
       // The time first, because a teacher scans a day by the clock.
       leading: SizedBox(
         width: 48,

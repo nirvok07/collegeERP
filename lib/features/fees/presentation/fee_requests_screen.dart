@@ -5,6 +5,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/submit_dialog.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
 import 'fee_requests_cubit.dart';
@@ -103,7 +104,7 @@ class _RequestsView extends StatelessWidget {
                 child: ListView(
                   children: [
                     for (final r in state.requests)
-                      ListTile(
+                      AppListTile(
                         leading: Icon(
                           switch (r.status) {
                             'approved' => Icons.check_circle_outline,

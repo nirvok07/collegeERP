@@ -8,6 +8,7 @@ import '../core/session/authority.dart';
 import '../core/session/college_brand.dart';
 import '../core/session/session_manager.dart';
 import '../core/session/session_store.dart';
+import '../core/widgets/app_list_tile.dart';
 import '../core/widgets/college_logo.dart';
 import '../core/widgets/saved_freshness.dart';
 import '../core/widgets/screen_state.dart';
@@ -168,11 +169,8 @@ class _Profile extends StatelessWidget {
                 ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            side: BorderSide(color: scheme.outlineVariant),
-          ),
+        AppListTile(
+          margin: EdgeInsets.zero,
           leading: Icon(Icons.logout_rounded, color: scheme.error),
           title: Text('Sign out', style: TextStyle(color: scheme.error)),
           onTap: () => signOutFromDevice(context),

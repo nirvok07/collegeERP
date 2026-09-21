@@ -6,6 +6,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
+import '../../../core/widgets/app_list_tile.dart';
 import '../domain/assessment.dart';
 import '../domain/assessment_repository.dart';
 import 'assessment_cubits.dart';
@@ -64,10 +65,10 @@ class _CourseAssessmentsView extends StatelessWidget {
               onRefresh: () => cubit.load(refresh: true),
               child: ListView.separated(
                 itemCount: state.components.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const SizedBox.shrink(),
                 itemBuilder: (context, index) {
                   final c = state.components[index];
-                  return ListTile(
+                  return AppListTile(
                     title: Text(c.name),
                     subtitle: Text(
                       '${c.outOf} · ${formatMarks(c.weight)}%'

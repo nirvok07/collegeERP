@@ -8,6 +8,7 @@ import '../../core/error/result.dart';
 import '../../core/widgets/screen_state.dart';
 import '../../core/widgets/status_chip.dart';
 import '../../core/widgets/submit_dialog.dart';
+import '../../core/widgets/app_list_tile.dart';
 import '../admin_locator.dart';
 import '../platform_authority.dart';
 import 'platform_api.dart';
@@ -154,7 +155,7 @@ class PlatformAccountsScreen extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 88),
                     children: [
                       for (final a in state.accounts)
-                        ListTile(
+                        AppListTile(
                           title: Text(a.isYou ? '${a.fullName} (you)' : a.fullName),
                           subtitle: Text('${a.email} · ${PlatformAccount.roleLabel(a.role)}${a.mfaEnrolled ? '' : ' · authenticator not set up'}'),
                           trailing: StatusChip(label: PlatformAccount.statusLabel(a.status), tone: _tone(a.status)),
