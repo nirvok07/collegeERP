@@ -37,6 +37,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
+- New design container language (ND, `docs/new-design/`): ✅ spec docs 2026-09-21 (context, requirements, design, architecture, flow, decisions, plan, checklist); implementation ❌ — next slice ND-S1 tokens
 
 ### CURRENT SLICE
 Owner feedback, 2026-09-14 (`feedbackchanges.md`):

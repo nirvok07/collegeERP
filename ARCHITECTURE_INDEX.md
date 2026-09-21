@@ -127,3 +127,5 @@ shows its shape.
 | AD-81 | Every module on the phone too (supersedes AD-32); back-office writes online only | Active; complete: college app ADM-1…11, Super Admin app SAM-2b, SAM-3 |
 | AD-82 | Sign-in by one-time code to email or mobile, for everyone; no passwords (supersedes AD-62, AD-80, AD-69's code) | Approved 2026-09-14; OTP-1…5 to build; fixed code 123456 until go-live (risk accepted by owner) |
 | AD-83 | Staff attendance: geo-fenced punch in/out per campus, online only, coordinates checked then discarded; corrections are approved requests; reminders local | Approved 2026-09-15; SA-A1…A5 to build |
+
+- `docs/new-design/` — container and ratio language derived from `assets/new_design.jpeg` (extends `docs/07-design-system.md`); slices ND-S1…ND-S7
