@@ -7,6 +7,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/session/authority.dart';
 import '../../../core/session/college_brand.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/college_logo.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/pending_writes_bar.dart';
@@ -1098,12 +1099,12 @@ class _ModuleGrid extends StatelessWidget {
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: AppSpacing.sm,
-            crossAxisSpacing: AppSpacing.sm,
+            mainAxisSpacing: AppGeometry.gapIntra,
+            crossAxisSpacing: AppGeometry.gapIntra,
             childAspectRatio: 1.55,
             children: [
               for (final t in tiles)
-                _Panel(
+                AppCard(
                   onTap: () => open(t.route, t.refresh, t.args),
                   padding: const EdgeInsets.all(AppSpacing.md),
                   child: Column(
