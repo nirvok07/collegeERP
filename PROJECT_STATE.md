@@ -763,7 +763,7 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 | OD-ENV-1 | Which database is development's source of truth | — | Development | — | ✅ AD-66 (local), superseded by AD-68: Supabase for dev and app testing |
 | OD-SA-6 | Minimum number of active Owners beyond "never zero" | A single Owner is a single point of failure | Platform administration | Keep "never zero"; require two | Open, blocks nothing |
 | OD-SA-2 | Retention and export for a closed college | Data protection duty | Export, retention | Fixed period; per contract | Open; close shipped without export or deletion |
-| OD-1 | Examinations model | Blocks M10 | M10 | See MASTER-CHECKLIST | Open |
+| OD-1 | Examinations model | Blocks M10 | M10 | See docs/MASTER-CHECKLIST.md | Open |
 | OD-MOB-1 | Should every module be on mobile too (R63)? | — | Mobile scope | — | ✅ Resolved as AD-81: every module, one slice at a time |
 | OD-MOB-2 | "Create classes" (R62): a cohort section, or timetable sessions? | — | M3/M4 on mobile | — | ✅ Both, under AD-81: sections are ADM-6 (built); timetable slots and sessions are ADM-8 |
 | OD-BIO-1 | A phone with no screen lock: let through (built) or refuse? Lock-screen sign-out keeps unsent changes dormant (built) or deletes them? | Security vs. being locked out of work | BIO-1 | As built; or stricter | Open, owner to confirm |
@@ -891,7 +891,7 @@ OD-1 (examinations model), OD-4, Drift 6 resolution (recoverable push token), ap
 - After reconnecting, the outbox honours its backoff (up to 10 minutes) until the teacher taps
   "Send now", because the app has no connectivity listener. Observed on device; by design today.
 - Firebase console test sends need the owner's console access; not yet done.
-- `IMPLEMENTATION-CHECKPOINT.md` calls S2 "Super Admin console — COMPLETE". It covers sign-in and
+- `docs/IMPLEMENTATION-CHECKPOINT.md` calls S2 "Super Admin console — COMPLETE". It covers sign-in and
   provisioning only; tenant lifecycle, audit view, platform roles and impersonation are missing.
 - The seat limit is stored and never enforced (SA-4).
 - College status is cached up to 15 s per server process; another process lags by at most that.

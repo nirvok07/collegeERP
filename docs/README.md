@@ -61,3 +61,20 @@ These were chosen so planning could proceed. Each is isolated in
    `data/remote` layer.
 2. The local store is **Drift** over SQLite.
 3. Release one ships Core, Academics and Communication. Fees and payments land in release two.
+
+## Working protocol and running notes
+
+Moved here from the repository root (2026-09-21) so only the trackers named in `CLAUDE.md`
+(`PROJECT_STATE.md`, `ARCHITECTURE_INDEX.md`, `MODULE_REGISTRY.md`, `requirements.md` inbox)
+stay at the root.
+
+| File | What it is |
+|---|---|
+| [MASTER-CHECKLIST.md](MASTER-CHECKLIST.md) | Planning checklist above the methodology prompts; drift and blocker register (Drift 1–6, OD-*) |
+| [MODULE-CONTROLLER.md](MODULE-CONTROLLER.md) | Module execution protocol, quality gates, Module Contract, Boundary Audit |
+| [IMPLEMENTATION-CHECKPOINT.md](IMPLEMENTATION-CHECKPOINT.md) | Long-form slice history |
+| [NEW-SESSION-CONTEXT.md](NEW-SESSION-CONTEXT.md) | Protocol for entering an existing session |
+| [INTERRUPT-RECOVERY.md](INTERRUPT-RECOVERY.md) | Protocol for resuming after an interrupted run |
+| [SERVER-RUNBOOK.md](SERVER-RUNBOOK.md) | Start/restart the dev server with a phone over USB |
+| [new-design/](new-design/README.md) | Container and ratio language from `assets/new_design.jpeg` |
+| [DESIGN_MOTION_SETUP_COMPLETE.md](DESIGN_MOTION_SETUP_COMPLETE.md), [DESIGN_ENHANCEMENTS.md](DESIGN_ENHANCEMENTS.md) | Motion and design enhancement notes |

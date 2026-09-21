@@ -9,7 +9,7 @@ Next:     S3 M1 write surface (invite, assign role, revoke)
 Drift:    3 open (see section 7)
 ```
 
-The control system above `prompt1.md`, `prompt2.md` and `module-controller.md`. It does not
+The control system above `prompt1.md`, `prompt2.md` and `docs/MODULE-CONTROLLER.md`. It does not
 replace them and does not repeat their methodology. It verifies that they were actually run,
 in the right order, on every part of the system, and that the seams between modules hold.
 
@@ -19,7 +19,7 @@ in the right order, on every part of the system, and that the seams between modu
 |---|---|---|
 | `prompt1.md` | System-level architecture methodology, Phases 1 to 13 | Verify each phase produced its artifact and passed validation |
 | `prompt2.md` | Per-module design methodology, 24 sections | Verify every planned module ran it fully |
-| `module-controller.md` | Module execution, quality gates, Module Contract, Registry, drift control | Verify every module has a contract, passed Boundary Audit, and is registered |
+| `docs/MODULE-CONTROLLER.md` | Module execution, quality gates, Module Contract, Registry, drift control | Verify every module has a contract, passed Boundary Audit, and is registered |
 | `docs/blueprint/adr.md` | Architecture Decision Log | Verify every decision here is recorded there, not in prose |
 | `docs/requirements.md` | Requirements register | Verify every checklist item traces to a requirement or a decision |
 
@@ -39,7 +39,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 
 | # | Item | Why it matters | Depends | Output | Validation | Status |
 |---|---|---|---|---|---|---|
-| 0.1 | Methodology files fixed and versioned | Three prompts drive every downstream artifact. If they drift, everything built from them drifts | — | `prompt1.md`, `prompt2.md`, `module-controller.md` | Files exist, are referenced not re-pasted | ✅ |
+| 0.1 | Methodology files fixed and versioned | Three prompts drive every downstream artifact. If they drift, everything built from them drifts | — | `prompt1.md`, `prompt2.md`, `docs/MODULE-CONTROLLER.md` | Files exist, are referenced not re-pasted | ✅ |
 | 0.2 | Requirements register live, inbox cleared each task | Requirements arrive informally and get lost. Unprocessed requirements build the wrong system | — | `docs/requirements.md` | Every requirement has an ID, status and a document it drives | ✅ |
 | 0.3 | Architecture Decision Log live | A decision not written down is re-litigated every month and silently reversed | — | `docs/blueprint/adr.md` | Each entry has reason, alternatives, impact | ✅ |
 | 0.4 | Canonical glossary | "Course" and "Subject" used interchangeably becomes two tables and two screens | — | Glossary document | Every domain noun has one agreed term, and the term is used in code, UI and docs | ⬜ |
@@ -87,7 +87,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 | 4.1 | Domains converted to modules with justified boundaries | Modules are what gets built, released and owned. Wrong boundaries are the most expensive mistake available | P3 | Blueprint 3 §3.1 | Every module states why it deserves to exist separately | ✅ |
 | 4.2 | Merges and splits argued, not assumed | Splitting examinations from results gives two owners of one number | 4.1 | Blueprint 3 §3.2 | Each merge and split has a stated reason | ✅ |
 | 4.3 | Module sequencing by dependency and risk | Building features before the foundation means retrofitting, which is where projects die | 4.1 | Blueprint 3, roadmap | No module scheduled before its dependencies | ✅ |
-| 4.4 | Module Registry initialized | Cross-module reasoning needs a compact index, not a re-read of every spec | 4.1 | Registry per `module-controller.md` | Every planned module has a row, even unstarted ones | ⬜ **gap: registry file does not exist yet** |
+| 4.4 | Module Registry initialized | Cross-module reasoning needs a compact index, not a re-read of every spec | 4.1 | Registry per `docs/MODULE-CONTROLLER.md` | Every planned module has a row, even unstarted ones | ⬜ **gap: registry file does not exist yet** |
 
 ## PHASE 5 — Cross-Module Architecture
 
@@ -242,13 +242,13 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 
 ## PHASE 18 — Module-by-Module Execution
 
-Driven by `module-controller.md`. This checklist verifies, it does not duplicate.
+Driven by `docs/MODULE-CONTROLLER.md`. This checklist verifies, it does not duplicate.
 
 | # | Item | Why | Depends | Output | Validation | Status |
 |---|---|---|---|---|---|---|
 | 18.1 | Every planned module processed through `prompt2.md` | A module skipped here is a module designed ad hoc during implementation | P4 | Per-module spec | 24 sections each, none marked complete on a mention | 🟡 **1 of 24** |
 | 18.2 | Every module has a Module Contract | The contract is what future modules reason against | 18.1 | Contract per module | Derived from the actual design, not written by hand | ⬜ **gap: M1 spec approved-pending, contract not yet derived** |
-| 18.3 | Every module passed Boundary Audit | Boundary violations found after implementation are rewrites | 18.2 | Audit result | Twelve checks per `module-controller.md` | ⬜ |
+| 18.3 | Every module passed Boundary Audit | Boundary violations found after implementation are rewrites | 18.2 | Audit result | Twelve checks per `docs/MODULE-CONTROLLER.md` | ⬜ |
 | 18.4 | Every module in the Module Registry | Without it, each new module re-reads everything | 18.2 | Registry | One row per module, kept current | ⬜ |
 | 18.5 | Dependencies and ownership recorded per module | Undocumented dependencies are discovered at integration | 18.2 | Registry fields | Consistent with Phase 5 and 6 | 🟡 |
 | 18.6 | Approved modules protected from silent change | Silent redesign of an approved module invalidates everything built on it | 18.2 | Change protocol | Any change raises ARCHITECTURE CHANGE REQUIRED | ✅ protocol defined |
@@ -311,7 +311,7 @@ P1 Discovery ──▶ P2 Actors ──▶ P3 Domains ──▶ P4 Modules ─�
               P15 Integrations ── P16 NFR ── P17 Technical readiness
                                │
                                ▼
-                      P18 Module execution  ◀── module-controller.md
+                      P18 Module execution  ◀── docs/MODULE-CONTROLLER.md
                                │
                                ▼
                       P19 Consistency review

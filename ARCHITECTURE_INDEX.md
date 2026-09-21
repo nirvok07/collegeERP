@@ -14,8 +14,8 @@ Pointers, not content. Read the linked file for the decision itself.
 | Offline model | `docs/03-offline-first.md` |
 | Security rules | `docs/08-security.md` |
 | Mobile platform, Firebase, device evidence | `docs/12-mobile-platform-config.md` |
-| Drift and blocker register | `MASTER-CHECKLIST.md` (Drift 1–6, OD-*) |
-| Long-form slice history | `IMPLEMENTATION-CHECKPOINT.md` |
+| Drift and blocker register | `docs/MASTER-CHECKLIST.md` (Drift 1–6, OD-*) |
+| Long-form slice history | `docs/IMPLEMENTATION-CHECKPOINT.md` |
 
 ## Stack (locked)
 
