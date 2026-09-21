@@ -44,6 +44,17 @@ AppRowCard(
 - Trailing: optional chevron, chip, or link
 - Touch target: full height, no sub-regions
 
+## List rows on a screen: AppListTile
+
+A drop-in for `ListTile` (same params) that renders the row as one card, with
+the page margin at the sides and 12dp between rows. Use it for rows directly on
+a screen; keep a plain `ListTile` inside dialogs and sheets. A list that
+already pads itself passes `margin: EdgeInsets.symmetric(vertical: 6)`.
+
+A dense roster (attendance, marks: dozens of rows, a control on each) is the
+one exception to "one row, one card": it is a single `AppCard(padding: zero)`
+around a divided list, so a full class scans fast.
+
 ## Card Group (Spaced Rows)
 
 Group multiple cards with automatic 12dp spacing:

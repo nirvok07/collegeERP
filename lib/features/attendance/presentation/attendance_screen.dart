@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/design/tokens.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../domain/attendance_repository.dart';
@@ -228,20 +229,29 @@ class _RegisterState extends State<_Register> {
                     ),
                   ),
                 )
-              : ListView.separated(
-                  // A builder, so a roster of two hundred costs the same as one
-                  // of twenty.
-                  itemCount: students.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final student = students[index];
-                    return _StudentRow(
-                      student: student,
-                      mark: draft.markFor(student.studentId),
-                      enabled: sheet.canMark && !widget.state.busy,
-                      onMark: (mark) => widget.cubit.mark(student.studentId, mark),
-                    );
-                  },
+              // ND: a dense roster is one card, not sixty; the rows keep their
+              // dividers so a teacher marking a full class scans them fast.
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppGeometry.pageMargin, 0, AppGeometry.pageMargin, AppGeometry.pageMargin),
+                  child: AppCard(
+                    padding: EdgeInsets.zero,
+                    child: ListView.separated(
+                      // A builder, so a roster of two hundred costs the same as one
+                      // of twenty.
+                      itemCount: students.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final student = students[index];
+                        return _StudentRow(
+                          student: student,
+                          mark: draft.markFor(student.studentId),
+                          enabled: sheet.canMark && !widget.state.busy,
+                          onMark: (mark) => widget.cubit.mark(student.studentId, mark),
+                        );
+                      },
+                    ),
+                  ),
                 ),
         ),
       ],
@@ -260,10 +270,10 @@ class _Header extends StatelessWidget {
     final session = draft.sheet.session;
     final counts = draft.counts;
 
-    return Container(
-      width: double.infinity,
-      color: scheme.surfaceContainerHighest,
-      padding: const EdgeInsets.all(AppSpacing.base),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppGeometry.pageMargin, AppGeometry.gapIntra, AppGeometry.pageMargin, AppGeometry.gapIntra),
+      child: AppCard(
+      padding: const EdgeInsets.all(AppGeometry.cardPadX),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -284,6 +294,7 @@ class _Header extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
+      ),
       ),
     );
   }

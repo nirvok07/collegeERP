@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/design/tokens.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../domain/assessment.dart';
@@ -159,24 +160,26 @@ class _SheetState extends State<_Sheet> {
 
     return Column(
       children: [
-        Container(
-          width: double.infinity,
-          color: scheme.surfaceContainerHighest,
-          padding: const EdgeInsets.all(AppSpacing.base),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${c.courseCode} · ${c.courseTitle}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                '${c.sectionLabel} · ${c.outOf}${c.heldOn == null ? '' : ' · held ${c.heldOn}'}',
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: scheme.onSurfaceVariant),
-              ),
-            ],
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppGeometry.pageMargin, AppGeometry.gapIntra, AppGeometry.pageMargin, AppGeometry.gapIntra),
+          child: AppCard(
+            padding: const EdgeInsets.all(AppGeometry.cardPadX),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${c.courseCode} · ${c.courseTitle}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  '${c.sectionLabel} · ${c.outOf}${c.heldOn == null ? '' : ' · held ${c.heldOn}'}',
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
           ),
         ),
         if (widget.state.failure != null)
@@ -205,21 +208,29 @@ class _SheetState extends State<_Sheet> {
           )
         else
           Expanded(
-            child: ListView.separated(
-              // A builder, so two hundred rows cost what twenty do.
-              itemCount: sheet.students.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final student = sheet.students[index];
-                return _StudentRow(
-                  student: student,
-                  draft: draft,
-                  controller: _controllerFor(draft, student.studentId),
-                  enabled: sheet.canMark && c.isOpen && !widget.state.busy,
-                  onScore: (text) => widget.cubit.setScore(student.studentId, text),
-                  onStatus: (status) => widget.cubit.setStatus(student.studentId, status),
-                );
-              },
+            // ND: a dense roster is one card, its rows divided, so a full class scans fast.
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppGeometry.pageMargin, 0, AppGeometry.pageMargin, AppGeometry.pageMargin),
+              child: AppCard(
+                padding: EdgeInsets.zero,
+                child: ListView.separated(
+                  // A builder, so two hundred rows cost what twenty do.
+                  itemCount: sheet.students.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final student = sheet.students[index];
+                    return _StudentRow(
+                      student: student,
+                      draft: draft,
+                      controller: _controllerFor(draft, student.studentId),
+                      enabled: sheet.canMark && c.isOpen && !widget.state.busy,
+                      onScore: (text) => widget.cubit.setScore(student.studentId, text),
+                      onStatus: (status) => widget.cubit.setStatus(student.studentId, status),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
       ],

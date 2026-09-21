@@ -269,7 +269,6 @@ class _DashboardSkeleton extends StatelessWidget {
                     const _SectionTitleSkeleton(),
                     _Panel(
                       color: Color.alphaBlend(scheme.primary.withValues(alpha: 0.08), scheme.surface),
-                      bordered: false,
                       child: const Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -1352,7 +1351,6 @@ class _TodayClasses extends StatelessWidget {
     if (focus == null) {
       return _Panel(
         color: scheme.surfaceContainerLow,
-        bordered: false,
         child: Row(
           children: [
             Icon(Icons.event_available_rounded, color: scheme.onSurfaceVariant),
@@ -1688,14 +1686,13 @@ class _CardTitle extends StatelessWidget {
   }
 }
 
-/// The dashboard's one surface: white, a hairline border, generous radius.
+/// The dashboard's panels: an [AppCard] with an optional outer margin (ND-S6).
 class _Panel extends StatelessWidget {
   const _Panel({
     required this.child,
-    this.padding = const EdgeInsets.all(AppSpacing.base),
+    this.padding = const EdgeInsets.all(AppGeometry.cardPadX),
     this.margin = EdgeInsets.zero,
     this.color,
-    this.bordered = true,
     this.onTap,
   });
 
@@ -1703,27 +1700,9 @@ class _Panel extends StatelessWidget {
   final EdgeInsets padding;
   final EdgeInsets margin;
   final Color? color;
-  final bool bordered;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.panel),
-      side: bordered ? BorderSide(color: scheme.outlineVariant) : BorderSide.none,
-    );
-    return Padding(
-      padding: margin,
-      child: Material(
-        color: color ?? scheme.surface,
-        shape: shape,
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(padding: padding, child: child),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      Padding(padding: margin, child: AppCard(color: color, padding: padding, onTap: onTap, child: child));
 }

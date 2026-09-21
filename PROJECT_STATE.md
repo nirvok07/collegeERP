@@ -37,7 +37,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
-- New design container language (ND, `docs/new-design/`): ✅ spec, ✅ S1 tokens, ✅ S2 AppCard/AppCardGroup/AppRowCard, ⚠️ S5 admin dashboard redone (neutral ground, original navy header kept per owner, tile pair with subtitles, grouped row cards with counts; rendered and checked in a test screenshot, not on the phone); 🔍 NEEDS VALIDATION on phone; teacher dashboard modules now the same row-card groups (no tile grid anywhere), its day/week/course panels still old; next ND-S6
+- New design container language (ND, `docs/new-design/`): ✅ spec, ✅ S1 tokens, ✅ S2 containers, ✅ S5 admin dashboard, ✅ S6 mobile rollout in code: light theme ground is neutral-50, every screen's `ListTile` rows are card rows (`AppListTile`), dashboard panels are `AppCard`, attendance/marks rosters are one card. ✅ analyze clean, ✅ 313 tests (twice), ✅ dashboards and rooms checked in test screenshots; 🔍 NEEDS VALIDATION on the phone for every screen; ⏸️ ND-S4 `AppSheet` (sheets/dialogs keep the old shell) and ND-S7 web parity not built; the outbox timing test `a write waits behind an earlier one` failed once in a full run and passed on rerun (not from ND, flaky)
 
 ### CURRENT SLICE
 Owner feedback, 2026-09-14 (`feedbackchanges.md`):
