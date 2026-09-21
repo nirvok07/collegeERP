@@ -6,10 +6,13 @@ import '../design/tokens.dart';
 /// re-types them: [AppGeometry.gapIntra] between cards, [AppGeometry.gapTight]
 /// under the title. Stack groups with [AppGeometry.gapGroup] between them.
 class AppCardGroup extends StatelessWidget {
-  const AppCardGroup({super.key, required this.children, this.title});
+  const AppCardGroup({super.key, required this.children, this.title, this.count});
 
   final List<Widget> children;
   final String? title;
+
+  /// How many cards, shown quietly beside the title.
+  final int? count;
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +25,20 @@ class AppCardGroup extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(AppSpacing.xs, 0, AppSpacing.xs, AppGeometry.gapTight),
             child: Semantics(
               header: true,
-              child: Text(
-                title!,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurfaceVariant,
+              child: Text.rich(
+                TextSpan(
+                  text: title!,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  children: [
+                    if (count != null)
+                      TextSpan(
+                        text: '   $count',
+                        style: TextStyle(fontWeight: FontWeight.w500, color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                  ],
                 ),
               ),
             ),

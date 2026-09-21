@@ -37,7 +37,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
-- New design container language (ND, `docs/new-design/`): ✅ spec, ✅ S1 tokens, ✅ S2 AppCard/AppCardGroup/AppRowCard, ⚠️ S5 admin dashboard redone (neutral ground, light header, summary card, tile pair, grouped row cards; rendered and checked in a test screenshot, not on the phone); 🔍 NEEDS VALIDATION on phone; teacher dashboard still old panels; next ND-S6
+- New design container language (ND, `docs/new-design/`): ✅ spec, ✅ S1 tokens, ✅ S2 AppCard/AppCardGroup/AppRowCard, ⚠️ S5 admin dashboard redone (neutral ground, original navy header kept per owner, tile pair with subtitles, grouped row cards with counts; rendered and checked in a test screenshot, not on the phone); 🔍 NEEDS VALIDATION on phone; teacher dashboard still old panels; next ND-S6
 
 ### CURRENT SLICE
 Owner feedback, 2026-09-14 (`feedbackchanges.md`):

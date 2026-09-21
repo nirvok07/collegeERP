@@ -394,44 +394,16 @@ class _DashboardSkeleton extends StatelessWidget {
   }
 }
 
-/// ND-S5: the admin's home while its first read is in flight: the summary
-/// card, the tile pair and a few row cards, at their real sizes.
+/// ND-S5: the admin's home while its first read is in flight: the tile pair
+/// and a few row cards, at their real sizes.
 class _AdminSkeleton extends StatelessWidget {
   const _AdminSkeleton();
-
-  static Widget _stats() => Row(
-        children: [
-          for (var i = 0; i < 3; i++)
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [SkeletonBox(width: 40, height: 26), SizedBox(height: 6), SkeletonBox(width: 60, height: 10)],
-              ),
-            ),
-        ],
-      );
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppCard(
-          padding: const EdgeInsets.all(AppGeometry.cardPadX),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SkeletonBox(width: 96, height: 14),
-              const SizedBox(height: AppGeometry.gapIntra),
-              _stats(),
-              const SizedBox(height: AppGeometry.gapIntra * 2 + 1),
-              const SkeletonBox(width: 110, height: 14),
-              const SizedBox(height: AppGeometry.gapIntra),
-              _stats(),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppGeometry.gapIntra),
         Row(
           children: [
             for (var i = 0; i < 2; i++) ...[
@@ -618,22 +590,18 @@ class _DashboardHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final waiting =
         !skeleton && (admin ? (overview?.pendingInvitations ?? 0) > 0 : summary.needsMarking.isNotEmpty);
-    // ND-S5: the admin's header is the college on the neutral ground; its
-    // numbers live in the first card below (see _AdminModules).
-    final panel = !admin && showDay;
-    final ink = admin ? AppColors.ink : Colors.white;
+    final panel = admin || showDay;
     return SliverAppBar(
       pinned: true,
       expandedHeight: panel ? kToolbarHeight + 232 + (waiting ? 52 : 0) : null,
-      backgroundColor: admin ? AppColors.panel : AppColors.navy,
-      foregroundColor: ink,
+      backgroundColor: AppColors.navy,
+      foregroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
-      scrolledUnderElevation: admin ? 0 : null,
-      systemOverlayStyle: admin ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
       clipBehavior: Clip.antiAlias,
-      shape: admin
-          ? null
-          : const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(28))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+      ),
       titleSpacing: AppSpacing.base,
       title: Row(
         children: [
@@ -646,7 +614,7 @@ class _DashboardHeader extends StatelessWidget {
               college?.name ?? 'College',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.titleMedium?.copyWith(color: ink, fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -680,6 +648,8 @@ class _DashboardHeader extends StatelessWidget {
                         width: MediaQuery.sizeOf(context).width - AppSpacing.base * 2,
                         child: skeleton
                             ? _HeaderPanelSkeleton(admin: admin)
+                            : admin
+                            ? _AdminPanel(overview: overview, onPending: onPeople)
                             : _HeaderPanel(summary: summary, onWaiting: onWaiting),
                       ),
                     ),
@@ -864,6 +834,97 @@ class _HeaderStat extends StatelessWidget {
   }
 }
 
+/// ADM-1: the college at a glance, white on navy, as the teacher's panel is.
+class _AdminPanel extends StatelessWidget {
+  const _AdminPanel({required this.overview, required this.onPending});
+
+  final CollegeOverview? overview;
+  final VoidCallback? onPending;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final o = overview;
+    final pending = o?.pendingInvitations ?? 0;
+    int n(int? v) => v ?? 0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Your college',
+          style: theme.textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            _HeaderStat(value: n(o?.staff), label: 'Staff', dot: AppColors.infoDark),
+            _HeaderStat(value: n(o?.students), label: 'Students', dot: AppColors.success),
+            _HeaderStat(value: n(o?.departments), label: 'Departments', dot: AppColors.warningDark),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(color: AppColors.navyRaised, borderRadius: BorderRadius.circular(AppRadius.card)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.menu_book_rounded, size: 16, color: AppColors.warningDark),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(
+                    'Teaching setup',
+                    style: theme.textTheme.labelLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  _HeaderStat(value: n(o?.programs), label: 'Programs', dot: AppColors.success),
+                  _HeaderStat(value: n(o?.sections), label: 'Sections', dot: AppColors.warningDark),
+                  _HeaderStat(value: n(o?.offerings), label: 'Courses', dot: AppColors.infoDark),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (pending > 0) ...[
+          const SizedBox(height: AppSpacing.md),
+          Material(
+            color: Colors.white.withValues(alpha: 0.08),
+            shape: const StadiumBorder(),
+            child: InkWell(
+              customBorder: const StadiumBorder(),
+              onTap: onPending,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: AppSpacing.sm + 2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.mark_email_unread_rounded, size: 18, color: AppColors.warningDark),
+                    const SizedBox(width: AppSpacing.sm),
+                    Flexible(
+                      child: Text(
+                        pending == 1 ? '1 person has not signed in yet' : '$pending people have not signed in yet',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// ND-S5: the College Admin's home, after `assets/new_design.jpeg`: the college
 /// in one summary card, the two things an admin does most as a tile pair, then
 /// every module as one row per card, grouped by what it is for. Each row is
@@ -883,7 +944,6 @@ class _AdminModules extends StatelessWidget {
     final o = overview;
     final manage = ManageArgs(authority: authority, college: college);
     final onboarding = OnboardingArgs(canAppoint: canAppoint, canAdmit: canAdmit, college: college);
-    final pending = o?.pendingInvitations ?? 0;
 
     _Tile tile(String title, String subtitle, IconData icon, Color color, String route,
             {Object? args, bool refresh = false}) =>
@@ -974,6 +1034,7 @@ class _AdminModules extends StatelessWidget {
 
     Widget group(String title, List<_Tile> tiles) => AppCardGroup(
           title: title,
+          count: tiles.length,
           children: [
             for (final t in tiles)
               AppRowCard(
@@ -997,14 +1058,6 @@ class _AdminModules extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (pending > 0) ...[
-          _PendingBanner(
-            count: pending,
-            onTap: () => open(Routes.people, false, manage),
-          ),
-          const SizedBox(height: AppGeometry.gapIntra),
-        ],
-        _CollegeSummary(overview: o),
         if (canAppoint || canAdmit) ...[
           const SizedBox(height: AppGeometry.gapIntra),
           // Equal-height tiles in a list of unbounded height.
@@ -1016,6 +1069,7 @@ class _AdminModules extends StatelessWidget {
                   Expanded(
                     child: _ActionTile(
                       title: 'Appoint a teacher',
+                      subtitle: 'Invite to a department',
                       icon: Icons.co_present_rounded,
                       onTap: () => open(Routes.appointTeacher, true, onboarding),
                     ),
@@ -1025,6 +1079,7 @@ class _AdminModules extends StatelessWidget {
                   Expanded(
                     child: _ActionTile(
                       title: 'Onboard a student',
+                      subtitle: 'Admit into a program',
                       icon: Icons.school_rounded,
                       onTap: () => open(Routes.admitStudent, true, onboarding),
                     ),
@@ -1056,126 +1111,19 @@ class _Chevron extends StatelessWidget {
       ExcludeSemantics(child: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant));
 }
 
-/// The college at a glance: two rows of three figures on one card.
-class _CollegeSummary extends StatelessWidget {
-  const _CollegeSummary({required this.overview});
-
-  final CollegeOverview? overview;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final o = overview;
-    int n(int? v) => v ?? 0;
-    return AppCard(
-      padding: const EdgeInsets.all(AppGeometry.cardPadX),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Your college', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: AppGeometry.gapIntra),
-          Row(
-            children: [
-              _CollegeStat(value: n(o?.staff), label: 'Staff', dot: AppColors.info),
-              _CollegeStat(value: n(o?.students), label: 'Students', dot: AppColors.success),
-              _CollegeStat(value: n(o?.departments), label: 'Departments', dot: AppColors.warning),
-            ],
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppGeometry.gapIntra),
-            child: Divider(height: 1, color: AppColors.line),
-          ),
-          Text('Teaching setup', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: AppGeometry.gapIntra),
-          Row(
-            children: [
-              _CollegeStat(value: n(o?.programs), label: 'Programs', dot: AppColors.success),
-              _CollegeStat(value: n(o?.sections), label: 'Sections', dot: AppColors.warning),
-              _CollegeStat(value: n(o?.offerings), label: 'Courses', dot: AppColors.info),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CollegeStat extends StatelessWidget {
-  const _CollegeStat({required this.value, required this.label, required this.dot});
-
-  final int value;
-  final String label;
-  final Color dot;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Expanded(
-      child: Semantics(
-        label: '$label: $value',
-        excludeSemantics: true,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$value',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(height: 2),
-            Row(
-              children: [
-                Container(width: 6, height: 6, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
-                const SizedBox(width: AppSpacing.xs),
-                Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// ND: "people have not signed in yet", as a tinted row that is also the way to fix it.
-class _PendingBanner extends StatelessWidget {
-  const _PendingBanner({required this.count, required this.onTap});
-
-  final int count;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppRowCard(
-      color: Color.alphaBlend(AppColors.warning.withValues(alpha: 0.10), Theme.of(context).colorScheme.surface),
-      leading: const AppIconBadge(icon: Icons.mark_email_unread_rounded, color: AppColors.warning),
-      title: count == 1 ? '1 person has not signed in yet' : '$count people have not signed in yet',
-      trailing: const _Chevron(),
-      onTap: onTap,
-    );
-  }
-}
-
 /// One of the two things an admin does most: a tinted tile, one action.
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.title, required this.icon, required this.onTap});
+  const _ActionTile({required this.title, required this.subtitle, required this.icon, required this.onTap});
 
   final String title;
+  final String subtitle;
   final IconData icon;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return AppCard(
       color: Color.alphaBlend(scheme.primary.withValues(alpha: 0.08), scheme.surface),
       padding: const EdgeInsets.all(AppGeometry.cardPadX),
@@ -1183,9 +1131,16 @@ class _ActionTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppIconBadge(icon: icon, color: scheme.primary),
+          Row(
+            children: [
+              AppIconBadge(icon: icon, color: scheme.primary),
+              const Spacer(),
+              ExcludeSemantics(child: Icon(Icons.arrow_forward_rounded, size: 20, color: scheme.primary)),
+            ],
+          ),
           const SizedBox(height: AppGeometry.gapIntra),
-          Text(title, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(title, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(subtitle, style: theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
         ],
       ),
     );
