@@ -256,33 +256,13 @@ class _DashboardSkeleton extends StatelessWidget {
               delegate: SliverChildListDelegate([
                 if (admin) const _AdminSkeleton(),
                 if (!admin && tiles > 0) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  const SkeletonBox(width: 180, height: 16),
-                  const SizedBox(height: AppSpacing.sm),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: AppSpacing.sm,
-                    crossAxisSpacing: AppSpacing.sm,
-                    childAspectRatio: 1.55,
-                    children: [
-                      for (var i = 0; i < tiles; i++)
-                        _Panel(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SkeletonBox(width: 36, height: 36, radius: AppRadius.card),
-                              const Spacer(),
-                              SkeletonLine(widthFactor: i.isEven ? 0.62 : 0.46, height: 13),
-                              const SizedBox(height: 6),
-                              const SkeletonLine(widthFactor: 0.8, height: 10),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
+                  const SizedBox(height: AppGeometry.gapIntra),
+                  const SkeletonBox(width: 120, height: 14),
+                  const SizedBox(height: AppGeometry.gapTight),
+                  for (var i = 0; i < tiles; i++) ...[
+                    if (i > 0) const SizedBox(height: AppGeometry.gapIntra),
+                    const _RowSkeleton(),
+                  ],
                 ],
                 if (!admin) ...[
                   if (showDay) ...[
@@ -451,6 +431,27 @@ class _AdminSkeleton extends StatelessWidget {
       ],
     );
   }
+}
+
+/// A module row's place while loading: badge, title and subtitle.
+class _RowSkeleton extends StatelessWidget {
+  const _RowSkeleton();
+
+  @override
+  Widget build(BuildContext context) => const AppCard(
+    child: Row(
+      children: [
+        SkeletonBox(width: 40, height: 40, radius: AppRadius.card),
+        SizedBox(width: AppGeometry.gapIntra),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [SkeletonLine(widthFactor: 0.5, height: 14), SizedBox(height: 6), SkeletonLine(widthFactor: 0.7, height: 10)],
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// A section title's place: the title, and the "View all" beside it.
@@ -1032,20 +1033,7 @@ class _AdminModules extends StatelessWidget {
             args: manage),
     ];
 
-    Widget group(String title, List<_Tile> tiles) => AppCardGroup(
-          title: title,
-          count: tiles.length,
-          children: [
-            for (final t in tiles)
-              AppRowCard(
-                leading: AppIconBadge(icon: t.icon, color: t.color),
-                title: t.title,
-                subtitle: t.subtitle,
-                trailing: const _Chevron(),
-                onTap: () => open(t.route, t.refresh, t.args),
-              ),
-          ],
-        );
+    Widget group(String title, List<_Tile> tiles) => _ModuleGroup(title: title, tiles: tiles, open: open);
 
     final groups = <(String, List<_Tile>)>[
       ('People and access', people),
@@ -1150,65 +1138,30 @@ class _ActionTile extends StatelessWidget {
 /// One tile of a dashboard's grid: what it opens, and a line of what is there.
 typedef _Tile = ({String title, String subtitle, IconData icon, Color color, String route, Object? args, bool refresh});
 
-/// The two-column grid both dashboards open on (ADM-1, FB-5).
-class _ModuleGrid extends StatelessWidget {
-  const _ModuleGrid({required this.title, required this.tiles, required this.open});
+/// A titled group of modules, one row card each (ND-S5/S6): the admin's sections
+/// and the teacher's "Your work" are built from this, so they cannot drift.
+class _ModuleGroup extends StatelessWidget {
+  const _ModuleGroup({required this.title, required this.tiles, required this.open});
 
   final String title;
   final List<_Tile> tiles;
   final void Function(String route, bool refresh, Object? arguments) open;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: AppSpacing.sm),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: AppGeometry.gapIntra,
-            crossAxisSpacing: AppGeometry.gapIntra,
-            childAspectRatio: 1.55,
-            children: [
-              for (final t in tiles)
-                AppCard(
-                  onTap: () => open(t.route, t.refresh, t.args),
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: t.color.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(AppRadius.card),
-                        ),
-                        child: Icon(t.icon, color: t.color, size: 20),
-                      ),
-                      const Spacer(),
-                      Text(t.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-                      Text(
-                        t.subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AppCardGroup(
+    title: title,
+    count: tiles.length,
+    children: [
+      for (final t in tiles)
+        AppRowCard(
+          leading: AppIconBadge(icon: t.icon, color: t.color),
+          title: t.title,
+          subtitle: t.subtitle,
+          trailing: const _Chevron(),
+          onTap: () => open(t.route, t.refresh, t.args),
+        ),
+    ],
+  );
 }
 
 class _InlineError extends StatelessWidget {
@@ -1374,7 +1327,10 @@ class _TeacherModules extends StatelessWidget {
         refresh: false,
       ),
     ];
-    return _ModuleGrid(title: 'Your work', tiles: tiles, open: open);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppGeometry.gapIntra),
+      child: _ModuleGroup(title: 'Your work', tiles: tiles, open: open),
+    );
   }
 }
 

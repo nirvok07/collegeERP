@@ -447,7 +447,8 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Sunrise College'), findsOneWidget);
       expect(find.byType(SliverAppBar), findsOneWidget);
-      expect(find.byType(GridView), findsOneWidget, reason: "FB-5: a teacher's tiles are drawn in place, as the admin's");
+      expect(find.byType(GridView), findsNothing, reason: 'ND-S6: rows, not a tile grid');
+      expect(find.byType(AppCard), findsWidgets, reason: "FB-5: a teacher's modules are drawn in place, as the admin's");
       expect(find.byType(SkeletonBox), findsWidgets);
 
       delivery.complete();

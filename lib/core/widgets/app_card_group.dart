@@ -25,21 +25,29 @@ class AppCardGroup extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(AppSpacing.xs, 0, AppSpacing.xs, AppGeometry.gapTight),
             child: Semantics(
               header: true,
-              child: Text.rich(
-                TextSpan(
-                  text: title!,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                  children: [
-                    if (count != null)
-                      TextSpan(
-                        text: '   $count',
-                        style: TextStyle(fontWeight: FontWeight.w500, color: theme.colorScheme.onSurfaceVariant),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Flexible(
+                    child: Text(
+                      title!,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
                       ),
+                    ),
+                  ),
+                  if (count != null) ...[
+                    const SizedBox(width: AppGeometry.gapTight),
+                    ExcludeSemantics(
+                      child: Text(
+                        '$count',
+                        style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
