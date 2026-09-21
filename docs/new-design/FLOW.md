@@ -50,10 +50,10 @@ One person/entity with an action?      → AppEntityCard
 Figures that add up?                   → AppSummaryCard
 Two headline figures?                  → AppTilePair
 Creating or editing something?         → AppSheet
-None of the above fits?                → STOP. Add the variant to design.md, then build it.
+None of the above fits?                → STOP. Add the variant to DESIGN.md, then build it.
 ```
 
 ## 5. Web parity flow
 The web shell keeps its sidebar; the content column applies the same groups and gaps at the
-desktop base (§7 of `design.md`). A sheet becomes a right-side panel. Token names match the
+desktop base (§7 of `DESIGN.md`). A sheet becomes a right-side panel. Token names match the
 Flutter names one-to-one so a mismatch is visible by grep, not by eye.

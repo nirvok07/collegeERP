@@ -32,7 +32,7 @@ Source: `assets/new_design.jpeg`. Measured on the reference frame and normalised
 ## 2. Surfaces
 | Layer | Colour role | Elevation |
 |---|---|---|
-| Page ground | `background` (warm neutral 50) | 0 |
+| Page ground | `background` (existing neutral 50, cool — ND-D9) | 0 |
 | Card | `surface` (white) | 0, with a soft `y=1, blur=3, 4% black` hairline shadow |
 | Sheet | `surface` + 24 top radius | level 2 |
 | Dimmed content behind a sheet | scrim 24% | — |

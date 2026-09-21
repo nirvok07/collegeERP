@@ -23,7 +23,7 @@ For each of `AppCard`, `AppCardGroup`, `AppRowCard`, `AppEntityCard`, `AppSummar
 - [ ] Tap target ≥48dp, ≥8dp from its neighbour
 - [ ] Loading / empty / error state drawn inside the container
 - [ ] Widget test for geometry + each state
-- [ ] Documented in `design.md` before it exists in code
+- [ ] Documented in `DESIGN.md` before it exists in code
 
 ## Per-screen migration checklist
 - [ ] All grouping goes through `AppCardGroup` (gaps never hand-written)

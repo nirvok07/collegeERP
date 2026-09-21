@@ -5,7 +5,7 @@ live status. No slice is DONE without tests.
 
 ## ND-S1 — Tokens (foundation)
 **Build:** fold `DESIGN_TOKENS_ADDITIONS.dart` into `lib/core/design/tokens.dart` as the `nd.*`
-geometry set from `design.md` §1; mirror the names in `clients/web/src/design/`.
+geometry set from `DESIGN.md` §1; mirror the names in `clients/web/src/design/`.
 **Not in slice:** any screen change, any colour change.
 **Validation:** `flutter analyze` clean; a token test asserting the 5:3 gap ratio and the 48dp
 minimum; web build passes.
@@ -19,7 +19,7 @@ golden for one card and one group.
 
 ## ND-S3 — Composite containers
 **Build:** `AppEntityCard`, `AppSummaryCard`, `AppTilePair`, including loading/empty/error states
-from `flow.md` §3.
+from `FLOW.md` §3.
 **Validation:** widget test per state; contrast assertion on the emphasis line.
 
 ## ND-S4 — `AppSheet`
@@ -49,4 +49,4 @@ fixing it after a full rollout is expensive.
 
 ## Risks
 - Golden churn across S5–S6 — accepted, contained per commit.
-- ND-O1 unresolved could force a re-baseline of goldens once. Mitigation: settle it during S5.
+- ND-O1 is closed (ND-D9, neutral-50), so no ground-colour golden re-baseline is expected.

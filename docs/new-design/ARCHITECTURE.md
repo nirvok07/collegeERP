@@ -2,7 +2,7 @@
 
 ## 1. Position in the system
 Presentation layer only. No module boundary, entity, permission, event or migration is touched.
-Existing layering (`docs/02-architecture.md`) is unchanged:
+Existing layering (`docs/02-ARCHITECTURE.md`) is unchanged:
 
 ```
 UI widgets ── Cubit ── repository ── Dio / local store ── server module
@@ -12,7 +12,7 @@ UI widgets ── Cubit ── repository ── Dio / local store ── server
 
 ## 2. Source of truth
 - **Tokens:** `lib/core/design/tokens.dart` is the single source. The `nd.*` values of
-  `design.md` are added as a `AppGeometry`/`AppSpacing` extension there. `DESIGN_TOKENS_ADDITIONS.dart`
+  `DESIGN.md` are added as a `AppGeometry`/`AppSpacing` extension there. `DESIGN_TOKENS_ADDITIONS.dart`
   (already staged at repo root) is the staging file and must be folded into `tokens.dart`, not kept
   as a parallel token set — two token files would be a second source of truth.
 - **Components:** `lib/core/widgets/`. One implementation per container type; screens compose.
@@ -39,12 +39,12 @@ to drift otherwise.
 2. No component reads `Theme.of(context).colorScheme` for a value that has a semantic token.
 3. Components are stateless and Cubit-agnostic; they take data and callbacks.
 4. Nothing in `core/widgets` imports a feature module.
-5. Adding a variant requires a line in `design.md` first. Undocumented variants are the failure
+5. Adding a variant requires a line in `DESIGN.md` first. Undocumented variants are the failure
    mode this whole spec exists to prevent.
 
 ## 6. Adoption strategy
 Strangler, not rewrite. New and reworked screens use the components. Existing screens migrate
-per slice (`implementation_plan.md`), each with its golden/widget test updated in the same commit.
+per slice (`IMPLEMENTATION_PLAN.md`), each with its golden/widget test updated in the same commit.
 Old ad-hoc card code is deleted as its last caller migrates — never left alongside.
 
 ## 7. Cross-module impact
