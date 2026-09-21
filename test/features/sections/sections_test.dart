@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
@@ -33,7 +34,7 @@ void main() {
   const admin = {'person.read', 'section.read', 'section.manage', 'student.read', 'enrolment.manage'};
 
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   testWidgets('a reader sees the current term and nothing to change', (tester) async {
     await pump(tester, {'person.read', 'section.read'});

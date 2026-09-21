@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
 import 'package:college_erp/features/curriculum/domain/curriculum.dart';
@@ -24,7 +25,7 @@ void main() {
   const admin = {'offering.read', 'offering.manage', 'instructor.assign', 'enrolment.manage'};
 
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   testWidgets('a reader sees the course and changes nothing', (tester) async {
     await pump(tester, {'offering.read'});

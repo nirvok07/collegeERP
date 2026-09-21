@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
 import 'package:college_erp/features/delivery/domain/class_session.dart';
@@ -14,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// and the college's week lists classes an administrator can cancel.
 void main() {
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   test('the week starts on Monday', () {
     expect(mondayOf('2026-09-14'), '2026-09-14');

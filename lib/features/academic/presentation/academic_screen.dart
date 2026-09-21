@@ -13,6 +13,7 @@ import '../../organisation/presentation/organisation_screen.dart' show showArchi
 import '../data/academic_api.dart';
 import '../domain/academic.dart';
 import 'academic_cubit.dart';
+import '../../../core/widgets/app_sheet.dart';
 
 /// ADM-3 (AD-81): programs and the academic calendar on the phone. Two tabs,
 /// because they are set up at different times of year by the same person.
@@ -481,8 +482,8 @@ class _CalendarTab extends StatelessWidget {
   Future<void> _addYear(BuildContext context) async {
     final cubit = context.read<AcademicCubit>();
     final s = suggestYear(today, state.years);
-    final saved = await showDialog<bool>(
-      context: context,
+    final saved = await showAppSheet<bool>(
+      context,
       builder: (_) => _PeriodDialog(
         title: 'Add an academic year',
         submitLabel: 'Add year',
@@ -499,8 +500,8 @@ class _CalendarTab extends StatelessWidget {
   Future<void> _addTerm(BuildContext context, AcademicYear year) async {
     final cubit = context.read<AcademicCubit>();
     final s = suggestTerm(year, state.termsOf(year.id));
-    final saved = await showDialog<bool>(
-      context: context,
+    final saved = await showAppSheet<bool>(
+      context,
       builder: (_) => _PeriodDialog(
         title: 'Add a term to ${year.name}',
         submitLabel: 'Add term',
@@ -520,8 +521,8 @@ class _CalendarTab extends StatelessWidget {
 
   Future<void> _editYear(BuildContext context, AcademicYear year) async {
     final cubit = context.read<AcademicCubit>();
-    final saved = await showDialog<bool>(
-      context: context,
+    final saved = await showAppSheet<bool>(
+      context,
       builder: (_) => _PeriodDialog(
         title: 'Edit ${year.name}',
         submitLabel: 'Save',
@@ -550,8 +551,8 @@ class _CalendarTab extends StatelessWidget {
 
   Future<void> _editTerm(BuildContext context, Term term) async {
     final cubit = context.read<AcademicCubit>();
-    final saved = await showDialog<bool>(
-      context: context,
+    final saved = await showAppSheet<bool>(
+      context,
       builder: (_) => _PeriodDialog(
         title: 'Edit ${term.name}',
         submitLabel: 'Save',
@@ -751,10 +752,16 @@ class _PeriodDialogState extends State<_PeriodDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SingleChildScrollView(
-        child: Column(
+    return AppSheet(
+      title: widget.title,
+      onClose: _busy ? null : () => Navigator.of(context).pop(false),
+      footer: FilledButton(
+          onPressed: _busy ? null : _save,
+          child: _busy
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(widget.submitLabel),
+        ),
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -791,16 +798,6 @@ class _PeriodDialogState extends State<_PeriodDialog> {
               ),
           ],
         ),
-      ),
-      actions: [
-        TextButton(onPressed: _busy ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: _busy ? null : _save,
-          child: _busy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(widget.submitLabel),
-        ),
-      ],
     );
   }
 }

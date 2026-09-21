@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
@@ -54,7 +55,7 @@ void main() {
     await tester.tap(inDialog('Publish'));
     await tester.pumpAndSettle();
     expect(find.textContaining('No courses in term 1'), findsOneWidget, reason: "the server's refusal stays in the form");
-    await tester.tap(find.text('Cancel'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Add course to term 1'));
@@ -156,4 +157,4 @@ class _FakeCurriculum implements CurriculumRepository {
 
 /// The confirming button inside the dialog, not the page's own button of the same name.
 Finder inDialog(String label) =>
-    find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+    find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));

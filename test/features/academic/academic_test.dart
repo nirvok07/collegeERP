@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
 import 'package:college_erp/features/academic/data/academic_api.dart';
@@ -71,7 +72,7 @@ void main() {
     await tester.tap(find.widgetWithText(FloatingActionButton, 'Add program'));
     await tester.pumpAndSettle();
     expect(find.byType(BottomSheet), findsOneWidget, reason: 'the form opens as a bottom sheet');
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(AppSheet), findsNothing);
     await tester.enterText(find.widgetWithText(TextField, 'Name'), 'BTech Computer Science');
     await tester.ensureVisible(find.widgetWithText(FilledButton, 'Add program'));
     await tester.tap(find.widgetWithText(FilledButton, 'Add program'));

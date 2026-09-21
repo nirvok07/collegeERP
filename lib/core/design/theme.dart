@@ -106,8 +106,12 @@ abstract final class AppTheme {
         backgroundColor: scheme.surface,
         showDragHandle: true,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppGeometry.sheetRadius)),
         ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: scheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppGeometry.sheetRadius)),
       ),
       dividerTheme: DividerThemeData(color: scheme.outlineVariant, space: 1, thickness: 1),
     );

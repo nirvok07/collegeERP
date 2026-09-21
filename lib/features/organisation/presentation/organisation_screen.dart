@@ -11,6 +11,7 @@ import '../../../core/widgets/app_list_tile.dart';
 import '../data/organisation_api.dart';
 import '../domain/org_unit.dart';
 import 'organisation_cubit.dart';
+import '../../../core/widgets/app_sheet.dart';
 
 /// The organisation, for touch.
 ///
@@ -457,8 +458,8 @@ Future<bool> showUnitForm(
   String? initialName,
   bool withCode = true,
 }) async {
-  final saved = await showDialog<bool>(
-    context: context,
+  final saved = await showAppSheet<bool>(
+    context,
     builder: (_) => _UnitDialog(
       title: title,
       submitLabel: submitLabel,
@@ -528,10 +529,16 @@ class _UnitDialogState extends State<_UnitDialog> {
   @override
   Widget build(BuildContext context) {
     final errors = _failure?.fieldErrors ?? const <String, String>{};
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SingleChildScrollView(
-        child: Column(
+    return AppSheet(
+      title: widget.title,
+      onClose: _busy ? null : () => Navigator.of(context).pop(false),
+      footer: FilledButton(
+          onPressed: _busy ? null : _save,
+          child: _busy
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(widget.submitLabel),
+        ),
+      child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_failure != null && errors.isEmpty)
@@ -563,16 +570,6 @@ class _UnitDialogState extends State<_UnitDialog> {
             ],
           ],
         ),
-      ),
-      actions: [
-        TextButton(onPressed: _busy ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-        FilledButton(
-          onPressed: _busy ? null : _save,
-          child: _busy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(widget.submitLabel),
-        ),
-      ],
     );
   }
 }
@@ -584,8 +581,8 @@ Future<bool> showArchiveForm(
   required String body,
   required Future<Failure?> Function(String reason) submit,
 }) async {
-  final done = await showDialog<bool>(
-    context: context,
+  final done = await showAppSheet<bool>(
+    context,
     builder: (_) => _ArchiveDialog(title: title, body: body, submit: submit),
   );
   return done ?? false;
@@ -631,9 +628,15 @@ class _ArchiveDialogState extends State<_ArchiveDialog> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AlertDialog(
-      title: Text(widget.title),
-      content: Column(
+    return AppSheet(
+      title: widget.title,
+      onClose: _busy ? null : () => Navigator.of(context).pop(false),
+      footer: FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError),
+          onPressed: _busy ? null : _archive,
+          child: const Text('Archive'),
+        ),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -646,14 +649,6 @@ class _ArchiveDialogState extends State<_ArchiveDialog> {
           ),
         ],
       ),
-      actions: [
-        TextButton(onPressed: _busy ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-        FilledButton(
-          style: FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError),
-          onPressed: _busy ? null : _archive,
-          child: const Text('Archive'),
-        ),
-      ],
     );
   }
 }

@@ -226,3 +226,20 @@ class InvoiceScreen extends StatelessWidget {
   }
 }
 ```
+
+## Forms and creation flows: AppSheet
+
+```dart
+final saved = await showAppSheet<bool>(context, builder: (_) => AppSheet(
+  title: 'Add a department',
+  chip: 'New',                       // optional, top right
+  onClose: () => Navigator.of(context).pop(false),
+  footer: FilledButton(onPressed: save, child: const Text('Add department')),
+  child: Column(children: [...fields...]),
+));
+```
+
+A phone gets a bottom sheet (24 top radius, close top-left, the body scrolls, one
+filled action at the foot); 600dp and wider gets a centred 480dp dialog. Prefer
+`showSubmitDialog` for a plain form: it already uses this shell and owns the
+busy state and the server's refusal. Yes/no confirmations stay `AlertDialog`.

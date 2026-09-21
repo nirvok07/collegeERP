@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
@@ -66,7 +67,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('A campus already uses that code.'), findsOneWidget);
-    expect(find.byType(AlertDialog), findsOneWidget, reason: 'the form stays open');
+    expect(find.byType(AppSheet), findsOneWidget, reason: 'the form stays open');
   });
 
   testWidgets('an admin adds the first department of a campus', (tester) async {

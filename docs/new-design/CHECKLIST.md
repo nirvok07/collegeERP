@@ -9,7 +9,7 @@ Status model per CLAUDE.md §3: ✅ DONE · 🟡 IN PROGRESS · ⚠️ PARTIAL �
 | ND-S1 Tokens | ✅ | `AppGeometry` added to `lib/core/design/tokens.dart` 2026-09-21 |
 | ND-S2 Core containers | ✅ | AppCard, AppCardGroup, AppRowCard implemented 2026-09-21 |
 | ND-S3 Composite containers | ❌ | — |
-| ND-S4 `AppSheet` | ❌ | sheets and dialogs still use the old shell; not started |
+| ND-S4 `AppSheet` | ✅ code / 🔍 phone | `AppSheet` + `showAppSheet` (sheet <600dp, dialog ≥600dp); `showSubmitDialog` and 3 form dialogs moved; confirmations unchanged; sheet screenshot reviewed; 313 tests pass |
 | ND-S5 Pilot screen | ⚠️ | Admin dashboard: neutral ground, light header, summary card, tile pair, grouped row cards, skeleton; analyze clean, 17 dashboard tests pass, screenshot reviewed; 🔍 phone |
 | ND-S6 Mobile rollout | ✅ code / 🔍 phone | Theme ground neutral-50; ~75 ListTile rows in 37 screens → `AppListTile`; dashboard `_Panel` → `AppCard`; rosters one card; dividers between rows removed; skeleton rows are cards; 313 tests pass; not seen on a phone |
 | ND-S7 Web parity | ❌ | — |

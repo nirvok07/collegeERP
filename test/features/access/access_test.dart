@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/features/access/data/access_api.dart';
@@ -13,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// profile saves pinned to the version it read.
 void main() {
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   Future<_FakeAccess> pumpAccess(WidgetTester tester, {bool canAssign = true}) async {
     final repo = _FakeAccess();

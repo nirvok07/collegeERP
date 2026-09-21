@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../design/tokens.dart';
 import '../error/failure.dart';
+import 'app_sheet.dart';
 
 /// A refusal found on the phone before asking the server, shaped like the
 /// server's own so a form shows both the same way.
@@ -23,8 +24,8 @@ Future<bool> showSubmitDialog(
   List<TextEditingController> controllers = const [],
   bool destructive = false,
 }) async {
-  final saved = await showDialog<bool>(
-    context: context,
+  final saved = await showAppSheet<bool>(
+    context,
     builder: (_) => _SubmitDialog(
       title: title,
       submitLabel: submitLabel,
@@ -87,9 +88,21 @@ class _SubmitDialogState extends State<_SubmitDialog> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SingleChildScrollView(
+    // Not dismissible while the write is in flight, as the dialog was not.
+    return PopScope(
+      canPop: !_busy,
+      child: AppSheet(
+        title: widget.title,
+        onClose: _busy ? null : () => Navigator.of(context).pop(false),
+        footer: FilledButton(
+          style: widget.destructive
+              ? FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError)
+              : null,
+          onPressed: _busy ? null : _save,
+          child: _busy
+              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(widget.submitLabel),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -103,21 +116,10 @@ class _SubmitDialogState extends State<_SubmitDialog> {
                 ),
               ),
             ...widget.fields(setState),
+            const SizedBox(height: AppSpacing.xs),
           ],
         ),
       ),
-      actions: [
-        TextButton(onPressed: _busy ? null : () => Navigator.of(context).pop(false), child: const Text('Cancel')),
-        FilledButton(
-          style: widget.destructive
-              ? FilledButton.styleFrom(backgroundColor: scheme.error, foregroundColor: scheme.onError)
-              : null,
-          onPressed: _busy ? null : _save,
-          child: _busy
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(widget.submitLabel),
-        ),
-      ],
     );
   }
 }

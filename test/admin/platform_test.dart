@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/admin/platform/accounts_screen.dart';
 import 'package:college_erp/admin/platform/audit_screen.dart';
 import 'package:college_erp/admin/platform/platform_api.dart';
@@ -14,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// audit pages by cursor.
 void main() {
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   const owner = PlatformAuthority(
     role: 'owner',

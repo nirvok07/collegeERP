@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
@@ -58,7 +59,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Archive'));
     await tester.pumpAndSettle();
     expect(find.textContaining('still used by 2 timetable slots'), findsOneWidget);
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(AppSheet), findsOneWidget);
   });
 }
 

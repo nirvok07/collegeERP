@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/admin/colleges/college_detail_screen.dart';
 import 'package:college_erp/admin/colleges/college_models.dart';
 import 'package:college_erp/admin/colleges/colleges_api.dart';
@@ -13,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// is checked as the college's own profile checks it.
 void main() {
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   Future<_FakeColleges> pump(WidgetTester tester, {bool canManage = true}) async {
     final repo = _FakeColleges();

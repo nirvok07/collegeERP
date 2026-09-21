@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/features/assessment/domain/assessment.dart';
@@ -13,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// score cannot exceed the maximum.
 void main() {
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   testWidgets('a day of registers; a submitted one is corrected with a reason', (tester) async {
     final repo = _FakeReview();
@@ -53,7 +54,7 @@ void main() {
     await tester.tap(inDialog('Correct'));
     await tester.pumpAndSettle();
     expect(find.text('The score is out of 30.'), findsOneWidget);
-    await tester.tap(find.text('Cancel'));
+    await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.widgetWithText(FilledButton, 'Verify'));

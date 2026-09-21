@@ -1,3 +1,4 @@
+import 'package:college_erp/core/widgets/app_sheet.dart';
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
 import 'package:college_erp/features/academic/domain/academic.dart';
@@ -30,7 +31,7 @@ void main() {
   }
 
   Finder inDialog(String label) =>
-      find.descendant(of: find.byType(AlertDialog), matching: find.widgetWithText(FilledButton, label));
+      find.descendant(of: find.byType(AppSheet), matching: find.widgetWithText(FilledButton, label));
 
   testWidgets('the list opens on enrolled students; a filter asks the server again', (tester) async {
     final repo = await pump(tester, {'student.read'});
