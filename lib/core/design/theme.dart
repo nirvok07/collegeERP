@@ -38,13 +38,16 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: scheme.surface,
+      // ND-D9: the light page is neutral-50 and cards are white on it; dark keeps its own surface.
+      scaffoldBackgroundColor: isDark ? scheme.surface : AppColors.panel,
       cardTheme: CardThemeData(
         color: scheme.surface,
-        elevation: 0,
+        elevation: isDark ? 0 : 1,
+        shadowColor: const Color(0x330F172A),
+        margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.panel),
-          side: BorderSide(color: scheme.outlineVariant),
+          borderRadius: BorderRadius.circular(AppGeometry.cardRadius),
+          side: isDark ? BorderSide(color: scheme.outlineVariant) : BorderSide.none,
         ),
       ),
       // Motion is defined once here rather than per route, so every push in the
@@ -56,7 +59,7 @@ abstract final class AppTheme {
       appBarTheme: AppBarTheme(
         centerTitle: false,
         scrolledUnderElevation: 0.5,
-        backgroundColor: scheme.surface,
+        backgroundColor: isDark ? scheme.surface : AppColors.panel,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: TextStyle(
           fontSize: 20,
@@ -66,7 +69,8 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        // On the neutral page a field is white with its border, as a card is.
+        fillColor: isDark ? scheme.surfaceContainerHighest.withValues(alpha: 0.4) : scheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.input),
           borderSide: BorderSide(color: scheme.outlineVariant),

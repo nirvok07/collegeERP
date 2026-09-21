@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../design/tokens.dart';
+import 'app_card.dart';
 
 /// Skeletons carry the shape of the real screen, so nothing jumps when the
 /// data lands (design system §7.6: "Skeleton matching the final layout").
@@ -260,10 +261,10 @@ class SkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     return SkeletonScope(
       child: ColoredBox(
-        color: scheme.surface,
+        // ND-S6: the page ground, and the rows below are cards on it, as the real ones are.
+        color: Theme.of(context).scaffoldBackgroundColor,
         child: Column(
           children: [
             if (tabs > 0) _TabStrip(tabs: tabs),
@@ -285,8 +286,16 @@ class SkeletonList extends StatelessWidget {
                         padding: EdgeInsets.fromLTRB(AppSpacing.base, AppSpacing.base, AppSpacing.base, AppSpacing.xs),
                         child: SkeletonLine(widthFactor: 0.32, height: 12),
                       ),
-                    SkeletonTile(index: i, leading: leading, trailing: trailing, subtitle: subtitle),
-                    if (dividers && i < rows - 1) Divider(height: 1, indent: dividerIndent),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppGeometry.pageMargin,
+                        vertical: AppGeometry.gapIntra / 2,
+                      ),
+                      child: AppCard(
+                        padding: EdgeInsets.zero,
+                        child: SkeletonTile(index: i, leading: leading, trailing: trailing, subtitle: subtitle),
+                      ),
+                    ),
                   ],
                 ],
               ),
