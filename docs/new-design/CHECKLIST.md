@@ -6,11 +6,11 @@ Status model per CLAUDE.md §3: ✅ DONE · 🟡 IN PROGRESS · ⚠️ PARTIAL �
 ## Slices
 | Slice | State | Evidence |
 |---|---|---|
-| ND-S1 Tokens | ❌ | `DESIGN_TOKENS_ADDITIONS.dart` still a separate staged file |
-| ND-S2 Core containers | ❌ | — |
+| ND-S1 Tokens | ✅ | `AppGeometry` added to `lib/core/design/tokens.dart` 2026-09-21 |
+| ND-S2 Core containers | ✅ | AppCard, AppCardGroup, AppRowCard implemented 2026-09-21 |
 | ND-S3 Composite containers | ❌ | — |
 | ND-S4 `AppSheet` | ❌ | — |
-| ND-S5 Pilot screen | ❌ | — |
+| ND-S5 Pilot screen | ⚠️ | Admin dashboard `_ModuleGrid` migrated to AppCard; 🔍 visual check pending on device |
 | ND-S6 Mobile rollout | ❌ | — |
 | ND-S7 Web parity | ❌ | — |
 | Docs (this folder) | ✅ | 2026-09-21 |
