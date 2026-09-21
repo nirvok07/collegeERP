@@ -63,6 +63,8 @@ export async function resetData(): Promise<void> {
       'offering_enrolments', 'section_memberships', 'students',
       // Teaching references courses and sections, so it goes before both.
       'instructor_assignments', 'course_offerings',
+      // Syllabus references courses and academic years, so it goes before both.
+      'syllabus',
       'curriculum_entries', 'curriculum_versions', 'courses',
       // Fee structure definitions reference programs and academic years
       // (invoices, which also reference students, are deleted earlier above).

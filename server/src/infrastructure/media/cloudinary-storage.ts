@@ -8,7 +8,7 @@
  * so there is no SDK dependency and no vendor types leaking inward.
  */
 import { createHash } from 'node:crypto';
-import type { MediaStorage, StoredMedia } from '../../shared/application/ports.ts';
+import type { MediaStorage, StoredFile, StoredMedia } from '../../shared/application/ports.ts';
 import { AppException } from '../../core/errors.ts';
 
 export interface CloudinaryConfig {
@@ -85,6 +85,22 @@ export class CloudinaryMediaStorage implements MediaStorage {
     if (!res.ok) throw new AppException('UNKNOWN', 'Delete failed', await res.text());
   }
 
+  /**
+   * Fetch the stored binary back. Syllabi upload through /auto/upload, which
+   * stores PDFs as `raw`; the delivery URL for a raw resource is
+   * .../raw/upload/<reference>. The fallback treats the reference as an image
+   * resource to keep the many non-PDF uploads (the only other current user) on
+   * their existing path.
+   */
+  async read(reference: string): Promise<StoredFile | null> {
+    const delivery = `https://res.cloudinary.com/${this.config.cloudName}/raw/upload/${reference}`;
+    const res = await fetch(delivery, { method: 'GET' });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new AppException('UNKNOWN', 'Download failed', await res.text());
+    const bytes = Buffer.from(await res.arrayBuffer());
+    return { bytes, contentType: res.headers.get('content-type') ?? 'application/octet-stream', byteSize: bytes.byteLength };
+  }
+
   private sign(params: Record<string, string>): string {
     const canonical = Object.keys(params)
       .sort()
@@ -96,14 +112,15 @@ export class CloudinaryMediaStorage implements MediaStorage {
 
 /** Used until Cloudinary credentials are configured, and in tests. */
 export class InMemoryMediaStorage implements MediaStorage {
-  private readonly items = new Map<string, StoredMedia>();
+  private readonly items = new Map<string, StoredMedia & { bytes: Buffer }>();
 
   async upload(input: { bytes: Buffer; contentType: string; folder: string; fileName: string }) {
     const reference = `${input.folder}/${input.fileName}`;
-    const stored: StoredMedia = {
+    const stored: StoredMedia & { bytes: Buffer } = {
       reference,
       contentType: input.contentType,
       byteSize: input.bytes.byteLength,
+      bytes: input.bytes,
     };
     this.items.set(reference, stored);
     return stored;
@@ -115,5 +132,16 @@ export class InMemoryMediaStorage implements MediaStorage {
 
   async delete(reference: string): Promise<void> {
     this.items.delete(reference);
+  }
+
+  async read(reference: string): Promise<StoredFile | null> {
+    const stored = this.items.get(reference);
+    if (!stored) return null;
+    return { bytes: stored.bytes, contentType: stored.contentType, byteSize: stored.byteSize };
+  }
+
+  /** Test helper: the references this instance is holding. */
+  recordedReferences(): string[] {
+    return [...this.items.keys()];
   }
 }

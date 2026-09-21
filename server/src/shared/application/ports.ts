@@ -71,6 +71,19 @@ export interface MediaStorage {
   }): Promise<StoredMedia>;
   urlFor(reference: string, options?: { width?: number; height?: number }): string;
   delete(reference: string): Promise<void>;
+  /**
+   * Fetch a stored binary back, for downloads (M12 syllabus PDFs). The
+   * application never sees a vendor type; it gets the bytes and metadata.
+   * Returns null when the reference no longer exists.
+   */
+  read(reference: string): Promise<StoredFile | null>;
+}
+
+/** A stored binary as the application needs it for a download. */
+export interface StoredFile {
+  bytes: Buffer;
+  contentType: string;
+  byteSize: number;
 }
 
 export interface StoredMedia {
