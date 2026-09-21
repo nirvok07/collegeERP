@@ -3,16 +3,16 @@
 
 .dash {
   display: grid;
-  gap: var(--space-xl);
+  gap: var(--nd-gap-group);
 }
 
+/* ND: cards are white on the canvas, no border, a soft shadow. */
 .dash__band,
 .dash__teacher {
   background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: var(--radius-card);
+  border-radius: var(--nd-card-radius);
   padding: var(--space-xl);
-  box-shadow: var(--shadow-1);
+  box-shadow: var(--nd-card-shadow);
 }
 
 .dash__band-head {
@@ -168,37 +168,45 @@
   color: var(--text-tertiary);
 }
 
-/* ---- Module grid -------------------------------------------------------- */
+/* ---- Module rows -------------------------------------------------------- */
+/* One row per module, as on the phone: badge, title and hint, chevron. Wide
+   screens lay the rows out in columns; the anatomy does not change. */
 
 .dash__grid-wrap {
   display: grid;
-  gap: var(--space-md);
+  gap: var(--nd-gap-intra);
+}
+
+.dash__count {
+  margin-left: var(--space-sm);
+  font: var(--text-caption);
+  color: var(--text-tertiary);
 }
 
 .dash__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--nd-gap-intra);
 }
 
 .dash__tile {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-base);
+  align-items: center;
+  gap: var(--space-md);
+  min-height: var(--nd-row-min-height);
+  padding: var(--nd-card-pad-y) var(--nd-card-pad-x);
   background: var(--surface);
-  border: 1px solid var(--outline);
-  border-radius: var(--radius-card);
+  border: 0;
+  border-radius: var(--nd-card-radius);
   cursor: pointer;
   text-align: left;
   font: inherit;
-  box-shadow: var(--shadow-1);
-  transition: border-color var(--state), box-shadow var(--state), transform var(--state);
+  box-shadow: var(--nd-card-shadow);
+  transition: box-shadow var(--state), transform var(--state);
 }
 
 .dash__tile:hover {
-  border-color: var(--outline-strong);
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--nd-card-shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -207,35 +215,47 @@
   outline-offset: 2px;
 }
 
-.dash__tile-key {
+.dash__tile-icon {
   display: grid;
   place-items: center;
   flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-input);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-card);
   background: var(--primary-subtle);
   color: var(--primary);
-  font: var(--text-caption);
-  font-variant-numeric: tabular-nums;
 }
+
+.dash__tile-icon svg { width: 20px; height: 20px; }
 
 .dash__tile-body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
 
 .dash__tile-title {
-  font: var(--text-body);
-  font-weight: 500;
+  font: var(--text-title);
   color: var(--text-primary);
 }
 
 .dash__tile-hint {
   font: var(--text-caption);
   color: var(--text-tertiary);
+}
+
+.dash__tile-chevron {
+  flex: none;
+  color: var(--text-tertiary);
+  font-size: 20px;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash__tile { transition: none; }
+  .dash__tile:hover { transform: none; }
 }
 
 /* ---- Skeleton (in-place, nothing shifts) -------------------------------- */
@@ -245,7 +265,7 @@
 }
 
 .dash__grid--skeleton {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
 
 /* Charts and numeric read-outs align columns; reuse tokens, not raw units. */

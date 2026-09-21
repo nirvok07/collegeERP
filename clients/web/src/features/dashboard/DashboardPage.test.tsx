@@ -49,11 +49,15 @@ describe('dashboard data reads', () => {
   });
 
   it('loadWeek sorts today by start time', async () => {
+    // loadWeek compares the first ten characters of starts_at with today's local
+    // date, so the fixture is built from the clock rather than a fixed day.
+    const n = new Date();
+    const day = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
     const api = client(() => ({
       ok: true,
       value: [
-        { starts_at: '2026-09-16T12:00:00Z', course: { code: 'B', title: 'Later' } },
-        { starts_at: '2026-09-16T09:00:00Z', course: { code: 'A', title: 'First' } },
+        { starts_at: `${day}T12:00:00Z`, course: { code: 'B', title: 'Later' } },
+        { starts_at: `${day}T09:00:00Z`, course: { code: 'A', title: 'First' } },
       ],
     }));
     const week = await loadWeek(api);

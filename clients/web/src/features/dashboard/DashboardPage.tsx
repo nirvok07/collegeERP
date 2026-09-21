@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Button, ErrorState, StatusChip } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import { useShellNav } from '../shell/AppShell.tsx';
+import { MODULE_ICONS } from '../shell/icons.tsx';
 import { loadCourses, loadOverview, loadWeek, type CollegeOverview, type MyCourse, type WeekSessions } from './dashboardData.ts';
 import './dashboard.css';
 
@@ -267,7 +268,7 @@ function TileGrid({ tiles }: { tiles: Tile[] }) {
   const go = useShellNav();
   return (
     <section className="dash__grid-wrap" aria-label="Modules">
-      <h2 className="dash__h">Modules</h2>
+      <h2 className="dash__h">Modules<span className="dash__count">{tiles.length}</span></h2>
       <div className="dash__grid">
         {tiles.map((tile, i) => (
           <button
@@ -277,11 +278,12 @@ function TileGrid({ tiles }: { tiles: Tile[] }) {
             aria-label={`Open ${tile.label}`}
             style={{ '--tile-i': i } as CSSProperties}
           >
-            <span className="dash__tile-key tabular" aria-hidden="true">{i + 1}</span>
+            <span className="dash__tile-icon" aria-hidden="true">{MODULE_ICONS[tile.key]}</span>
             <span className="dash__tile-body">
               <span className="dash__tile-title">{tile.label}</span>
               <span className="dash__tile-hint">{tile.hint}</span>
             </span>
+            <span className="dash__tile-chevron" aria-hidden="true">›</span>
           </button>
         ))}
       </div>
@@ -312,7 +314,7 @@ function DashboardSkeleton() {
       </div>
       <div className="dash__grid dash__grid--skeleton">
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div className="skeleton" key={i} style={{ height: 64 }} />
+          <div className="skeleton" key={i} style={{ height: 'var(--nd-row-min-height)', borderRadius: 'var(--nd-card-radius)' }} />
         ))}
       </div>
     </div>

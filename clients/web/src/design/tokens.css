@@ -71,7 +71,7 @@
   /* Radius (§7.4). */
   --radius-input: 8px;
   --radius-card: 12px;
-  --radius-sheet: 16px;
+  --radius-sheet: 24px;             /* ND: sheets and dialogs */
   --radius-pill: 999px;
 
   /* Elevation — soft, large radius, low opacity. */
@@ -79,6 +79,25 @@
   --shadow-2: 0 2px 6px rgb(30 27 75 / 0.05), 0 6px 16px rgb(30 27 75 / 0.06);
   --shadow-3: 0 12px 28px rgb(30 27 75 / 0.12), 0 4px 8px rgb(30 27 75 / 0.06);
   --shadow-elevate: 0 0 0 1px rgb(30 27 75 / 0.04), 0 12px 28px rgb(30 27 75 / 0.10);
+
+  /* ND — the new container language (docs/new-design/DESIGN.md). Names mirror
+     the Flutter `AppGeometry` tokens so a value is compared across clients by
+     grep. Desktop base: gaps scale from 12/20/24 to 16/20/24, row height 52. */
+  --nd-page-margin: 24px;
+  --nd-gap-tight: 8px;
+  --nd-gap-intra: 16px;
+  --nd-gap-group: 20px;
+  --nd-gap-section: 24px;
+  --nd-card-radius: 16px;
+  --nd-sheet-radius: 24px;
+  --nd-card-pad-x: 16px;
+  --nd-card-pad-y: 14px;
+  --nd-row-min-height: 52px;
+  --nd-control-size: 48px;
+  --nd-avatar-sm: 32px;
+  /* Cards separate from the canvas by tone and this soft shadow, not a border. */
+  --nd-card-shadow: 0 2px 10px rgb(15 23 42 / 0.06);
+  --nd-card-shadow-hover: 0 4px 16px rgb(15 23 42 / 0.10);
 
   /* Type (§7.3). Inter, with a real fallback stack. A controlled, dense
      scale: display and headline are reined in so a page reads composed and
