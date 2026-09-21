@@ -58,6 +58,50 @@ abstract final class AppRadius {
   static const pill = 999.0;
 }
 
+/// ND: New design container and ratio language.
+/// Derived from `assets/new_design.jpeg` (2026-09-21). See `docs/new-design/DESIGN.md`.
+/// Geometry and rhythm taken; colour and type from the approved contract in `docs/07-design-system.md`.
+abstract final class AppGeometry {
+  /// Page margins: card edge sits this far from screen edges.
+  static const pageMargin = AppSpacing.base; // 16
+
+  /// Tight gap: label ↔ value inside a row, chip ↔ text.
+  static const gapTight = AppSpacing.sm; // 8
+
+  /// Intra-group gap: between cards in the same logical group.
+  static const gapIntra = AppSpacing.md; // 12
+
+  /// Group gap: between separate card groups. Ratio to gapIntra is 5:3.
+  static const gapGroup = AppSpacing.lg; // 20
+
+  /// Section gap: between a card stack and the next section/heading.
+  static const gapSection = AppSpacing.xl; // 24
+
+  /// Card corner radius.
+  static const cardRadius = 16.0;
+
+  /// Bottom-sheet top corner radius. Ratio to cardRadius is 3:2.
+  static const sheetRadius = 24.0;
+
+  /// Horizontal padding inside a card.
+  static const cardPadX = 16.0;
+
+  /// Vertical padding inside a single-row card.
+  static const cardPadY = 14.0;
+
+  /// Minimum height of a single-row card (includes padding + 48dp touch target).
+  static const rowMinHeight = 56.0;
+
+  /// Icon buttons, close button, secondary circular actions.
+  static const controlSize = 48.0;
+
+  /// The one primary action per screen.
+  static const fabSize = 64.0;
+
+  /// Avatar size inside a row card.
+  static const avatarSm = 32.0;
+}
+
 /// Motion, matching the web bands. Curves are Flutter's equivalents of the same
 /// cubic-beziers: entrances decelerate, exits accelerate away, pressed feedback
 /// is near-instant.
