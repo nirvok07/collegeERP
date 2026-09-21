@@ -10,7 +10,7 @@ Status model per CLAUDE.md §3: ✅ DONE · 🟡 IN PROGRESS · ⚠️ PARTIAL �
 | ND-S2 Core containers | ✅ | AppCard, AppCardGroup, AppRowCard implemented 2026-09-21 |
 | ND-S3 Composite containers | ❌ | — |
 | ND-S4 `AppSheet` | ❌ | — |
-| ND-S5 Pilot screen | ⚠️ | Admin dashboard `_ModuleGrid` migrated to AppCard; 🔍 visual check pending on device |
+| ND-S5 Pilot screen | ⚠️ | Admin dashboard: neutral ground, light header, summary card, tile pair, grouped row cards, skeleton; analyze clean, 17 dashboard tests pass, screenshot reviewed; 🔍 phone |
 | ND-S6 Mobile rollout | ❌ | — |
 | ND-S7 Web parity | ❌ | — |
 | Docs (this folder) | ✅ | 2026-09-21 |

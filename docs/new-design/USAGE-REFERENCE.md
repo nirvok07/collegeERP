@@ -22,14 +22,16 @@ AppCard(
 
 - Radius: 16 (AppGeometry.cardRadius)
 - Padding: 16 horizontal, optional custom via `padding:` parameter
-- Shadow: 4% black hairline
+- Ground: put cards on `AppColors.panel` (neutral-50); on a white page they vanish
+- Shadow: soft, 6%
 - No visible border (tone + gap separate cards)
 
 ## Row Card (Label + Value)
 
 ```dart
 AppRowCard(
-  label: 'Invoice',
+  title: 'Invoice',
+  subtitle: 'Due 30 Sep',
   value: '₹500',
   trailing: Icon(Icons.arrow_forward_rounded, size: 18),
   onTap: () => navigateToInvoice(),
@@ -37,7 +39,7 @@ AppRowCard(
 ```
 
 - Minimum height: 56dp
-- Label on left (bodyLarge), value on right (bodyLarge, medium weight)
+- Title (+ optional subtitle) on left, value right-aligned; grows with a subtitle, never clipped
 - Leading: optional 32–36dp widget (avatar, icon)
 - Trailing: optional chevron, chip, or link
 - Touch target: full height, no sub-regions
@@ -49,9 +51,9 @@ Group multiple cards with automatic 12dp spacing:
 ```dart
 AppCardGroup(
   children: [
-    AppRowCard(label: 'Date', value: '21/09/2026'),
-    AppRowCard(label: 'Amount', value: '₹400'),
-    AppRowCard(label: 'Status', value: 'Paid'),
+    AppRowCard(title: 'Date', value: '21/09/2026'),
+    AppRowCard(title: 'Amount', value: '₹400'),
+    AppRowCard(title: 'Status', value: 'Paid'),
   ],
 )
 ```
@@ -68,19 +70,14 @@ Column(
 )
 ```
 
-## With Header
+## With a title
 
 ```dart
 AppCardGroup(
-  header: Text(
-    'Invoice Details',
-    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-      fontWeight: FontWeight.w700,
-    ),
-  ),
+  title: 'Invoice details',
   children: [
-    AppRowCard(label: 'Total', value: '₹500'),
-    AppRowCard(label: 'Paid', value: '₹300'),
+    AppRowCard(title: 'Total', value: '₹500'),
+    AppRowCard(title: 'Paid', value: '₹300'),
   ],
 )
 ```
@@ -168,10 +165,10 @@ class InvoiceScreen extends StatelessWidget {
           children: [
             // Party information
             AppCardGroup(
-              header: Text('Party', style: theme.textTheme.titleMedium),
+              title: 'Party',
               children: [
                 AppRowCard(
-                  label: 'Name',
+                  title: 'Name',
                   value: 'ABC Industries',
                   trailing: Icon(Icons.edit_rounded, size: 18),
                 ),
@@ -181,11 +178,11 @@ class InvoiceScreen extends StatelessWidget {
 
             // Line items
             AppCardGroup(
-              header: Text('Items', style: theme.textTheme.titleMedium),
+              title: 'Items',
               children: [
                 for (final item in invoice.items)
                   AppRowCard(
-                    label: item.description,
+                    title: item.description,
                     value: '₹${item.amount}',
                   ),
               ],
@@ -195,13 +192,13 @@ class InvoiceScreen extends StatelessWidget {
             // Summary
             AppCardGroup(
               children: [
-                AppRowCard(label: 'Subtotal', value: '₹${invoice.subtotal}'),
-                AppRowCard(label: 'Tax', value: '₹${invoice.tax}'),
+                AppRowCard(title: 'Subtotal', value: '₹${invoice.subtotal}'),
+                AppRowCard(title: 'Tax', value: '₹${invoice.tax}'),
                 AppRowCard(
-                  label: 'Total',
+                  title: 'Total',
                   value: '₹${invoice.total}',
                   // Emphasis line gets semantic colour
-                  backgroundColor: Colors.red.withValues(alpha: 0.05),
+                  color: Colors.red.withValues(alpha: 0.05),
                 ),
               ],
             ),

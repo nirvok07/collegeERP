@@ -2,64 +2,51 @@ import 'package:flutter/material.dart';
 
 import '../design/tokens.dart';
 
-/// ND-S2: The single surface container for content grouping.
+/// ND-S2: the one surface a screen groups content on.
 ///
-/// Radius 16, padding 16, 4% black shadow hairline. No border.
-/// Separation comes from tone + gap, never from visible borders or heavy shadow.
+/// White on the neutral page ground, radius 16, no border. It separates from
+/// the ground by tone and a soft shadow; gaps between cards do the rest.
 class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
     this.onTap,
-    this.padding = const EdgeInsets.all(AppGeometry.cardPadX),
-    this.backgroundColor,
+    this.padding = const EdgeInsets.symmetric(horizontal: AppGeometry.cardPadX, vertical: AppGeometry.cardPadY),
+    this.color,
+    this.semanticLabel,
   });
 
-  /// The content inside the card.
   final Widget child;
 
-  /// Optional tap handler for the card.
+  /// A card with a tap handler is a button: ripple, focus and semantics.
   final VoidCallback? onTap;
+  final EdgeInsetsGeometry padding;
 
-  /// Card inner padding. Defaults to 16 (AppGeometry.cardPadX).
-  final EdgeInsets padding;
-
-  /// Card background colour. Defaults to Theme.surface (white in light mode).
-  final Color? backgroundColor;
+  /// Defaults to the theme's surface; a tinted card passes its own.
+  final Color? color;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final color = backgroundColor ?? scheme.surface;
-
-    return Material(
-      color: color,
-      borderRadius: BorderRadius.circular(AppGeometry.cardRadius),
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.04),
-      // The 4% shadow is a hairline, not a visible drop. It separates the card
-      // from the background without competing with spacing.
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppGeometry.cardRadius),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              offset: const Offset(0, 1),
-              blurRadius: 3,
-              spreadRadius: 0,
-            ),
-          ],
-        ),
+    final radius = BorderRadius.circular(AppGeometry.cardRadius);
+    final card = DecoratedBox(
+      decoration: BoxDecoration(
+        color: color ?? Theme.of(context).colorScheme.surface,
+        borderRadius: radius,
+        boxShadow: const [BoxShadow(color: Color(0x0F0F172A), offset: Offset(0, 2), blurRadius: 10)],
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        borderRadius: radius,
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppGeometry.cardRadius),
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
+          borderRadius: radius,
+          child: Padding(padding: padding, child: child),
         ),
       ),
     );
+    if (semanticLabel == null) return card;
+    return Semantics(label: semanticLabel, button: onTap != null, container: true, child: card);
   }
 }

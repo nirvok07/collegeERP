@@ -15,6 +15,7 @@ import 'package:college_erp/features/teaching/domain/teaching_offering.dart';
 import 'package:college_erp/features/teaching/domain/teaching_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:college_erp/core/widgets/app_card.dart';
 
 /// The dashboard only shapes the teacher's own sessions and teaching. These
 /// tests pin down the shaping, what it asks the server for, and that a surface
@@ -421,8 +422,9 @@ void main() {
       expect(cubit.state.status, LoadStatus.loading);
       expect(tester.takeException(), isNull);
       expect(find.text('Sunrise College'), findsOneWidget, reason: 'the college is known before the numbers');
-      expect(find.byType(SliverAppBar), findsOneWidget, reason: 'the navy header, not a list of rows');
-      expect(find.byType(GridView), findsOneWidget, reason: 'the module tiles, in their grid');
+      expect(find.byType(SliverAppBar), findsOneWidget, reason: 'the college header, not a list of rows');
+      expect(find.byType(GridView), findsNothing, reason: 'ND-S5: the admin home is cards, not a tile grid');
+      expect(find.byType(AppCard), findsWidgets, reason: 'the summary, the tile pair and the rows, drawn in place');
       expect(find.byType(SkeletonBox), findsWidgets);
       expect(find.text('Your college'), findsNothing, reason: 'no numbers until they arrive');
 

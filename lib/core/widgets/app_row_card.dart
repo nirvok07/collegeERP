@@ -3,102 +3,97 @@ import 'package:flutter/material.dart';
 import '../design/tokens.dart';
 import 'app_card.dart';
 
-/// ND-S2: A row inside an [AppCard] or as a standalone card.
+/// ND-S2: one row, one card: `[leading] title / subtitle ........ value [trailing]`.
 ///
-/// Anatomy: [leading 32?] · label (left) · value (right) · [trailing]
-///
-/// Minimum height 56dp (48dp touch target + padding). Label and value are
-/// `bodyLarge`/`titleMedium`, with value right-aligned and trailing control last.
+/// At least 56dp high, so the whole card is a comfortable tap target. A row
+/// with a [subtitle] grows to fit it; text is never clipped by a fixed height.
 class AppRowCard extends StatelessWidget {
   const AppRowCard({
     super.key,
-    required this.label,
+    required this.title,
+    this.subtitle,
     this.value,
     this.leading,
     this.trailing,
     this.onTap,
-    this.backgroundColor,
+    this.color,
   });
 
-  /// Label text, left-aligned.
-  final String label;
+  final String title;
+  final String? subtitle;
 
-  /// Value text, right-aligned. Optional (e.g. empty state shows "Not set").
+  /// Right-aligned, after the title block.
   final String? value;
-
-  /// Optional leading widget (e.g. avatar, icon). Typically 32–36dp.
   final Widget? leading;
 
-  /// Optional trailing widget (e.g. chevron, chip, link). After value.
+  /// A chevron, chip or link; last in the row.
   final Widget? trailing;
-
-  /// Tap callback.
   final VoidCallback? onTap;
-
-  /// Card background colour override.
-  final Color? backgroundColor;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final hasValue = value != null && value!.isNotEmpty;
-
+    final muted = theme.colorScheme.onSurfaceVariant;
     return AppCard(
       onTap: onTap,
-      padding: EdgeInsets.symmetric(
-        horizontal: AppGeometry.cardPadX,
-        vertical: AppGeometry.cardPadY,
-      ),
-      backgroundColor: backgroundColor,
-      child: SizedBox(
-        height: AppGeometry.rowMinHeight - AppGeometry.cardPadY * 2,
+      color: color,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: AppGeometry.rowMinHeight - AppGeometry.cardPadY * 2),
         child: Row(
           children: [
-            if (leading != null) ...[
-              leading!,
-              const SizedBox(width: AppGeometry.gapTight),
-            ],
+            if (leading != null) ...[leading!, const SizedBox(width: AppGeometry.gapIntra)],
             Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    label,
-                    maxLines: 1,
+                    title,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w400,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
                   ),
-                  if (hasValue)
+                  if (subtitle != null)
                     Text(
-                      value!,
-                      maxLines: 1,
+                      subtitle!,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                      ),
+                      style: theme.textTheme.bodySmall?.copyWith(color: muted),
                     ),
                 ],
               ),
             ),
-            const SizedBox(width: AppGeometry.gapTight),
-            if (hasValue)
-              Text(
-                value!,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            if (trailing != null) ...[
+            if (value != null) ...[
               const SizedBox(width: AppGeometry.gapTight),
-              trailing!,
+              Text(value!, style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
             ],
+            if (trailing != null) ...[const SizedBox(width: AppGeometry.gapTight), trailing!],
           ],
         ),
       ),
     );
   }
+}
+
+/// The 36dp tinted icon square a row or tile leads with.
+class AppIconBadge extends StatelessWidget {
+  const AppIconBadge({super.key, required this.icon, required this.color, this.size = 40});
+
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+          ),
+          child: Icon(icon, color: color, size: size * 0.5),
+        ),
+      );
 }

@@ -33,11 +33,11 @@ Source: `assets/new_design.jpeg`. Measured on the reference frame and normalised
 | Layer | Colour role | Elevation |
 |---|---|---|
 | Page ground | `background` (existing neutral 50, cool — ND-D9) | 0 |
-| Card | `surface` (white) | 0, with a soft `y=1, blur=3, 4% black` hairline shadow |
+| Card | `surface` (white) | 0, soft shadow `y=2, blur=10, 6% ink` (4% was invisible on the neutral ground; checked on a rendered screen 2026-09-21) |
 | Sheet | `surface` + 24 top radius | level 2 |
 | Dimmed content behind a sheet | scrim 24% | — |
 
-No card gets a visible border. Tone + gap + the 4% shadow is the whole separation system
+No card gets a visible border. Tone + gap + the soft shadow is the whole separation system
 (`docs/07-design-system.md` §7.1 principle 3 holds).
 
 ## 3. Card anatomy
