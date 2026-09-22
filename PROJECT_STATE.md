@@ -35,7 +35,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Firebase (R67, R68): Core, Crashlytics, Remote Config, Messaging built and initialised on Android; 🔍 first crash report and a console test push (owner); backend push 🚫 Drift 6
 - Student sign-in and "My attendance" (ST-1, AD-69, R72): ✅ server, ✅ app, ✅ tests; 🔍 on the phone; fees (D1) and circulars (no module) ❌
 - Owner feedback (feedbackchanges.md, 2026-09-22) #2/#4 — saved-first reads: `fromSaved` (AD-9 amended) already covered dashboard, schedule, my-fees, my-teaching, and both onboarding forms (REF-1, confirming #4 "appoint-teacher loads the whole page" was already fixed). Extended to the remaining list/reference screens that used to call the network on every open: academic, organisation, people, rooms, all 5 fee screens (heads, requests, structures, structure detail, student fees), sections, curriculum, students, and a section's course offerings — 13 more cubits. Every post-write reload and every pull-to-refresh across them now passes `refresh: true` explicitly (`onRefresh: cubit.load` tear-offs, which silently defaulted to the cache path, were the same bug in 4 fee screens; fixed). Deliberately excluded: attendance and mark-sheet marking (live, per-session data — caching it risks marking against a stale roster) and the timetable/offering/section/version/student *detail* screens (not yet migrated; a real follow-up slice, not urgent). ✅ analyze clean, ✅ 317 tests (1 new e2e), 🔍 NEEDS VALIDATION on the phone
-- Owner feedback #1 — Fee module A-Z: ❌ NOT BUILT this session. FEE-1..FEE-6 already exist (heads, structures, instalments, invoices, payments, concessions/waivers, fines); a full A-Z (richer reporting, student-facing print/PDF) is planned in `docs/plan-inbox-2026-09-16.md` §E but out of scope for one sitting — needs its own slice when the owner says go
+- Owner feedback #1 — Fee module A-Z: ❌ NOT BUILT this session; planned instead, 2026-09-22, `docs/plan-fee-a-to-z-2026-09-22.md` (also corrects a stale FEE-6 tracker line — the student self-view was already built). Two slices queued: G1 receipt/statement PDF, G2 reports. FEE-7 (online payment) stays 🚫 blocked on Razorpay credentials. Open decision OD-FEE-5: does fees ever reach web (recommend: not yet)
 - Examinations, Results (M10): 🚫 OD-1
 - iOS validation: 🚫 Xcode not installed
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
@@ -434,12 +434,15 @@ From `feedbackchanges.md` (owner, 2026-09-15), building in order: LK-1 → CR-1 
     (`test/features/fees/fee_test_support.dart`) implements the whole interface once, faithfully
     enough to allocate a payment oldest-due-first itself, for every fee screen's test to share.
     Flutter 311/311 (+18), `flutter analyze` clean.
-  - FEE-6 ❌ student's own dues/invoices/payments view (self-scoped, like `/v1/me/attendance`) +
-    receipt/statement PDF (view/print/share; new `pdf`/`printing` packages, mobile only — no server
-    work beyond the self-scoped read); FEE-7 🚫 BLOCKED — Razorpay web payment + webhook, TODO until
-    the owner supplies a merchant account and API keys; FEE-8 ❌ reports (daily collection by
-    cashier/mode, outstanding, defaulters, concession/waiver register), server + mobile — does not
-    need FEE-7.
+  - FEE-6 ⚠️ PARTIAL, corrected 2026-09-22 (was stated ❌, verified against the repository):
+    student's own dues/invoices/payments view is ✅ built (`GET /v1/me/fees`, `MyFeesCubit`,
+    `MyFeesScreen`, saved-first). Receipt/statement PDF (view/print/share; new `pdf`/`printing`
+    packages, mobile only) is ❌ NOT BUILT — planned as G1 in `docs/plan-fee-a-to-z-2026-09-22.md`.
+    FEE-7 🚫 BLOCKED — Razorpay web payment + webhook, TODO until the owner supplies a merchant
+    account and API keys. FEE-8 ❌ reports (daily collection by cashier/mode, outstanding,
+    defaulters, concession/waiver register), server + mobile — does not need FEE-7; planned as G2
+    in `docs/plan-fee-a-to-z-2026-09-22.md`. Full A-to-Z plan, with an open decision on whether fees
+    ever reach the web console (OD-FEE-5): `docs/plan-fee-a-to-z-2026-09-22.md`.
 
 Saved reads first (AD-9 amended 2026-09-14, owner's decision): every mobile screen opens on the data
 it last received and refreshes in the background; writes unchanged.
