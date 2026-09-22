@@ -255,3 +255,60 @@ export interface OnlineIntentRepository {
   find(tx: Tx, id: string): Promise<OnlineIntentRecord | null>;
   complete(tx: Tx, input: { id: string; status: 'paid' | 'failed'; paymentId: string | null; completedAt: Date }): Promise<boolean>;
 }
+
+/* ------------------------------------------------------------------ G2 reports */
+
+/**
+ * One (date, cashier, method, kind) group of the daily collection report.
+ * `amountPaise` is signed — negative for a reversal — so a reversal reads
+ * as its own line, never netted into the payment it corrects (module doc
+ * §3, plan `docs/plan-fee-a-to-z-2026-09-22.md` §5).
+ */
+export interface CollectionRow {
+  date: string;
+  receivedBy: string | null;
+  receivedByName: string | null;
+  method: PaymentMethod;
+  kind: PaymentKind;
+  amountPaise: number;
+}
+
+/** One due invoice still owing something, for the outstanding/defaulters reports. */
+export interface OutstandingRow {
+  invoiceId: string;
+  studentId: string;
+  studentName: string;
+  enrolmentNumber: string;
+  kind: string;
+  dueDate: string;
+  outstandingPaise: number;
+  overdueDays: number;
+}
+
+/** One concession/waiver request with who decided it and when — the accountability trail. */
+export interface RequestRegisterRow {
+  id: string;
+  kind: FeeRequestKind;
+  studentId: string;
+  studentName: string;
+  invoiceId: string;
+  amountPaise: number;
+  reason: string;
+  status: FeeRequestStatus;
+  requestedBy: string;
+  requestedByName: string;
+  requestedAt: Date;
+  decidedBy: string | null;
+  decidedByName: string | null;
+  decidedAt: Date | null;
+  decisionReason: string | null;
+}
+
+export interface FeeReportsRepository {
+  /** `from`/`to` inclusive, YYYY-MM-DD. */
+  collection(tx: Tx, from: string, to: string): Promise<CollectionRow[]>;
+  /** Every invoice with status 'due', as of `asOf` (YYYY-MM-DD) — outstanding and defaulters share this. */
+  outstanding(tx: Tx, asOf: string): Promise<OutstandingRow[]>;
+  /** `from`/`to` inclusive, YYYY-MM-DD, or null for no bound. */
+  requestsRegister(tx: Tx, filter: { from: string | null; to: string | null }): Promise<RequestRegisterRow[]>;
+}

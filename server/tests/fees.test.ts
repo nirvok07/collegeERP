@@ -813,3 +813,116 @@ describe('FEE-7: online payment (dummy gateway)', () => {
     assert.match(wrongCollege.body, /expired/i);
   });
 });
+
+describe('G2: reports', () => {
+  const todayIso = () => new Date().toISOString().slice(0, 10);
+
+  it('collection: a payment and its reversal show as separate lines, the reversal negative', async () => {
+    const s = await feeSetup();
+    const cashier = await appoint(s.code, s.admin, {
+      name: 'Rohit Nair', email: `rohit@${s.code}.edu`, roleKey: 'cashier', scopeType: 'institution',
+    });
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+      seq: 1, due_date: '2026-07-01',
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 500000 });
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+    const studentId = (await post('/v1/students', s.admin, {
+      full_name: 'Nisha Kumar', email: `nisha@${s.code}.edu`,
+      enrolment_number: 'CSE2026-001', program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id;
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+
+    const paid = await post('/v1/fees/payments', cashier, { student_id: studentId, method: 'cash', amount_paise: 500000 });
+    const paymentId = paid.json().data.payment.id as string;
+    await post(`/v1/fees/payments/${paymentId}/cancel`, cashier, { reason: 'Wrong student' });
+
+    const today = todayIso();
+    const report = await get(`/v1/fees/reports/collection?from=${today}&to=${today}`, s.admin);
+    assert.equal(report.statusCode, 200);
+    const rows = report.json().data as { kind: string; amount_paise: number; method: string; received_by_name: string }[];
+    const line = rows.find((r) => r.kind === 'payment');
+    const reversal = rows.find((r) => r.kind === 'reversal');
+    assert.equal(line?.amount_paise, 500000);
+    assert.equal(reversal?.amount_paise, -500000, 'a reversal is its own negative line, not netted away');
+    assert.equal(line?.received_by_name, 'Rohit Nair');
+
+    const teacher = await appoint(s.code, s.admin, {
+      name: 'Meera Iyer', email: `meera@${s.code}.edu`,
+      roleKey: 'faculty', scopeType: 'department', scopeRefId: s.department,
+    });
+    assert.equal((await get(`/v1/fees/reports/collection?from=${today}&to=${today}`, teacher)).statusCode, 403);
+  });
+
+  it('outstanding and defaulters: a due invoice is listed with what is still owed and how overdue', async () => {
+    const s = await feeSetup();
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+      seq: 1, due_date: '2000-01-01',
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 500000 });
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+    const studentId = (await post('/v1/students', s.admin, {
+      full_name: 'Nisha Kumar', email: `nisha@${s.code}.edu`,
+      enrolment_number: 'CSE2026-001', program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id;
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    const cashier = await appoint(s.code, s.admin, {
+      name: 'Rohit Nair', email: `rohit@${s.code}.edu`, roleKey: 'cashier', scopeType: 'institution',
+    });
+    await post('/v1/fees/payments', cashier, { student_id: studentId, method: 'cash', amount_paise: 200000 });
+
+    const outstanding = (await get('/v1/fees/reports/outstanding', s.admin)).json().data as
+      { student_id: string; outstanding_paise: number; overdue_days: number }[];
+    const row = outstanding.find((r) => r.student_id === studentId);
+    assert.equal(row?.outstanding_paise, 300000, 'partially paid, only the remainder is outstanding');
+    assert.ok((row?.overdue_days ?? 0) > 1000, 'due 2000-01-01, long overdue');
+
+    const defaulters = (await get('/v1/fees/reports/defaulters?days=30', s.admin)).json().data as { student_id: string }[];
+    assert.ok(defaulters.some((r) => r.student_id === studentId));
+    const none = (await get('/v1/fees/reports/defaulters?days=999999', s.admin)).json().data as unknown[];
+    assert.deepEqual(none, []);
+  });
+
+  it('requests register: a decided concession appears with who requested and who decided', async () => {
+    const s = await feeSetup();
+    const accountant = await appoint(s.code, s.admin, {
+      name: 'Asha Rao', email: `asha@${s.code}.edu`, roleKey: 'accountant', scopeType: 'institution',
+    });
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+      seq: 1, due_date: '2026-07-01',
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: 500000 });
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+    const studentId = (await post('/v1/students', s.admin, {
+      full_name: 'Nisha Kumar', email: `nisha@${s.code}.edu`,
+      enrolment_number: 'CSE2026-001', program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id;
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+    const invoiceId = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data[0].id;
+
+    const requested = await post('/v1/fees/concessions', accountant, {
+      invoice_id: invoiceId, amount_paise: 100000, reason: 'Sibling discount',
+    });
+    const requestId = requested.json().data.id as string;
+    await post(`/v1/fees/requests/${requestId}/approve`, s.admin);
+
+    const register = (await get('/v1/fees/reports/requests-register', s.admin)).json().data as
+      { id: string; status: string; requested_by_name: string; decided_by_name: string | null }[];
+    const row = register.find((r) => r.id === requestId);
+    assert.equal(row?.status, 'approved');
+    assert.equal(row?.requested_by_name, 'Asha Rao');
+    assert.ok(row?.decided_by_name, 'the admin who decided it is named');
+  });
+});

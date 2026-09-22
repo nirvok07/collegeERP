@@ -7,14 +7,16 @@ import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
   addInstalment, addLine, applyLateFees, approveRequest, archiveFeeHead, cancelPayment,
-  completeOnlineIntent, createDraftStructure, createFeeHead, createOnlineIntent, failOnlineIntent,
-  findOnlineIntent, generateInvoices, listFeeHeads, listFeeRequests, listStructureInvoices,
-  listStructures, listStudentInvoices, listStudentPayments, publishStructure, raiseFine,
-  readStructure, recordPayment, rejectRequest, requestConcession, requestWaiver,
-  searchFeeStudents, withdrawRequest, type FeesActor,
+  collectionReport, completeOnlineIntent, createDraftStructure, createFeeHead, createOnlineIntent,
+  defaultersReport, failOnlineIntent, findOnlineIntent, generateInvoices, listFeeHeads,
+  listFeeRequests, listStructureInvoices, listStructures, listStudentInvoices, listStudentPayments,
+  outstandingReport, publishStructure, raiseFine, readStructure, recordPayment, rejectRequest,
+  requestConcession, requestsRegisterReport, requestWaiver, searchFeeStudents, withdrawRequest,
+  type FeesActor,
 } from '../application/manage-fees.ts';
 import type {
-  FeeHeadRecord, FeeRequestRecord, FeeStructureRecord, InvoiceRecord, PaymentRecord,
+  CollectionRow, FeeHeadRecord, FeeRequestRecord, FeeStructureRecord, InvoiceRecord, OutstandingRow,
+  PaymentRecord, RequestRegisterRow,
 } from '../application/ports.ts';
 
 const headBody = z.object({
@@ -75,12 +77,33 @@ const cancelBody = z.object({ reason: z.string().min(1).max(500) });
 const onlinePayBody = z.object({ amount_paise: z.number().int().positive() });
 const checkoutQuery = z.object({ college: z.string().min(1) });
 
+const collectionQuery = z.object({ from: isoDate, to: isoDate });
+const defaultersQuery = z.object({ days: z.coerce.number().int().min(0).default(30) });
+const registerQuery = z.object({ from: isoDate.optional(), to: isoDate.optional() });
+
 const serialisePayment = (p: PaymentRecord) => ({
   id: p.id, student_id: p.studentId, kind: p.kind, method: p.method, amount_paise: p.amountPaise,
   reference: p.reference, reverses_payment_id: p.reversesPaymentId, reason: p.reason,
   received_by: p.receivedBy, received_at: p.receivedAt.toISOString(),
   receipt_number: p.receiptNumber, receipt_status: p.receiptStatus,
   receipt_issued_at: p.receiptIssuedAt?.toISOString() ?? null,
+});
+
+const serialiseCollectionRow = (r: CollectionRow) => ({
+  date: r.date, received_by: r.receivedBy, received_by_name: r.receivedByName,
+  method: r.method, kind: r.kind, amount_paise: r.amountPaise,
+});
+const serialiseOutstandingRow = (r: OutstandingRow) => ({
+  invoice_id: r.invoiceId, student_id: r.studentId, student_name: r.studentName,
+  enrolment_number: r.enrolmentNumber, kind: r.kind, due_date: r.dueDate,
+  outstanding_paise: r.outstandingPaise, overdue_days: r.overdueDays,
+});
+const serialiseRegisterRow = (r: RequestRegisterRow) => ({
+  id: r.id, kind: r.kind, student_id: r.studentId, student_name: r.studentName, invoice_id: r.invoiceId,
+  amount_paise: r.amountPaise, reason: r.reason, status: r.status,
+  requested_by: r.requestedBy, requested_by_name: r.requestedByName, requested_at: r.requestedAt.toISOString(),
+  decided_by: r.decidedBy, decided_by_name: r.decidedByName,
+  decided_at: r.decidedAt?.toISOString() ?? null, decision_reason: r.decisionReason,
 });
 
 export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
@@ -415,6 +438,38 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
     return sendResult(reply, await requestWaiver(c.fees, actorOf(req), {
       invoiceId: parsed.data.invoice_id, reason: parsed.data.reason,
     }), 201);
+  });
+
+  /* ---------------------------------------------------------------- G2: reports */
+
+  app.get('/fees/reports/collection', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const parsed = collectionQuery.safeParse(req.query);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    const rows = await collectionReport(c.fees, actorOf(req), parsed.data.from, parsed.data.to);
+    return sendOk(reply, rows.map(serialiseCollectionRow));
+  });
+
+  app.get('/fees/reports/outstanding', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const rows = await outstandingReport(c.fees, actorOf(req));
+    return sendOk(reply, rows.map(serialiseOutstandingRow));
+  });
+
+  app.get('/fees/reports/defaulters', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const parsed = defaultersQuery.safeParse(req.query);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    const rows = await defaultersReport(c.fees, actorOf(req), parsed.data.days);
+    return sendOk(reply, rows.map(serialiseOutstandingRow));
+  });
+
+  app.get('/fees/reports/requests-register', async (req, reply) => {
+    if (!(await canRead(req as never, reply as never))) return reply;
+    const parsed = registerQuery.safeParse(req.query);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    const rows = await requestsRegisterReport(c.fees, actorOf(req), parsed.data.from ?? null, parsed.data.to ?? null);
+    return sendOk(reply, rows.map(serialiseRegisterRow));
   });
 }
 

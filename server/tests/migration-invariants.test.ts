@@ -150,6 +150,9 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // is never deleted, and its number is never reissued.
   receipts: 'INSERT+SELECT+UPDATE',
   fee_receipt_counters: 'INSERT+SELECT+UPDATE',
+  // FEE-7: created -> paid|failed, exactly once, driven by the checkout
+  // page standing in for a gateway webhook (dummy provider today).
+  fee_online_intents: 'INSERT+SELECT+UPDATE',
 };
 
 /** Migration infrastructure, deliberately unreachable from the application. */

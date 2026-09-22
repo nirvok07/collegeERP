@@ -97,6 +97,7 @@ import {
   PgFeeHeadRepository, PgFeeRequestRepository, PgFeeStructureRepository, PgInvoiceRepository,
   PgPaymentRepository,
   PgOnlineIntentRepository,
+  PgFeeReportsRepository,
 } from './modules/fees/infrastructure/repositories.ts';
 import type { FeesDeps } from './modules/fees/application/manage-fees.ts';
 import { PgSyllabusRepository } from './modules/syllabus/infrastructure/repositories.ts';
@@ -360,6 +361,7 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       requests: new PgFeeRequestRepository(),
       payments: new PgPaymentRepository(),
       onlineIntents: new PgOnlineIntentRepository(),
+      reports: new PgFeeReportsRepository(),
     },
     // M12 reads its own table and routes the binary through the shared media
     // port, exactly as college branding does.

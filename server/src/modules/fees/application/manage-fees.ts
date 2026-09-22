@@ -10,9 +10,9 @@ import { AppException, fail } from '../../../core/errors.ts';
 import type { AuditWriter, Clock, IdGenerator } from '../../../shared/application/ports.ts';
 import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
-  FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeRequestRecord, FeeRequestRepository,
-  FeeStructureRepository, InvoiceRecord, InvoiceRepository, OnlineIntentRecord, OnlineIntentRepository,
-  PaymentMethod, PaymentRecord, PaymentRepository, ReceiptRecord, StudentSummary,
+  FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeReportsRepository, FeeRequestRecord,
+  FeeRequestRepository, FeeStructureRepository, InvoiceRecord, InvoiceRepository, OnlineIntentRecord,
+  OnlineIntentRepository, PaymentMethod, PaymentRecord, PaymentRepository, ReceiptRecord, StudentSummary,
 } from './ports.ts';
 
 export interface FeesActor {
@@ -29,6 +29,8 @@ export interface FeesDeps {
   payments: PaymentRepository;
   /** FEE-7: online payment intents (dummy gateway today). */
   onlineIntents: OnlineIntentRepository;
+  /** G2: daily collection, outstanding/defaulters, concession/waiver register. */
+  reports: FeeReportsRepository;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -767,4 +769,29 @@ export async function failOnlineIntent(deps: FeesDeps, tenantId: string, id: str
     await deps.onlineIntents.complete(tx, { id, status: 'failed', paymentId: null, completedAt: deps.clock.now() });
     return Ok(null);
   }), 'That could not be updated.');
+}
+
+/* ------------------------------------------------------------------------ G2: reports */
+
+/** FEE reports plan §5: daily collection, by cashier and method, reversals as their own negative line. */
+export async function collectionReport(deps: FeesDeps, actor: FeesActor, from: string, to: string) {
+  return deps.uow.run(actor.tenantId, (tx) => deps.reports.collection(tx, from, to));
+}
+
+/** Every student with a due invoice, and by how much — as of today. */
+export async function outstandingReport(deps: FeesDeps, actor: FeesActor) {
+  return deps.uow.run(actor.tenantId, (tx) => deps.reports.outstanding(tx, todayIso(deps.clock)));
+}
+
+/** Outstanding, filtered to whatever has been overdue at least `minDays` — for follow-up. */
+export async function defaultersReport(deps: FeesDeps, actor: FeesActor, minDays: number) {
+  const rows = await deps.uow.run(actor.tenantId, (tx) => deps.reports.outstanding(tx, todayIso(deps.clock)));
+  return rows.filter((r) => r.overdueDays >= minDays);
+}
+
+/** Every concession/waiver request with its decision — the approval state machine's own trail. */
+export async function requestsRegisterReport(
+  deps: FeesDeps, actor: FeesActor, from: string | null, to: string | null,
+) {
+  return deps.uow.run(actor.tenantId, (tx) => deps.reports.requestsRegister(tx, { from, to }));
 }

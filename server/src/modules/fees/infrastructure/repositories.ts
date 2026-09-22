@@ -1,10 +1,10 @@
 import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
-  AllocationRecord, FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord,
-  FeeRequestRecord, FeeRequestRepository, FeeStructureRecord, FeeStructureRepository,
-  InvoiceRecord, InvoiceRepository, OnlineIntentRecord, OnlineIntentRepository, PaymentRecord,
-  PaymentRepository, ReceiptRecord, StudentSummary,
+  AllocationRecord, CollectionRow, FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord,
+  FeeReportsRepository, FeeRequestRecord, FeeRequestRepository, FeeStructureRecord, FeeStructureRepository,
+  InvoiceRecord, InvoiceRepository, OnlineIntentRecord, OnlineIntentRepository, OutstandingRow, PaymentRecord,
+  PaymentRepository, ReceiptRecord, RequestRegisterRow, StudentSummary,
 } from '../application/ports.ts';
 
 function toHead(r: any): FeeHeadRecord {
@@ -580,5 +580,81 @@ export class PgOnlineIntentRepository implements OnlineIntentRepository {
       [input.id, input.status, input.paymentId, input.completedAt],
     );
     return (rowCount ?? 0) > 0;
+  }
+}
+
+/**
+ * G2: reports read against the ledger the module already keeps — no new
+ * tables, no new invariant (plan `docs/plan-fee-a-to-z-2026-09-22.md` §5).
+ */
+export class PgFeeReportsRepository implements FeeReportsRepository {
+  // Dates here are UTC-normalized, the same convention `todayIso` in
+  // manage-fees.ts uses for due-date comparisons — independent of whatever
+  // timezone the DB session happens to run in.
+  async collection(tx: Tx, from: string, to: string): Promise<CollectionRow[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT to_char(p.received_at AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS date,
+              p.received_by, per.full_name AS received_by_name, p.method, p.kind,
+              SUM(CASE WHEN p.kind = 'payment' THEN p.amount_paise ELSE -p.amount_paise END) AS amount_paise
+         FROM payments p
+         LEFT JOIN persons per ON per.id = p.received_by
+        WHERE (p.received_at AT TIME ZONE 'UTC')::date BETWEEN $1::date AND $2::date
+        GROUP BY date, p.received_by, per.full_name, p.method, p.kind
+        ORDER BY date, received_by_name NULLS FIRST, p.method, p.kind`,
+      [from, to],
+    );
+    return rows.map((r: any) => ({
+      date: r.date, receivedBy: r.received_by, receivedByName: r.received_by_name,
+      method: r.method, kind: r.kind, amountPaise: Number(r.amount_paise),
+    }));
+  }
+
+  async outstanding(tx: Tx, asOf: string): Promise<OutstandingRow[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT i.id AS invoice_id, i.student_id, per.full_name AS student_name, s.enrolment_number,
+              i.kind, i.due_date, i.amount_paise - coalesce(alloc.net, 0) AS outstanding_paise,
+              greatest(0, $1::date - i.due_date) AS overdue_days
+         FROM invoices i
+         JOIN students s ON s.id = i.student_id
+         JOIN persons per ON per.id = s.person_id
+         LEFT JOIN (
+           SELECT a.invoice_id,
+                  SUM(CASE WHEN p.kind = 'payment' THEN a.amount_paise ELSE -a.amount_paise END) AS net
+             FROM payment_allocations a JOIN payments p ON p.id = a.payment_id
+            GROUP BY a.invoice_id
+         ) alloc ON alloc.invoice_id = i.id
+        WHERE i.status = 'due'
+        ORDER BY i.due_date, per.full_name`,
+      [asOf],
+    );
+    return rows.map((r: any) => ({
+      invoiceId: r.invoice_id, studentId: r.student_id, studentName: r.student_name,
+      enrolmentNumber: r.enrolment_number, kind: r.kind, dueDate: `${r.due_date}`,
+      outstandingPaise: Number(r.outstanding_paise), overdueDays: Number(r.overdue_days),
+    }));
+  }
+
+  async requestsRegister(tx: Tx, filter: { from: string | null; to: string | null }): Promise<RequestRegisterRow[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT r.id, r.kind, r.student_id, per.full_name AS student_name, r.invoice_id, r.amount_paise,
+              r.reason, r.status, r.requested_by, reqp.full_name AS requested_by_name, r.requested_at,
+              r.decided_by, decp.full_name AS decided_by_name, r.decided_at, r.decision_reason
+         FROM fee_requests r
+         JOIN students s ON s.id = r.student_id
+         JOIN persons per ON per.id = s.person_id
+         JOIN persons reqp ON reqp.id = r.requested_by
+         LEFT JOIN persons decp ON decp.id = r.decided_by
+        WHERE ($1::date IS NULL OR r.requested_at >= $1::date)
+          AND ($2::date IS NULL OR r.requested_at < $2::date + interval '1 day')
+        ORDER BY r.requested_at DESC`,
+      [filter.from, filter.to],
+    );
+    return rows.map((r: any) => ({
+      id: r.id, kind: r.kind, studentId: r.student_id, studentName: r.student_name, invoiceId: r.invoice_id,
+      amountPaise: Number(r.amount_paise), reason: r.reason, status: r.status,
+      requestedBy: r.requested_by, requestedByName: r.requested_by_name, requestedAt: r.requested_at,
+      decidedBy: r.decided_by, decidedByName: r.decided_by_name,
+      decidedAt: r.decided_at, decisionReason: r.decision_reason,
+    }));
   }
 }
