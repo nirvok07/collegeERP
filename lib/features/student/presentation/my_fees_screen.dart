@@ -8,6 +8,7 @@ import '../../../core/widgets/saved_freshness.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/app_list_tile.dart';
 import '../../fees/domain/fees.dart';
+import '../../fees/presentation/fee_document_actions.dart';
 import '../data/my_attendance.dart';
 import 'my_fees_cubit.dart';
 
@@ -34,8 +35,21 @@ class _MyFeesView extends StatelessWidget {
     return BlocBuilder<MyFeesCubit, MyFeesState>(
       builder: (context, state) {
         final cubit = context.read<MyFeesCubit>();
+        final invoices = state.fees?.invoices ?? const <FeeInvoice>[];
+        final payments = state.fees?.payments ?? const <FeePayment>[];
+        // A receipt and a statement name the student; there is no dedicated
+        // "my name" read here, so an invoice's own copy of it is used —
+        // every invoice already carries it (server: serialiseInvoice).
+        final studentName = invoices.firstOrNull?.studentName ?? '';
+        final enrolmentNumber = invoices.firstOrNull?.enrolmentNumber ?? '';
         return Scaffold(
-          appBar: AppBar(title: const Text('My fees')),
+          appBar: AppBar(
+            title: const Text('My fees'),
+            actions: [
+              if (state.fees != null && (invoices.isNotEmpty || payments.isNotEmpty))
+                StatementAction(invoices: invoices, payments: payments, studentName: studentName, enrolmentNumber: enrolmentNumber),
+            ],
+          ),
           body: switch (state.status) {
             LoadStatus.loading => const SkeletonList(rows: 4),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
@@ -92,13 +106,19 @@ class _MyFeesView extends StatelessWidget {
                     Text('Payments', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     if ((state.fees?.payments ?? const []).isEmpty)
                       const Padding(padding: EdgeInsets.all(AppSpacing.base), child: Text('No payments yet.')),
-                    for (final p in state.fees?.payments ?? const <FeePayment>[])
+                    for (final p in payments)
                       AppListTile(
                         margin: const EdgeInsets.symmetric(vertical: 6),
                         leading: Icon(p.isReversal ? Icons.undo_rounded : Icons.payments_outlined, color: p.isReversal ? AppColors.error : null),
                         title: Text('${p.isReversal ? 'Reversal · ' : ''}${FeePayment.methodLabel(p.method)}'),
                         subtitle: Text(p.reference ?? p.reason ?? ''),
-                        trailing: Text(rupees(p.amountPaise)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(rupees(p.amountPaise)),
+                            ReceiptButton(payment: p, studentName: studentName, enrolmentNumber: enrolmentNumber),
+                          ],
+                        ),
                       ),
                   ],
                 ),

@@ -8,6 +8,7 @@ import '../../../core/widgets/submit_dialog.dart';
 import '../../../core/widgets/app_list_tile.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
+import 'fee_document_actions.dart';
 import 'student_fee_cubit.dart';
 
 class StudentFeeArgs {
@@ -186,13 +187,23 @@ class _StudentFeeView extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<StudentFeeCubit>();
         return Scaffold(
-          appBar: AppBar(title: Text(args.studentName), bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(20),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(args.enrolmentNumber, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          appBar: AppBar(
+            title: Text(args.studentName),
+            actions: [
+              if (state.status != LoadStatus.loading && (state.invoices.isNotEmpty || state.payments.isNotEmpty))
+                StatementAction(
+                  invoices: state.invoices, payments: state.payments,
+                  studentName: args.studentName, enrolmentNumber: args.enrolmentNumber,
+                ),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(20),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(args.enrolmentNumber, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+              ),
             ),
-          )),
+          ),
           floatingActionButton: state.status == LoadStatus.loading
               ? null
               : Row(
@@ -268,6 +279,7 @@ class _StudentFeeView extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(rupees(p.amountPaise)),
+                            ReceiptButton(payment: p, studentName: args.studentName, enrolmentNumber: args.enrolmentNumber),
                             if (args.canCollect && !p.isReversal)
                               IconButton(icon: const Icon(Icons.close_rounded), tooltip: 'Cancel', onPressed: () => _cancelPayment(context, p)),
                           ],

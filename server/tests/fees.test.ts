@@ -412,6 +412,17 @@ describe('FEE-4: payments', () => {
     const allPaid = (await get(`/v1/fees/students/${studentId}/invoices`, s.admin)).json().data;
     assert.ok(allPaid.every((i: { status: string }) => i.status === 'paid'));
 
+    // G1: a listed payment carries its own receipt number and status, not
+    // just the immediate response to recording it — a receipt printed later
+    // needs this from the ordinary payments list.
+    const listed = (await get(`/v1/fees/students/${studentId}/payments`, s.admin)).json().data as
+      { receipt_number: number | null; receipt_status: string | null }[];
+    assert.deepEqual(
+      listed.map((p) => p.receipt_number).sort((a, b) => (a ?? 0) - (b ?? 0)),
+      [1, 2, 3],
+    );
+    assert.ok(listed.every((p) => p.receipt_status === 'issued'));
+
     assert.equal((await post('/v1/fees/payments', cashier, { student_id: studentId, method: 'cash', amount_paise: 1 })).statusCode, 422);
   });
 
@@ -435,6 +446,14 @@ describe('FEE-4: payments', () => {
     assert.equal(payments.length, 2, 'the original and its reversal, both kept');
     assert.ok(payments.some((p: { id: string; kind: string }) => p.id === paymentId && p.kind === 'payment'));
     assert.ok(payments.some((p: { id: string; kind: string }) => p.id === reversalId && p.kind === 'reversal'));
+
+    // G1: the receipt row itself is never touched (module doc §3), only its
+    // status; the reversal gets no receipt of its own (module doc §6).
+    const original = payments.find((p: { id: string }) => p.id === paymentId);
+    assert.equal(original.receipt_status, 'cancelled');
+    assert.equal(original.receipt_number, 1, 'the number stays, it is never reissued');
+    const reversal = payments.find((p: { id: string }) => p.id === reversalId);
+    assert.equal(reversal.receipt_number, null);
 
     assert.equal((await post(`/v1/fees/payments/${paymentId}/cancel`, cashier, { reason: 'Again' })).statusCode, 409, 'already cancelled');
 

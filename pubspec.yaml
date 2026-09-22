@@ -72,6 +72,11 @@ dependencies:
   # the app); module doc §6.
   url_launcher: ^6.3.1
 
+  # G1: a fee receipt/statement, rendered on the phone and handed to the OS
+  # view/print/share sheet. No server work; every field is already in hand.
+  pdf: ^3.11.3
+  printing: ^5.13.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

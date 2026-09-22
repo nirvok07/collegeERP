@@ -79,6 +79,8 @@ const serialisePayment = (p: PaymentRecord) => ({
   id: p.id, student_id: p.studentId, kind: p.kind, method: p.method, amount_paise: p.amountPaise,
   reference: p.reference, reverses_payment_id: p.reversesPaymentId, reason: p.reason,
   received_by: p.receivedBy, received_at: p.receivedAt.toISOString(),
+  receipt_number: p.receiptNumber, receipt_status: p.receiptStatus,
+  receipt_issued_at: p.receiptIssuedAt?.toISOString() ?? null,
 });
 
 export async function registerFeeRoutes(app: FastifyInstance, c: Container) {

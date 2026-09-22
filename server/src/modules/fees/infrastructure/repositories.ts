@@ -410,6 +410,8 @@ function toPayment(r: any): PaymentRecord {
     id: r.id, studentId: r.student_id, kind: r.kind, method: r.method, amountPaise: Number(r.amount_paise),
     reference: r.reference, reversesPaymentId: r.reverses_payment_id, reason: r.reason,
     receivedBy: r.received_by, receivedAt: r.received_at,
+    receiptNumber: r.receipt_number == null ? null : Number(r.receipt_number),
+    receiptStatus: r.receipt_status, receiptIssuedAt: r.receipt_issued_at,
   };
 }
 
@@ -420,10 +422,16 @@ function toReceipt(r: any): ReceiptRecord {
   };
 }
 
+// G1 (receipt/statement): a payment's receipt travels with it everywhere a
+// payment is read, so a screen never has to fetch it separately — a reversal
+// has none (module doc §6: "gets no receipt of its own"), which the LEFT
+// JOIN leaves null rather than absent.
 const PAYMENT_SELECT = `
-  SELECT id, student_id, kind, method, amount_paise, reference, reverses_payment_id, reason,
-         received_by, received_at
-    FROM payments`;
+  SELECT p.id, p.student_id, p.kind, p.method, p.amount_paise, p.reference, p.reverses_payment_id,
+         p.reason, p.received_by, p.received_at,
+         r.receipt_number, r.status AS receipt_status, r.issued_at AS receipt_issued_at
+    FROM payments p
+    LEFT JOIN receipts r ON r.payment_id = p.id`;
 
 export class PgPaymentRepository implements PaymentRepository {
   async nextReceiptNumber(tx: Tx, tenantId: string): Promise<number> {
@@ -451,12 +459,12 @@ export class PgPaymentRepository implements PaymentRepository {
   }
 
   async findPayment(tx: Tx, id: string): Promise<PaymentRecord | null> {
-    const { rows } = await clientOf(tx).query(`${PAYMENT_SELECT} WHERE id=$1`, [id]);
+    const { rows } = await clientOf(tx).query(`${PAYMENT_SELECT} WHERE p.id=$1`, [id]);
     return rows[0] ? toPayment(rows[0]) : null;
   }
 
   async reversalOf(tx: Tx, paymentId: string): Promise<PaymentRecord | null> {
-    const { rows } = await clientOf(tx).query(`${PAYMENT_SELECT} WHERE reverses_payment_id=$1`, [paymentId]);
+    const { rows } = await clientOf(tx).query(`${PAYMENT_SELECT} WHERE p.reverses_payment_id=$1`, [paymentId]);
     return rows[0] ? toPayment(rows[0]) : null;
   }
 
@@ -522,7 +530,7 @@ export class PgPaymentRepository implements PaymentRepository {
 
   async listByStudent(tx: Tx, studentId: string): Promise<PaymentRecord[]> {
     const { rows } = await clientOf(tx).query(
-      `${PAYMENT_SELECT} WHERE student_id=$1 ORDER BY received_at DESC`,
+      `${PAYMENT_SELECT} WHERE p.student_id=$1 ORDER BY p.received_at DESC`,
       [studentId],
     );
     return rows.map(toPayment);

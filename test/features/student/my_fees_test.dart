@@ -64,6 +64,34 @@ void main() {
 
   // FEE-7: the online-payment button offers the full amount due, and asks
   // the repository for exactly that when tapped.
+  // G1: a receipt is offered per payment (it has one), a statement for the
+  // whole ledger; a reversal never gets a "Receipt" action of its own.
+  testWidgets('offers a receipt for a paid payment, a statement overall, and no receipt for a reversal', (tester) async {
+    final fees = MyFees(
+      invoices: const [
+        FeeInvoice(id: 'i1', studentId: 's1', studentName: 'Me', enrolmentNumber: 'E1', kind: 'instalment', instalmentSeq: 1, amountPaise: 500000, dueDate: '2026-07-01', status: 'paid'),
+      ],
+      payments: [
+        FeePayment(
+          id: 'p1', studentId: 's1', kind: 'payment', method: 'cash', amountPaise: 500000, reference: 'UTR1',
+          reversesPaymentId: null, reason: null, receivedAt: DateTime(2026, 6, 1),
+          receiptNumber: 7, receiptStatus: 'issued', receiptIssuedAt: DateTime(2026, 6, 1),
+        ),
+        FeePayment(
+          id: 'p2', studentId: 's1', kind: 'reversal', method: 'cash', amountPaise: 500000, reference: null,
+          reversesPaymentId: 'p1', reason: 'Cheque bounced', receivedAt: DateTime(2026, 6, 2),
+        ),
+      ],
+    );
+    await tester.pumpWidget(MaterialApp(home: MyFeesScreen(repository: _FakeSelf(fees))));
+    await tester.pumpAndSettle();
+
+    // One "Statement" action in the app bar, and exactly one "Receipt"
+    // action — the paid payment's, never the reversal's.
+    expect(find.byTooltip('Statement'), findsOneWidget);
+    expect(find.byTooltip('Receipt'), findsOneWidget);
+  });
+
   testWidgets('a student with dues sees a pay-online button for the full amount', (tester) async {
     final fees = MyFees(
       invoices: const [

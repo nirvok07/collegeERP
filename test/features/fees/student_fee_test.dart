@@ -63,6 +63,28 @@ void main() {
     expect(fees.allRequests.single.kind, 'concession');
   });
 
+  // G1: a Cashier gets a "Receipt" per paid payment and one "Statement" for
+  // the whole ledger; a reversal never gets a "Receipt" action of its own.
+  testWidgets('offers a receipt for a paid payment, a statement overall, and no receipt for a reversal', (tester) async {
+    final fees = dueRepo();
+    fees.payments['st1'] = [
+      FeePayment(
+        id: 'p1', studentId: 'st1', kind: 'payment', method: 'cash', amountPaise: 500000,
+        reference: null, reversesPaymentId: null, reason: null, receivedAt: DateTime(2026, 6, 1),
+        receiptNumber: 7, receiptStatus: 'issued', receiptIssuedAt: DateTime(2026, 6, 1),
+      ),
+      FeePayment(
+        id: 'p2', studentId: 'st1', kind: 'reversal', method: 'cash', amountPaise: -500000,
+        reference: null, reversesPaymentId: 'p1', reason: 'Wrong student', receivedAt: DateTime(2026, 6, 2),
+      ),
+    ];
+    await tester.pumpWidget(MaterialApp(home: StudentFeeScreen(args: args, repository: fees)));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Statement'), findsOneWidget);
+    expect(find.byTooltip('Receipt'), findsOneWidget);
+  });
+
   testWidgets('without any fee permission there is nothing to do but look', (tester) async {
     final fees = dueRepo();
     await tester.pumpWidget(MaterialApp(

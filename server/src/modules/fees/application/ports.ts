@@ -179,6 +179,10 @@ export interface PaymentRecord {
   /** Null exactly for an online payment: nobody at the college received it personally. */
   receivedBy: string | null;
   receivedAt: Date;
+  /** G1: a reversal has none (module doc §6); every other payment does. */
+  receiptNumber: number | null;
+  receiptStatus: 'issued' | 'cancelled' | null;
+  receiptIssuedAt: Date | null;
 }
 
 export interface AllocationRecord {

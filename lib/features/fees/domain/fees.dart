@@ -208,6 +208,9 @@ class FeePayment {
     required this.reversesPaymentId,
     required this.reason,
     required this.receivedAt,
+    this.receiptNumber,
+    this.receiptStatus,
+    this.receiptIssuedAt,
   });
 
   final String id;
@@ -216,7 +219,7 @@ class FeePayment {
   /// payment | reversal.
   final String kind;
 
-  /// cash | upi | cheque | bank_transfer.
+  /// cash | upi | cheque | bank_transfer | online.
   final String method;
   final int amountPaise;
   final String? reference;
@@ -224,7 +227,16 @@ class FeePayment {
   final String? reason;
   final DateTime receivedAt;
 
+  /// G1: null for a reversal, which gets no receipt of its own (module doc §6).
+  final int? receiptNumber;
+
+  /// issued | cancelled, null exactly when [receiptNumber] is.
+  final String? receiptStatus;
+  final DateTime? receiptIssuedAt;
+
   bool get isReversal => kind == 'reversal';
+  bool get hasReceipt => receiptNumber != null;
+  bool get receiptCancelled => receiptStatus == 'cancelled';
 
   static const methods = ['cash', 'upi', 'cheque', 'bank_transfer'];
 
@@ -243,6 +255,8 @@ class FeePayment {
       method: m['method'] as String, amountPaise: (m['amount_paise'] as num).toInt(),
       reference: m['reference'] as String?, reversesPaymentId: m['reverses_payment_id'] as String?,
       reason: m['reason'] as String?, receivedAt: DateTime.parse(m['received_at'] as String),
+      receiptNumber: (m['receipt_number'] as num?)?.toInt(), receiptStatus: m['receipt_status'] as String?,
+      receiptIssuedAt: m['receipt_issued_at'] == null ? null : DateTime.parse(m['receipt_issued_at'] as String),
     );
   }
 }
