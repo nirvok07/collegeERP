@@ -189,17 +189,25 @@ class _CollegeAppState extends State<CollegeApp> {
   /// unless LK-1 has turned it off for this phone.
   Widget _lockWhenSignedIn(Widget content) {
     if (_phase != _Phase.signedIn) return content;
+    final preference = locator<AppLockPreference>();
     return ValueListenableBuilder<bool>(
-      valueListenable: locator<AppLockPreference>(),
-      builder: (context, enabled, _) => enabled
-          ? AppLockGate(
-              unlock: locator<DeviceUnlock>(),
-              college: _college,
-              startLocked: !_freshSignIn,
-              onSignOut: () => unawaited(_session.signOut()),
-              child: content,
-            )
-          : content,
+      valueListenable: preference,
+      builder: (context, enabled, _) {
+        // Whether the phone is even asked (BIO-1) waits for the saved
+        // preference to actually load: deciding from the optimistic
+        // default would ask on every cold open, including a phone whose
+        // owner turned the lock off in Settings (OD-LK-1 / feedback 2026-09).
+        if (!preference.settled) return AppLockLoading(college: _college);
+        return enabled
+            ? AppLockGate(
+                unlock: locator<DeviceUnlock>(),
+                college: _college,
+                startLocked: !_freshSignIn,
+                onSignOut: () => unawaited(_session.signOut()),
+                child: content,
+              )
+            : content;
+      },
     );
   }
 

@@ -126,6 +126,29 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   }
 }
 
+/// BIO-1: shown while [AppLockPreference] is still loading, before it is
+/// known whether the lock is even on. Looks like the real lock screen but
+/// asks the phone nothing — asking now, ahead of the answer, is the bug this
+/// exists to avoid: a person who turned the lock off would see (or feel) a
+/// fingerprint prompt anyway, on every cold open, until the read caught up.
+class AppLockLoading extends StatelessWidget {
+  const AppLockLoading({super.key, this.college});
+
+  final CollegeBrand? college;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: AppColors.navy,
+    child: SafeArea(
+      child: Center(
+        child: college != null
+            ? CollegeLogo(college: college!, size: 64)
+            : const Icon(Icons.lock_rounded, size: 56, color: Colors.white),
+      ),
+    ),
+  );
+}
+
 class _LockScreen extends StatelessWidget {
   const _LockScreen({required this.college, required this.asking, required this.onUnlock, this.onSignOut});
 

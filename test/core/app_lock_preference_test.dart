@@ -50,4 +50,33 @@ void main() {
     preference.resetOnSignOut();
     expect(preference.value, isTrue);
   });
+
+  // Owner feedback (feedbackchanges.md, 2026-09): after turning the lock off in
+  // Settings, it must not ask the phone again until that is actually known —
+  // not just assumed from the constructor's optimistic default.
+  test('settled is false until the store has answered, even when the answer is the default', () {
+    final store = _FakeStore();
+    final preference = AppLockPreference(store);
+    expect(preference.settled, isFalse, reason: 'the read has not resolved yet');
+    expect(preference.value, isTrue, reason: 'the optimistic default, not yet trustworthy');
+  });
+
+  test('settled becomes true once loaded, even when the stored value equals the default', () async {
+    final store = _FakeStore(); // enabled = true, same as the constructor's default
+    final preference = AppLockPreference(store);
+    var notified = 0;
+    preference.addListener(() => notified++);
+    await Future<void>.delayed(Duration.zero);
+    expect(preference.settled, isTrue);
+    expect(notified, greaterThan(0), reason: 'a listener waiting on settled must be told, even though value did not change');
+  });
+
+  test('settled becomes true immediately on disable(), before the store write finishes', () {
+    final store = _FakeStore();
+    final preference = AppLockPreference(store);
+    final future = preference.disable();
+    expect(preference.settled, isTrue);
+    expect(preference.value, isFalse);
+    return future;
+  });
 }
