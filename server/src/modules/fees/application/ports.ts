@@ -164,7 +164,7 @@ export interface InvoiceRepository {
   studentsStillDue(tx: Tx, instalmentId: string): Promise<string[]>;
 }
 
-export type PaymentMethod = 'cash' | 'upi' | 'cheque' | 'bank_transfer';
+export type PaymentMethod = 'cash' | 'upi' | 'cheque' | 'bank_transfer' | 'online';
 export type PaymentKind = 'payment' | 'reversal';
 
 export interface PaymentRecord {
@@ -176,7 +176,8 @@ export interface PaymentRecord {
   reference: string | null;
   reversesPaymentId: string | null;
   reason: string | null;
-  receivedBy: string;
+  /** Null exactly for an online payment: nobody at the college received it personally. */
+  receivedBy: string | null;
   receivedAt: Date;
 }
 
@@ -200,7 +201,7 @@ export interface PaymentRepository {
   createPayment(tx: Tx, input: {
     id: string; tenantId: string; studentId: string; kind: PaymentKind; method: PaymentMethod;
     amountPaise: number; reference: string | null; reversesPaymentId: string | null;
-    reason: string | null; receivedBy: string;
+    reason: string | null; receivedBy: string | null;
   }): Promise<void>;
   findPayment(tx: Tx, id: string): Promise<PaymentRecord | null>;
   reversalOf(tx: Tx, paymentId: string): Promise<PaymentRecord | null>;
@@ -217,4 +218,36 @@ export interface PaymentRepository {
     paymentId: string; cancelledBy: string; cancelledAt: Date; reason: string;
   }): Promise<boolean>;
   listByStudent(tx: Tx, studentId: string): Promise<PaymentRecord[]>;
+}
+
+/* --------------------------------------------------------- FEE-7 online payment */
+
+export type OnlineIntentStatus = 'created' | 'paid' | 'failed';
+
+export interface OnlineIntentRecord {
+  id: string;
+  studentId: string;
+  amountPaise: number;
+  status: OnlineIntentStatus;
+  provider: string;
+  providerRef: string | null;
+  paymentId: string | null;
+  createdBy: string;
+  createdAt: Date;
+  completedAt: Date | null;
+}
+
+/**
+ * Tracks a payment from "the student asked to pay online" through to
+ * completion — created, then paid or failed, exactly once. A real gateway's
+ * signed webhook would drive this transition; the dummy provider's own
+ * checkout page stands in for it today (module doc §6, FEE-7).
+ */
+export interface OnlineIntentRepository {
+  create(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; amountPaise: number;
+    provider: string; providerRef: string | null; createdBy: string;
+  }): Promise<void>;
+  find(tx: Tx, id: string): Promise<OnlineIntentRecord | null>;
+  complete(tx: Tx, input: { id: string; status: 'paid' | 'failed'; paymentId: string | null; completedAt: Date }): Promise<boolean>;
 }

@@ -232,6 +232,7 @@ class FeePayment {
         'upi' => 'UPI',
         'cheque' => 'Cheque',
         'bank_transfer' => 'Bank transfer',
+        'online' => 'Online',
         _ => 'Cash',
       };
 

@@ -7,10 +7,11 @@ import { fail } from '../../../core/errors.ts';
 import { institutionScope } from '../../identity/domain/scope.ts';
 import {
   addInstalment, addLine, applyLateFees, approveRequest, archiveFeeHead, cancelPayment,
-  createDraftStructure, createFeeHead, generateInvoices, listFeeHeads, listFeeRequests,
-  listStructureInvoices, listStructures, listStudentInvoices, listStudentPayments,
-  publishStructure, raiseFine, readStructure, recordPayment, rejectRequest, requestConcession,
-  requestWaiver, searchFeeStudents, withdrawRequest, type FeesActor,
+  completeOnlineIntent, createDraftStructure, createFeeHead, createOnlineIntent, failOnlineIntent,
+  findOnlineIntent, generateInvoices, listFeeHeads, listFeeRequests, listStructureInvoices,
+  listStructures, listStudentInvoices, listStudentPayments, publishStructure, raiseFine,
+  readStructure, recordPayment, rejectRequest, requestConcession, requestWaiver,
+  searchFeeStudents, withdrawRequest, type FeesActor,
 } from '../application/manage-fees.ts';
 import type {
   FeeHeadRecord, FeeRequestRecord, FeeStructureRecord, InvoiceRecord, PaymentRecord,
@@ -71,6 +72,8 @@ const paymentBody = z.object({
   reference: z.string().max(80).optional(),
 });
 const cancelBody = z.object({ reason: z.string().min(1).max(500) });
+const onlinePayBody = z.object({ amount_paise: z.number().int().positive() });
+const checkoutQuery = z.object({ college: z.string().min(1) });
 
 const serialisePayment = (p: PaymentRecord) => ({
   id: p.id, student_id: p.studentId, kind: p.kind, method: p.method, amount_paise: p.amountPaise,
@@ -116,6 +119,82 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
       listStudentPayments(c.fees, actor, student.id),
     ]);
     return sendOk(reply, { invoices: invoices.map(serialiseInvoice), payments: payments.map(serialisePayment) });
+  });
+
+  /*
+   * FEE-7: a student starts paying their own dues online. Dummy provider for
+   * now (no Razorpay merchant account/keys yet, owner 2026-09-22): the
+   * checkout URL is our own hosted page below, in place of a Razorpay
+   * Payment Link. Swapping providers later changes only how these two
+   * routes talk to the gateway; the app-facing shape (create → a URL to
+   * open → the app refreshes on return) stays the same.
+   */
+  app.post('/me/fees/online', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const parsed = onlinePayBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, invalid(parsed.error.issues));
+    const personId = req.actor.sub;
+    const tenantId = req.actor.tenantId;
+    const student = await c.uow.run(tenantId, (tx) => c.studentSelf.whoAmI(tx, personId));
+    if (!student) return sendFailure(reply, fail('FORBIDDEN', 'Only students pay their own fees.'));
+    const institution = await c.uow.run(null, (tx) => c.institutions.findById(tx, tenantId));
+    const result = await createOnlineIntent(c.fees, { tenantId, personId }, {
+      studentId: student.id, amountPaise: parsed.data.amount_paise,
+      // The checkout page has no session; the college's code (not the tenant
+      // uuid, per the app's own code-first convention) says which tenant to
+      // look the intent up under, the way an invitation link already does.
+      publicBaseUrl: `${req.protocol}://${req.headers.host}`,
+      collegeCode: institution?.code ?? '',
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, { intent_id: result.value.intentId, checkout_url: result.value.checkoutUrl }, 201);
+  });
+
+  app.get('/me/fees/online/:id', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const intent = await findOnlineIntent(c.fees, req.actor.tenantId, (req.params as { id: string }).id);
+    if (!intent) return sendFailure(reply, fail('NOT_FOUND', 'Not found.'));
+    return sendOk(reply, { status: intent.status });
+  });
+
+  /** No session: the college code plus the intent's own uuid is its capability, the same shape an invitation link uses. */
+  const tenantFromQuery = async (req: { query: unknown }): Promise<string | null> => {
+    const q = checkoutQuery.safeParse(req.query);
+    if (!q.success) return null;
+    const institution = await c.uow.run(null, (tx) => c.institutions.findByCode(tx, q.data.college.toLowerCase()));
+    return institution ? institution.id : null;
+  };
+
+  app.get('/fees/online/:id/checkout', async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    reply.type('text/html');
+    const tenantId = await tenantFromQuery(req);
+    const intent = tenantId ? await findOnlineIntent(c.fees, tenantId, id) : null;
+    if (!intent || intent.status !== 'created') {
+      return reply.send(dummyCheckoutPage({ ok: false, id, amountPaise: intent?.amountPaise ?? 0 }));
+    }
+    return reply.send(dummyCheckoutPage({ ok: true, id, amountPaise: intent.amountPaise }));
+  });
+
+  app.post('/fees/online/:id/complete', async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    reply.type('text/html');
+    const tenantId = await tenantFromQuery(req);
+    if (!tenantId) return reply.send(dummyCheckoutResultPage(false));
+    const result = await completeOnlineIntent(c.fees, tenantId, id);
+    return reply.send(dummyCheckoutResultPage(result.ok));
+  });
+
+  app.post('/fees/online/:id/fail', async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    reply.type('text/html');
+    const tenantId = await tenantFromQuery(req);
+    if (tenantId) await failOnlineIntent(c.fees, tenantId, id);
+    return reply.send(dummyCheckoutResultPage(false));
   });
 
   app.get('/fees/students', async (req, reply) => {
@@ -335,4 +414,65 @@ export async function registerFeeRoutes(app: FastifyInstance, c: Container) {
       invoiceId: parsed.data.invoice_id, reason: parsed.data.reason,
     }), 201);
   });
+}
+
+/* -------------------------------------------------------- FEE-7: dummy checkout */
+/*
+ * The dummy provider's own hosted page. Stands in for Razorpay's checkout
+ * exactly where module doc §6 says the app opens a hosted page and the
+ * payment lands only through a signed webhook — here, this page's own two
+ * buttons post to the routes above, in place of that webhook. Swapping in a
+ * real gateway later means these two functions (and the two POST routes
+ * above) change; nothing else in the fees module does.
+ */
+function rupees(paise: number): string {
+  return `₹${(paise / 100).toFixed(2)}`;
+}
+
+function dummyCheckoutPage(input: { ok: boolean; id: string; amountPaise: number }): string {
+  if (!input.ok) {
+    return page('Payment link expired', `
+      <p>This payment link has already been used or is no longer valid.</p>
+      <p>Go back to the app and try again.</p>
+    `);
+  }
+  return page('Pay your fees', `
+    <p class="amount">${rupees(input.amountPaise)}</p>
+    <p class="notice">DUMMY GATEWAY — no real money moves. Stands in for Razorpay until the
+      college supplies a merchant account (module doc §6).</p>
+    <form method="post" action="/v1/fees/online/${input.id}/complete">
+      <button class="pay" type="submit">Simulate successful payment</button>
+    </form>
+    <form method="post" action="/v1/fees/online/${input.id}/fail">
+      <button class="fail" type="submit">Simulate a failed payment</button>
+    </form>
+  `);
+}
+
+function dummyCheckoutResultPage(paid: boolean): string {
+  return page(paid ? 'Payment received' : 'Payment not completed', `
+    <p>${paid ? 'Your payment was recorded.' : 'This payment was not completed.'}</p>
+    <p>Return to the app to see your updated fees.</p>
+  `);
+}
+
+function page(title: string, body: string): string {
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; background: #f5f6fb; color: #1b1c2b;
+         display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  main { background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgb(15 23 42 / 0.10);
+         padding: 32px; max-width: 360px; width: 90%; text-align: center; }
+  h1 { font-size: 20px; margin: 0 0 12px; }
+  .amount { font-size: 32px; font-weight: 700; margin: 8px 0 20px; }
+  .notice { font-size: 12px; color: #8f92a8; background: #fffbeb; padding: 8px; border-radius: 8px; }
+  form { margin-top: 12px; }
+  button { width: 100%; min-height: 44px; border-radius: 8px; border: 0; font-size: 15px;
+           font-weight: 600; cursor: pointer; }
+  .pay { background: #4f46e5; color: #fff; }
+  .fail { background: transparent; color: #dc2626; margin-top: 8px; }
+</style></head>
+<body><main><h1>${title}</h1>${body}</main></body></html>`;
 }

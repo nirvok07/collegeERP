@@ -674,3 +674,123 @@ describe('FEE-6: a student reads their own fees', () => {
     assert.equal((await get('/v1/me/fees', s.admin)).statusCode, 403);
   });
 });
+
+describe('FEE-7: online payment (dummy gateway)', () => {
+  /** Gets a signed-in student with one due instalment, ready to pay online. */
+  async function studentWithDues(amountPaise = 500000) {
+    const s = await feeSetup('fee-online');
+    const tuition = (await post('/v1/fees/heads', s.admin, { name: 'Tuition', code: 'tuition' })).json().data.id;
+    const structureId = (await post('/v1/fees/structures', s.admin, {
+      program_id: s.program, academic_year_id: s.year,
+    })).json().data.id;
+    const instalmentId = (await post(`/v1/fees/structures/${structureId}/instalments`, s.admin, {
+      seq: 1, due_date: '2026-07-01',
+    })).json().data.id;
+    await post(`/v1/fees/instalments/${instalmentId}/lines`, s.admin, { fee_head_id: tuition, amount_paise: amountPaise });
+    await post(`/v1/fees/structures/${structureId}/publish`, s.admin);
+
+    const studentId = (await post('/v1/students', s.admin, {
+      full_name: 'Rehan Ali', email: `rehan@${s.code}.edu`,
+      enrolment_number: 'CSE2026-002', program_id: s.program, admitted_on: '2026-06-01',
+    })).json().data.id;
+    await post(`/v1/fees/structures/${structureId}/invoices`, s.admin);
+
+    const issued = await post(`/v1/students/${studentId}/access`, s.admin);
+    const { code: activationCode } = issued.json().data as { code: string };
+    await post('/v1/auth/student-activate', s.admin, {
+      institution_code: s.code, enrolment_number: 'CSE2026-002', code: activationCode, password: 'rehan-strong-99',
+    });
+    const login = await post('/v1/auth/login', s.admin, {
+      institution_code: s.code, identifier: 'CSE2026-002', password: 'rehan-strong-99',
+    });
+    const studentToken = login.json().data.access_token as string;
+    return { ...s, studentId, studentToken };
+  }
+
+  it('a student starts an online payment, completes it through the dummy checkout, and their fees reflect it', async () => {
+    const s = await studentWithDues();
+
+    const started = await post('/v1/me/fees/online', s.studentToken, { amount_paise: 500000 });
+    assert.equal(started.statusCode, 201, JSON.stringify(started.json()));
+    const { intent_id: intentId, checkout_url: checkoutUrl } = started.json().data as { intent_id: string; checkout_url: string };
+    assert.ok(checkoutUrl.includes(`/v1/fees/online/${intentId}/checkout`));
+    assert.ok(checkoutUrl.includes(`college=${s.code}`));
+
+    // The checkout page itself needs no session — the link is its own capability.
+    const path = new URL(checkoutUrl).pathname + new URL(checkoutUrl).search;
+    const checkoutPage = await harness.app.inject({ method: 'GET', url: path });
+    assert.equal(checkoutPage.statusCode, 200);
+    assert.match(checkoutPage.body, /₹5000\.00/);
+
+    const before = await get(`/v1/me/fees/online/${intentId}`, s.studentToken);
+    assert.equal(before.json().data.status, 'created');
+
+    // The dummy provider's own "I paid" call, in place of a signed webhook.
+    const completed = await harness.app.inject({ method: 'POST', url: `/v1/fees/online/${intentId}/complete?college=${s.code}` });
+    assert.equal(completed.statusCode, 200);
+
+    const mine = await get('/v1/me/fees', s.studentToken);
+    assert.equal(mine.json().data.invoices[0].status, 'paid');
+    assert.equal(mine.json().data.payments.length, 1);
+    assert.equal(mine.json().data.payments[0].method, 'online');
+    assert.equal(mine.json().data.payments[0].amount_paise, 500000);
+    assert.equal(mine.json().data.payments[0].received_by, null, 'nobody at the college received an online payment personally');
+
+    const after = await get(`/v1/me/fees/online/${intentId}`, s.studentToken);
+    assert.equal(after.json().data.status, 'paid');
+  });
+
+  it('a simulated failed payment settles nothing, and the intent cannot be completed afterwards', async () => {
+    const s = await studentWithDues();
+    const started = await post('/v1/me/fees/online', s.studentToken, { amount_paise: 500000 });
+    const { intent_id: intentId } = started.json().data as { intent_id: string };
+
+    const failed = await harness.app.inject({ method: 'POST', url: `/v1/fees/online/${intentId}/fail?college=${s.code}` });
+    assert.equal(failed.statusCode, 200);
+
+    const mine = await get('/v1/me/fees', s.studentToken);
+    assert.equal(mine.json().data.payments.length, 0, 'a failed payment settles nothing');
+
+    // A failed (or already-completed) intent refuses to complete afterwards.
+    const lateComplete = await harness.app.inject({ method: 'POST', url: `/v1/fees/online/${intentId}/complete?college=${s.code}` });
+    assert.equal(lateComplete.statusCode, 200, 'the dummy page always renders, even on refusal');
+    const mineAfter = await get('/v1/me/fees', s.studentToken);
+    assert.equal(mineAfter.json().data.payments.length, 0);
+  });
+
+  it('the same intent cannot be completed twice', async () => {
+    const s = await studentWithDues();
+    const started = await post('/v1/me/fees/online', s.studentToken, { amount_paise: 500000 });
+    const { intent_id: intentId } = started.json().data as { intent_id: string };
+
+    await harness.app.inject({ method: 'POST', url: `/v1/fees/online/${intentId}/complete?college=${s.code}` });
+    await harness.app.inject({ method: 'POST', url: `/v1/fees/online/${intentId}/complete?college=${s.code}` });
+
+    const mine = await get('/v1/me/fees', s.studentToken);
+    assert.equal(mine.json().data.payments.length, 1, 'a repeated "webhook" call never pays twice');
+  });
+
+  it('refuses to start online payment for more than is due, or when nothing is due', async () => {
+    const s = await studentWithDues(500000);
+    const tooMuch = await post('/v1/me/fees/online', s.studentToken, { amount_paise: 600000 });
+    assert.equal(tooMuch.statusCode, 422);
+
+    // Pay it off entirely by counter, then try again online.
+    await post('/v1/fees/payments', s.admin, { student_id: s.studentId, method: 'cash', amount_paise: 500000 });
+    const nothingDue = await post('/v1/me/fees/online', s.studentToken, { amount_paise: 100 });
+    assert.equal(nothingDue.statusCode, 422);
+  });
+
+  it('a checkout link from another college is never found', async () => {
+    const s = await studentWithDues();
+    const other = await feeSetup('fee-online-2');
+    const started = await post('/v1/me/fees/online', s.studentToken, { amount_paise: 500000 });
+    const { intent_id: intentId } = started.json().data as { intent_id: string };
+
+    const wrongCollege = await harness.app.inject({
+      method: 'GET', url: `/v1/fees/online/${intentId}/checkout?college=${other.code}`,
+    });
+    assert.equal(wrongCollege.statusCode, 200);
+    assert.match(wrongCollege.body, /expired/i);
+  });
+});

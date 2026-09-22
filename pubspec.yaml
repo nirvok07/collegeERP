@@ -67,6 +67,11 @@ dependencies:
   local_auth: ^3.0.2
   geolocator: ^14.0.2
 
+  # FEE-7: opens the online-payment checkout page in the browser. The app
+  # never embeds a payment SDK (owner: no store cut on a link opened outside
+  # the app); module doc §6.
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -47,6 +47,11 @@ class _FakeSelf implements StudentSelfRepository {
   Future<DateTime?> myAttendanceSavedAt() async => null;
 
   @override
+  Future<Result<OnlinePaymentStarted>> payOnline(int amountPaise) => throw UnimplementedError();
+  @override
+  Future<Result<String>> onlinePaymentStatus(String intentId) => throw UnimplementedError();
+
+  @override
   Future<Result<MyFees>> myFees() async => const Ok(MyFees(invoices: [], payments: []));
 
   @override

@@ -11,8 +11,8 @@ import type { AuditWriter, Clock, IdGenerator } from '../../../shared/applicatio
 import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type {
   FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord, FeeRequestRecord, FeeRequestRepository,
-  FeeStructureRepository, InvoiceRecord, InvoiceRepository, PaymentMethod, PaymentRecord,
-  PaymentRepository, ReceiptRecord, StudentSummary,
+  FeeStructureRepository, InvoiceRecord, InvoiceRepository, OnlineIntentRecord, OnlineIntentRepository,
+  PaymentMethod, PaymentRecord, PaymentRepository, ReceiptRecord, StudentSummary,
 } from './ports.ts';
 
 export interface FeesActor {
@@ -27,6 +27,8 @@ export interface FeesDeps {
   invoices: InvoiceRepository;
   requests: FeeRequestRepository;
   payments: PaymentRepository;
+  /** FEE-7: online payment intents (dummy gateway today). */
+  onlineIntents: OnlineIntentRepository;
   audit: AuditWriter;
   ids: IdGenerator;
   clock: Clock;
@@ -546,44 +548,61 @@ export async function recordPayment(
   deps: FeesDeps, actor: FeesActor,
   input: { studentId: string; method: PaymentMethod; amountPaise: number; reference: string | null },
 ): Promise<Result<RecordedPayment>> {
-  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
-    const due = await deps.invoices.listDueByStudent(tx, input.studentId);
-    const totalDue = due.reduce((sum, i) => sum + i.amountPaise, 0);
-    if (totalDue === 0) return Err(fail('VALIDATION_FAILED', 'This student has nothing due.'));
-    if (input.amountPaise > totalDue) {
-      return Err(fail('VALIDATION_FAILED',
-        `That is more than the ${totalDue} paise this student currently owes. Partial and exact payments are accepted; an advance balance is not, yet.`));
-    }
+  return attempt(() => deps.uow.run(actor.tenantId, (tx) => settlePayment(deps, tx, actor.tenantId, {
+    studentId: input.studentId, method: input.method, amountPaise: input.amountPaise,
+    reference: input.reference, receivedBy: actor.personId, auditActorId: actor.personId,
+  })), 'That payment could not be recorded.');
+}
 
-    const paymentId = deps.ids.next();
-    await deps.payments.createPayment(tx, {
-      id: paymentId, tenantId: actor.tenantId, studentId: input.studentId, kind: 'payment',
-      method: input.method, amountPaise: input.amountPaise, reference: input.reference,
-      reversesPaymentId: null, reason: null, receivedBy: actor.personId,
-    });
+/**
+ * The actual settlement: allocate oldest-due-first, issue a gapless receipt,
+ * audit it. Shared by a counter payment (FEE-4, `receivedBy` the Cashier) and
+ * an online payment completing (FEE-7, `receivedBy` null — nobody at the
+ * college received it personally). Runs inside the caller's transaction.
+ */
+async function settlePayment(
+  deps: FeesDeps, tx: Tx, tenantId: string,
+  input: {
+    studentId: string; method: PaymentMethod; amountPaise: number; reference: string | null;
+    receivedBy: string | null; auditActorId: string;
+  },
+): Promise<Result<RecordedPayment>> {
+  const due = await deps.invoices.listDueByStudent(tx, input.studentId);
+  const totalDue = due.reduce((sum, i) => sum + i.amountPaise, 0);
+  if (totalDue === 0) return Err(fail('VALIDATION_FAILED', 'This student has nothing due.'));
+  if (input.amountPaise > totalDue) {
+    return Err(fail('VALIDATION_FAILED',
+      `That is more than the ${totalDue} paise this student currently owes. Partial and exact payments are accepted; an advance balance is not, yet.`));
+  }
 
-    const allocations = await allocate(deps, tx, actor.tenantId, paymentId, due, input.amountPaise);
+  const paymentId = deps.ids.next();
+  await deps.payments.createPayment(tx, {
+    id: paymentId, tenantId, studentId: input.studentId, kind: 'payment',
+    method: input.method, amountPaise: input.amountPaise, reference: input.reference,
+    reversesPaymentId: null, reason: null, receivedBy: input.receivedBy,
+  });
 
-    const receiptNumber = await deps.payments.nextReceiptNumber(tx, actor.tenantId);
-    const receiptId = deps.ids.next();
-    await deps.payments.createReceipt(tx, {
-      id: receiptId, tenantId: actor.tenantId, paymentId, receiptNumber,
-    });
+  const allocations = await allocate(deps, tx, tenantId, paymentId, due, input.amountPaise);
 
-    await deps.audit.record({
-      correlationId: deps.ids.next(), tenantId: actor.tenantId,
-      actorType: 'person', actorId: actor.personId,
-      action: 'fee.payment_recorded', subjectType: 'payment', subjectId: paymentId,
-      after: {
-        studentId: input.studentId, method: input.method, amountPaise: input.amountPaise,
-        receiptNumber, invoices: allocations.map((a) => a.invoiceId),
-      },
-    }, tx);
+  const receiptNumber = await deps.payments.nextReceiptNumber(tx, tenantId);
+  const receiptId = deps.ids.next();
+  await deps.payments.createReceipt(tx, {
+    id: receiptId, tenantId, paymentId, receiptNumber,
+  });
 
-    const payment = await deps.payments.findPayment(tx, paymentId);
-    const receipt = await deps.payments.findReceiptByPayment(tx, paymentId);
-    return Ok({ payment: payment!, receipt: receipt!, allocations });
-  }), 'That payment could not be recorded.');
+  await deps.audit.record({
+    correlationId: deps.ids.next(), tenantId,
+    actorType: 'person', actorId: input.auditActorId,
+    action: 'fee.payment_recorded', subjectType: 'payment', subjectId: paymentId,
+    after: {
+      studentId: input.studentId, method: input.method, amountPaise: input.amountPaise,
+      receiptNumber, invoices: allocations.map((a) => a.invoiceId),
+    },
+  }, tx);
+
+  const payment = await deps.payments.findPayment(tx, paymentId);
+  const receipt = await deps.payments.findReceiptByPayment(tx, paymentId);
+  return Ok({ payment: payment!, receipt: receipt!, allocations });
 }
 
 /** Splits amountPaise across due invoices, oldest first, marking each paid as it fills. */
@@ -668,4 +687,84 @@ export async function cancelPayment(
 
 export async function listStudentPayments(deps: FeesDeps, actor: FeesActor, studentId: string) {
   return deps.uow.run(actor.tenantId, (tx) => deps.payments.listByStudent(tx, studentId));
+}
+
+/* --------------------------------------------------------- FEE-7: online payment */
+
+/**
+ * The student asks to pay online. Creates an intent for the amount they
+ * currently owe (their own dues, never a parameter) and a checkout URL —
+ * today, our own dummy hosted page; a real gateway integration replaces
+ * only how this URL and `providerRef` are produced (module doc §6).
+ */
+export async function createOnlineIntent(
+  deps: FeesDeps, actor: FeesActor,
+  input: { studentId: string; amountPaise: number; publicBaseUrl: string; collegeCode: string },
+): Promise<Result<{ intentId: string; checkoutUrl: string }>> {
+  return attempt(() => deps.uow.run(actor.tenantId, async (tx) => {
+    const due = await deps.invoices.listDueByStudent(tx, input.studentId);
+    const totalDue = due.reduce((sum, i) => sum + i.amountPaise, 0);
+    if (totalDue === 0) return Err(fail('VALIDATION_FAILED', 'There is nothing due to pay.'));
+    if (input.amountPaise > totalDue) {
+      return Err(fail('VALIDATION_FAILED',
+        `That is more than the ${totalDue} paise currently due. Partial and exact payments are accepted.`));
+    }
+    const id = deps.ids.next();
+    await deps.onlineIntents.create(tx, {
+      id, tenantId: actor.tenantId, studentId: input.studentId, amountPaise: input.amountPaise,
+      provider: 'dummy', providerRef: null, createdBy: actor.personId,
+    });
+    const college = encodeURIComponent(input.collegeCode);
+    return Ok({ intentId: id, checkoutUrl: `${input.publicBaseUrl}/v1/fees/online/${id}/checkout?college=${college}` });
+  }), 'That could not be started.');
+}
+
+export async function findOnlineIntent(
+  deps: FeesDeps, tenantId: string, id: string,
+): Promise<OnlineIntentRecord | null> {
+  return deps.uow.run(tenantId, (tx) => deps.onlineIntents.find(tx, id));
+}
+
+/**
+ * The dummy provider's own "I paid" call — stands in for a real gateway's
+ * signed webhook. Settles the payment (online, no personal receiver) exactly
+ * as a counter payment would, and marks the intent paid, in one transaction
+ * so a payment never exists without its intent agreeing, or vice versa.
+ */
+export async function completeOnlineIntent(
+  deps: FeesDeps, tenantId: string, id: string,
+): Promise<Result<RecordedPayment>> {
+  return attempt(() => deps.uow.run(tenantId, async (tx) => {
+    const intent = await deps.onlineIntents.find(tx, id);
+    if (!intent) return Err(fail('NOT_FOUND', 'That payment link has expired or does not exist.'));
+    if (intent.status !== 'created') {
+      return Err(fail('CONFLICT', 'That payment has already been settled.'));
+    }
+    const settled = await settlePayment(deps, tx, tenantId, {
+      studentId: intent.studentId, method: 'online', amountPaise: intent.amountPaise,
+      reference: `dummy:${intent.id}`, receivedBy: null, auditActorId: intent.createdBy,
+    });
+    if (!settled.ok) {
+      // The student's dues changed since the intent was created (paid another
+      // way, or a concession reduced it): fail the intent rather than settle
+      // an amount that no longer matches what they owe.
+      await deps.onlineIntents.complete(tx, { id, status: 'failed', paymentId: null, completedAt: deps.clock.now() });
+      return settled;
+    }
+    await deps.onlineIntents.complete(tx, {
+      id, status: 'paid', paymentId: settled.value.payment.id, completedAt: deps.clock.now(),
+    });
+    return settled;
+  }), 'That payment could not be completed.');
+}
+
+/** The dummy provider's own "I did not pay" call, or the checkout page expiring unpaid. */
+export async function failOnlineIntent(deps: FeesDeps, tenantId: string, id: string): Promise<Result<null>> {
+  return attempt(() => deps.uow.run(tenantId, async (tx) => {
+    const intent = await deps.onlineIntents.find(tx, id);
+    if (!intent) return Err(fail('NOT_FOUND', 'That payment link has expired or does not exist.'));
+    if (intent.status !== 'created') return Ok(null);
+    await deps.onlineIntents.complete(tx, { id, status: 'failed', paymentId: null, completedAt: deps.clock.now() });
+    return Ok(null);
+  }), 'That could not be updated.');
 }

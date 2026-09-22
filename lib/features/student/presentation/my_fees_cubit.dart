@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/error/result.dart';
 import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/my_attendance.dart';
@@ -44,4 +45,8 @@ class MyFeesCubit extends Cubit<MyFeesState> {
       )),
     );
   }
+
+  /// FEE-7: starts paying [amountPaise] online. The screen opens the URL this
+  /// returns in the browser; the payment itself never touches this app.
+  Future<Result<OnlinePaymentStarted>> payOnline(int amountPaise) => _repository.payOnline(amountPaise);
 }

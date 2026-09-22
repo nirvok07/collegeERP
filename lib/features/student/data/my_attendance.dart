@@ -105,6 +105,13 @@ abstract interface class StudentSelfRepository {
 
   /// CR-1b: when [myFees] was last saved.
   Future<DateTime?> myFeesSavedAt();
+
+  /// FEE-7: starts paying [amountPaise] of the student's own dues online.
+  /// Returns where to open it; the app never handles card/UPI details itself.
+  Future<Result<OnlinePaymentStarted>> payOnline(int amountPaise);
+
+  /// Polls one intent, so the app can tell when the browser's payment has landed.
+  Future<Result<String>> onlinePaymentStatus(String intentId);
 }
 
 class StudentSelfApi implements StudentSelfRepository {
@@ -122,6 +129,30 @@ class StudentSelfApi implements StudentSelfRepository {
 
   @override
   Future<DateTime?> myFeesSavedAt() => _client.savedAt('/v1/me/fees');
+
+  @override
+  Future<Result<OnlinePaymentStarted>> payOnline(int amountPaise) => _client.post(
+        '/v1/me/fees/online',
+        {'amount_paise': amountPaise},
+        (data) => OnlinePaymentStarted.fromJson(data as Map),
+      );
+
+  @override
+  Future<Result<String>> onlinePaymentStatus(String intentId) => _client.get(
+        '/v1/me/fees/online/${Uri.encodeComponent(intentId)}',
+        (data) => (data as Map)['status'] as String,
+      );
+}
+
+/// FEE-7: where to send the student to pay, and the intent to poll afterwards.
+class OnlinePaymentStarted {
+  const OnlinePaymentStarted({required this.intentId, required this.checkoutUrl});
+
+  final String intentId;
+  final String checkoutUrl;
+
+  static OnlinePaymentStarted fromJson(Map m) =>
+      OnlinePaymentStarted(intentId: m['intent_id'] as String, checkoutUrl: m['checkout_url'] as String);
 }
 
 class StudentHomeState {

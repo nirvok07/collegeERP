@@ -6,13 +6,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeSelf implements StudentSelfRepository {
-  _FakeSelf(this.fees);
+  _FakeSelf(this.fees, {this.payOnlineCalledWith});
   final MyFees fees;
+
+  /// Set by the fake when [payOnline] is called, so a test can assert the amount asked for.
+  final void Function(int amountPaise)? payOnlineCalledWith;
 
   @override
   Future<Result<MyAttendance>> myAttendance() => throw UnimplementedError();
   @override
   Future<DateTime?> myAttendanceSavedAt() => throw UnimplementedError();
+
+  @override
+  Future<Result<OnlinePaymentStarted>> payOnline(int amountPaise) async {
+    payOnlineCalledWith?.call(amountPaise);
+    return const Ok(OnlinePaymentStarted(intentId: 'i1', checkoutUrl: 'https://example.test/checkout'));
+  }
+
+  @override
+  Future<Result<String>> onlinePaymentStatus(String intentId) => throw UnimplementedError();
 
   @override
   Future<Result<MyFees>> myFees() async => Ok(fees);
@@ -41,11 +53,34 @@ void main() {
     expect(find.text('₹2,000.00'), findsOneWidget);
   });
 
-  testWidgets('nothing due reads as clear, not zero', (tester) async {
+  testWidgets('nothing due reads as clear, not zero, and there is no pay-online button', (tester) async {
     await tester.pumpWidget(MaterialApp(home: MyFeesScreen(repository: _FakeSelf(const MyFees(invoices: [], payments: [])))));
     await tester.pumpAndSettle();
     expect(find.text('Nothing due'), findsOneWidget);
     expect(find.text('No invoices yet.'), findsOneWidget);
     expect(find.text('No payments yet.'), findsOneWidget);
+    expect(find.byIcon(Icons.credit_card_rounded), findsNothing, reason: 'nothing to pay online');
+  });
+
+  // FEE-7: the online-payment button offers the full amount due, and asks
+  // the repository for exactly that when tapped.
+  testWidgets('a student with dues sees a pay-online button for the full amount', (tester) async {
+    final fees = MyFees(
+      invoices: const [
+        FeeInvoice(id: 'i1', studentId: 's1', studentName: 'Me', enrolmentNumber: 'E1', kind: 'instalment', instalmentSeq: 1, amountPaise: 500000, dueDate: '2026-07-01', status: 'due'),
+      ],
+      payments: const [],
+    );
+    int? asked;
+    await tester.pumpWidget(MaterialApp(
+      home: MyFeesScreen(repository: _FakeSelf(fees, payOnlineCalledWith: (a) => asked = a)),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pay ₹5,000.00 online'), findsOneWidget);
+    // Tapping starts the intent (the fake never really launches a URL browser-side).
+    await tester.tap(find.text('Pay ₹5,000.00 online'));
+    await tester.pump();
+    expect(asked, 500000);
   });
 }

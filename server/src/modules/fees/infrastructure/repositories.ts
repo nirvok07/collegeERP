@@ -3,7 +3,8 @@ import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
   AllocationRecord, FeeHeadRecord, FeeHeadRepository, FeeInstalmentRecord, FeeLineRecord,
   FeeRequestRecord, FeeRequestRepository, FeeStructureRecord, FeeStructureRepository,
-  InvoiceRecord, InvoiceRepository, PaymentRecord, PaymentRepository, ReceiptRecord, StudentSummary,
+  InvoiceRecord, InvoiceRepository, OnlineIntentRecord, OnlineIntentRepository, PaymentRecord,
+  PaymentRepository, ReceiptRecord, StudentSummary,
 } from '../application/ports.ts';
 
 function toHead(r: any): FeeHeadRecord {
@@ -438,7 +439,7 @@ export class PgPaymentRepository implements PaymentRepository {
   async createPayment(tx: Tx, input: {
     id: string; tenantId: string; studentId: string; kind: string; method: string;
     amountPaise: number; reference: string | null; reversesPaymentId: string | null;
-    reason: string | null; receivedBy: string;
+    reason: string | null; receivedBy: string | null;
   }): Promise<void> {
     await clientOf(tx).query(
       `INSERT INTO payments
@@ -525,5 +526,51 @@ export class PgPaymentRepository implements PaymentRepository {
       [studentId],
     );
     return rows.map(toPayment);
+  }
+}
+
+
+function toOnlineIntent(r: any): OnlineIntentRecord {
+  return {
+    id: r.id, studentId: r.student_id, amountPaise: Number(r.amount_paise), status: r.status,
+    provider: r.provider, providerRef: r.provider_ref, paymentId: r.payment_id,
+    createdBy: r.created_by, createdAt: r.created_at, completedAt: r.completed_at,
+  };
+}
+
+const ONLINE_INTENT_SELECT = `
+  SELECT id, student_id, amount_paise, status, provider, provider_ref, payment_id,
+         created_by, created_at, completed_at
+    FROM fee_online_intents`;
+
+/** FEE-7: the dummy-gateway-today, real-gateway-later online payment intent. */
+export class PgOnlineIntentRepository implements OnlineIntentRepository {
+  async create(tx: Tx, input: {
+    id: string; tenantId: string; studentId: string; amountPaise: number;
+    provider: string; providerRef: string | null; createdBy: string;
+  }): Promise<void> {
+    await clientOf(tx).query(
+      `INSERT INTO fee_online_intents (id, tenant_id, student_id, amount_paise, provider, provider_ref, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [input.id, input.tenantId, input.studentId, input.amountPaise, input.provider, input.providerRef, input.createdBy],
+    );
+  }
+
+  async find(tx: Tx, id: string): Promise<OnlineIntentRecord | null> {
+    const { rows } = await clientOf(tx).query(`${ONLINE_INTENT_SELECT} WHERE id=$1`, [id]);
+    return rows[0] ? toOnlineIntent(rows[0]) : null;
+  }
+
+  async complete(tx: Tx, input: {
+    id: string; status: 'paid' | 'failed'; paymentId: string | null; completedAt: Date;
+  }): Promise<boolean> {
+    // Only a 'created' intent may complete, and only once — guards a retried
+    // or doubled "webhook" call from completing the same intent twice.
+    const { rowCount } = await clientOf(tx).query(
+      `UPDATE fee_online_intents SET status=$2, payment_id=$3, completed_at=$4, version=version+1
+        WHERE id=$1 AND status='created'`,
+      [input.id, input.status, input.paymentId, input.completedAt],
+    );
+    return (rowCount ?? 0) > 0;
   }
 }

@@ -44,7 +44,7 @@ not a rewrite; it is the pieces below it never had.
 |---|---|---|
 | **G1 — Receipt / statement, view + print + share** | "print karwa payega" | Medium |
 | **G2 — Reports** (daily collection, outstanding, defaulters, concession/waiver register) | "sub kuch details me dekh payega" | Medium-large |
-| **G3 — Online payment (FEE-7)** | implied by "poora fee management system" | 🚫 Blocked — needs a Razorpay merchant account and API keys from the owner; design already decided (module doc §6), nothing to plan here until unblocked |
+| **G3 — Online payment (FEE-7)** | implied by "poora fee management system" | ✅ Built 2026-09-22 with a **dummy gateway** (owner: move ahead with a dummy for now) — see §10 |
 | **G4 — Web fee screens** | not asked for directly, but "A to Z" implies every desk role, not only mobile | Large, **open decision** — see §6 |
 
 G1 and G2 are the two real slices this plan queues. G3 stays a blocked TODO, unchanged. G4 is a
@@ -163,6 +163,35 @@ not a code change): `PROJECT_STATE.md`'s `FEE-6 ❌ ...` line is split into "sel
   generated documents, not uploaded ones, and share nothing with that plan.
 - Any change to the approval state machine, roles, or ledger invariants in the module contract —
   none of G1/G2 needs one.
+
+## 10. G3 addendum — built with a dummy gateway (2026-09-22)
+
+The owner said not to wait on Razorpay credentials: build FEE-7 now with a stand-in gateway,
+swap it for the real one once the merchant account exists. Built exactly to module doc §6's
+shape — the app opens a hosted checkout page via `url_launcher`, the payment is recorded only
+from a call the app itself never makes — except the hosted page and that call are our own
+server's, not Razorpay's yet.
+
+- Migration 037: `payments.method` gains `'online'`; `received_by` becomes nullable, exactly
+  when the method is online (nobody at the college receives an online payment personally).
+  New table `fee_online_intents` (`created → paid | failed`, `provider` = `'dummy'` today).
+- `POST /v1/me/fees/online` (a student starts paying their own dues) → `GET
+  /v1/fees/online/:id/checkout?college=<code>` (no session; the id plus the college code is
+  the link's own capability, the same shape an invitation link already uses) → the page's own
+  two buttons post to `/v1/fees/online/:id/{complete,fail}`, which settle the payment (reusing
+  the same allocate-oldest-first, gapless-receipt logic FEE-4 already has) or fail the intent.
+  `GET /v1/me/fees/online/:id` lets the app poll/confirm on return from the browser.
+- **Swap-in path for the real gateway**, when the owner has a merchant account: replace the
+  checkout-page rendering with a real Razorpay Payment Link create call, and replace
+  `complete`/`fail`'s trigger with Razorpay's signed webhook (verified server-side) instead of
+  the page's own buttons. `fee_online_intents`, the settlement logic, and the mobile UI do not
+  change.
+- Mobile: `MyFeesScreen` shows "Pay ⟨amount⟩ online" whenever dues > 0; opens the checkout URL
+  externally; refreshes on return. New dependency: `url_launcher`.
+- Tested: 5 new server tests (start → complete → reflected in `/v1/me/fees`; a failed
+  simulation settles nothing; an intent cannot complete twice; refuses more than is due or
+  nothing due; a checkout link scoped to the wrong college is never found), a new Flutter
+  widget test (button shown/hidden, asks for the full amount). Not tried on a phone.
 
 ## 9. Next
 

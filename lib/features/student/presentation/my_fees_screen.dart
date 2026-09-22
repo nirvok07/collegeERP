@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
@@ -71,6 +72,10 @@ class _MyFeesView extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if ((state.fees?.duePaise ?? 0) > 0) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      _PayOnlineButton(duePaise: state.fees!.duePaise),
+                    ],
                     const SizedBox(height: AppSpacing.lg),
                     Text('Invoices', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     if ((state.fees?.invoices ?? const []).isEmpty)
@@ -101,6 +106,61 @@ class _MyFeesView extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+
+/// FEE-7: pays the student's own dues online. Opens the checkout page in the
+/// browser (the app never handles card/UPI details itself, module doc §6) and
+/// refreshes this screen when the person comes back to it.
+class _PayOnlineButton extends StatefulWidget {
+  const _PayOnlineButton({required this.duePaise});
+
+  final int duePaise;
+
+  @override
+  State<_PayOnlineButton> createState() => _PayOnlineButtonState();
+}
+
+class _PayOnlineButtonState extends State<_PayOnlineButton> {
+  bool _busy = false;
+
+  Future<void> _pay() async {
+    setState(() => _busy = true);
+    final cubit = context.read<MyFeesCubit>();
+    final result = await cubit.payOnline(widget.duePaise);
+    if (!mounted) return;
+    await result.when(
+      ok: (started) async {
+        final uri = Uri.parse(started.checkoutUrl);
+        final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (!mounted) return;
+        if (!opened) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open the payment page.')),
+          );
+        }
+        // The payment happens in the browser; refresh on return to pick it up.
+        setState(() => _busy = false);
+        await cubit.load(refresh: true);
+      },
+      err: (failure) async {
+        if (!mounted) return;
+        setState(() => _busy = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message)));
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton.icon(
+      onPressed: _busy ? null : _pay,
+      icon: _busy
+          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+          : const Icon(Icons.credit_card_rounded),
+      label: Text(_busy ? 'Opening…' : 'Pay ${rupees(widget.duePaise)} online'),
     );
   }
 }
