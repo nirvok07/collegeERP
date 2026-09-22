@@ -274,4 +274,36 @@ class FakeFeesRepository implements FeesRepository {
     ));
     return const Ok(null);
   }
+
+  final collectionRows = <FeeCollectionRow>[];
+  final outstandingRows = <FeeOutstandingRow>[];
+  final registerRows = <FeeRegisterRow>[];
+
+  @override
+  Future<Result<List<FeeCollectionRow>>> collectionReport({required String from, required String to}) async {
+    final f = _take();
+    if (f != null) return Err(f);
+    return Ok(collectionRows);
+  }
+
+  @override
+  Future<Result<List<FeeOutstandingRow>>> outstandingReport() async {
+    final f = _take();
+    if (f != null) return Err(f);
+    return Ok(outstandingRows);
+  }
+
+  @override
+  Future<Result<List<FeeOutstandingRow>>> defaultersReport({required int days}) async {
+    final f = _take();
+    if (f != null) return Err(f);
+    return Ok(outstandingRows.where((r) => r.overdueDays >= days).toList());
+  }
+
+  @override
+  Future<Result<List<FeeRegisterRow>>> requestsRegisterReport({String? from, String? to}) async {
+    final f = _take();
+    if (f != null) return Err(f);
+    return Ok(registerRows);
+  }
 }

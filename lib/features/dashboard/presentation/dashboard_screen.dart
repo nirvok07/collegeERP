@@ -1023,6 +1023,11 @@ class _AdminModules extends StatelessWidget {
         tile('Student fees', 'Find a student, collect a payment', Icons.payments_rounded, AppColors.success,
             Routes.feeStudentSearch,
             args: manage),
+      // G2: collection, outstanding, defaulters, concession/waiver register.
+      if (authority.can('fee.read'))
+        tile('Fee reports', 'Collection, outstanding, defaulters', Icons.bar_chart_rounded, AppColors.info,
+            Routes.feeReports,
+            args: manage),
     ];
     // ADM-10 (AD-81): the college's name, logo and colour.
     final college_ = <_Tile>[
@@ -1312,6 +1317,17 @@ class _TeacherModules extends StatelessWidget {
           icon: Icons.payments_rounded,
           color: AppColors.success,
           route: Routes.feeStudentSearch,
+          args: ManageArgs(authority: authority, college: college),
+          refresh: false,
+        ),
+      // G2: collection, outstanding, defaulters, concession/waiver register.
+      if (authority.can('fee.read'))
+        (
+          title: 'Fee reports',
+          subtitle: 'Collection, outstanding, defaulters',
+          icon: Icons.bar_chart_rounded,
+          color: AppColors.info,
+          route: Routes.feeReports,
           args: ManageArgs(authority: authority, college: college),
           refresh: false,
         ),

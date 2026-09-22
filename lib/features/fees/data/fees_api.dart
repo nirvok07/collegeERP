@@ -36,6 +36,18 @@ abstract interface class FeesRepository {
   Future<Result<void>> cancelPayment(String paymentId, {required String reason});
 
   Future<Result<void>> raiseFine({required String studentId, required int amountPaise, required String reason});
+
+  /// G2: daily collection, by day/cashier/method, `from`/`to` inclusive (YYYY-MM-DD).
+  Future<Result<List<FeeCollectionRow>>> collectionReport({required String from, required String to});
+
+  /// G2: every due invoice, as of today.
+  Future<Result<List<FeeOutstandingRow>>> outstandingReport();
+
+  /// G2: outstanding overdue at least [days].
+  Future<Result<List<FeeOutstandingRow>>> defaultersReport({required int days});
+
+  /// G2: every concession/waiver request with its decision. `from`/`to` optional (YYYY-MM-DD).
+  Future<Result<List<FeeRegisterRow>>> requestsRegisterReport({String? from, String? to});
 }
 
 class FeesApi implements FeesRepository {
@@ -200,4 +212,32 @@ class FeesApi implements FeesRepository {
         {'amount_paise': amountPaise, 'reason': reason},
         _ignore,
       );
+
+  @override
+  Future<Result<List<FeeCollectionRow>>> collectionReport({required String from, required String to}) => _client.get(
+        '/v1/fees/reports/collection?from=$from&to=$to',
+        (data) => (data as List).map(FeeCollectionRow.fromJson).toList(),
+      );
+
+  @override
+  Future<Result<List<FeeOutstandingRow>>> outstandingReport() => _client.get(
+        '/v1/fees/reports/outstanding',
+        (data) => (data as List).map(FeeOutstandingRow.fromJson).toList(),
+      );
+
+  @override
+  Future<Result<List<FeeOutstandingRow>>> defaultersReport({required int days}) => _client.get(
+        '/v1/fees/reports/defaulters?days=$days',
+        (data) => (data as List).map(FeeOutstandingRow.fromJson).toList(),
+      );
+
+  @override
+  Future<Result<List<FeeRegisterRow>>> requestsRegisterReport({String? from, String? to}) {
+    final params = <String>[
+      if (from != null) 'from=$from',
+      if (to != null) 'to=$to',
+    ];
+    final query = params.isEmpty ? '' : '?${params.join('&')}';
+    return _client.get('/v1/fees/reports/requests-register$query', (data) => (data as List).map(FeeRegisterRow.fromJson).toList());
+  }
 }

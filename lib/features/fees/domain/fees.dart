@@ -344,3 +344,115 @@ String rupees(int paise) {
   final paiseLeft = (paise.abs() % 100).toString().padLeft(2, '0');
   return '${paise < 0 ? '-' : ''}₹${_indianGrouped(whole)}.$paiseLeft';
 }
+
+/* --------------------------------------------------------------------- G2: reports */
+
+/// One (date, cashier, method, kind) line of the daily collection report.
+/// [amountPaise] is signed — negative for a reversal, its own line, never
+/// netted into the payment it corrects (module doc §3).
+class FeeCollectionRow {
+  const FeeCollectionRow({
+    required this.date,
+    required this.receivedBy,
+    required this.receivedByName,
+    required this.method,
+    required this.kind,
+    required this.amountPaise,
+  });
+
+  final String date;
+  final String? receivedBy;
+
+  /// Null for an online payment; nobody at the college received it personally.
+  final String? receivedByName;
+  final String method;
+  final String kind;
+  final int amountPaise;
+
+  static FeeCollectionRow fromJson(dynamic json) {
+    final m = json as Map;
+    return FeeCollectionRow(
+      date: m['date'] as String, receivedBy: m['received_by'] as String?,
+      receivedByName: m['received_by_name'] as String?, method: m['method'] as String,
+      kind: m['kind'] as String, amountPaise: (m['amount_paise'] as num).toInt(),
+    );
+  }
+}
+
+/// One due invoice still owing something — shared shape for outstanding and defaulters.
+class FeeOutstandingRow {
+  const FeeOutstandingRow({
+    required this.invoiceId,
+    required this.studentId,
+    required this.studentName,
+    required this.enrolmentNumber,
+    required this.kind,
+    required this.dueDate,
+    required this.outstandingPaise,
+    required this.overdueDays,
+  });
+
+  final String invoiceId;
+  final String studentId;
+  final String studentName;
+  final String enrolmentNumber;
+  final String kind;
+  final String dueDate;
+  final int outstandingPaise;
+  final int overdueDays;
+
+  static FeeOutstandingRow fromJson(dynamic json) {
+    final m = json as Map;
+    return FeeOutstandingRow(
+      invoiceId: m['invoice_id'] as String, studentId: m['student_id'] as String,
+      studentName: m['student_name'] as String, enrolmentNumber: m['enrolment_number'] as String,
+      kind: m['kind'] as String, dueDate: m['due_date'] as String,
+      outstandingPaise: (m['outstanding_paise'] as num).toInt(), overdueDays: (m['overdue_days'] as num).toInt(),
+    );
+  }
+}
+
+/// One concession/waiver request with its decision — the accountability trail.
+class FeeRegisterRow {
+  const FeeRegisterRow({
+    required this.id,
+    required this.kind,
+    required this.studentName,
+    required this.amountPaise,
+    required this.reason,
+    required this.status,
+    required this.requestedByName,
+    required this.requestedAt,
+    this.decidedByName,
+    this.decidedAt,
+    this.decisionReason,
+  });
+
+  final String id;
+
+  /// concession | waiver.
+  final String kind;
+  final String studentName;
+  final int amountPaise;
+  final String reason;
+
+  /// requested | approved | rejected | withdrawn.
+  final String status;
+  final String requestedByName;
+  final DateTime requestedAt;
+  final String? decidedByName;
+  final DateTime? decidedAt;
+  final String? decisionReason;
+
+  static FeeRegisterRow fromJson(dynamic json) {
+    final m = json as Map;
+    return FeeRegisterRow(
+      id: m['id'] as String, kind: m['kind'] as String, studentName: m['student_name'] as String,
+      amountPaise: (m['amount_paise'] as num).toInt(), reason: m['reason'] as String, status: m['status'] as String,
+      requestedByName: m['requested_by_name'] as String, requestedAt: DateTime.parse(m['requested_at'] as String),
+      decidedByName: m['decided_by_name'] as String?,
+      decidedAt: m['decided_at'] == null ? null : DateTime.parse(m['decided_at'] as String),
+      decisionReason: m['decision_reason'] as String?,
+    );
+  }
+}
