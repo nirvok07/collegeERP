@@ -50,51 +50,95 @@ export function SignInPage({ auth, onAcceptInvite }: { auth: AuthSession; onAcce
   );
 }
 
+type CollegeStep = 'identifier' | 'code';
+
+/**
+ * AD-82: sign in by a one-time code, mirroring the phone exactly — college
+ * code and who, then the six-digit code sent to them. There is no password.
+ */
 function CollegeSignIn({
   auth, onAcceptInvite, onPlatform,
 }: { auth: AuthSession; onAcceptInvite?: () => void; onPlatform: () => void }) {
+  const [step, setStep] = useState<CollegeStep>('identifier');
   const [college, setCollege] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [challenge, setChallenge] = useState('');
+  const [destination, setDestination] = useState('');
+  const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    if (!college.trim() || !email.trim() || !password) {
-      setFailure({ code: 'VALIDATION_FAILED', message: 'Enter your college code, email and password.' });
+  async function requestCode(again = false) {
+    if (!college.trim() || !identifier.trim()) {
+      setFailure({ code: 'VALIDATION_FAILED', message: 'Enter your college code and email or mobile number.' });
       return;
     }
     setSubmitting(true); setFailure(null);
-    const result = await auth.signInCollege(college.trim().toLowerCase(), email.trim().toLowerCase(), password);
+    const result = await auth.requestCollegeCode(college.trim().toLowerCase(), identifier.trim());
+    setSubmitting(false);
+    if (!result.ok) { setFailure(result.failure); return; }
+    setChallenge(result.challenge);
+    setDestination(result.destination);
+    setStep('code');
+    setNotice(again ? 'A new code is on its way. The earlier one no longer works.' : null);
+  }
+
+  async function submitCode(e: FormEvent) {
+    e.preventDefault();
+    if (!isCompleteCode(code)) { setFailure({ code: 'VALIDATION_FAILED', message: 'Enter the six-digit code.' }); return; }
+    setSubmitting(true); setFailure(null);
+    const result = await auth.verifyCollegeCode(college.trim().toLowerCase(), challenge, code);
     setSubmitting(false);
     // On success the session manager switches the screen.
-    if (!result.ok) setFailure(result.failure);
+    if (!result.ok) { setFailure(result.failure); setCode(''); }
+  }
+
+  function changeIdentifier() {
+    setStep('identifier'); setChallenge(''); setCode(''); setFailure(null); setNotice(null);
   }
 
   return (
     <>
+      {notice && <Banner tone="info">{notice}</Banner>}
       {failure && <Banner tone="error">{failure.message}</Banner>}
-      <form onSubmit={submit} noValidate className="signin__form">
-        <Field
-          label="College code" name="college" value={college} autoComplete="organization" autoFocus required
-          placeholder="sunrise-college" onChange={(e) => setCollege(e.currentTarget.value)}
-        />
-        <Field
-          label="Email" type="email" name="email" value={email} autoComplete="username" required
-          onChange={(e) => setEmail(e.currentTarget.value)}
-        />
-        <Field
-          label="Password" type="password" name="password" value={password}
-          autoComplete="current-password" required onChange={(e) => setPassword(e.currentTarget.value)}
-        />
-        <Button type="submit" variant="primary" block loading={submitting}>
-          {submitting ? 'Signing in' : 'Sign in'}
-        </Button>
-        {onAcceptInvite && (
-          <Button variant="text" block onClick={onAcceptInvite}>I have an invitation</Button>
-        )}
-      </form>
+
+      {step === 'identifier' && (
+        <form onSubmit={(e) => { e.preventDefault(); void requestCode(); }} noValidate className="signin__form">
+          <Field
+            label="College code" name="college" value={college} autoComplete="organization" autoFocus required
+            placeholder="sunrise-college" onChange={(e) => setCollege(e.currentTarget.value)}
+          />
+          <Field
+            label="Email or mobile" name="identifier" value={identifier} autoComplete="username" required
+            onChange={(e) => setIdentifier(e.currentTarget.value)}
+          />
+          <Button type="submit" variant="primary" block loading={submitting}>
+            {submitting ? 'Sending' : 'Send code'}
+          </Button>
+          {onAcceptInvite && (
+            <Button variant="text" block onClick={onAcceptInvite}>I have an invitation</Button>
+          )}
+        </form>
+      )}
+
+      {step === 'code' && (
+        <form onSubmit={submitCode} noValidate className="signin__form">
+          <p className="signin__sub">
+            {destination ? `A six-digit code was sent to ${destination}.` : 'Enter the six-digit code that was sent to you.'}
+          </p>
+          <Field
+            label="Code" inputMode="numeric" autoComplete="one-time-code" autoFocus
+            value={code} maxLength={7} onChange={(e) => setCode(normaliseCode(e.currentTarget.value))}
+          />
+          <Button type="submit" variant="primary" block loading={submitting}>
+            {submitting ? 'Signing in' : 'Sign in'}
+          </Button>
+          <Button variant="text" block onClick={() => void requestCode(true)}>Send a new code</Button>
+          <Button variant="text" block onClick={changeIdentifier}>Use a different account</Button>
+        </form>
+      )}
+
       <p className="signin__foot">
         <Button variant="text" onClick={onPlatform}>Platform administration</Button>
       </p>

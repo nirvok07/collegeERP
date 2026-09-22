@@ -122,13 +122,27 @@ export class AuthSession {
   }
 
   /**
-   * WEB-1: a college account signs in with its college's code. The same
-   * session rules as the platform: refresh cookie, access token in memory.
+   * AD-82: a college account signs in by a one-time code sent to their email
+   * or mobile — no password. Mirrors the mobile app's flow exactly, against
+   * the same `/v1/auth/otp/*` endpoints.
    */
-  async signInCollege(
-    institutionCode: string, identifier: string, password: string,
+  async requestCollegeCode(
+    institutionCode: string, identifier: string,
+  ): Promise<{ ok: true; challenge: string; destination: string } | { ok: false; failure: ApiFailure }> {
+    const response = await this.call<{ challenge_token: string; expires_at: string; destination: string }>(
+      '/v1/auth/otp/request', { institution_code: institutionCode, identifier },
+    );
+    if (!response.ok) return { ok: false, failure: response.failure };
+    return { ok: true, challenge: response.data.challenge_token, destination: response.data.destination };
+  }
+
+  /** The only call that starts a college session; the same session rules as the platform. */
+  async verifyCollegeCode(
+    institutionCode: string, challenge: string, code: string,
   ): Promise<{ ok: true } | { ok: false; failure: ApiFailure }> {
-    const response = await this.call('/v1/auth/login', { institution_code: institutionCode, identifier, password });
+    const response = await this.call(
+      '/v1/auth/otp/verify', { institution_code: institutionCode, challenge_token: challenge, code },
+    );
     if (!response.ok) return { ok: false, failure: response.failure };
     this.adopt(response.data);
     this.emit({ type: 'signed-in', actor: this.actor! });

@@ -26,7 +26,7 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Super admin app, flavor `admin` (SAM-1, AD-72): ✅ sign-in with authenticator, colleges list and detail, add college; ✅ tests; ✅ both APKs build; 🔍 on the phone; SAM-2a ✅ suspend/reactivate/close/reissue; SAM-2b (plan, branding) and SAM-3 (audit, accounts) ❌
 - API logs via Dio interceptor (LOG-1, AD-73): ✅ debug only, secrets masked, tested
 - Real super admin account (OPS-2, AD-74): ✅ `nirvokofficial@gmail.com` Owner on local; `owner@nirvok.com` disabled; authenticator app kept
-- College sign-in and invitation acceptance (WEB-1 web, ACC-1 mobile, AD-75): ✅ code, ✅ tests, ✅ end-to-end handover test; 🔍 on the phone and in a browser
+- College sign-in and invitation acceptance (WEB-1 web, ACC-1 mobile, AD-75): ✅ code, ✅ tests, ✅ end-to-end handover test; 🔍 on the phone and in a browser. WID-1 (2026-09-22): web college sign-in moved off password onto the OTP flow (AD-82), matching mobile — college code + email/mobile → six-digit code, `AuthSession.requestCollegeCode`/`verifyCollegeCode` against `/v1/auth/otp/*`. Platform (Super Admin) sign-in unchanged: password + authenticator (SA-3b) on both clients. ✅ tsc clean, ✅ 202 web tests pass, ✅ seen in headless Chrome, 🔍 not seen with a live server
 - College Admin onboarding on the phone (ONB-1, AD-76): ✅ appoint teacher, admit student; ✅ tests; ✅ APK builds; 🔍 on the phone; student sign-in ❌ (ST-1)
 - Dashboard sliver header and Profile (UX-2, AD-77): ✅ code, ✅ tests; 🔍 on the phone
 - Biometric lock on every open (BIO-1, R59, AD-78): ✅ code, ✅ tests, ✅ both APKs build; 🔍 on the phone
