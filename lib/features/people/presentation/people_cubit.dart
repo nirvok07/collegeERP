@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/people_api.dart';
 import '../domain/person.dart';
@@ -46,7 +47,16 @@ class PeopleCubit extends Cubit<PeopleState> {
   /// live in Profile, so they are not listed among the people they manage.
   final String? _selfId;
 
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every
+  /// open). A search always asks — `searchChanged` is followed by an explicit
+  /// `load(refresh: true)`, never this cache.
   Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return;
+    return _read(refresh: refresh);
+  }
+
+  Future<void> _read({required bool refresh}) async {
     emit(state.copyWith(
       status: refresh ? LoadStatus.refreshing : LoadStatus.loading,
       clearFailure: true,

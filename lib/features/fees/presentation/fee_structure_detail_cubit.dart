@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
@@ -38,7 +39,14 @@ class FeeStructureDetailCubit extends Cubit<FeeStructureDetailState> {
   final FeesRepository _repository;
   final String structureId;
 
-  Future<void> load() async {
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
+    return _read();
+  }
+
+  Future<void> _read() async {
     emit(state.copyWith(status: LoadStatus.loading, clearFailure: true));
     final results = await Future.wait([_repository.structure(structureId), _repository.heads()]);
     if (isClosed) return;
@@ -56,19 +64,19 @@ class FeeStructureDetailCubit extends Cubit<FeeStructureDetailState> {
     final nextSeq = (state.structure?.instalments.map((i) => i.seq).fold(0, (a, b) => a > b ? a : b) ?? 0) + 1;
     final result = await _repository.addInstalment(structureId, seq: nextSeq, dueDate: dueDate, lateFeePaise: lateFeePaise);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 
   Future<Failure?> addLine(String instalmentId, {required String feeHeadId, required int amountPaise}) async {
     final result = await _repository.addLine(instalmentId, feeHeadId: feeHeadId, amountPaise: amountPaise);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 
   Future<Failure?> publish() async {
     final result = await _repository.publishStructure(structureId);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 
   Future<Failure?> generateInvoices() async {

@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../academic/domain/academic.dart';
 import '../data/sections_api.dart';
@@ -64,7 +65,14 @@ class SectionsCubit extends Cubit<SectionsState> {
   final SectionsRepository repository;
   final DateTime _today;
 
-  Future<void> load() async {
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
+    return _read();
+  }
+
+  Future<void> _read() async {
     final sections = repository.sections();
     final programs = repository.programs();
     final terms = repository.terms();
@@ -103,7 +111,7 @@ class SectionsCubit extends Cubit<SectionsState> {
       label: label.trim().toUpperCase(),
       capacity: capacity,
     )).failureOrNull;
-    if (failure == null && !isClosed) await load();
+    if (failure == null && !isClosed) await load(refresh: true);
     return failure;
   }
 }

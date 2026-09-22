@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../academic/domain/academic.dart';
 import '../../sections/domain/section.dart';
@@ -40,7 +41,15 @@ class StudentsCubit extends Cubit<StudentsState> {
 
   final StudentsRepository repository;
 
-  Future<void> load() async {
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every
+  /// open). A changed filter always asks — see [filterBy].
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
+    return _read();
+  }
+
+  Future<void> _read() async {
     final students = repository.students(state.filter);
     final programs = state.programs.isEmpty ? repository.programs() : Future.value(Ok(state.programs));
     final s = await students, p = await programs;
@@ -58,7 +67,7 @@ class StudentsCubit extends Cubit<StudentsState> {
 
   Future<void> filterBy(StudentFilter filter) async {
     emit(state.copyWith(filter: filter));
-    await load();
+    await load(refresh: true);
   }
 }
 

@@ -100,7 +100,7 @@ class _RequestsView extends StatelessWidget {
                 ],
               ),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   children: [
                     for (final r in state.requests)

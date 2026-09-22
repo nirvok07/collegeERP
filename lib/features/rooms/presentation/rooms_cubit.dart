@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../organisation/domain/org_unit.dart';
 import '../data/rooms_api.dart';
@@ -40,7 +41,14 @@ class RoomsCubit extends Cubit<RoomsState> {
   final RoomsRepository _repository;
   final bool _manage;
 
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
   Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return;
+    return _read(refresh: refresh);
+  }
+
+  Future<void> _read({required bool refresh}) async {
     final rooms = _repository.rooms();
     final campuses = _manage ? _repository.campuses() : Future.value(const Ok(<Campus>[]));
     final r = await rooms, c = await campuses;

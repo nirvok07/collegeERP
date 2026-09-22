@@ -79,7 +79,7 @@ class _StudentsViewState extends State<_StudentsView> {
                       Routes.admitStudent,
                       arguments: OnboardingArgs(canAppoint: false, canAdmit: true, college: widget.college),
                     );
-                    if (context.mounted) await cubit.load();
+                    if (context.mounted) await cubit.load(refresh: true);
                   },
                   icon: const Icon(Icons.person_add_alt_1_rounded),
                   label: const Text('Admit student'),
@@ -89,7 +89,7 @@ class _StudentsViewState extends State<_StudentsView> {
             LoadStatus.loading => const SkeletonList(rows: 6, filters: [SkeletonFilter.search, SkeletonFilter.chips, SkeletonFilter.dropdown], countLabel: true, trailing: SkeletonTrailing.chip),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 88),
                   children: [
@@ -183,7 +183,7 @@ class _StudentsViewState extends State<_StudentsView> {
                               college: widget.college,
                             ),
                           ));
-                          if (context.mounted) await cubit.load();
+                          if (context.mounted) await cubit.load(refresh: true);
                         },
                       ),
                   ],

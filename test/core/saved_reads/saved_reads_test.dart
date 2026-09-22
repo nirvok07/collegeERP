@@ -9,6 +9,8 @@ import 'package:college_erp/core/saved_reads/saved_reads_database.dart';
 import 'package:college_erp/core/widgets/screen_state.dart';
 import 'package:college_erp/features/onboarding/data/onboarding_api.dart';
 import 'package:college_erp/features/onboarding/presentation/onboarding_cubits.dart';
+import 'package:college_erp/features/rooms/data/rooms_api.dart';
+import 'package:college_erp/features/rooms/presentation/rooms_cubit.dart';
 import 'package:college_erp/features/student/data/my_attendance.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
@@ -269,6 +271,30 @@ void main() {
       expect(again.state.status, LoadStatus.success);
       expect(again.state.attendance!.overall.present, 6);
       expect(again.state.failure, isNotNull, reason: 'the refresh failed, and the screen can say so');
+      await again.close();
+    });
+
+    test('feedbackchanges.md 2026-09 #2: Rooms opens on what was saved, not a fresh call every visit', () async {
+      server.answer('/v1/rooms', [
+        {'id': 'r1', 'campus_id': 'c1', 'code': 'LH-101', 'name': 'Lecture Hall 101', 'kind': 'classroom', 'capacity': 60, 'campus_name': 'Main', 'slot_count': 0},
+      ]);
+      final first = RoomsCubit(RoomsApi(client()), manage: false);
+      await first.load();
+      expect(first.state.rooms, hasLength(1));
+      await first.close();
+
+      final again = RoomsCubit(RoomsApi(client()), manage: false);
+      await again.load();
+      expect(again.state.rooms, hasLength(1), reason: 'opening again answers from what was saved');
+      expect(server.asked, hasLength(1), reason: 'only the very first open ever asked the network');
+
+      server.answer('/v1/rooms', [
+        {'id': 'r1', 'campus_id': 'c1', 'code': 'LH-101', 'name': 'Lecture Hall 101', 'kind': 'classroom', 'capacity': 60, 'campus_name': 'Main', 'slot_count': 0},
+        {'id': 'r2', 'campus_id': 'c1', 'code': 'LH-102', 'name': 'Lecture Hall 102', 'kind': 'classroom', 'capacity': 40, 'campus_name': 'Main', 'slot_count': 0},
+      ]);
+      await again.load(refresh: true);
+      expect(again.state.rooms, hasLength(2), reason: 'a pull to refresh does ask, and shows what changed');
+      expect(server.asked, hasLength(2));
       await again.close();
     });
 

@@ -216,7 +216,7 @@ class _StudentFeeView extends StatelessWidget {
             LoadStatus.loading => const SkeletonList(rows: 4),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(AppSpacing.base, AppSpacing.base, AppSpacing.base, 96),
                   children: [

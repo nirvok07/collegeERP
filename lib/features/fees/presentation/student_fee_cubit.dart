@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
@@ -40,7 +41,14 @@ class StudentFeeCubit extends Cubit<StudentFeeState> {
   final FeesRepository _repository;
   final String studentId;
 
-  Future<void> load() async {
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
+    return _read();
+  }
+
+  Future<void> _read() async {
     emit(state.copyWith(status: LoadStatus.loading, clearFailure: true));
     final results = await Future.wait<Object?>([_repository.studentInvoices(studentId), _repository.studentPayments(studentId)]);
     if (isClosed) return;
@@ -57,30 +65,30 @@ class StudentFeeCubit extends Cubit<StudentFeeState> {
   Future<Failure?> recordPayment({required String method, required int amountPaise, String? reference}) async {
     final result = await _repository.recordPayment(studentId: studentId, method: method, amountPaise: amountPaise, reference: reference);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 
   Future<Failure?> cancelPayment(String paymentId, {required String reason}) async {
     final result = await _repository.cancelPayment(paymentId, reason: reason);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 
   Future<Failure?> raiseFine({required int amountPaise, required String reason}) async {
     final result = await _repository.raiseFine(studentId: studentId, amountPaise: amountPaise, reason: reason);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 
   Future<Failure?> requestConcession(String invoiceId, {required int amountPaise, required String reason}) async {
     final result = await _repository.requestConcession(invoiceId: invoiceId, amountPaise: amountPaise, reason: reason);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 
   Future<Failure?> requestWaiver(String invoiceId, {required String reason}) async {
     final result = await _repository.requestWaiver(invoiceId: invoiceId, reason: reason);
     if (isClosed) return null;
-    return result.when(ok: (_) { load(); return null; }, err: (f) => f);
+    return result.when(ok: (_) { load(refresh: true); return null; }, err: (f) => f);
   }
 }

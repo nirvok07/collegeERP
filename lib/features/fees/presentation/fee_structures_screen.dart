@@ -106,7 +106,7 @@ class _FeeStructuresView extends StatelessWidget {
                 ],
               ),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 88),
                   children: [
@@ -122,7 +122,7 @@ class _FeeStructuresView extends StatelessWidget {
                         onTap: () => Navigator.of(context).pushNamed(
                           Routes.feeStructureDetail,
                           arguments: FeeStructureDetailArgs(structureId: s.id, canManage: canManage),
-                        ).then((_) => cubit.load()),
+                        ).then((_) => cubit.load(refresh: true)),
                       ),
                   ],
                 ),

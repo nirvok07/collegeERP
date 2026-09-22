@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/offerings_api.dart';
 import '../domain/offering.dart';
@@ -21,7 +22,14 @@ class SectionOfferingsCubit extends Cubit<SectionOfferingsState> {
   final OfferingsRepository repository;
   final String sectionId;
 
-  Future<void> load() async {
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
+    return _read();
+  }
+
+  Future<void> _read() async {
     final result = await repository.forSection(sectionId);
     if (isClosed) return;
     result.when(
@@ -35,7 +43,7 @@ class SectionOfferingsCubit extends Cubit<SectionOfferingsState> {
 
   Future<Failure?> create(String courseId, String component) async {
     final failure = (await repository.create(sectionId: sectionId, courseId: courseId, component: component)).failureOrNull;
-    if (failure == null && !isClosed) await load();
+    if (failure == null && !isClosed) await load(refresh: true);
     return failure;
   }
 }

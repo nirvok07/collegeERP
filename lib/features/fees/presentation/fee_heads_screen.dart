@@ -99,7 +99,7 @@ class _FeeHeadsView extends StatelessWidget {
                 ],
               ),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 88),
                   children: [

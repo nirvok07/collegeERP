@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../academic/domain/academic.dart';
 import '../data/curriculum_api.dart';
@@ -50,7 +51,14 @@ class CurriculumCubit extends Cubit<CurriculumState> {
 
   final CurriculumRepository repository;
 
-  Future<void> load() async {
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
+    return _read();
+  }
+
+  Future<void> _read() async {
     final programs = repository.programs();
     final courses = repository.courses();
     final p = await programs, c = await courses;
@@ -85,11 +93,11 @@ class CurriculumCubit extends Cubit<CurriculumState> {
     );
   }
 
-  Future<void> refresh() => load();
+  Future<void> refresh() => load(refresh: true);
 
   Future<Failure?> _thenReload(Future<Result<void>> write) async {
     final failure = (await write).failureOrNull;
-    if (failure == null && !isClosed) await load();
+    if (failure == null && !isClosed) await load(refresh: true);
     return failure;
   }
 

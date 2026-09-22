@@ -146,7 +146,7 @@ class _SectionOfferingsView extends StatelessWidget {
                       timetable: locator.isRegistered<TimetableRepository>() ? locator<TimetableRepository>() : null,
                     ),
                   ));
-                  if (context.mounted) await cubit.load();
+                  if (context.mounted) await cubit.load(refresh: true);
                 },
               ),
           ],

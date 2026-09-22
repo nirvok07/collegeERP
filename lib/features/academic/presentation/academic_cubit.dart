@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../organisation/domain/org_unit.dart';
 import '../data/academic_api.dart';
@@ -40,7 +41,14 @@ class AcademicCubit extends Cubit<AcademicState> {
   final AcademicRepository _repository;
   final bool _calendar;
 
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
   Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(() => _read(refresh: false))) return;
+    return _read(refresh: refresh);
+  }
+
+  Future<void> _read({required bool refresh}) async {
     if (!refresh) emit(const AcademicState());
     final programs = _repository.programs();
     final departments = _repository.departments();

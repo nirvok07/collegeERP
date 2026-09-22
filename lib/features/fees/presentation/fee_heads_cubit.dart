@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/error/failure.dart';
+import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/fees_api.dart';
 import '../domain/fees.dart';
@@ -27,7 +28,14 @@ class FeeHeadsCubit extends Cubit<FeeHeadsState> {
 
   final FeesRepository _repository;
 
-  Future<void> load() async {
+  /// Opens on what was saved; the network is asked only when nothing was
+  /// saved, or on an explicit refresh (feedbackchanges.md: no call on every open).
+  Future<void> load({bool refresh = false}) async {
+    if (!refresh && await fromSaved(_read)) return;
+    return _read();
+  }
+
+  Future<void> _read() async {
     emit(state.copyWith(status: LoadStatus.loading, clearFailure: true));
     final result = await _repository.heads();
     if (isClosed) return;
@@ -44,7 +52,7 @@ class FeeHeadsCubit extends Cubit<FeeHeadsState> {
     if (isClosed) return null;
     return result.when(
       ok: (_) {
-        load();
+        load(refresh: true);
         return null;
       },
       err: (f) => f,
@@ -56,7 +64,7 @@ class FeeHeadsCubit extends Cubit<FeeHeadsState> {
     if (isClosed) return null;
     return result.when(
       ok: (_) {
-        load();
+        load(refresh: true);
         return null;
       },
       err: (f) => f,

@@ -154,7 +154,7 @@ class _SectionsView extends StatelessWidget {
             LoadStatus.loading => const SkeletonList(rows: 5, filters: [SkeletonFilter.dropdown], trailing: SkeletonTrailing.chip),
             LoadStatus.failure => ErrorView(failure: state.failure!, onRetry: cubit.load),
             _ => RefreshIndicator(
-                onRefresh: cubit.load,
+                onRefresh: () => cubit.load(refresh: true),
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 88),
                   children: [
@@ -197,7 +197,7 @@ class _SectionsView extends StatelessWidget {
                               offerings: locator.isRegistered<OfferingsRepository>() ? locator<OfferingsRepository>() : null,
                             ),
                           ));
-                          if (context.mounted) await cubit.load();
+                          if (context.mounted) await cubit.load(refresh: true);
                         },
                       ),
                     if (state.failure != null)
