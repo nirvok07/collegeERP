@@ -12,6 +12,8 @@ import '../core/widgets/app_list_tile.dart';
 import '../core/widgets/college_logo.dart';
 import '../core/widgets/saved_freshness.dart';
 import '../core/widgets/screen_state.dart';
+import '../features/teaching/domain/teaching_offering.dart';
+import '../features/teaching/domain/teaching_repository.dart';
 import 'sign_out.dart';
 
 /// The person's own details, and only here (UX-2): the dashboard no longer
@@ -29,27 +31,31 @@ class AccountScreen extends StatefulWidget {
 }
 
 class _AccountScreenState extends State<AccountScreen> {
-  late Future<(Result<Authority>, CollegeBrand?, DateTime?)> _load = _read(refresh: false);
+  late Future<(Result<Authority>, CollegeBrand?, DateTime?, List<TeachingOffering>)> _load = _read(refresh: false);
 
-  Future<(Result<Authority>, CollegeBrand?, DateTime?)> _read({required bool refresh}) async {
+  Future<(Result<Authority>, CollegeBrand?, DateTime?, List<TeachingOffering>)> _read({required bool refresh}) async {
     if (!refresh) {
       Result<Authority>? saved;
+      Result<List<TeachingOffering>>? savedTeaching;
       final hit = await fromSaved(() async {
         saved = await locator<AuthorityApi>().mine();
+        savedTeaching = await locator<TeachingRepository>().myTeaching();
       });
       if (hit && saved != null) {
         final college = await locator<SessionStore>().readCollege();
         final updatedAt = await locator<AuthorityApi>().mineSavedAt();
-        return (saved!, college, updatedAt);
+        return (saved!, college, updatedAt, savedTeaching?.valueOrNull ?? const []);
       }
     }
     final results = await Future.wait<Object?>([
       locator<AuthorityApi>().mine(),
       locator<SessionStore>().readCollege(),
+      locator<TeachingRepository>().myTeaching(),
     ]);
     final result = results[0] as Result<Authority>;
     final updatedAt = result.valueOrNull == null ? null : await locator<AuthorityApi>().mineSavedAt();
-    return (result, results[1] as CollegeBrand?, updatedAt);
+    final teaching = (results[2] as Result<List<TeachingOffering>>).valueOrNull ?? const [];
+    return (result, results[1] as CollegeBrand?, updatedAt, teaching);
   }
 
   Future<void> _refresh() async {
@@ -64,12 +70,12 @@ class _AccountScreenState extends State<AccountScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
-      body: FutureBuilder<(Result<Authority>, CollegeBrand?, DateTime?)>(
+      body: FutureBuilder<(Result<Authority>, CollegeBrand?, DateTime?, List<TeachingOffering>)>(
         future: _load,
         builder: (context, snapshot) {
           final data = snapshot.data;
           if (data == null) return const SkeletonList(rows: 3, detailHeader: true, leading: SkeletonLeading.icon, subtitle: false);
-          final (result, college, updatedAt) = data;
+          final (result, college, updatedAt, teaching) = data;
           final authority = result.valueOrNull;
           if (authority == null) {
             return ErrorView(
@@ -79,7 +85,7 @@ class _AccountScreenState extends State<AccountScreen> {
           }
           return RefreshIndicator(
             onRefresh: _refresh,
-            child: _Profile(authority: authority, college: college, updatedAt: updatedAt),
+            child: _Profile(authority: authority, college: college, updatedAt: updatedAt, teaching: teaching),
           );
         },
       ),
@@ -88,11 +94,12 @@ class _AccountScreenState extends State<AccountScreen> {
 }
 
 class _Profile extends StatelessWidget {
-  const _Profile({required this.authority, required this.college, this.updatedAt});
+  const _Profile({required this.authority, required this.college, this.updatedAt, this.teaching = const []});
 
   final Authority authority;
   final CollegeBrand? college;
   final DateTime? updatedAt;
+  final List<TeachingOffering> teaching;
 
   @override
   Widget build(BuildContext context) {
@@ -168,6 +175,31 @@ class _Profile extends StatelessWidget {
                   ],
                 ),
         ),
+        if (teaching.isNotEmpty)
+          _Section(
+            title: 'Your teaching',
+            child: Column(
+              children: [
+                for (final cohort in groupByCohort(teaching)) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.xs),
+                    child: Text(
+                      '${cohort.programName} · Section ${cohort.sectionLabel} · Semester ${cohort.termNumber}',
+                      style: theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ),
+                  for (final o in cohort.offerings)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: Icon(Icons.menu_book_outlined, color: scheme.primary),
+                      title: Text('${o.courseCode} · ${o.courseTitle}'),
+                      subtitle: Text('${o.departmentName} · ${o.componentLabel}'),
+                    ),
+                ],
+              ],
+            ),
+          ),
         _Section(
           title: 'What you can access',
           child: () {

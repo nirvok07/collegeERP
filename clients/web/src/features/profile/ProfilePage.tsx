@@ -17,6 +17,15 @@ interface Me {
   has_access: boolean;
 }
 
+interface TeachingWire {
+  id: string;
+  component: string;
+  course: { code: string; title: string };
+  section: { label: string; term_number: number };
+  department_name: string | null;
+  program: { name: string };
+}
+
 const ROLE_LABELS: Record<string, string> = {
   college_admin: 'College Administrator',
   department_head: 'Head of Department',
@@ -43,6 +52,7 @@ const SCOPE_LABELS: Record<string, string> = {
  */
 export function ProfilePage({ api }: { api: ApiClient }) {
   const [me, setMe] = useState<Me | null>(null);
+  const [teaching, setTeaching] = useState<TeachingWire[] | null>(null);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
 
   const load = useCallback(async () => {
@@ -50,6 +60,10 @@ export function ProfilePage({ api }: { api: ApiClient }) {
     const result = await api.get<Me>('/v1/auth/me');
     if (!result.ok) { setFailure(result.error); return; }
     setMe(result.value);
+    // Self-scoped (mirrors the dashboard): department, class and subject for
+    // whoever teaches, no extra permission needed beyond being signed in.
+    const taught = await api.get<TeachingWire[]>('/v1/me/teaching');
+    setTeaching(taught.ok ? taught.value : []);
   }, [api]);
 
   useEffect(() => { void load(); }, [load]);
@@ -85,6 +99,22 @@ export function ProfilePage({ api }: { api: ApiClient }) {
             </ul>
           )}
         </div>
+
+        {teaching && teaching.length > 0 && (
+          <div>
+            <h2 className="page__eyebrow">Your teaching</h2>
+            <ul style={{ display: 'grid', gap: 'var(--space-xs)', listStyle: 'none', padding: 0, margin: 0 }}>
+              {teaching.map((t) => (
+                <li key={t.id}>
+                  <strong>{t.course.code}</strong> — {t.course.title}
+                  <br />
+                  {t.department_name ?? 'No department'} · Section {t.section.label} (Semester {t.section.term_number}) ·{' '}
+                  {t.program.name}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div>
           <h2 className="page__eyebrow">What you can access</h2>
