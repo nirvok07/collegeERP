@@ -52,6 +52,59 @@ export function Field({
   );
 }
 
+/* ---- OTP field ----------------------------------------------------------
+ * Six boxes over one invisible input, mirroring the phone's
+ * `core/widgets/otp_code_field.dart`: autofill/paste/backspace all work
+ * because there is really only one field, styled to look like six.
+ */
+
+export function OtpField({
+  value, onChange, onComplete, autoFocus, label = 'Code', error,
+}: {
+  value: string; onChange: (v: string) => void; onComplete?: (value: string) => void;
+  autoFocus?: boolean; label?: string; error?: string;
+}) {
+  const id = useId();
+  const messageId = `${id}-message`;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const digits = value.padEnd(6, ' ').slice(0, 6).split('');
+
+  function handleChange(raw: string) {
+    const next = raw.replace(/\D/g, '').slice(0, 6);
+    onChange(next);
+    if (next.length === 6) onComplete?.(next);
+  }
+
+  return (
+    <div className={`field otp${error ? ' field--invalid' : ''}`}>
+      <label className="field__label" htmlFor={id}>{label}</label>
+      <div className="otp__boxes" onClick={() => inputRef.current?.focus()}>
+        {digits.map((d, i) => (
+          <span key={i} className={`otp__box${i === value.length ? ' otp__box--active' : ''}`}>
+            {d.trim()}
+          </span>
+        ))}
+        <input
+          ref={inputRef}
+          id={id}
+          className="otp__input"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          autoFocus={autoFocus}
+          value={value}
+          maxLength={6}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? messageId : undefined}
+          onChange={(e) => handleChange(e.currentTarget.value)}
+        />
+      </div>
+      <span className="field__message" id={messageId} role={error ? 'alert' : undefined}>
+        {error ?? ' '}
+      </span>
+    </div>
+  );
+}
+
 /* ---- Status chip ------------------------------------------------------- */
 
 export type ChipTone = 'success' | 'warning' | 'error' | 'info' | 'neutral';

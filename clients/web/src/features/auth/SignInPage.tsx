@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Banner, Button, Field } from '../../components/index.tsx';
+import { Banner, Button, Field, OtpField } from '../../components/index.tsx';
 import type { ApiFailure } from '../../lib/api.ts';
 import type { AuthSession } from '../../lib/auth.ts';
 import { EnrolmentPanel } from './EnrolmentPanel.tsx';
@@ -84,11 +84,12 @@ function CollegeSignIn({
     setNotice(again ? 'A new code is on its way. The earlier one no longer works.' : null);
   }
 
-  async function submitCode(e: FormEvent) {
-    e.preventDefault();
-    if (!isCompleteCode(code)) { setFailure({ code: 'VALIDATION_FAILED', message: 'Enter the six-digit code.' }); return; }
+  async function submitCode(e?: FormEvent, codeOverride?: string) {
+    e?.preventDefault();
+    const value = codeOverride ?? code;
+    if (!isCompleteCode(value)) { setFailure({ code: 'VALIDATION_FAILED', message: 'Enter the six-digit code.' }); return; }
     setSubmitting(true); setFailure(null);
-    const result = await auth.verifyCollegeCode(college.trim().toLowerCase(), challenge, code);
+    const result = await auth.verifyCollegeCode(college.trim().toLowerCase(), challenge, value);
     setSubmitting(false);
     // On success the session manager switches the screen.
     if (!result.ok) { setFailure(result.failure); setCode(''); }
@@ -127,9 +128,10 @@ function CollegeSignIn({
           <p className="signin__sub">
             {destination ? `A six-digit code was sent to ${destination}.` : 'Enter the six-digit code that was sent to you.'}
           </p>
-          <Field
-            label="Code" inputMode="numeric" autoComplete="one-time-code" autoFocus
-            value={code} maxLength={7} onChange={(e) => setCode(normaliseCode(e.currentTarget.value))}
+          <OtpField
+            autoFocus value={code}
+            onChange={(v) => setCode(normaliseCode(v))}
+            onComplete={(v) => void submitCode(undefined, v)}
           />
           <Button type="submit" variant="primary" block loading={submitting}>
             {submitting ? 'Signing in' : 'Sign in'}
@@ -171,11 +173,12 @@ function PlatformSignIn({ auth, onCollege }: { auth: AuthSession; onCollege: () 
     setStep(result.step === 'second_factor' ? 'code' : 'enrol');
   }
 
-  async function submitCode(e: FormEvent) {
-    e.preventDefault();
-    if (!isCompleteCode(code)) { setFailure({ code: 'VALIDATION_FAILED', message: 'Enter the six-digit code.' }); return; }
+  async function submitCode(e?: FormEvent, codeOverride?: string) {
+    e?.preventDefault();
+    const value = codeOverride ?? code;
+    if (!isCompleteCode(value)) { setFailure({ code: 'VALIDATION_FAILED', message: 'Enter the six-digit code.' }); return; }
     setSubmitting(true); setFailure(null);
-    const result = await auth.verifySecondFactor(challenge, code);
+    const result = await auth.verifySecondFactor(challenge, value);
     setSubmitting(false);
     if (result.ok) return; // The session manager switches the screen.
     if (isExpiredStep(result.failure.message) || result.failure.code === 'ACCOUNT_LOCKED') {
@@ -214,9 +217,10 @@ function PlatformSignIn({ auth, onCollege }: { auth: AuthSession; onCollege: () 
       {step === 'code' && (
         <form onSubmit={submitCode} noValidate className="signin__form">
           <p className="signin__sub">Enter the six-digit code from your authenticator app.</p>
-          <Field
-            label="Code" inputMode="numeric" autoComplete="one-time-code" autoFocus
-            value={code} maxLength={7} onChange={(e) => setCode(normaliseCode(e.currentTarget.value))}
+          <OtpField
+            autoFocus value={code}
+            onChange={(v) => setCode(normaliseCode(v))}
+            onComplete={(v) => void submitCode(undefined, v)}
           />
           <Button type="submit" variant="primary" block loading={submitting}>
             {submitting ? 'Signing in' : 'Sign in'}

@@ -52,6 +52,27 @@
 .field--invalid .field__input { animation: m-fade-in var(--dur-state) var(--ease-out); }
 .field--invalid .field__message { color: var(--error); }
 
+/* ---- OTP field ----------------------------------------------------------
+ * Six boxes drawn over one real, invisible input so paste/autofill/backspace
+ * all keep working; the boxes are purely decorative reflections of its value.
+ */
+.otp__boxes { position: relative; display: flex; gap: var(--space-sm); }
+.otp__box {
+  width: 44px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface); color: var(--text-primary);
+  border: 1px solid var(--outline-strong); border-radius: var(--radius-input);
+  font: var(--text-label); font-variant-numeric: tabular-nums;
+  transition: border-color var(--state), box-shadow var(--state);
+}
+.otp__box--active { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
+.otp.field--invalid .otp__box { border-color: var(--error); }
+.otp__input {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; border: 0; padding: 0; margin: 0; letter-spacing: 40px;
+  caret-color: transparent; cursor: text;
+}
+
 /* ---- Table ------------------------------------------------------------- */
 .table-wrap { overflow-x: auto; border-radius: var(--nd-card-radius); background: var(--surface); box-shadow: var(--nd-card-shadow); }
 .table { width: 100%; border-collapse: collapse; }
