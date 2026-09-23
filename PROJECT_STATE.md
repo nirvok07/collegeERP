@@ -753,23 +753,25 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   slots/sessions, mirroring the `/me/sessions` self-scope pattern) plus a tile on
   `student_home_screen.dart`. Not started.
 - Teacher/student "apna attendance dekh payen" (own attendance): student side ✅ already built
-  (ST-1, `StudentSelfRepository`, on the student home screen). Teacher side ❌ NOT BUILT — there is
-  no staff-attendance concept anywhere (server has no staff attendance table; `attendance_screen.dart`
-  is a teacher marking a class's roster, not viewing their own record). **STATUS: ARCHITECTURE CHANGE
-  REQUIRED** — owner confirmed (2026-09-24) they want a real staff attendance module: a teacher's own
-  daily presence, tracked and shown to them, plus the owner wants ~2-3 months of data seeded for
-  `sonam@gmail.com` to see the UI. This is a new entity/workflow, not a UI tweak: needs a migration
-  (e.g. `staff_attendance`), an owner/authority decision on who marks it (self mark-in? HoD/admin
-  marks it? imported?), a permission, server routes, and a mobile "My attendance" surface for
-  teachers. Recorded as OD-STAFF-ATT-1 below; smallest first slice scoped as SA-ATT-1.
-
-### OPEN DECISION — OD-STAFF-ATT-1
-Who records a teacher's daily attendance (self check-in, HoD/admin marks it, or both), and what
-counts as present/absent/leave for a teacher (no existing model to reuse — M6 attendance is
-student-and-session shaped). Blocks SA-ATT-1. Smallest reasonable default if not answered before
-starting: HoD/College Admin marks teacher attendance daily (same authority shape as `attendance.mark`
-today), teacher gets a read-only "My attendance" view — proceed on this default unless the owner
-says otherwise.
+  (ST-1). Teacher side ✅ **SA-ATT-1 built 2026-09-24** — owner decision (OD-STAFF-ATT-1 resolved):
+  self-service punch in/out, not marked by HoD/Admin. Migration 038 `staff_attendance` (one row per
+  person per day, unique on tenant+person+work_date, immutable INSERT+SELECT+UPDATE only — a punch is
+  never deleted, only closed). Server: `POST /v1/me/staff-attendance/punch-in`, `POST
+  /v1/me/staff-attendance/punch-out`, `GET /v1/me/staff-attendance?from&to` (self-scoped, no
+  permission, mirrors `/v1/me/sessions`; distinct from the student's `/v1/me/attendance` and from a
+  teacher marking a class roster). Refuses a double punch-in and a punch-out with nothing open.
+  Mobile: `lib/features/staff_attendance/` (API, cubit, screen) — a "My attendance" tile on both
+  admin and teacher dashboards, one button that reads "Punch in" / "Punch out" / "Done for today",
+  history below. ✅ server 3 new tests (39/39 attendance.test.ts, 509/523 full suite — 14 failures are
+  the pre-existing syllabus/debug drift, unrelated), ✅ Flutter analyze clean, 327/327 tests (2 new).
+  Seeded 60 days of realistic history for `sonam@gmail.com` (weekday, ~92% present) so the UI is not
+  empty. 🔍 NEEDS VALIDATION on the phone. Committed `5c33971`.
+- "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
+  me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
+  to a real name (department/section/program/campus, one lookup per distinct id) and returns
+  `scope_name`; both clients show it in place of the generic scope-type label. The existing "Your
+  teaching" section (subjects/classes/department per offering, from `/v1/me/teaching`) already covers
+  "subjects kya hain, classes kaun c hain" — unchanged, just confirmed still correct.
 
 ### NEXT SLICE — validate on the phone, end to end (runbook 06)
 - **Why next:** every module is built and unit-tested but none has been opened on a real phone since
