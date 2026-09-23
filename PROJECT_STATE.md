@@ -740,11 +740,15 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   (`OtpField`, `clients/web/src/components/index.tsx`), matching mobile's `otp_code_field.dart`;
   sixth digit auto-submits. Wired into both `SignInPage.tsx` code steps. tsc clean, 202/202 web
   tests pass. Committed `ab07f9a`.
-- Module visibility by permission ("jiske pass access nahi wo module nahi dikhega"): ✅ already the
-  case — `dashboard_screen.dart`'s `_AdminModules`/`_TeacherModules` gate every tile with
-  `if (authority.can('...'))` (~15 tiles); the one unconditional tile is Academic calendar
-  (by design, everyone gets one). No code change needed; owner feedback was pre-existing behaviour,
-  not a bug.
+- Module visibility by permission ("jiske pass access nahi wo module nahi dikhega"): mobile ✅
+  confirmed already correct — `dashboard_screen.dart`'s `_AdminModules`/`_TeacherModules` gate every
+  tile with `if (authority.can('...'))` (~15 tiles); Academic calendar is the one unconditional tile,
+  by design. **Web was wrong** — first assessed "already fine" here, which was an error found later
+  the same day: web's sidebar/dashboard gated whole-college tiles (People, Sections, Students,
+  Timetable, the Attendance overview...) on the flat permission set, but most of those routes require
+  the permission at institution scope exactly (`institutionScope()`), which a department/section-
+  scoped grant — any teacher's — does not satisfy. A teacher (sonam@gmail.com) saw the tile, opened
+  it, and got "You do not have access to do that." ✅ Fixed same day — see below.
 - Timetable for everyone ("sub k pass"): ⚠️ PARTIAL. Teachers already have a "Schedule" tile
   (`session.read` → `/me/sessions`, instructor-assignment based). Students have no timetable/schedule
   view at all — `/me/sessions` only returns classes where the caller teaches, so a student-scoped
@@ -772,6 +776,22 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   `scope_name`; both clients show it in place of the generic scope-type label. The existing "Your
   teaching" section (subjects/classes/department per offering, from `/v1/me/teaching`) already covers
   "subjects kya hain, classes kaun c hain" — unchanged, just confirmed still correct.
+- Web sidebar/dashboard showed tiles a person could not open (owner: "jis cheez ka access hi nahi hai
+  wo module dikhao hi mat karo"). ✅ Fixed 2026-09-24 — `/v1/auth/me` now also returns
+  `institution_permissions` (`institutionPermissionKeys`, `domain/authority.ts`): the subset of a
+  person's permissions actually held at institution scope, distinct from the flat `permissions` set
+  which includes narrower department/section grants that most whole-college list routes refuse.
+  `sectionsFor()` (App.tsx) and `buildTiles()` (DashboardPage.tsx, reused by ProfilePage) gate People,
+  Organisation, Curriculum, College, Teaching, Students, Timetable and the Attendance overview on
+  `institution_permissions` instead; `assessment.verify` stays on the flat set since the server
+  already narrows the verification queue to the reader's own cohort (correctly designed, not
+  affected). Also added punch in/out to web Profile (mobile had it from SA-ATT-1, web didn't). ✅ tsc
+  clean, 203/203 web tests pass (+2 new); server 15/15 people.test.ts (+2 new asserting a
+  department-scoped grant is excluded from `institution_permissions` while the granting admin's is
+  included); full suite 509/523 (pre-existing syllabus/debug drift, unrelated). Committed `be16e09`.
+  **Not yet audited**: whether any other web page (beyond the ones this pass covered) calls a route
+  requiring `institutionScope()` while being reachable by a department/section-scoped role; this pass
+  fixed every tile currently in `sectionsFor()`/`buildTiles()`, not a from-scratch audit of every route.
 
 ### NEXT SLICE — validate on the phone, end to end (runbook 06)
 - **Why next:** every module is built and unit-tested but none has been opened on a real phone since
