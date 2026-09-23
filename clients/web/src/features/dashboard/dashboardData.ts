@@ -18,7 +18,7 @@ export interface CollegeOverview {
   pendingInvitations: number;
 }
 
-/** A class session from `/me/sessions` (self-scoped, no special permission). */
+/** A class session from `/v1/me/sessions` (self-scoped, no special permission). */
 export interface ClassSession {
   id: string;
   title: string;
@@ -35,7 +35,7 @@ export interface WeekSessions {
   next: ClassSession[];
 }
 
-/** A course from `/me/teaching` (self-scoped, no special permission). */
+/** A course from `/v1/me/teaching` (self-scoped, no special permission). */
 export interface MyCourse {
   id: string;
   title: string;
@@ -64,7 +64,7 @@ interface SessionWire {
 
 /** Reads the teacher's own classes for today and the next 7 days. */
 export async function loadWeek(api: ApiClient): Promise<WeekSessions | undefined> {
-  const result = await api.get<SessionWire[]>('/me/sessions');
+  const result = await api.get<SessionWire[]>('/v1/me/sessions');
   const rows = ok(result) ?? [];
   const today = `${new Date().getFullYear()}-${pad(new Date().getMonth() + 1)}-${pad(new Date().getDate())}`;
   const todayClasses: ClassSession[] = [];
@@ -98,7 +98,7 @@ interface OfferingWire {
 
 /** Reads the teacher's own courses. */
 export async function loadCourses(api: ApiClient): Promise<MyCourse[] | undefined> {
-  const rows = ok(await api.get<OfferingWire[]>('/me/teaching')) ?? [];
+  const rows = ok(await api.get<OfferingWire[]>('/v1/me/teaching')) ?? [];
   return rows.map((o) => ({
     id: o.id,
     title: o.course.title,
