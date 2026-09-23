@@ -7,6 +7,7 @@ interface Assignment {
   role_key: string;
   scope_type: string;
   scope_ref_id: string | null;
+  scope_name: string | null;
 }
 
 interface Me {
@@ -93,7 +94,7 @@ export function ProfilePage({ api }: { api: ApiClient }) {
               {me.assignments.map((a, i) => (
                 <li key={i}>
                   <StatusChip tone="info">{ROLE_LABELS[a.role_key] ?? a.role_key}</StatusChip>
-                  {' '}for {SCOPE_LABELS[a.scope_type] ?? a.scope_type}
+                  {' '}for {a.scope_name ?? SCOPE_LABELS[a.scope_type] ?? a.scope_type}
                 </li>
               ))}
             </ul>

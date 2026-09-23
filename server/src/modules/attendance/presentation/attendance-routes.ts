@@ -9,6 +9,7 @@ import {
   correctMark, listSessionsForAttendance, markAttendance, readSheet, submitSheet, summariesFor,
   type ActingAs, type AttendanceActor, type SheetView,
 } from '../application/manage-attendance.ts';
+import { myAttendance, punchIn, punchOut } from '../application/self-attendance.ts';
 import type { AttendanceState } from '../application/ports.ts';
 
 const STATES = ['present', 'absent', 'late', 'excused'] as const;
@@ -217,6 +218,40 @@ export async function registerAttendanceRoutes(app: FastifyInstance, c: Containe
     });
   });
 
+  /**
+   * SA-ATT-1: a staff member's own attendance, punched in and out — distinct
+   * from a student's `/me/attendance` above and from marking a class's
+   * roster. Self-scoped: needs no permission beyond being signed in.
+   */
+  app.post('/me/staff-attendance/punch-in', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const result = await punchIn(c.selfAttendance, { tenantId: req.actor.tenantId, personId: req.actor.sub });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, serialiseStaffAttendance(result.value), 201);
+  });
+
+  app.post('/me/staff-attendance/punch-out', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const result = await punchOut(c.selfAttendance, { tenantId: req.actor.tenantId, personId: req.actor.sub });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, serialiseStaffAttendance(result.value));
+  });
+
+  app.get('/me/staff-attendance', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const q = req.query as { from?: string; to?: string };
+    const to = q.to ?? new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+    const from = q.from ?? new Date(new Date(to).getTime() - 89 * 86_400_000).toISOString().slice(0, 10);
+    const rows = await myAttendance(c.selfAttendance, { tenantId: req.actor.tenantId, personId: req.actor.sub }, { from, to });
+    return sendOk(reply, rows.map(serialiseStaffAttendance));
+  });
+
   /* -------------------------------------------------------------- overview */
 
   /**
@@ -326,6 +361,12 @@ function serialiseView(view: SheetView) {
       corrected_at: correction.correctedAt,
     })),
     summary: summarise(view),
+  };
+}
+
+function serialiseStaffAttendance(r: { id: string; workDate: string; punchInAt: Date; punchOutAt: Date | null }) {
+  return {
+    id: r.id, work_date: r.workDate, punch_in_at: r.punchInAt, punch_out_at: r.punchOutAt,
   };
 }
 

@@ -76,6 +76,7 @@ class _DashboardView extends StatelessWidget {
     authority.can('student.manage'),
     authority.can('session.read'),
     authority.can('offering.read'),
+    true, // My attendance (SA-ATT-1), always shown
     authority.can('person.read'),
     authority.can('person.read'),
     authority.can('assessment.verify'),
@@ -1004,6 +1005,8 @@ class _AdminModules extends StatelessWidget {
             Routes.registers),
       if (authority.can('assessment.verify'))
         tile('Verify marks', 'Submitted mark sheets', Icons.verified_rounded, AppColors.success, Routes.verifyMarks),
+      // SA-ATT-1: self-scoped, like Academic calendar — every staff member gets one.
+      tile('My attendance', 'Punch in and out', Icons.fingerprint_rounded, AppColors.info, Routes.staffAttendance),
     ];
     // M11: the Accountant composes fees, the Cashier collects them, and the
     // College Admin holds every fee permission there is.
@@ -1246,6 +1249,17 @@ class _TeacherModules extends StatelessWidget {
           args: null,
           refresh: true,
         ),
+      // SA-ATT-1: a staff member's own attendance, self-scoped like the
+      // academic calendar below — everyone signed in as staff gets one.
+      (
+        title: 'My attendance',
+        subtitle: 'Punch in and out',
+        icon: Icons.fingerprint_rounded,
+        color: AppColors.info,
+        route: Routes.staffAttendance,
+        args: null,
+        refresh: false,
+      ),
       // The organisation tree is read behind `person.read`, which is the
       // permission the campus and department endpoints actually require.
       if (authority.can('person.read')) ...[

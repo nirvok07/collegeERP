@@ -83,9 +83,10 @@ import {
 } from './modules/enrolment/infrastructure/repositories.ts';
 import type { EnrolmentDeps } from './modules/enrolment/application/manage-students.ts';
 import {
-  PgMarkRepository, PgSheetRepository,
+  PgMarkRepository, PgSheetRepository, PgStaffAttendanceRepository,
 } from './modules/attendance/infrastructure/repositories.ts';
 import type { AttendanceDeps } from './modules/attendance/application/manage-attendance.ts';
+import type { SelfAttendanceDeps } from './modules/attendance/application/self-attendance.ts';
 import {
   PgAssessmentMarkRepository, PgComponentRepository,
 } from './modules/assessment/infrastructure/repositories.ts';
@@ -131,6 +132,7 @@ export interface Container {
   sessions: SessionDeps;
   enrolment: EnrolmentDeps;
   attendance: AttendanceDeps;
+  selfAttendance: SelfAttendanceDeps;
   assessment: AssessmentDeps;
   fees: FeesDeps;
   syllabus: SyllabusDeps;
@@ -342,6 +344,13 @@ export function buildContainer(config: Config, pool?: Pool): Container {
       sessions: sessionRepository,
       enrolments: enrolmentRepository,
       reach: reachReader,
+    },
+    // SA-ATT-1: a staff member's own attendance, self-scoped like `sessions`
+    // above — no reach reader, since a person's own punch needs nothing but
+    // their own id.
+    selfAttendance: {
+      uow, ids, clock,
+      staffAttendance: new PgStaffAttendanceRepository(),
     },
     // M7 consumes M3's offering, M5's roster and the one reach reader, so which
     // teaching a person can act on is stated in exactly one place.

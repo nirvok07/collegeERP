@@ -92,3 +92,20 @@ export interface MarkRepository {
   }): Promise<void>;
   correctionsForSheet(tx: Tx, sheetId: string): Promise<CorrectionRecord[]>;
 }
+
+/** SA-ATT-1: one person's one day, punched in and (once done) punched out. */
+export interface StaffAttendanceRecord {
+  id: string;
+  workDate: string;
+  punchInAt: Date;
+  punchOutAt: Date | null;
+}
+
+export interface StaffAttendanceRepository {
+  findByDate(tx: Tx, personId: string, workDate: string): Promise<StaffAttendanceRecord | null>;
+  punchIn(tx: Tx, input: {
+    id: string; tenantId: string; personId: string; workDate: string; at: Date;
+  }): Promise<StaffAttendanceRecord>;
+  punchOut(tx: Tx, input: { id: string; at: Date }): Promise<void>;
+  history(tx: Tx, personId: string, range: { from: string; to: string }): Promise<StaffAttendanceRecord[]>;
+}

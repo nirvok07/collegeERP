@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/design/tokens.dart';
 import '../features/academic/presentation/academic_screen.dart';
 import '../features/calendar/presentation/academic_calendar_screen.dart';
+import '../features/staff_attendance/presentation/staff_attendance_screen.dart';
 import '../features/curriculum/presentation/curriculum_screen.dart';
 import '../features/rooms/presentation/rooms_screen.dart';
 import '../features/fees/presentation/fee_heads_screen.dart';
@@ -65,6 +66,9 @@ abstract final class Routes {
   static const registers = '/registers';
   static const verifyMarks = '/verify-marks';
   static const account = '/account';
+
+  /// SA-ATT-1: a staff member's own attendance, punched in and out.
+  static const staffAttendance = '/me/staff-attendance';
 
   /// CAL-1: arguments are `true` when this person may add and remove holidays.
   static const calendar = '/calendar';
@@ -215,6 +219,8 @@ abstract final class AppRouter {
         return _page(settings, const VerifyMarksScreen());
       case Routes.account:
         return _page(settings, const AccountScreen());
+      case Routes.staffAttendance:
+        return _page(settings, const StaffAttendanceScreen());
       case Routes.calendar:
         return _page(settings, AcademicCalendarScreen(canManage: settings.arguments == true));
       case Routes.myFees:

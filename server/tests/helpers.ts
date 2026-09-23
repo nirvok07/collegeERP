@@ -49,6 +49,8 @@ export async function resetData(): Promise<void> {
       'devices', 'credentials', 'role_assignments',
       // Attendance references a class session, so it goes before delivery.
       'attendance_corrections', 'attendance_records', 'attendance_sheets',
+      // SA-ATT-1 references persons directly, not a session, but must still go first.
+      'staff_attendance',
       // Assessment references offerings and students, so it goes before both.
       'assessment_mark_corrections', 'assessment_marks', 'assessment_components',
       // Receipts and allocations reference payments; online intents (FEE-7)

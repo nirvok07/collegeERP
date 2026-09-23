@@ -3,10 +3,15 @@ import '../network/api_client.dart';
 
 /// One role the person holds, and at what level, as the server resolved it.
 class RoleGrant {
-  const RoleGrant({required this.roleKey, required this.scopeType});
+  const RoleGrant({required this.roleKey, required this.scopeType, this.scopeName});
 
   final String roleKey;
   final String scopeType;
+
+  /// The department, section, program or campus this role is scoped to, by
+  /// name, resolved by the server (owner feedback: "Faculty for a department"
+  /// told nobody which one). Null for `institution` scope or when unresolved.
+  final String? scopeName;
 
   String get label => switch (roleKey) {
     'college_admin' => 'College Administrator',
@@ -15,14 +20,17 @@ class RoleGrant {
     _ => roleKey.replaceAll('_', ' '),
   };
 
-  String get scopeLabel => switch (scopeType) {
-    'institution' => 'Whole college',
-    'campus' => 'Campus',
-    'department' => 'Department',
-    'program' => 'Program',
-    'section' => 'Section',
-    _ => scopeType,
-  };
+  String get scopeLabel {
+    if (scopeName != null) return scopeName!;
+    return switch (scopeType) {
+      'institution' => 'Whole college',
+      'campus' => 'Campus',
+      'department' => 'Department',
+      'program' => 'Program',
+      'section' => 'Section',
+      _ => scopeType,
+    };
+  }
 }
 
 /// ST-1: the signed-in person is a student. Their own screens follow from
@@ -105,7 +113,11 @@ class Authority {
       loginIdentifier: map['login_identifier'] as String?,
       student: StudentInfo.fromJson(map['student']),
       roles: ((map['assignments'] as List?) ?? const [])
-          .map((a) => RoleGrant(roleKey: '${(a as Map)['role_key']}', scopeType: '${a['scope_type']}'))
+          .map((a) => RoleGrant(
+                roleKey: '${(a as Map)['role_key']}',
+                scopeType: '${a['scope_type']}',
+                scopeName: a['scope_name'] as String?,
+              ))
           .toList(),
     );
   }

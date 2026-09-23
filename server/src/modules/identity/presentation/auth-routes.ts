@@ -412,6 +412,30 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
       account: accountId ? await c.managePeople.accounts.findById(tx, accountId) : null,
       student: await c.studentSelf.whoAmI(tx, personId),
     }));
+    // UX-2 / owner feedback: "Faculty for a department" told nobody which
+    // department. Resolved per assignment rather than joined generically,
+    // because each scope type names a different table.
+    const scopeNames = await c.uow.run(tenantId, async (tx) => {
+      const names = new Map<string, string>();
+      for (const a of authority.assignments) {
+        const refId = a.scope.refId;
+        if (!refId || names.has(refId)) continue;
+        const name = await (async () => {
+          switch (a.scope.type) {
+            case 'campus': return (await c.manageOrg.campuses.findById(tx, refId))?.name ?? null;
+            case 'department': return (await c.manageOrg.departments.findById(tx, refId))?.name ?? null;
+            case 'program': return (await c.curriculum.programs.findById(tx, refId))?.name ?? null;
+            case 'section': {
+              const section = await c.enrolment.sections.findById(tx, refId);
+              return section ? `Section ${section.label}` : null;
+            }
+            default: return null;
+          }
+        })();
+        if (name) names.set(refId, name);
+      }
+      return names;
+    });
     return sendOk(reply, {
       actor_type: 'person',
       actor_id: req.actor.sub,
@@ -433,6 +457,7 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
         role_key: a.roleKey,
         scope_type: a.scope.type,
         scope_ref_id: a.scope.refId,
+        scope_name: a.scope.refId ? (scopeNames.get(a.scope.refId) ?? null) : null,
         valid_to: a.validTo,
       })),
       has_access: !c.authority.hasNoAccess(authority),

@@ -2,7 +2,7 @@ import type { Tx } from '../../../shared/application/unit-of-work.ts';
 import { clientOf } from '../../../infrastructure/db/unit-of-work.ts';
 import type {
   AttendanceState, CorrectionRecord, MarkRecord, MarkRepository, SheetRecord, SheetRepository,
-  SheetSummary,
+  SheetSummary, StaffAttendanceRecord, StaffAttendanceRepository,
 } from '../application/ports.ts';
 
 const SHEET_SELECT = `
@@ -194,6 +194,54 @@ export class PgMarkRepository implements MarkRepository {
       correctedAt: r.corrected_at,
     }));
   }
+}
+
+export class PgStaffAttendanceRepository implements StaffAttendanceRepository {
+  async findByDate(tx: Tx, personId: string, workDate: string): Promise<StaffAttendanceRecord | null> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, work_date, punch_in_at, punch_out_at FROM staff_attendance
+        WHERE person_id = $1 AND work_date = $2`,
+      [personId, workDate],
+    );
+    return rows[0] ? toStaffAttendance(rows[0]) : null;
+  }
+
+  async punchIn(tx: Tx, input: {
+    id: string; tenantId: string; personId: string; workDate: string; at: Date;
+  }): Promise<StaffAttendanceRecord> {
+    const { rows } = await clientOf(tx).query(
+      `INSERT INTO staff_attendance (id, tenant_id, person_id, work_date, punch_in_at)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING id, work_date, punch_in_at, punch_out_at`,
+      [input.id, input.tenantId, input.personId, input.workDate, input.at],
+    );
+    return toStaffAttendance(rows[0]);
+  }
+
+  async punchOut(tx: Tx, input: { id: string; at: Date }): Promise<void> {
+    await clientOf(tx).query(
+      `UPDATE staff_attendance SET punch_out_at = $2 WHERE id = $1`,
+      [input.id, input.at],
+    );
+  }
+
+  async history(tx: Tx, personId: string, range: { from: string; to: string }): Promise<StaffAttendanceRecord[]> {
+    const { rows } = await clientOf(tx).query(
+      `SELECT id, work_date, punch_in_at, punch_out_at FROM staff_attendance
+        WHERE person_id = $1 AND work_date BETWEEN $2 AND $3
+        ORDER BY work_date DESC`,
+      [personId, range.from, range.to],
+    );
+    return rows.map(toStaffAttendance);
+  }
+}
+
+function toStaffAttendance(r: any): StaffAttendanceRecord {
+  return {
+    id: r.id,
+    workDate: r.work_date instanceof Date ? r.work_date.toISOString().slice(0, 10) : r.work_date,
+    punchInAt: r.punch_in_at, punchOutAt: r.punch_out_at,
+  };
 }
 
 /* ---------------------------------------------------------------- mapping -- */

@@ -767,3 +767,54 @@ describe('tenant isolation holds for attendance', () => {
     assert.equal(marked.statusCode, 404);
   });
 });
+
+/**
+ * SA-ATT-1: a staff member's own attendance, punched in and out. Self-scoped
+ * like `/v1/me/sessions` — no permission beyond being signed in, and the
+ * server never trusts a client-supplied person id.
+ */
+describe('staff self-attendance (SA-ATT-1)', () => {
+  it('punches in, then out, and the day appears in history', async () => {
+    const c = await oneClass('attend-punch');
+    const teacher = c.teacher.token;
+
+    const in1 = await post('/v1/me/staff-attendance/punch-in', teacher);
+    assert.equal(in1.statusCode, 201);
+    assert.ok(in1.json().data.punch_in_at);
+    assert.equal(in1.json().data.punch_out_at, null);
+
+    const out1 = await post('/v1/me/staff-attendance/punch-out', teacher);
+    assert.equal(out1.statusCode, 200);
+    assert.ok(out1.json().data.punch_out_at);
+
+    const history = await get('/v1/me/staff-attendance', teacher);
+    assert.equal(history.statusCode, 200);
+    assert.equal(history.json().data.length, 1);
+    assert.equal(history.json().data[0].id, in1.json().data.id);
+  });
+
+  it('refuses a second punch-in the same day, and a punch-out before any punch-in', async () => {
+    const c = await oneClass('attend-punch-2');
+    const teacher = c.teacher.token;
+
+    const early = await post('/v1/me/staff-attendance/punch-out', teacher);
+    assert.equal(early.statusCode, 409);
+
+    await post('/v1/me/staff-attendance/punch-in', teacher);
+    const again = await post('/v1/me/staff-attendance/punch-in', teacher);
+    assert.equal(again.statusCode, 409);
+
+    await post('/v1/me/staff-attendance/punch-out', teacher);
+    const late = await post('/v1/me/staff-attendance/punch-out', teacher);
+    assert.equal(late.statusCode, 409);
+  });
+
+  it('keeps one teacher\'s punches invisible to another', async () => {
+    const c = await oneClass('attend-punch-3');
+    await post('/v1/me/staff-attendance/punch-in', c.teacher.token);
+
+    const other = await c.staff('Rohit Dey', 'rohit@attend-punch-3.edu', c.section);
+    const otherHistory = await get('/v1/me/staff-attendance', other.token);
+    assert.equal(otherHistory.json().data.length, 0, 'a new person has nothing punched, ever their own');
+  });
+});

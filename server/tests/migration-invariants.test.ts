@@ -97,6 +97,9 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   non_teaching_days: 'DELETE+INSERT+SELECT+UPDATE',
   // CAL-2: an event is marked removed, never deleted.
   calendar_events: 'INSERT+SELECT+UPDATE',
+  // SA-ATT-1: a punched day is immutable once it exists; UPDATE is only for
+  // the punch-out that closes the same row.
+  staff_attendance: 'INSERT+SELECT+UPDATE',
 
   // Student records. No DELETE: a placement is ended and a student is
   // withdrawn, because attendance and results reference both by identity.
