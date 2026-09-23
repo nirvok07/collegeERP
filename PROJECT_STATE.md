@@ -735,6 +735,42 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
 - No server change: `/me/sessions` and `/me/teaching` only. Earlier: SA-4a (`05a34d3`); the owner
   ran `023_seat_limits.sql` on Supabase (2026-09-13), which the rebuild re-applies, tracked.
 
+### Owner feedback, 2026-09-24 (feedbackchanges.md)
+- WID-2 ✅ web sign-in/second-factor code field is now six boxes over one invisible input
+  (`OtpField`, `clients/web/src/components/index.tsx`), matching mobile's `otp_code_field.dart`;
+  sixth digit auto-submits. Wired into both `SignInPage.tsx` code steps. tsc clean, 202/202 web
+  tests pass. Committed `ab07f9a`.
+- Module visibility by permission ("jiske pass access nahi wo module nahi dikhega"): ✅ already the
+  case — `dashboard_screen.dart`'s `_AdminModules`/`_TeacherModules` gate every tile with
+  `if (authority.can('...'))` (~15 tiles); the one unconditional tile is Academic calendar
+  (by design, everyone gets one). No code change needed; owner feedback was pre-existing behaviour,
+  not a bug.
+- Timetable for everyone ("sub k pass"): ⚠️ PARTIAL. Teachers already have a "Schedule" tile
+  (`session.read` → `/me/sessions`, instructor-assignment based). Students have no timetable/schedule
+  view at all — `/me/sessions` only returns classes where the caller teaches, so a student-scoped
+  equivalent (their enrolled section's slots/sessions) does not exist server- or client-side yet.
+  Needs its own small slice: a self-scoped `GET /v1/me/timetable`-style read (enrolment → section →
+  slots/sessions, mirroring the `/me/sessions` self-scope pattern) plus a tile on
+  `student_home_screen.dart`. Not started.
+- Teacher/student "apna attendance dekh payen" (own attendance): student side ✅ already built
+  (ST-1, `StudentSelfRepository`, on the student home screen). Teacher side ❌ NOT BUILT — there is
+  no staff-attendance concept anywhere (server has no staff attendance table; `attendance_screen.dart`
+  is a teacher marking a class's roster, not viewing their own record). **STATUS: ARCHITECTURE CHANGE
+  REQUIRED** — owner confirmed (2026-09-24) they want a real staff attendance module: a teacher's own
+  daily presence, tracked and shown to them, plus the owner wants ~2-3 months of data seeded for
+  `sonam@gmail.com` to see the UI. This is a new entity/workflow, not a UI tweak: needs a migration
+  (e.g. `staff_attendance`), an owner/authority decision on who marks it (self mark-in? HoD/admin
+  marks it? imported?), a permission, server routes, and a mobile "My attendance" surface for
+  teachers. Recorded as OD-STAFF-ATT-1 below; smallest first slice scoped as SA-ATT-1.
+
+### OPEN DECISION — OD-STAFF-ATT-1
+Who records a teacher's daily attendance (self check-in, HoD/admin marks it, or both), and what
+counts as present/absent/leave for a teacher (no existing model to reuse — M6 attendance is
+student-and-session shaped). Blocks SA-ATT-1. Smallest reasonable default if not answered before
+starting: HoD/College Admin marks teacher attendance daily (same authority shape as `attendance.mark`
+today), teacher gets a read-only "My attendance" view — proceed on this default unless the owner
+says otherwise.
+
 ### NEXT SLICE — validate on the phone, end to end (runbook 06)
 - **Why next:** every module is built and unit-tested but none has been opened on a real phone since
   ADM-1, and since then skeletons (UX-3), saved reads (OF-R1), calendar/program edit and archive
