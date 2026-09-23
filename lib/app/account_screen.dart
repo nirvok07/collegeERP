@@ -168,6 +168,25 @@ class _Profile extends StatelessWidget {
                   ],
                 ),
         ),
+        _Section(
+          title: 'What you can access',
+          child: () {
+            final modules = accessibleModules(authority);
+            return modules.isEmpty
+                ? Text('Nothing yet. Ask your College Administrator for access.', style: theme.textTheme.bodyMedium)
+                : Column(
+                    children: [
+                      for (final m in modules)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                          leading: const Icon(Icons.check_circle_outline_rounded),
+                          title: Text(m),
+                        ),
+                    ],
+                  );
+          }(),
+        ),
         const SizedBox(height: AppSpacing.sm),
         AppListTile(
           margin: EdgeInsets.zero,
@@ -178,6 +197,35 @@ class _Profile extends StatelessWidget {
       ],
     );
   }
+}
+
+/// The dashboard's module tiles, restated in plain language, so a person can
+/// check their own access without having to know a permission name. Mirrors
+/// the `authority.can(...)` gates in `_AdminModules`/`_TeacherModules`
+/// (dashboard_screen.dart) and `student_home_screen.dart`; keep both in sync.
+List<String> accessibleModules(Authority authority) {
+  bool can(String p) => authority.can(p);
+  return [
+    if (can('person.read')) 'People',
+    if (can('person.read')) 'Organisation',
+    if (can('person.read')) 'Curriculum',
+    if (can('section.read') && can('person.read')) 'Sections',
+    if (can('student.read')) 'Students',
+    if (can('session.manage')) 'Timetable',
+    if (can('session.read')) 'Schedule',
+    if (can('offering.read')) 'Courses',
+    if (can('session.read') && can('room.manage')) 'Rooms',
+    if (can('attendance.correct')) 'Registers',
+    if (can('assessment.verify')) 'Verify marks',
+    if (can('account.manage') && can('role.assign')) 'Onboarding',
+    if (can('fee.manage')) 'Fee heads',
+    if (can('fee.read')) 'Fee structures',
+    if (can('fee.approve') || can('fee.manage')) 'Concessions & waivers',
+    if (can('fee.collect') || can('fee.manage')) 'Student fees',
+    if (can('fee.read')) 'Fee reports',
+    if (can('institution.read')) 'College profile',
+    'Academic calendar',
+  ];
 }
 
 class _Section extends StatelessWidget {

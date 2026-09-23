@@ -21,13 +21,14 @@ import 'package:flutter_test/flutter_test.dart';
 class _Server implements HttpClientAdapter {
   final asked = <String>[];
   Object? name = 'Asha Rao';
+  List<String> permissions = const [];
 
   @override
   Future<ResponseBody> fetch(RequestOptions options, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
     asked.add(options.path);
     return ResponseBody.fromString(
       jsonEncode({
-        'data': {'permissions': <String>[], 'has_access': true, 'full_name': name},
+        'data': {'permissions': permissions, 'has_access': true, 'full_name': name},
       }),
       200,
       headers: {
@@ -98,6 +99,21 @@ void main() {
       }
       expect(server.asked, hasLength(2), reason: 'pull to refresh is the one thing that asks again');
       expect(find.text('Asha Verma'), findsOneWidget);
+    });
+  });
+
+  testWidgets('what you can access lists only granted modules, plainly named', (tester) async {
+    server.permissions = ['session.read'];
+    await tester.runAsync(() async {
+      await tester.pumpWidget(const MaterialApp(home: AccountScreen()));
+      for (var i = 0; i < 20; i++) {
+        await tester.pump();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
+      expect(find.text('What you can access'), findsOneWidget);
+      expect(find.text('Schedule'), findsOneWidget);
+      expect(find.text('Fee heads'), findsNothing);
+      expect(find.text('People'), findsNothing);
     });
   });
 }
