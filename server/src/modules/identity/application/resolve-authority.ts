@@ -9,7 +9,9 @@
 import type { Clock } from '../../../shared/application/ports.ts';
 import type { Tx, UnitOfWork } from '../../../shared/application/unit-of-work.ts';
 import type { OrgTreeReader, RoleAssignmentRepository } from './ports.ts';
-import { can, hasNoAuthority, permissionKeys, type Authority } from '../domain/authority.ts';
+import {
+  can, hasNoAuthority, institutionPermissionKeys, permissionKeys, type Authority,
+} from '../domain/authority.ts';
 import type { Scope } from '../domain/scope.ts';
 
 export const AUTHORITY_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -75,6 +77,11 @@ export class AuthorityService {
 
   permissions(authority: Authority): ReadonlySet<string> {
     return permissionKeys(authority, this.deps.clock.now());
+  }
+
+  /** The subset actually granted institution-wide; see `institutionPermissionKeys`. */
+  institutionPermissions(authority: Authority): ReadonlySet<string> {
+    return institutionPermissionKeys(authority, this.deps.clock.now());
   }
 
   /** AD-18. Drives the designed "no access yet" screen rather than an error. */

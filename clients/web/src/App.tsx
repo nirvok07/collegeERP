@@ -20,7 +20,7 @@ import { AttendancePage } from './features/attendance/AttendancePage.tsx';
 import { AssessmentPage } from './features/assessment/AssessmentPage.tsx';
 import { DashboardPage } from './features/dashboard/DashboardPage.tsx';
 import { ProfilePage } from './features/profile/ProfilePage.tsx';
-import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
+import { AppShell, loadPermissions, type NavItem, type Permissions } from './features/shell/AppShell.tsx';
 import { MODULE_ICONS } from './features/shell/icons.tsx';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -32,7 +32,7 @@ export function App() {
   const [phase, setPhase] = useState<Phase>('restoring');
   const [actor, setActor] = useState<Actor | null>(null);
   const [degraded, setDegraded] = useState<ApiFailure | null>(null);
-  const [permissions, setPermissions] = useState<Set<string> | null>(null);
+  const [permissions, setPermissions] = useState<Permissions | null>(null);
   const restored = useRef(false);
   // SA-3b: a platform invitation link opens its own setup page.
   const [invite, setInvite] = useState(() => window.location.pathname === '/platform/enrol');
@@ -146,38 +146,48 @@ export function App() {
  */
 function sectionsFor(
   actorType: 'platform' | 'person',
-  permissions: Set<string> | null,
+  permissions: Permissions | null,
   api: ApiClient,
 ): NavItem[] {
   if (actorType === 'platform') {
     // SA-3a: sections follow the platform role's permissions, read from the server.
+    const p = permissions?.all;
     const platform: NavItem[] = [];
-    if (permissions?.has('platform.colleges.read')) {
+    if (p?.has('platform.colleges.read')) {
       platform.push({
         key: 'institutions', label: 'Colleges', section: 'Platform', icon: MODULE_ICONS.institutions,
-        render: () => <InstitutionsPage api={api} canManage={permissions.has('platform.colleges.manage')} />,
+        render: () => <InstitutionsPage api={api} canManage={p.has('platform.colleges.manage')} />,
       });
     }
-    if (permissions?.has('platform.audit.read')) {
+    if (p?.has('platform.audit.read')) {
       platform.push({
         key: 'audit', label: 'Audit', section: 'Platform', icon: MODULE_ICONS.audit,
         render: () => <AuditPage api={api} />,
       });
     }
-    if (permissions?.has('platform.accounts.read')) {
+    if (p?.has('platform.accounts.read')) {
       platform.push({
         key: 'accounts', label: 'Accounts', section: 'Platform', icon: MODULE_ICONS.accounts,
         render: () => (
           <AccountsPage
             api={api}
-            canManage={permissions.has('platform.accounts.manage')}
-            canAssignRoles={permissions.has('platform.roles.manage')}
+            canManage={p.has('platform.accounts.manage')}
+            canAssignRoles={p.has('platform.roles.manage')}
           />
         ),
       });
     }
     return platform;
   }
+  // Most list routes require a permission at institution scope exactly (a
+  // department- or section-scoped grant, as any teacher holds, does not
+  // satisfy it) — see `institutionPermissionKeys` server-side. Gating a tile
+  // on `all` used to show it and then answer 403; gate on `institution`
+  // instead so a tile is absent rather than a dead end. Action-level flags
+  // (canManage, etc.) stay on `all`: they only affect buttons inside a page
+  // the person can already open.
+  const all = permissions?.all;
+  const inst = permissions?.institution;
   const items: NavItem[] = [];
   // WID-2: a dashboard landing, mirroring the mobile app's dashboard-first
   // home. Always the first tab for a college person; the dashboard internally
@@ -190,13 +200,13 @@ function sectionsFor(
     icon: MODULE_ICONS.home,
     render: () => <DashboardPage permissions={permissions} api={api} />,
   });
-  if (permissions?.has('person.read')) {
+  if (inst?.has('person.read')) {
     items.push({
       key: 'people',
       label: 'People',
       section: 'Modules',
       icon: MODULE_ICONS.people,
-      render: () => <PeoplePage api={api} canManage={permissions.has('account.manage')} />,
+      render: () => <PeoplePage api={api} canManage={all!.has('account.manage')} />,
     });
     items.push({
       key: 'organisation',
@@ -204,7 +214,7 @@ function sectionsFor(
       section: 'Modules',
       icon: MODULE_ICONS.organisation,
       render: () => (
-        <OrganisationPage api={api} canManage={permissions.has('department.manage')} />
+        <OrganisationPage api={api} canManage={all!.has('department.manage')} />
       ),
     });
     items.push({
@@ -213,24 +223,25 @@ function sectionsFor(
       section: 'Modules',
       icon: MODULE_ICONS.curriculum,
       render: () => (
-        <CurriculumPage api={api} canManage={permissions.has('department.manage')} />
+        <CurriculumPage api={api} canManage={all!.has('department.manage')} />
       ),
     });
   }
   // AD-70: how the college appears in the app. Read by whoever may read the
   // college's record; changed only with institution.manage.
-  if (permissions?.has('institution.read')) {
+  if (inst?.has('institution.read')) {
     items.push({
       key: 'college',
       label: 'College',
       section: 'Modules',
       icon: MODULE_ICONS.college,
-      render: () => <CollegePage api={api} canManage={permissions.has('institution.manage')} />,
+      render: () => <CollegePage api={api} canManage={all!.has('institution.manage')} />,
     });
   }
-  // Teaching has its own gate: a head of department reads sections and staffs
-  // courses without necessarily being able to read the whole staff directory.
-  if (permissions?.has('section.read')) {
+  // Teaching lists every section and offering in the college — institution
+  // scope, unlike a teacher's own courses (Dashboard) or a cohort a head of
+  // department is scoped to.
+  if (inst?.has('section.read')) {
     items.push({
       key: 'teaching',
       label: 'Teaching',
@@ -240,17 +251,17 @@ function sectionsFor(
         <TeachingPage
           api={api}
           can={{
-            manageSections: permissions.has('section.manage'),
-            manageOfferings: permissions.has('offering.manage'),
-            assignInstructors: permissions.has('instructor.assign'),
-            manageSessions: permissions.has('session.manage'),
-            planAssessment: permissions.has('assessment.plan'),
+            manageSections: all!.has('section.manage'),
+            manageOfferings: all!.has('offering.manage'),
+            assignInstructors: all!.has('instructor.assign'),
+            manageSessions: all!.has('session.manage'),
+            planAssessment: all!.has('assessment.plan'),
           }}
         />
       ),
     });
   }
-  if (permissions?.has('student.read')) {
+  if (inst?.has('student.read')) {
     items.push({
       key: 'students',
       label: 'Students',
@@ -260,8 +271,8 @@ function sectionsFor(
         <StudentsPage
           api={api}
           can={{
-            manageStudents: permissions.has('student.manage'),
-            manageEnrolment: permissions.has('enrolment.manage'),
+            manageStudents: all!.has('student.manage'),
+            manageEnrolment: all!.has('enrolment.manage'),
           }}
         />
       ),
@@ -270,7 +281,7 @@ function sectionsFor(
   // Delivery is its own section: the question "what is happening today" is a
   // different job from "who teaches what", and the same person rarely does both
   // at the same moment.
-  if (permissions?.has('session.read')) {
+  if (inst?.has('session.read')) {
     items.push({
       key: 'timetable',
       label: 'Timetable',
@@ -280,15 +291,18 @@ function sectionsFor(
         <DeliveryPage
           api={api}
           can={{
-            manageSessions: permissions.has('session.manage'),
-            manageRooms: permissions.has('room.manage'),
-            manageCalendar: permissions.has('term.manage'),
+            manageSessions: all!.has('session.manage'),
+            manageRooms: all!.has('room.manage'),
+            manageCalendar: all!.has('term.manage'),
           }}
         />
       ),
     });
   }
-  if (permissions?.has('attendance.read')) {
+  // The whole-college register overview — a class-by-class list across every
+  // cohort, so it needs `attendance.read` institution-wide (a college_admin).
+  // A teacher takes attendance for their own class from Schedule instead.
+  if (inst?.has('attendance.read')) {
     items.push({
       key: 'attendance',
       label: 'Attendance',
@@ -299,9 +313,10 @@ function sectionsFor(
       render: () => <AttendancePage api={api} />,
     });
   }
-  // The verification queue. Only somebody who may verify has anything to do here;
-  // the server narrows it further to the cohorts they reach.
-  if (permissions?.has('assessment.verify')) {
+  // The verification queue narrows itself to the cohorts the reader reaches
+  // (department/section grants work, unlike the tiles above), so this one
+  // stays gated on the flat set.
+  if (all?.has('assessment.verify')) {
     items.push({
       key: 'assessment',
       label: 'Assessment',

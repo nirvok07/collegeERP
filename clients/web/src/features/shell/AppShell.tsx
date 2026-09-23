@@ -173,10 +173,28 @@ export function groupSections(items: NavItem[]): Array<{ label: string; items: N
   return groups;
 }
 
+export interface Permissions {
+  /** Granted anywhere, at any scope — a teacher's own courses count. */
+  all: Set<string>;
+  /**
+   * Granted institution-wide specifically. Most list routes (People,
+   * Sections, the Attendance overview...) require exactly this, so a sidebar
+   * tile gated on `all` used to appear and then answer 403 for anyone whose
+   * grant was narrower (a department- or section-scoped teacher).
+   */
+  institution: Set<string>;
+}
+
 /** Reads the permission set once, so screens ask a question rather than a role. */
-export async function loadPermissions(api: ApiClient): Promise<Set<string>> {
-  const result = await api.get<{ permissions: string[] }>('/v1/auth/me');
-  return new Set(result.ok ? result.value.permissions : []);
+export async function loadPermissions(api: ApiClient): Promise<Permissions> {
+  const result = await api.get<{ permissions: string[]; institution_permissions?: string[] }>('/v1/auth/me');
+  if (!result.ok) return { all: new Set(), institution: new Set() };
+  return {
+    all: new Set(result.value.permissions),
+    // Platform actors have no `institution_permissions` field; fall back to
+    // the flat set so nothing regresses for them.
+    institution: new Set(result.value.institution_permissions ?? result.value.permissions),
+  };
 }
 
 function MenuIcon(props: SVGProps<SVGSVGElement>) {

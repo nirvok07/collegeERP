@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Button, ErrorState, StatusChip } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
-import { useShellNav } from '../shell/AppShell.tsx';
+import { useShellNav, type Permissions } from '../shell/AppShell.tsx';
 import { MODULE_ICONS } from '../shell/icons.tsx';
 import { loadCourses, loadOverview, loadWeek, type CollegeOverview, type MyCourse, type WeekSessions } from './dashboardData.ts';
 import './dashboard.css';
@@ -19,7 +19,7 @@ import './dashboard.css';
 export function DashboardPage({
   permissions, api,
 }: {
-  permissions: Set<string> | null;
+  permissions: Permissions | null;
   api: ApiClient;
 }) {
   const [overview, setOverview] = useState<CollegeOverview | undefined>();
@@ -27,8 +27,11 @@ export function DashboardPage({
   const [courses, setCourses] = useState<MyCourse[] | undefined>();
   const [failure, setFailure] = useState<ApiFailure | null>(null);
 
-  const canReadCollege = permissions?.has('institution.read') ?? false;
-  const canReadSessions = permissions?.has('session.read') ?? false;
+  // The college overview needs institution.read institution-wide; a
+  // teacher's own week and courses are self-scoped (`/v1/me/sessions`,
+  // `/v1/me/teaching`) and need no permission beyond being signed in.
+  const canReadCollege = permissions?.institution.has('institution.read') ?? false;
+  const canReadSessions = permissions?.all.has('session.read') ?? false;
 
   // The two read groups are independent: an admin reads the college overview, a
   // teacher reads their own sessions and courses (self-scoped, so no special
@@ -241,9 +244,18 @@ interface Tile {
  * the two lists in one place would couple the shell to a screen; instead this is
  * the one screen that lists the gates, deliberately matching the shell.
  */
-/** Exported for the Profile page: the same tiles, restated as plain labels. */
-export function buildTiles(permissions: Set<string> | null): Tile[] {
-  const p = permissions;
+/**
+ * Exported for the Profile page: the same tiles, restated as plain labels.
+ *
+ * Gated on `institution` (not the flat `all` set) for every whole-college
+ * list, matching `sectionsFor()` in App.tsx: a department/section-scoped
+ * grant (any teacher's) does not satisfy `institutionScope()` server-side, so
+ * showing the tile on the flat set used to promise access the click then
+ * refused. `assessment.verify` is the one exception — the server narrows it
+ * to the reader's own cohort, so it works at any scope.
+ */
+export function buildTiles(permissions: Permissions | null): Tile[] {
+  const p = permissions?.institution;
   const tiles: Tile[] = [];
   const t = (key: string, label: string, hint: string) => tiles.push({ key, label, hint });
   if (p?.has('person.read')) {
@@ -256,12 +268,12 @@ export function buildTiles(permissions: Set<string> | null): Tile[] {
   if (p?.has('student.read')) t('students', 'Students', 'Enrolment and records');
   if (p?.has('session.read')) t('timetable', 'Timetable', 'Sessions, rooms, calendar');
   if (p?.has('attendance.read')) t('attendance', 'Attendance', 'Registers and marking');
-  if (p?.has('assessment.verify')) t('assessment', 'Assessment', 'Verification queue');
+  if (permissions?.all.has('assessment.verify')) t('assessment', 'Assessment', 'Verification queue');
   return tiles;
 }
 
 /** Exported for tests: the gate→section list is a contract worth pinning. */
-export function dashboardTileKeys(permissions: Set<string> | null): string[] {
+export function dashboardTileKeys(permissions: Permissions | null): string[] {
   return buildTiles(permissions).map((x) => x.key);
 }
 

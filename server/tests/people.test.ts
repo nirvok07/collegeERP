@@ -119,6 +119,16 @@ describe('inviting people', () => {
 
     const me = await get('/v1/auth/me', signedIn.json().data.access_token);
     assert.equal(me.json().data.assignments[0].role_key, 'faculty');
+    // Department-scoped, not institution-wide: `permissions` holds it (the
+    // faculty role grants it), but `institution_permissions` must not, since
+    // the whole-college list routes require exactly that scope.
+    assert.ok(me.json().data.permissions.includes('person.read'));
+    assert.ok(!me.json().data.institution_permissions.includes('person.read'));
+
+    // The College Admin who invited them holds the same permission
+    // institution-wide, so it appears in both sets.
+    const adminMe = await get('/v1/auth/me', college.token);
+    assert.ok(adminMe.json().data.institution_permissions.includes('person.read'));
   });
 });
 

@@ -41,6 +41,25 @@ export function permissionKeys(authority: Authority, at: Date): ReadonlySet<stri
 }
 
 /**
+ * The subset of {@link permissionKeys} held at `institution` scope
+ * specifically — the ones that actually satisfy a whole-college read (most
+ * list routes require `institutionScope()` exactly, per BR-20's ancestry
+ * check: a department- or section-scoped grant does not contain it). A thin
+ * client (the web sidebar) that only sees the flat permission set cannot
+ * tell "granted anywhere" from "granted institution-wide", which is why a
+ * teacher used to see tiles that then answered 403.
+ */
+export function institutionPermissionKeys(authority: Authority, at: Date): ReadonlySet<string> {
+  const keys = new Set<string>();
+  for (const a of authority.assignments) {
+    if (!isCurrentlyValid(a, at)) continue;
+    if (a.scope.type !== 'institution') continue;
+    for (const k of a.permissionKeys) keys.add(k);
+  }
+  return keys;
+}
+
+/**
  * BR-20. Granted if any currently valid assignment carries the permission AND its
  * scope contains the target. This is the authorisation decision; everything else
  * in this module is presentation.

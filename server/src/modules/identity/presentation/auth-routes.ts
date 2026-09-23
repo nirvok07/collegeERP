@@ -453,6 +453,12 @@ export async function registerAuthRoutes(app: FastifyInstance, c: Container) {
         section_term_number: who.student.sectionTermNumber,
       },
       permissions: [...c.authority.permissions(authority)].sort(),
+      // Owner feedback: a teacher's sidebar showed tiles (People, Sections,
+      // Attendance overview...) that then answered "you do not have access" —
+      // most list routes require the permission at institution scope
+      // exactly, which a department/section-scoped grant does not satisfy.
+      // A thin client can gate on this set instead of the flat one above.
+      institution_permissions: [...c.authority.institutionPermissions(authority)].sort(),
       assignments: authority.assignments.map((a) => ({
         role_key: a.roleKey,
         scope_type: a.scope.type,

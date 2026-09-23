@@ -1,26 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import type { ApiClient } from '../../lib/api.ts';
+import type { Permissions } from '../shell/AppShell.tsx';
 import { dashboardTileKeys } from './DashboardPage.tsx';
 import { loadCourses, loadOverview, loadWeek } from './dashboardData.ts';
 
+/** Both sets equal, unless a test needs the institution/all split apart. */
+function perms(institutionKeys: string[], allKeys: string[] = institutionKeys): Permissions {
+  return { institution: new Set(institutionKeys), all: new Set(allKeys) };
+}
+
 describe('dashboard module grid (WID-2)', () => {
   it('shows the people/organisation/curriculum tiles only with person.read', () => {
-    expect(dashboardTileKeys(new Set(['person.read']))).toEqual(['people', 'organisation', 'curriculum']);
+    expect(dashboardTileKeys(perms(['person.read']))).toEqual(['people', 'organisation', 'curriculum']);
   });
 
   it('adds the college tile with institution.read', () => {
-    expect(dashboardTileKeys(new Set(['person.read', 'institution.read']))).toContain('college');
+    expect(dashboardTileKeys(perms(['person.read', 'institution.read']))).toContain('college');
   });
 
   it('shows no tiles when the actor has no permission', () => {
-    expect(dashboardTileKeys(new Set())).toEqual([]);
+    expect(dashboardTileKeys(perms([]))).toEqual([]);
     expect(dashboardTileKeys(null)).toEqual([]);
   });
 
   it('puts a teacher into timetable and assessment when their perms allow', () => {
-    const keys = dashboardTileKeys(new Set(['session.read', 'assessment.verify']));
+    const keys = dashboardTileKeys(perms(['session.read', 'assessment.verify']));
     expect(keys).toContain('timetable');
     expect(keys).toContain('assessment');
+  });
+
+  it('hides a whole-college tile granted only at department/section scope, but keeps assessment', () => {
+    // A teacher: session.read etc. held narrowly (not in `institution`), so it
+    // must not promise a tile whose endpoint would then refuse them — but
+    // assessment.verify narrows to their own cohort server-side, so it stays.
+    const keys = dashboardTileKeys(perms([], ['person.read', 'session.read', 'assessment.verify']));
+    expect(keys).toEqual(['assessment']);
   });
 });
 
