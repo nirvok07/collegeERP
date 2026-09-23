@@ -19,6 +19,7 @@ import { StudentsPage } from './features/students/StudentsPage.tsx';
 import { AttendancePage } from './features/attendance/AttendancePage.tsx';
 import { AssessmentPage } from './features/assessment/AssessmentPage.tsx';
 import { DashboardPage } from './features/dashboard/DashboardPage.tsx';
+import { ProfilePage } from './features/profile/ProfilePage.tsx';
 import { AppShell, loadPermissions, type NavItem } from './features/shell/AppShell.tsx';
 import { MODULE_ICONS } from './features/shell/icons.tsx';
 
@@ -309,6 +310,15 @@ function sectionsFor(
       render: () => <AssessmentPage api={api} />,
     });
   }
+  // Always present, like the dashboard: who you are and what you can see,
+  // without knowing a permission name (owner feedback: it wasn't obvious).
+  items.push({
+    key: 'profile',
+    label: 'Profile',
+    section: 'Account',
+    icon: MODULE_ICONS.profile,
+    render: () => <ProfilePage api={api} />,
+  });
   if (items.length === 0) {
     items.push({ key: 'none', label: 'Home', render: () => <NoAccessYet /> });
   }

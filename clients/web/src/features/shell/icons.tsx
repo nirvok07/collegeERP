@@ -175,6 +175,17 @@ function AccountsIcon(props: NavIconProps) {
   );
 }
 
+/** Profile — a person in a circle. */
+function ProfileIcon(props: NavIconProps) {
+  return (
+    <I {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="12" cy="10" r="3" />
+      <path d="M6.5 18.5c1-2.8 3-4 5.5-4s4.5 1.2 5.5 4" />
+    </I>
+  );
+}
+
 /**
  * Registry keyed by nav-item `key`, so App.tsx attaches an icon to each section
  * without the shell knowing anything about a particular module. Values are
@@ -182,6 +193,7 @@ function AccountsIcon(props: NavIconProps) {
  */
 export const MODULE_ICONS: Record<string, ReactNode> = {
   home: <DashboardIcon />,
+  profile: <ProfileIcon />,
   people: <PeopleIcon />,
   organisation: <OrganisationIcon />,
   curriculum: <CurriculumIcon />,

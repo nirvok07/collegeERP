@@ -241,7 +241,8 @@ interface Tile {
  * the two lists in one place would couple the shell to a screen; instead this is
  * the one screen that lists the gates, deliberately matching the shell.
  */
-function buildTiles(permissions: Set<string> | null): Tile[] {
+/** Exported for the Profile page: the same tiles, restated as plain labels. */
+export function buildTiles(permissions: Set<string> | null): Tile[] {
   const p = permissions;
   const tiles: Tile[] = [];
   const t = (key: string, label: string, hint: string) => tiles.push({ key, label, hint });
