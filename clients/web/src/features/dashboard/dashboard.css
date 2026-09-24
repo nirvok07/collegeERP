@@ -181,28 +181,87 @@
   color: var(--text-tertiary);
 }
 
-/* A month has ~30 bars in the same width a week had 7: gap and bar shrink,
-   labels thin out to every 5th day (drawn only where PunchCard emits one). */
-.dash__chart--month {
-  gap: 3px;
+/* ---- Hours-worked chart: a smooth gradient curve over the month --------- */
+/* Plot area (curve + invisible hover zones) sits above a separate label
+   row, so the day numbers never compete with the curve's own baseline. */
+.dash__linechart-plot {
+  position: relative;
+  height: 88px;
 }
-.dash__chart--month .dash__bar {
-  max-width: 12px;
-  border-radius: 2px 2px 0 0;
+
+.dash__linechart-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1), transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.dash__chart--month .dash__bar-day {
+
+.dash__linechart-svg--grown {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dash__linechart-line {
+  filter: drop-shadow(0 2px 5px rgb(79 70 229 / 0.35));
+}
+
+.dash__linechart-area {
+  transition: opacity var(--state);
+}
+
+.dash__linechart-guide {
+  stroke: var(--outline-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+
+.dash__linechart-dot {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2.5;
+}
+
+.dash__linechart-dot--today {
+  fill: var(--primary);
+  stroke: var(--surface);
+}
+
+.dash__linechart-zones {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.dash__linechart-zone {
+  flex: 1;
+  cursor: pointer;
+  border-radius: var(--radius-input);
+}
+
+.dash__linechart-zone:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.dash__linechart-labels {
+  display: flex;
+  margin-top: var(--space-xs);
+}
+
+.dash__linechart-labels span {
+  flex: 1;
+  text-align: center;
   font-size: 10px;
-  min-height: 12px;
+  color: var(--text-tertiary);
 }
-.dash__bar-wrap--today .dash__bar {
-  background: var(--primary);
-}
-.dash__bar-wrap--hover .dash__bar {
-  background: var(--primary);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--primary);
-}
-.dash__chart--month:has(.dash__bar-wrap--hover) .dash__bar-wrap:not(.dash__bar-wrap--hover) .dash__bar {
-  opacity: 0.45;
+
+.dash__linechart-label--today {
+  color: var(--primary);
+  font-weight: 700;
 }
 
 /* The hours-chart tooltip: date, precise hours, punch in-out — everything
@@ -365,14 +424,16 @@
 
 .dash__donut-arc {
   cursor: pointer;
+  filter: drop-shadow(0 1px 1px rgb(15 23 42 / 0.12));
   transition:
     stroke-dasharray 900ms cubic-bezier(0.16, 1, 0.3, 1),
     stroke-width 200ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 200ms ease;
+    opacity 200ms ease,
+    filter 200ms ease;
 }
 
 .dash__donut-arc--dim { opacity: 0.35; }
-.dash__donut-arc--active { filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.18)); }
+.dash__donut-arc--active { filter: drop-shadow(0 2px 3px rgb(15 23 42 / 0.22)); }
 
 .dash__donut-num { font: var(--text-title); font-weight: 700; fill: var(--text-primary); transition: opacity 150ms ease; }
 .dash__donut-label { font: var(--text-caption); fill: var(--text-tertiary); }
@@ -446,6 +507,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .dash__bar, .dash__donut-arc { transition: none; }
+  .dash__linechart-svg { transition: none; opacity: 1; transform: none; }
 }
 
 /* ---- Skeleton (in-place, nothing shifts) -------------------------------- */

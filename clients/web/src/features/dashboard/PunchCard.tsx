@@ -23,15 +23,39 @@ function dateLabel(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+/** Catmull-Rom → cubic-Bezier smoothing, so the line reads as one continuous curve, not connected spikes. */
+function smoothPath(points: { x: number; y: number }[]): string {
+  if (points.length === 0) return '';
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
+const CHART_W = 600;
+const CHART_H = 100;
+
 /**
- * The visual form of the punch record: hours worked, one bar per day of the
- * current month, oldest to newest — the whole month in one chart, instead of
- * a plain list of raw punch times underneath it. Hovering a bar (a real
- * floating tooltip, not the OS's native title box) gives the exact date,
- * hours and punch times in one glance, matching the donut's tooltip
- * treatment. Bars grow in on mount/update (a `grown` flip one frame after
- * render, so the CSS `height` transition on `.dash__bar` has something to
- * animate from) rather than jumping straight to their final height.
+ * The visual form of the punch record: hours worked, one smooth curve across
+ * the current month, oldest to newest — the whole month in one glance,
+ * instead of a plain list of raw punch times underneath it. A gradient
+ * stroke (blue → teal, `--info`/`--primary` to `--success`, all existing
+ * tokens) with a soft glow and a fading fill underneath, matching the
+ * dashboard's own "no screen invents a colour" rule while giving the curve
+ * a premium, illustrative feel. Hovering (a real floating tooltip, not the
+ * OS's native title box) gives the exact date, hours and punch times, with
+ * a marker dot and guide line on the curve itself. The curve fades and
+ * lifts in on mount/update rather than appearing instantly.
  */
 function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
   const now = new Date();
@@ -50,6 +74,15 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
   }
   const max = Math.max(1, ...bars.map((b) => b.hours));
 
+  const points = bars.map((b, i) => ({
+    x: daysInMonth === 1 ? CHART_W / 2 : (i / (daysInMonth - 1)) * CHART_W,
+    y: CHART_H - 6 - (b.hours / max) * (CHART_H - 16),
+  }));
+  const linePath = smoothPath(points);
+  const areaPath = points.length > 0
+    ? `${linePath} L ${points[points.length - 1].x} ${CHART_H} L ${points[0].x} ${CHART_H} Z`
+    : '';
+
   const [grown, setGrown] = useState(false);
   useEffect(() => {
     setGrown(false);
@@ -58,33 +91,75 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
   }, [days]);
 
   const [hovered, setHovered] = useState<string | null>(null);
-  const hoveredBar = bars.find((b) => b.iso === hovered) ?? null;
+  const hoveredIndex = bars.findIndex((b) => b.iso === hovered);
+  const hoveredBar = hoveredIndex >= 0 ? bars[hoveredIndex] : null;
+  const hoveredPoint = hoveredIndex >= 0 ? points[hoveredIndex] : null;
+  const todayIndex = bars.findIndex((b) => b.isToday);
+  const todayPoint = todayIndex >= 0 ? points[todayIndex] : null;
 
   return (
-    <div className="dash__chart-wrap">
-      <div className="dash__chart dash__chart--month" role="img" aria-label={`Hours worked this month, ${daysInMonth} days`}>
+    <div className="dash__chart-wrap" role="img" aria-label={`Hours worked this month, ${daysInMonth} days`}>
+      <div className="dash__linechart-plot">
+        <svg
+          viewBox={`0 0 ${CHART_W} ${CHART_H}`} preserveAspectRatio="none"
+          className={`dash__linechart-svg${grown ? ' dash__linechart-svg--grown' : ''}`}
+        >
+          <defs>
+            <linearGradient id="dash-line-stroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="var(--info)" />
+              <stop offset="55%" stopColor="var(--primary)" />
+              <stop offset="100%" stopColor="var(--success)" />
+            </linearGradient>
+            <linearGradient id="dash-line-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={areaPath} fill="url(#dash-line-fill)" className="dash__linechart-area" />
+          <path
+            d={linePath} fill="none" stroke="url(#dash-line-stroke)" strokeWidth={3}
+            strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke"
+            className="dash__linechart-line"
+          />
+          {hoveredPoint && (
+            <line
+              x1={hoveredPoint.x} y1={0} x2={hoveredPoint.x} y2={CHART_H}
+              className="dash__linechart-guide" vectorEffect="non-scaling-stroke"
+            />
+          )}
+          {hoveredPoint && (
+            <circle cx={hoveredPoint.x} cy={hoveredPoint.y} r={5} className="dash__linechart-dot" />
+          )}
+          {todayPoint && !hoveredPoint && (
+            <circle cx={todayPoint.x} cy={todayPoint.y} r={4} className="dash__linechart-dot dash__linechart-dot--today" />
+          )}
+        </svg>
+        <div className="dash__linechart-zones">
+          {bars.map((b) => (
+            <div
+              key={b.iso}
+              className={`dash__linechart-zone${hovered === b.iso ? ' dash__linechart-zone--hover' : ''}`}
+              onMouseEnter={() => setHovered(b.iso)}
+              onMouseLeave={() => setHovered(null)}
+              onFocus={() => setHovered(b.iso)}
+              onBlur={() => setHovered(null)}
+              tabIndex={0}
+              aria-label={
+                b.record
+                  ? `${b.iso}: ${formatTime(b.record.punch_in_at)}${
+                      b.record.punch_out_at ? ` – ${formatTime(b.record.punch_out_at)}, ${b.hours.toFixed(1)} hours` : ' (still open)'
+                    }`
+                  : `${b.iso}: no punch`
+              }
+            />
+          ))}
+        </div>
+      </div>
+      <div className="dash__linechart-labels">
         {bars.map((b) => (
-          <div
-            key={b.iso}
-            className={`dash__bar-wrap${b.isToday ? ' dash__bar-wrap--today' : ''}${
-              hovered === b.iso ? ' dash__bar-wrap--hover' : ''
-            }`}
-            onMouseEnter={() => setHovered(b.iso)}
-            onMouseLeave={() => setHovered(null)}
-            onFocus={() => setHovered(b.iso)}
-            onBlur={() => setHovered(null)}
-            tabIndex={0}
-            aria-label={
-              b.record
-                ? `${b.iso}: ${formatTime(b.record.punch_in_at)}${
-                    b.record.punch_out_at ? ` – ${formatTime(b.record.punch_out_at)}, ${b.hours.toFixed(1)} hours` : ' (still open)'
-                  }`
-                : `${b.iso}: no punch`
-            }
-          >
-            <div className="dash__bar" style={{ height: grown ? `${(b.hours / max) * 100}%` : 0 }} />
-            <span className="dash__bar-day">{b.day === 1 || b.day % 5 === 0 || b.isToday ? b.day : ''}</span>
-          </div>
+          <span key={b.iso} className={b.isToday ? 'dash__linechart-label--today' : undefined}>
+            {b.day === 1 || b.day % 5 === 0 || b.isToday ? b.day : ''}
+          </span>
         ))}
       </div>
       {hoveredBar && (
@@ -206,6 +281,13 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
           role="img"
           aria-label={`${monthLabel}: ${present} present, ${absent} absent, ${holiday} holiday, ${remaining} days left, of ${total} days`}
         >
+          <defs>
+            {/* A soft gloss, top-left, for a lightly sculpted ring rather than a flat one. */}
+            <radialGradient id="dash-donut-gloss" cx="35%" cy="28%" r="65%">
+              <stop offset="0%" stopColor="#fff" stopOpacity="0.35" />
+              <stop offset="60%" stopColor="#fff" stopOpacity="0" />
+            </radialGradient>
+          </defs>
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--outline)" strokeWidth={strokeWidth} />
           {arcs.map((a) => a.value === 0 ? null : (
             <circle
@@ -223,6 +305,10 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
               onMouseLeave={() => setHovered(null)}
             />
           ))}
+          <circle
+            cx={cx} cy={cy} r={r} fill="none" stroke="url(#dash-donut-gloss)"
+            strokeWidth={strokeWidth} aria-hidden="true" pointerEvents="none"
+          />
           <text x={cx} y={cy - 3} textAnchor="middle" className="dash__donut-num">{centerValue}</text>
           <text x={cx} y={cy + 15} textAnchor="middle" className="dash__donut-label">{centerLabel}</text>
         </svg>
