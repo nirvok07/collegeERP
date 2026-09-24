@@ -769,7 +769,14 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   history below. ✅ server 3 new tests (39/39 attendance.test.ts, 509/523 full suite — 14 failures are
   the pre-existing syllabus/debug drift, unrelated), ✅ Flutter analyze clean, 327/327 tests (2 new).
   Seeded 60 days of realistic history for `sonam@gmail.com` (weekday, ~92% present) so the UI is not
-  empty. 🔍 NEEDS VALIDATION on the phone. Committed `5c33971`.
+  empty. 🔍 NEEDS VALIDATION on the phone. Committed `5c33971`. Owner feedback 2026-09-24 ("punchin
+  punchout dashboard pe hoga"): `PunchCard` (web) / `punch_card.dart` (mobile) now sit at the top of
+  the dashboard itself, self-scoped, same tier as week/courses; Profile keeps only the history list.
+  Owner also confirmed "my attendance" should exist for everyone (already true: self-scoped, no
+  permission) and asked whether a teacher can mark their own students' attendance — that's a distinct,
+  already-built capability (M6, `AttendanceScreen`/`Routes.attendance`, opened from a class session),
+  not part of SA-ATT-1; no gap found. ✅ web tsc clean, 203/203 tests; ✅ Flutter analyze clean,
+  dashboard_test.dart 17/17. Committed `109eada`. 🔍 NEEDS VALIDATION on the phone.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
