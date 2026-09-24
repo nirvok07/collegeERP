@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, ErrorState, StatusChip } from '../../components/index.tsx';
+import { ErrorState, StatusChip } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import { buildTiles } from '../dashboard/DashboardPage.tsx';
 
@@ -67,14 +67,7 @@ export function ProfilePage({ api }: { api: ApiClient }) {
   const [me, setMe] = useState<Me | null>(null);
   const [teaching, setTeaching] = useState<TeachingWire[] | null>(null);
   const [days, setDays] = useState<StaffAttendanceDay[] | null>(null);
-  const [punching, setPunching] = useState(false);
-  const [punchError, setPunchError] = useState<string | null>(null);
   const [failure, setFailure] = useState<ApiFailure | null>(null);
-
-  const loadDays = useCallback(async () => {
-    const history = await api.get<StaffAttendanceDay[]>('/v1/me/staff-attendance');
-    setDays(history.ok ? history.value : []);
-  }, [api]);
 
   const load = useCallback(async () => {
     setFailure(null);
@@ -85,8 +78,11 @@ export function ProfilePage({ api }: { api: ApiClient }) {
     // whoever teaches, no extra permission needed beyond being signed in.
     const taught = await api.get<TeachingWire[]>('/v1/me/teaching');
     setTeaching(taught.ok ? taught.value : []);
-    void loadDays();
-  }, [api, loadDays]);
+    // Punching itself lives on the Dashboard now (owner feedback); this is
+    // just the history.
+    const history = await api.get<StaffAttendanceDay[]>('/v1/me/staff-attendance');
+    setDays(history.ok ? history.value : []);
+  }, [api]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -97,18 +93,6 @@ export function ProfilePage({ api }: { api: ApiClient }) {
     all: new Set(me.permissions),
     institution: new Set(me.institution_permissions ?? me.permissions),
   });
-
-  const today = new Date().toISOString().slice(0, 10);
-  const todayRow = days?.find((d) => d.work_date === today) ?? null;
-  const open = todayRow !== null && todayRow.punch_out_at === null;
-
-  async function punch(kind: 'punch-in' | 'punch-out') {
-    setPunching(true); setPunchError(null);
-    const result = await api.post<StaffAttendanceDay>(`/v1/me/staff-attendance/${kind}`, {});
-    setPunching(false);
-    if (!result.ok) { setPunchError(result.error.message); return; }
-    await loadDays();
-  }
 
   return (
     <>
@@ -121,25 +105,11 @@ export function ProfilePage({ api }: { api: ApiClient }) {
       </div>
 
       <section style={{ display: 'grid', gap: 'var(--space-md)', maxWidth: 560 }}>
-        <div>
-          <h2 className="page__eyebrow">My attendance</h2>
-          <p style={{ margin: '0 0 var(--space-xs)' }}>
-            {todayRow === null
-              ? 'Not punched in yet'
-              : open
-                ? `Punched in at ${formatTime(todayRow.punch_in_at)}`
-                : `Punched out at ${formatTime(todayRow.punch_out_at!)}`}
-          </p>
-          {punchError && <p style={{ color: 'var(--error)' }}>{punchError}</p>}
-          <Button
-            variant="primary"
-            disabled={punching || (todayRow !== null && !open)}
-            onClick={() => void punch(open ? 'punch-out' : 'punch-in')}
-          >
-            {punching ? 'Please wait…' : todayRow !== null && !open ? 'Done for today' : open ? 'Punch out' : 'Punch in'}
-          </Button>
-          {days && days.length > 0 && (
-            <ul style={{ display: 'grid', gap: 'var(--space-xs)', listStyle: 'none', padding: 0, margin: 'var(--space-sm) 0 0' }}>
+        {days && days.length > 0 && (
+          <div>
+            <h2 className="page__eyebrow">Attendance history</h2>
+            <p className="page__sub" style={{ margin: '0 0 var(--space-xs)' }}>Punch in and out from the Dashboard.</p>
+            <ul style={{ display: 'grid', gap: 'var(--space-xs)', listStyle: 'none', padding: 0, margin: 0 }}>
               {days.slice(0, 10).map((d) => (
                 <li key={d.id}>
                   {d.work_date}: {formatTime(d.punch_in_at)}
@@ -147,8 +117,8 @@ export function ProfilePage({ api }: { api: ApiClient }) {
                 </li>
               ))}
             </ul>
-          )}
-        </div>
+          </div>
+        )}
 
         <div>
           <h2 className="page__eyebrow">Your roles</h2>

@@ -17,6 +17,8 @@ import '../../../core/widgets/screen_state.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../delivery/domain/class_session.dart';
 import '../../delivery/domain/delivery_repository.dart';
+import '../../staff_attendance/data/staff_attendance_api.dart';
+import '../../staff_attendance/presentation/punch_card.dart';
 import '../../teaching/domain/teaching_offering.dart';
 import '../../teaching/domain/teaching_repository.dart';
 import '../../teaching/presentation/offering_sheet.dart';
@@ -30,7 +32,9 @@ import 'dashboard_cubit.dart';
 /// the server's answer about this person's authority: a section they cannot
 /// use is absent, not disabled.
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, required this.authority, this.createCubit, this.college});
+  const DashboardScreen({
+    super.key, required this.authority, this.createCubit, this.college, this.staffAttendanceRepository,
+  });
 
   final Authority authority;
 
@@ -40,6 +44,8 @@ class DashboardScreen extends StatelessWidget {
   /// Tests supply their own cubit; the app builds one from the locator.
   final DashboardCubit Function()? createCubit;
 
+  /// Tests supply their own; the app uses the locator.
+  final StaffAttendanceRepository? staffAttendanceRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -52,13 +58,15 @@ class DashboardScreen extends StatelessWidget {
                   overview: authority.can('institution.read') ? locator<OverviewRepository>() : null,
                 ))
             ..load(),
-      child: _DashboardView(authority: authority, college: college),
+      child: _DashboardView(authority: authority, college: college, staffAttendanceRepository: staffAttendanceRepository),
     );
   }
 }
 
 class _DashboardView extends StatelessWidget {
-  const _DashboardView({required this.authority, this.college});
+  const _DashboardView({required this.authority, this.college, this.staffAttendanceRepository});
+
+  final StaffAttendanceRepository? staffAttendanceRepository;
 
   final Authority authority;
   final CollegeBrand? college;
@@ -142,6 +150,8 @@ class _DashboardView extends StatelessWidget {
                     sliver: SliverList(
                       delegate: SliverChildListDelegate(_stagger(context, [
                         if (state.failure != null) _InlineError(message: state.failure!.message),
+                        // SA-ATT-1, owner feedback: punch in/out right on the dashboard, not a tap away.
+                        PunchCard(repository: staffAttendanceRepository),
                         if (_schedule) const PendingWritesBar(),
                         if (_admin)
                           _AdminModules(
@@ -1006,7 +1016,7 @@ class _AdminModules extends StatelessWidget {
       if (authority.can('assessment.verify'))
         tile('Verify marks', 'Submitted mark sheets', Icons.verified_rounded, AppColors.success, Routes.verifyMarks),
       // SA-ATT-1: self-scoped, like Academic calendar — every staff member gets one.
-      tile('My attendance', 'Punch in and out', Icons.fingerprint_rounded, AppColors.info, Routes.staffAttendance),
+      tile('My attendance', 'Full history', Icons.fingerprint_rounded, AppColors.info, Routes.staffAttendance),
     ];
     // M11: the Accountant composes fees, the Cashier collects them, and the
     // College Admin holds every fee permission there is.
@@ -1253,7 +1263,7 @@ class _TeacherModules extends StatelessWidget {
       // academic calendar below — everyone signed in as staff gets one.
       (
         title: 'My attendance',
-        subtitle: 'Punch in and out',
+        subtitle: 'Full history',
         icon: Icons.fingerprint_rounded,
         color: AppColors.info,
         route: Routes.staffAttendance,

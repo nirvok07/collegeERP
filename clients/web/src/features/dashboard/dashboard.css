@@ -258,6 +258,16 @@
   .dash__tile:hover { transform: none; }
 }
 
+/* ---- Punch card (SA-ATT-1) ----------------------------------------------- */
+.dash__punch {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-base);
+  padding: var(--space-base);
+  background: var(--primary); color: var(--on-primary);
+  border-radius: var(--radius-card); margin-bottom: var(--space-base);
+}
+.dash__punch-status { margin: 0; font: var(--text-label); font-weight: 700; }
+.dash__punch-error { margin: var(--space-xs) 0 0; color: #fff; font: var(--text-caption); }
+
 /* ---- Skeleton (in-place, nothing shifts) -------------------------------- */
 
 .dash__stats--skeleton {

@@ -11,11 +11,25 @@ import 'package:college_erp/features/dashboard/data/overview_api.dart';
 import 'package:college_erp/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:college_erp/features/delivery/domain/class_session.dart';
 import 'package:college_erp/features/delivery/domain/delivery_repository.dart';
+import 'package:college_erp/features/staff_attendance/data/staff_attendance_api.dart';
 import 'package:college_erp/features/teaching/domain/teaching_offering.dart';
 import 'package:college_erp/features/teaching/domain/teaching_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:college_erp/core/widgets/app_card.dart';
+
+/// The punch card is self-scoped and only ever shows "Not punched in yet" in
+/// these tests; a fake with no history is enough not to hit the network.
+class _FakeStaffAttendance implements StaffAttendanceRepository {
+  @override
+  Future<Result<List<StaffAttendanceDay>>> history() async => const Ok([]);
+  @override
+  Future<Result<StaffAttendanceDay>> punchIn() async =>
+      Err(const Failure(code: FailureCode.unknown, message: 'not used in this test'));
+  @override
+  Future<Result<StaffAttendanceDay>> punchOut() async =>
+      Err(const Failure(code: FailureCode.unknown, message: 'not used in this test'));
+}
 
 /// The dashboard only shapes the teacher's own sessions and teaching. These
 /// tests pin down the shaping, what it asks the server for, and that a surface
@@ -282,6 +296,7 @@ void main() {
             authority: authority,
             createCubit: () => cubit,
             college: const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
+            staffAttendanceRepository: _FakeStaffAttendance(),
           ),
         ),
       );
@@ -403,6 +418,7 @@ void main() {
             authority: authority,
             createCubit: () => cubit,
             college: const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
+            staffAttendanceRepository: _FakeStaffAttendance(),
           ),
         ),
       );

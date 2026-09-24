@@ -4,6 +4,7 @@ import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import { useShellNav, type Permissions } from '../shell/AppShell.tsx';
 import { MODULE_ICONS } from '../shell/icons.tsx';
 import { loadCourses, loadOverview, loadWeek, type CollegeOverview, type MyCourse, type WeekSessions } from './dashboardData.ts';
+import { PunchCard } from './PunchCard.tsx';
 import './dashboard.css';
 
 /**
@@ -63,6 +64,7 @@ export function DashboardPage({
           <Button variant="text" onClick={() => window.location.reload()}>Retry</Button>
         )}
       </div>
+      <PunchCard api={api} />
       <DashboardBody
         overview={overview}
         week={week}
