@@ -137,6 +137,12 @@
 
 /* ---- Week-ahead bar chart ---------------------------------------------- */
 
+.dash__chart-wrap {
+  position: relative;
+  /* Room above the bars for the floating tooltip so it never covers them. */
+  padding-top: 52px;
+}
+
 .dash__chart {
   display: flex;
   align-items: flex-end;
@@ -153,6 +159,13 @@
   gap: var(--space-xs);
   height: 100%;
   justify-content: flex-end;
+  cursor: pointer;
+  border-radius: var(--radius-input);
+}
+
+.dash__bar-wrap:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .dash__bar {
@@ -160,7 +173,7 @@
   max-width: 28px;
   background: var(--viz-seq-3);
   border-radius: var(--radius-input) var(--radius-input) 0 0;
-  transition: background var(--state), height 600ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background var(--state), height 600ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms ease;
 }
 
 .dash__bar-day {
@@ -184,6 +197,35 @@
 .dash__bar-wrap--today .dash__bar {
   background: var(--primary);
 }
+.dash__bar-wrap--hover .dash__bar {
+  background: var(--primary);
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--primary);
+}
+.dash__chart--month:has(.dash__bar-wrap--hover) .dash__bar-wrap:not(.dash__bar-wrap--hover) .dash__bar {
+  opacity: 0.45;
+}
+
+/* The hours-chart tooltip: date, precise hours, punch in-out — everything
+   the old plain-text list used to show, in one glance on hover/focus. */
+.dash__chart-tip {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+  min-width: 120px;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--nd-card-shadow-hover);
+  pointer-events: none;
+  animation: dash-donut-tip-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash__chart-tip-date { font: var(--text-caption); font-weight: 700; color: var(--text-primary); }
+.dash__chart-tip-value { font: var(--text-caption); color: var(--text-secondary); }
+.dash__chart-tip-meta { font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 
 /* ---- Module rows -------------------------------------------------------- */
 /* One row per module, as on the phone: badge, title and hint, chevron. Wide
@@ -399,7 +441,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dash__donut-tip { animation: none; }
+  .dash__donut-tip, .dash__chart-tip { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

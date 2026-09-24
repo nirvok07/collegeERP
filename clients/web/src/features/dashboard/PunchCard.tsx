@@ -19,14 +19,19 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+function dateLabel(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
 /**
  * The visual form of the punch record: hours worked, one bar per day of the
  * current month, oldest to newest — the whole month in one chart, instead of
- * a plain list of raw punch times underneath it. Hovering a bar (or reading
- * its accessible name) gives the exact times; the bar itself is the record.
- * Bars grow in on mount/update (a `grown` flip one frame after render, so
- * the CSS `height` transition on `.dash__bar` has something to animate from)
- * rather than jumping straight to their final height.
+ * a plain list of raw punch times underneath it. Hovering a bar (a real
+ * floating tooltip, not the OS's native title box) gives the exact date,
+ * hours and punch times in one glance, matching the donut's tooltip
+ * treatment. Bars grow in on mount/update (a `grown` flip one frame after
+ * render, so the CSS `height` transition on `.dash__bar` has something to
+ * animate from) rather than jumping straight to their final height.
  */
 function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
   const now = new Date();
@@ -41,7 +46,7 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
     const hours = record?.punch_out_at
       ? (new Date(record.punch_out_at).getTime() - new Date(record.punch_in_at).getTime()) / 3_600_000
       : 0;
-    bars.push({ day, iso, hours, record, isToday: iso === todayIso });
+    bars.push({ day, iso, hours, record, isToday: iso === todayIso, isFuture: iso > todayIso });
   }
   const max = Math.max(1, ...bars.map((b) => b.hours));
 
@@ -52,24 +57,57 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
     return () => cancelAnimationFrame(frame);
   }, [days]);
 
+  const [hovered, setHovered] = useState<string | null>(null);
+  const hoveredBar = bars.find((b) => b.iso === hovered) ?? null;
+
   return (
-    <div className="dash__chart dash__chart--month" role="img" aria-label={`Hours worked this month, ${daysInMonth} days`}>
-      {bars.map((b) => (
+    <div className="dash__chart-wrap">
+      <div className="dash__chart dash__chart--month" role="img" aria-label={`Hours worked this month, ${daysInMonth} days`}>
+        {bars.map((b) => (
+          <div
+            key={b.iso}
+            className={`dash__bar-wrap${b.isToday ? ' dash__bar-wrap--today' : ''}${
+              hovered === b.iso ? ' dash__bar-wrap--hover' : ''
+            }`}
+            onMouseEnter={() => setHovered(b.iso)}
+            onMouseLeave={() => setHovered(null)}
+            onFocus={() => setHovered(b.iso)}
+            onBlur={() => setHovered(null)}
+            tabIndex={0}
+            aria-label={
+              b.record
+                ? `${b.iso}: ${formatTime(b.record.punch_in_at)}${
+                    b.record.punch_out_at ? ` – ${formatTime(b.record.punch_out_at)}, ${b.hours.toFixed(1)} hours` : ' (still open)'
+                  }`
+                : `${b.iso}: no punch`
+            }
+          >
+            <div className="dash__bar" style={{ height: grown ? `${(b.hours / max) * 100}%` : 0 }} />
+            <span className="dash__bar-day">{b.day === 1 || b.day % 5 === 0 || b.isToday ? b.day : ''}</span>
+          </div>
+        ))}
+      </div>
+      {hoveredBar && (
         <div
-          key={b.iso}
-          className={`dash__bar-wrap${b.isToday ? ' dash__bar-wrap--today' : ''}`}
-          title={
-            b.record
-              ? `${b.iso}: ${formatTime(b.record.punch_in_at)}${
-                  b.record.punch_out_at ? ` – ${formatTime(b.record.punch_out_at)}` : ' (still open)'
-                }`
-              : b.iso
-          }
+          className="dash__chart-tip"
+          style={{ left: `${((hoveredBar.day - 0.5) / daysInMonth) * 100}%` }}
         >
-          <div className="dash__bar" style={{ height: grown ? `${(b.hours / max) * 100}%` : 0 }} />
-          <span className="dash__bar-day">{b.day === 1 || b.day % 5 === 0 || b.isToday ? b.day : ''}</span>
+          <span className="dash__chart-tip-date">{dateLabel(hoveredBar.iso)}</span>
+          {hoveredBar.record ? (
+            <>
+              <span className="dash__chart-tip-value">
+                {hoveredBar.record.punch_out_at ? `${hoveredBar.hours.toFixed(1)} hrs worked` : 'Still punched in'}
+              </span>
+              <span className="dash__chart-tip-meta">
+                {formatTime(hoveredBar.record.punch_in_at)}
+                {hoveredBar.record.punch_out_at ? ` – ${formatTime(hoveredBar.record.punch_out_at)}` : ' – now'}
+              </span>
+            </>
+          ) : (
+            <span className="dash__chart-tip-value">{hoveredBar.isFuture ? 'Not reached yet' : 'No punch'}</span>
+          )}
         </div>
-      ))}
+      )}
     </div>
   );
 }
