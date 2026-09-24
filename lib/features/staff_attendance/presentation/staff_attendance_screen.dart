@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/network/api_client.dart';
-import '../../../core/widgets/app_list_tile.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../../calendar/data/calendar_api.dart';
@@ -15,8 +14,8 @@ import 'staff_attendance_cubit.dart';
 /// SA-ATT-1: a staff member's own attendance, punched in and out — distinct
 /// from marking a class's roster (that stays under Registers/the session
 /// sheet). One button: "Punch in" when the day has not started, "Punch out"
-/// while it is open, then today reads back as a plain record like any other
-/// day in the list below.
+/// while it is open; the month's donut and the hours chart are the record —
+/// owner feedback: no separate list of raw punch times underneath them.
 class StaffAttendanceScreen extends StatelessWidget {
   const StaffAttendanceScreen({super.key, this.repository, this.calendarRepository});
 
@@ -84,21 +83,9 @@ class _Body extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                   MonthDonut(history: history, calendarRepository: calendarRepository),
                   const SizedBox(height: AppSpacing.lg),
-                  if (history.isNotEmpty) ...[
-                    Text('Hours worked', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: AppSpacing.sm),
-                    _HoursChart(history: history),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                  Text('Recent days', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  Text('Hours worked', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: AppSpacing.sm),
-                  if (history.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                      child: Center(child: Text('No days recorded yet.')),
-                    )
-                  else
-                    for (final day in history) _DayTile(day: day),
+                  _HoursChart(history: history),
                 ],
               ),
             ),
@@ -155,61 +142,43 @@ class _TodayCard extends StatelessWidget {
   }
 }
 
-/// The visual form of the punch-in/out record: hours worked per day, most
-/// recent 7 days that have a punch, oldest to newest so the chart reads
-/// left-to-right like a week. An open (not yet punched out) day counts
-/// nothing until it closes, same as `_hours` below.
+/// The visual form of the punch-in/out record: hours worked, one bar per day
+/// of the current month — the whole month in one chart, instead of a list of
+/// raw punch times underneath it (owner feedback). A day without a closed
+/// punch (not reached yet, a holiday, or still open) reads as no bar.
 class _HoursChart extends StatelessWidget {
   const _HoursChart({required this.history});
   final List<StaffAttendanceDay> history;
 
   @override
   Widget build(BuildContext context) {
-    final recent = history.take(7).toList().reversed.toList();
+    final now = DateTime.now();
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final byDate = {for (final day in history) day.workDate: day};
     return BarChart(
-      semanticLabel: 'Hours worked, last ${recent.length} recorded days',
+      semanticLabel: 'Hours worked this month, $daysInMonth days',
       bars: [
-        for (final day in recent)
-          BarDatum(
-            label: _weekday(day.workDate),
-            value: day.isOpen ? 0 : day.worked.inMinutes ~/ 60,
-          ),
+        for (var day = 1; day <= daysInMonth; day++)
+          _barFor(day: day, now: now, record: byDate[_isoOf(now.year, now.month, day)]),
       ],
     );
   }
-}
 
-String _weekday(String isoDate) {
-  const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  return names[DateTime.parse(isoDate).weekday - 1];
-}
-
-class _DayTile extends StatelessWidget {
-  const _DayTile({required this.day});
-  final StaffAttendanceDay day;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppListTile(
-      leading: Icon(day.isOpen ? Icons.timelapse_rounded : Icons.check_circle_outline_rounded),
-      title: Text(day.workDate),
-      subtitle: Text(
-        day.isOpen
-            ? 'Punched in at ${_time(day.punchInAt)} · still open'
-            : '${_time(day.punchInAt)} – ${_time(day.punchOutAt!)} · ${_hours(day.worked)}',
-      ),
+  BarDatum _barFor({required int day, required DateTime now, required StaffAttendanceDay? record}) {
+    final isToday = day == now.day;
+    return BarDatum(
+      label: day == 1 || day % 5 == 0 || isToday ? '$day' : '',
+      value: record != null && !record.isOpen ? record.worked.inMinutes ~/ 60 : 0,
+      highlight: isToday,
     );
   }
 }
+
+String _isoOf(int year, int month, int day) =>
+    '${year.toString().padLeft(4, '0')}-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
 
 String _time(DateTime t) {
   final h = t.hour % 12 == 0 ? 12 : t.hour % 12;
   final suffix = t.hour < 12 ? 'AM' : 'PM';
   return '$h:${t.minute.toString().padLeft(2, '0')} $suffix';
-}
-
-String _hours(Duration d) {
-  final h = d.inMinutes ~/ 60;
-  final m = d.inMinutes % 60;
-  return m == 0 ? '${h}h' : '${h}h ${m}m';
 }

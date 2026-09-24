@@ -19,22 +19,32 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-function weekday(iso: string): string {
-  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(`${iso}T00:00:00`).getDay()];
-}
-
 /**
- * The visual form of the punch record: hours worked per day, oldest to
- * newest. Bars grow in on mount/update (a `grown` flip one frame after
- * render, so the CSS `height` transition on `.dash__bar` has something to
- * animate from) rather than jumping straight to their final height.
+ * The visual form of the punch record: hours worked, one bar per day of the
+ * current month, oldest to newest — the whole month in one chart, instead of
+ * a plain list of raw punch times underneath it. Hovering a bar (or reading
+ * its accessible name) gives the exact times; the bar itself is the record.
+ * Bars grow in on mount/update (a `grown` flip one frame after render, so
+ * the CSS `height` transition on `.dash__bar` has something to animate from)
+ * rather than jumping straight to their final height.
  */
 function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
-  const recent = [...days].slice(0, 7).reverse();
-  const hours = recent.map((d) =>
-    d.punch_out_at ? (new Date(d.punch_out_at).getTime() - new Date(d.punch_in_at).getTime()) / 3_600_000 : 0,
-  );
-  const max = Math.max(1, ...hours);
+  const now = new Date();
+  const { year, month, daysInMonth } = monthRange(now);
+  const todayIso = now.toISOString().slice(0, 10);
+  const byDate = new Map(days.map((d) => [d.work_date, d]));
+
+  const bars = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const record = byDate.get(iso);
+    const hours = record?.punch_out_at
+      ? (new Date(record.punch_out_at).getTime() - new Date(record.punch_in_at).getTime()) / 3_600_000
+      : 0;
+    bars.push({ day, iso, hours, record, isToday: iso === todayIso });
+  }
+  const max = Math.max(1, ...bars.map((b) => b.hours));
+
   const [grown, setGrown] = useState(false);
   useEffect(() => {
     setGrown(false);
@@ -43,11 +53,21 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
   }, [days]);
 
   return (
-    <div className="dash__chart" role="img" aria-label={`Hours worked, last ${recent.length} recorded days`}>
-      {recent.map((d, i) => (
-        <div key={d.id} className="dash__bar-wrap" title={`${d.work_date}: ${hours[i].toFixed(1)}h`}>
-          <div className="dash__bar" style={{ height: grown ? `${(hours[i] / max) * 100}%` : 0 }} />
-          <span className="dash__bar-day">{weekday(d.work_date)}</span>
+    <div className="dash__chart dash__chart--month" role="img" aria-label={`Hours worked this month, ${daysInMonth} days`}>
+      {bars.map((b) => (
+        <div
+          key={b.iso}
+          className={`dash__bar-wrap${b.isToday ? ' dash__bar-wrap--today' : ''}`}
+          title={
+            b.record
+              ? `${b.iso}: ${formatTime(b.record.punch_in_at)}${
+                  b.record.punch_out_at ? ` – ${formatTime(b.record.punch_out_at)}` : ' (still open)'
+                }`
+              : b.iso
+          }
+        >
+          <div className="dash__bar" style={{ height: grown ? `${(b.hours / max) * 100}%` : 0 }} />
+          <span className="dash__bar-day">{b.day === 1 || b.day % 5 === 0 || b.isToday ? b.day : ''}</span>
         </div>
       ))}
     </div>
@@ -219,20 +239,10 @@ export function PunchCard({ api }: { api: ApiClient }) {
             monthLabel={new Date().toLocaleDateString([], { month: 'long', year: 'numeric' })}
           />
         </div>
-        {days.length > 0 && (
-          <div>
-            <h3 className="dash__sub">Attendance history</h3>
-            <HoursChart days={days} />
-            <ul style={{ display: 'grid', gap: 'var(--space-xs)', listStyle: 'none', padding: 0, margin: 'var(--space-sm) 0 0' }}>
-              {days.slice(0, 10).map((d) => (
-                <li key={d.id} className="dash__muted">
-                  {d.work_date}: {formatTime(d.punch_in_at)}
-                  {d.punch_out_at ? ` – ${formatTime(d.punch_out_at)}` : ' (still open)'}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <div>
+          <h3 className="dash__sub">Attendance history</h3>
+          <HoursChart days={days} />
+        </div>
       </div>
     </>
   );

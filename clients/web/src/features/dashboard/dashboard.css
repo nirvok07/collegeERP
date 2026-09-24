@@ -168,6 +168,23 @@
   color: var(--text-tertiary);
 }
 
+/* A month has ~30 bars in the same width a week had 7: gap and bar shrink,
+   labels thin out to every 5th day (drawn only where PunchCard emits one). */
+.dash__chart--month {
+  gap: 3px;
+}
+.dash__chart--month .dash__bar {
+  max-width: 12px;
+  border-radius: 2px 2px 0 0;
+}
+.dash__chart--month .dash__bar-day {
+  font-size: 10px;
+  min-height: 12px;
+}
+.dash__bar-wrap--today .dash__bar {
+  background: var(--primary);
+}
+
 /* ---- Module rows -------------------------------------------------------- */
 /* One row per module, as on the phone: badge, title and hint, chevron. Wide
    screens lay the rows out in columns; the anatomy does not change. */
