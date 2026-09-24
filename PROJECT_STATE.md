@@ -823,8 +823,16 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   every precise detail in one glance. The native `title` tooltip is now a floating tooltip matching the
   donut's (date, exact hours, punch in-out times, or "No punch"/"Not reached yet"), anchored above the
   hovered bar; the hovered bar highlights and the rest dim; every bar is keyboard-focusable with its own
-  accessible name (not mouse-only). No new colors. ✅ tsc clean, 203/203 tests. Committed `fabf2bb`.
-  🔍 NEEDS VALIDATION on the phone and in a browser.
+  accessible name (not mouse-only). No new colors. ✅ tsc clean, 203/203 tests. Committed `fabf2bb`. Owner feedback 2026-09-24 (round 9, web-only): shared reference images (glowing
+  gradient curve chart; sculpted 3D-look donut) and asked for that visual quality; confirmed via
+  AskUserQuestion to keep the app's existing light theme/tokens rather than a dark theme for just these
+  charts. `HoursChart` is now a smooth gradient curve (Catmull-Rom-to-Bezier through each day's hours,
+  blue→teal stroke via `--info`/`--primary`/`--success`, soft glow, fading area fill) replacing the
+  ~30-bar chart; hover tooltip/accessible labels unchanged in behavior. `MonthDonut` got a subtle
+  top-left gloss and per-arc drop-shadow for a lightly sculpted ring; data/layout/tooltip unchanged. No
+  new colors — reused tokens throughout (including `--primary`'s RGB the same way `--chrome-gradient`
+  already does). Removed now-dead `--month` bar-chart CSS. ✅ tsc clean, 203/203 tests. Committed
+  `0c20002`. 🔍 NEEDS VALIDATION on the phone and in a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
