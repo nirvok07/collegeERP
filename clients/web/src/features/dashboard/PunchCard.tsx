@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button } from '../../components/index.tsx';
+import { Button, StatusChip, type ChipTone } from '../../components/index.tsx';
 import type { ApiClient } from '../../lib/api.ts';
 
 interface StaffAttendanceDay {
@@ -49,7 +49,11 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
       : 0;
     bars.push({ day, iso, hours, record, isToday: iso === todayIso, isFuture: iso > todayIso });
   }
-  const axisMax = Math.max(1, Math.ceil(Math.max(...bars.map((b) => b.hours))));
+  // A fixed 0/4/8/12h scale (a full workday), not a scale that rescales
+  // itself to whatever the busiest day happened to be — so a 4h day always
+  // reads as "half a normal day" from one glance at the axis, month to
+  // month. Overtime past 12h still fits (the bar is capped at 100%).
+  const axisMax = 12;
 
   const [grown, setGrown] = useState(false);
   useEffect(() => {
@@ -65,15 +69,16 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
     <div className="dash__chart-wrap" role="img" aria-label={`Hours worked this month, ${daysInMonth} days`}>
       <div className="dash__hourschart">
         <div className="dash__hourschart-axis">
-          <span>{axisMax}h</span>
-          <span>{Math.round(axisMax / 2)}h</span>
+          <span>12h</span>
+          <span>8h</span>
+          <span>4h</span>
           <span>0h</span>
         </div>
         <div className="dash__hourschart-plot">
-          {/* Gridlines at the same three ticks as the axis, so the numbers
+          {/* Gridlines at the same four ticks as the axis, so the numbers
               on the left actually line up with something in the bars. */}
           <div className="dash__hourschart-grid" aria-hidden="true">
-            <span /><span /><span />
+            <span /><span /><span /><span />
           </div>
           <div className="dash__chart dash__chart--month">
             {bars.map((b) => (
@@ -100,7 +105,7 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
                     the chart. */}
                 <div
                   className={`dash__bar${b.hours === 0 ? ' dash__bar--empty' : ''}`}
-                  style={{ height: grown ? (b.hours === 0 ? 3 : `${(b.hours / axisMax) * 100}%`) : 0 }}
+                  style={{ height: grown ? (b.hours === 0 ? 3 : `${Math.min(100, (b.hours / axisMax) * 100)}%`) : 0 }}
                 />
               </div>
             ))}
@@ -176,10 +181,14 @@ function monthCounts(days: StaffAttendanceDay[], holidays: string[], now: Date):
 /**
  * A "smart" donut: this month at a glance — present, absent, holiday and
  * days still to come — drawn as one ring, no charting library, matching
- * the mobile app's `RingChart` (`core/widgets/charts.dart`). Draws itself
- * in on mount by animating each arc's `stroke-dasharray` from 0. Hovering
- * an arc (or its legend row — they're linked) thickens that arc, dims the
- * rest, swaps the centre readout to that segment, and opens a small
+ * the mobile app's `RingChart` (`core/widgets/charts.dart`). "Smart" means
+ * the centre defaults to the attendance rate (present ÷ days actually
+ * reached so far) with a qualitative read (On track / Watch this / Needs
+ * attention) below the legend, not just a raw present count — the number
+ * that actually answers "how am I doing this month". Draws itself in on
+ * mount by animating each arc's `stroke-dasharray` from 0. Hovering an arc
+ * (or its legend row — they're linked) thickens that arc, dims the rest,
+ * swaps the centre readout to that segment's own count, and opens a small
  * tooltip anchored on the ring at the arc's midpoint.
  */
 function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: string }) {
@@ -225,8 +234,20 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
   });
 
   const active = arcs.find((a) => a.key === hovered) ?? null;
-  const centerValue = active?.value ?? present;
-  const centerLabel = active?.label.toLowerCase() ?? 'present';
+  // "Smart": the default readout is the attendance rate (present of days
+  // actually reached so far), not just a raw present count — the number
+  // that actually answers "how am I doing this month", with a qualitative
+  // read below it. Hovering a segment still swaps in that segment's own
+  // count, same as before.
+  const reached = present + absent;
+  const rate = reached > 0 ? Math.round((present / reached) * 100) : null;
+  const status: { label: string; tone: ChipTone } | null =
+    rate === null ? null
+    : rate >= 90 ? { label: 'On track', tone: 'success' }
+    : rate >= 75 ? { label: 'Watch this', tone: 'warning' }
+    : { label: 'Needs attention', tone: 'error' };
+  const centerValue = active ? active.value : rate === null ? present : `${rate}%`;
+  const centerLabel = active ? active.label.toLowerCase() : rate === null ? 'present' : 'attendance';
 
   return (
     <div className="dash__donut">
@@ -280,19 +301,27 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
           </div>
         )}
       </div>
-      <ul className="dash__donut-legend">
-        {segments.map((s) => (
-          <li
-            key={s.key}
-            className={hovered && hovered !== s.key ? 'dash__donut-legend-row--dim' : undefined}
-            onMouseEnter={() => setHovered(s.key)}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <span className="dash__donut-dot" style={{ background: s.color }} />
-            {s.label}: {s.value}
-          </li>
-        ))}
-      </ul>
+      <div>
+        <ul className="dash__donut-legend">
+          {segments.map((s) => (
+            <li
+              key={s.key}
+              className={hovered && hovered !== s.key ? 'dash__donut-legend-row--dim' : undefined}
+              onMouseEnter={() => setHovered(s.key)}
+              onMouseLeave={() => setHovered(null)}
+            >
+              <span className="dash__donut-dot" style={{ background: s.color }} />
+              {s.label}: {s.value}
+            </li>
+          ))}
+        </ul>
+        {status && (
+          <div className="dash__donut-status">
+            <StatusChip tone={status.tone}>{status.label}</StatusChip>
+            <span className="dash__donut-status-note">{rate}% present of {reached} days so far</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

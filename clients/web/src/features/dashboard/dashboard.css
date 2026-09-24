@@ -516,6 +516,18 @@
 
 .dash__donut-legend-row--dim { opacity: 0.5; }
 
+/* The "smart" read-out: a status chip plus the number behind it. */
+.dash__donut-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+.dash__donut-status-note {
+  font: var(--text-caption);
+  color: var(--text-tertiary);
+}
+
 .dash__donut-dot {
   display: inline-block;
   flex: none;
