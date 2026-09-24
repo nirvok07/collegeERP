@@ -883,8 +883,13 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   plot only (previously double-counted, contributing to the misalignment), gave empty days a 3px stub
   instead of literally nothing (matching the mobile app's own BarChart convention), and widened the
   tooltip's reserved headroom 52px→64px after seeing it graze the tallest bars. Screenshot-verified
-  before and after. ✅ tsc clean, 203/203 tests. Committed `226a579`. 🔍 NEEDS VALIDATION on the phone
-  and against the real signed-in app in a browser (the preview used sample data, not live app state).
+  before and after. ✅ tsc clean, 203/203 tests. Committed `226a579`. Owner feedback 2026-09-24 (round 16, web-only): fixed 0/4/8/12h axis (was
+  rescaling to the busiest day) and "donut chart ko smart karo" — centre now defaults to the
+  attendance rate (present ÷ days reached so far) instead of a raw present count, plus a status chip
+  below the legend (On track/Watch this/Needs attention at 90%/75%, existing `StatusChip` component).
+  Screenshot-verified with the same Playwright setup. ✅ tsc clean, 203/203 tests. Committed `c8f5d17`.
+  🔍 NEEDS VALIDATION on the phone and against the real signed-in app in a browser (every preview so far
+  used sample data, not live app state — the dev DB currently has 0 persons/institutions).
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
