@@ -318,6 +318,28 @@ export async function registerDeliveryRoutes(app: FastifyInstance, c: Container)
     })));
   });
 
+  /**
+   * A student's own timetable: the classes of the section they currently
+   * belong to. Self-scoped exactly as `/me/sessions` is for a teacher — the
+   * section comes from the student's own membership, never from anything the
+   * client sends, so nobody reads another section's timetable through here.
+   * A student not yet placed in a section (or not a student at all, though
+   * `req.actor` already guarantees a person) simply sees an empty list.
+   */
+  app.get('/me/timetable', async (req, reply) => {
+    if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
+      return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
+    }
+    const student = await c.uow.run(req.actor.tenantId, (tx) => c.studentSelf.whoAmI(tx, req.actor!.sub));
+    if (!student) return sendFailure(reply, fail('FORBIDDEN', 'Only students have their own timetable.'));
+    if (!student.sectionId) return sendOk(reply, []);
+    const q = req.query as { from?: string; to?: string };
+    const rows = await listSessions(c.sessions, actorOf(req), {
+      sectionId: student.sectionId, from: q.from ?? null, to: q.to ?? null,
+    });
+    return sendOk(reply, rows.map(serialiseSession));
+  });
+
   app.get('/sessions', async (req, reply) => {
     if (!(await canRead(req as never, reply as never))) return reply;
     const q = req.query as Record<string, string | undefined>;

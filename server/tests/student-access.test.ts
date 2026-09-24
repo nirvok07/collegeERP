@@ -92,7 +92,7 @@ async function college() {
     }
   }
 
-  return { admin, teacher, nisha, ravi, register };
+  return { admin, teacher, nisha, ravi, register, offeringId: offering, programId: program };
 }
 
 describe('student app access', () => {
@@ -184,5 +184,46 @@ describe('my attendance', () => {
 
     assert.equal((await get('/v1/me/attendance', c.admin)).statusCode, 403, 'not a student');
     assert.equal((await get('/v1/me/attendance')).statusCode, 401);
+  });
+});
+
+describe('my timetable', () => {
+  it('shows the classes of the student\'s own section, and nobody else\'s', async () => {
+    const c = await college();
+    await post('/v1/sessions', c.admin, {
+      offering_id: c.offeringId, session_date: '2026-06-02', starts_at: '09:00', ends_at: '10:00',
+    });
+    await post('/v1/sessions', c.admin, {
+      offering_id: c.offeringId, session_date: '2026-06-09', starts_at: '09:00', ends_at: '10:00',
+    });
+
+    const code = (await post(`/v1/students/${c.nisha}/access`, c.admin)).json().data.code;
+    await activate('CSE26-001', code, 'nisha-strong-99');
+    const nisha = (await login('CSE26-001', 'nisha-strong-99')).json().data.access_token as string;
+
+    const mine = await get('/v1/me/timetable', nisha);
+    assert.equal(mine.statusCode, 200, mine.body);
+    const rows = mine.json().data;
+    assert.equal(rows.length, 2);
+    assert.equal(rows[0].course.code, 'CS101');
+    assert.equal(rows[0].section.label, 'A');
+
+    assert.equal((await get('/v1/me/timetable', c.admin)).statusCode, 403, 'not a student');
+    assert.equal((await get('/v1/me/timetable')).statusCode, 401);
+  });
+
+  it('is empty for a student not yet placed in a section', async () => {
+    const c = await college();
+    const unplaced = (await post('/v1/students', c.admin, {
+      full_name: 'Deepa Rao', email: 'deepa@student.edu', enrolment_number: 'CSE26-003',
+      program_id: c.programId, admitted_on: '2026-06-01',
+    })).json().data.id as string;
+    const code = (await post(`/v1/students/${unplaced}/access`, c.admin)).json().data.code;
+    await activate('CSE26-003', code, 'deepa-strong-99');
+    const deepa = (await login('CSE26-003', 'deepa-strong-99')).json().data.access_token as string;
+
+    const mine = await get('/v1/me/timetable', deepa);
+    assert.equal(mine.statusCode, 200, mine.body);
+    assert.deepEqual(mine.json().data, []);
   });
 });

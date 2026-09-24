@@ -7,6 +7,7 @@ export interface StudentSelf {
   enrolmentNumber: string;
   status: string;
   programName: string;
+  sectionId: string | null;
   sectionLabel: string | null;
   sectionTermNumber: number | null;
 }
@@ -34,7 +35,7 @@ export class PgStudentSelfReader {
   async whoAmI(tx: Tx, personId: string): Promise<StudentSelf | null> {
     const { rows } = await clientOf(tx).query(
       `SELECT s.id, s.enrolment_number, s.status, p.name AS program_name,
-              sec.label AS section_label, sec.term_number AS section_term_number
+              sec.id AS section_id, sec.label AS section_label, sec.term_number AS section_term_number
          FROM students s
          JOIN programs p ON p.id = s.program_id
          LEFT JOIN section_memberships m ON m.student_id = s.id AND m.valid_to IS NULL
@@ -47,6 +48,7 @@ export class PgStudentSelfReader {
     return r
       ? {
           id: r.id, enrolmentNumber: r.enrolment_number, status: r.status, programName: r.program_name,
+          sectionId: r.section_id ?? null,
           sectionLabel: r.section_label ?? null, sectionTermNumber: r.section_term_number ?? null,
         }
       : null;
