@@ -186,23 +186,34 @@
   gap: 3px;
 }
 .dash__chart--month .dash__bar {
+  position: relative;
   max-width: 12px;
-  border-radius: 3px 3px 0 0;
-  /* A glowing gradient bar (owner reference), deepest at the base: same
-     two tokens as the donut/legend, not a new colour. */
-  background: linear-gradient(180deg, var(--viz-seq-4), var(--primary));
-  box-shadow: 0 0 6px rgb(79 70 229 / 0.28);
+  border-radius: 4px 4px 0 0;
+  /* A glowing gradient bar (owner reference), brightest at the tip, deepest
+     at the base: existing tokens (viz-seq-5/-4, primary), not a new colour. */
+  background: linear-gradient(180deg, var(--viz-seq-5), var(--viz-seq-4) 45%, var(--primary));
+  box-shadow: 0 0 8px rgb(79 70 229 / 0.4), 0 0 2px rgb(96 165 250 / 0.6);
+}
+/* The bright tip, echoing the reference's glowing peak on every bar. */
+.dash__chart--month .dash__bar::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  border-radius: 4px 4px 0 0;
+  background: #fff;
+  opacity: 0.55;
 }
 .dash__chart--month .dash__bar-day {
   font-size: 10px;
   min-height: 12px;
 }
 .dash__bar-wrap--today .dash__bar {
-  background: linear-gradient(180deg, var(--info), var(--primary));
-  box-shadow: 0 0 10px rgb(79 70 229 / 0.45);
+  background: linear-gradient(180deg, #fff, var(--info) 35%, var(--primary));
+  box-shadow: 0 0 14px rgb(79 70 229 / 0.6), 0 0 4px rgb(96 165 250 / 0.7);
 }
 .dash__bar-wrap--hover .dash__bar {
-  box-shadow: 0 0 12px rgb(79 70 229 / 0.5), 0 0 0 2px var(--surface), 0 0 0 3.5px var(--primary);
+  box-shadow: 0 0 16px rgb(79 70 229 / 0.65), 0 0 0 2px var(--surface), 0 0 0 3.5px var(--primary);
 }
 .dash__chart--month:has(.dash__bar-wrap--hover) .dash__bar-wrap:not(.dash__bar-wrap--hover) .dash__bar {
   opacity: 0.45;
