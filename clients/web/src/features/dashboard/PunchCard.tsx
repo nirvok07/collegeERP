@@ -56,9 +56,11 @@ export function PunchCard({ api }: { api: ApiClient }) {
         </p>
         {error && <p className="dash__punch-error">{error}</p>}
       </div>
-      <Button variant="primary" disabled={busy || (today !== null && !open)} onClick={() => void punch()}>
-        {busy ? 'Please wait…' : today !== null && !open ? 'Done for today' : open ? 'Punch out' : 'Punch in'}
-      </Button>
+      <span className="dash__punch-btn">
+        <Button variant="primary" disabled={busy || (today !== null && !open)} onClick={() => void punch()}>
+          {busy ? 'Please wait…' : today !== null && !open ? 'Done' : open ? 'Punch out' : 'Punch in'}
+        </Button>
+      </span>
     </div>
   );
 }

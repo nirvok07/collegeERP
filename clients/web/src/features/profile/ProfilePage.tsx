@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ErrorState, StatusChip } from '../../components/index.tsx';
 import type { ApiClient, ApiFailure } from '../../lib/api.ts';
 import { buildTiles } from '../dashboard/DashboardPage.tsx';
+import '../dashboard/dashboard.css';
 
 interface Assignment {
   role_key: string;
@@ -45,6 +46,29 @@ const ROLE_LABELS: Record<string, string> = {
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function weekday(iso: string): string {
+  return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(`${iso}T00:00:00`).getDay()];
+}
+
+/** The visual form of the punch record: hours worked per day, oldest to newest. */
+function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
+  const recent = [...days].slice(0, 7).reverse();
+  const hours = recent.map((d) =>
+    d.punch_out_at ? (new Date(d.punch_out_at).getTime() - new Date(d.punch_in_at).getTime()) / 3_600_000 : 0,
+  );
+  const max = Math.max(1, ...hours);
+  return (
+    <div className="dash__chart" role="img" aria-label={`Hours worked, last ${recent.length} recorded days`}>
+      {recent.map((d, i) => (
+        <div key={d.id} className="dash__bar-wrap" title={`${d.work_date}: ${hours[i].toFixed(1)}h`}>
+          <div className="dash__bar" style={{ height: `${(hours[i] / max) * 100}%` }} />
+          <span className="dash__bar-day">{weekday(d.work_date)}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 const SCOPE_LABELS: Record<string, string> = {
@@ -109,7 +133,8 @@ export function ProfilePage({ api }: { api: ApiClient }) {
           <div>
             <h2 className="page__eyebrow">Attendance history</h2>
             <p className="page__sub" style={{ margin: '0 0 var(--space-xs)' }}>Punch in and out from the Dashboard.</p>
-            <ul style={{ display: 'grid', gap: 'var(--space-xs)', listStyle: 'none', padding: 0, margin: 0 }}>
+            <HoursChart days={days} />
+            <ul style={{ display: 'grid', gap: 'var(--space-xs)', listStyle: 'none', padding: 0, margin: 'var(--space-sm) 0 0' }}>
               {days.slice(0, 10).map((d) => (
                 <li key={d.id}>
                   {d.work_date}: {formatTime(d.punch_in_at)}

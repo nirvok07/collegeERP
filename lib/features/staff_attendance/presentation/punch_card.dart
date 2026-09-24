@@ -81,7 +81,14 @@ class _PunchCardBody extends StatelessWidget {
                     : () => open
                         ? context.read<StaffAttendanceCubit>().punchOut()
                         : context.read<StaffAttendanceCubit>().punchIn(),
-                style: FilledButton.styleFrom(backgroundColor: scheme.primary),
+                style: FilledButton.styleFrom(
+                  backgroundColor: scheme.primary,
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
                 child: Text(
                   state.acting ? '…' : (today != null && !open) ? 'Done' : open ? 'Punch out' : 'Punch in',
                 ),

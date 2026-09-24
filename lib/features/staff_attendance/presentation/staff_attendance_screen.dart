@@ -5,6 +5,7 @@ import '../../../core/design/tokens.dart';
 import '../../../core/di/locator.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/widgets/app_list_tile.dart';
+import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/screen_state.dart';
 import '../data/staff_attendance_api.dart';
 import 'staff_attendance_cubit.dart';
@@ -73,6 +74,12 @@ class _Body extends StatelessWidget {
                 children: [
                   _TodayCard(today: today, acting: acting),
                   const SizedBox(height: AppSpacing.lg),
+                  if (history.isNotEmpty) ...[
+                    Text('Hours worked', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: AppSpacing.sm),
+                    _HoursChart(history: history),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                   Text('Recent days', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: AppSpacing.sm),
                   if (history.isEmpty)
@@ -136,6 +143,35 @@ class _TodayCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The visual form of the punch-in/out record: hours worked per day, most
+/// recent 7 days that have a punch, oldest to newest so the chart reads
+/// left-to-right like a week. An open (not yet punched out) day counts
+/// nothing until it closes, same as `_hours` below.
+class _HoursChart extends StatelessWidget {
+  const _HoursChart({required this.history});
+  final List<StaffAttendanceDay> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final recent = history.take(7).toList().reversed.toList();
+    return BarChart(
+      semanticLabel: 'Hours worked, last ${recent.length} recorded days',
+      bars: [
+        for (final day in recent)
+          BarDatum(
+            label: _weekday(day.workDate),
+            value: day.isOpen ? 0 : day.worked.inMinutes ~/ 60,
+          ),
+      ],
+    );
+  }
+}
+
+String _weekday(String isoDate) {
+  const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return names[DateTime.parse(isoDate).weekday - 1];
 }
 
 class _DayTile extends StatelessWidget {

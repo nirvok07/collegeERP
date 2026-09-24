@@ -267,6 +267,8 @@
 }
 .dash__punch-status { margin: 0; font: var(--text-label); font-weight: 700; }
 .dash__punch-error { margin: var(--space-xs) 0 0; color: #fff; font: var(--text-caption); }
+/* Compact: the punch button sits inside a small card, not a page action. */
+.dash__punch-btn .btn { min-height: 32px; padding: 0 var(--space-md); font: var(--text-caption); }
 
 /* ---- Skeleton (in-place, nothing shifts) -------------------------------- */
 
