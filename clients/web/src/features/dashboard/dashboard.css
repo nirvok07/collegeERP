@@ -431,12 +431,21 @@
   gap: var(--space-xl);
 }
 
-.dash__punch-detail .dash__donut {
-  align-items: flex-start;
+/* ---- Monthly attendance donut -------------------------------------------- */
+/* Owner: the ring centered, the indicators (legend + status) beside it, not
+   stacked underneath — reads as one balanced row instead of a lopsided
+   column. Narrow widths fall back to stacked and centered. */
+.dash__donut {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
 }
 
-/* ---- Monthly attendance donut -------------------------------------------- */
-.dash__donut { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
+@media (max-width: 420px) {
+  .dash__donut { flex-direction: column; gap: var(--space-sm); }
+}
 
 .dash__donut-chart {
   position: relative;
