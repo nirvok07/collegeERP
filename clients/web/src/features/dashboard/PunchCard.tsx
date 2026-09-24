@@ -198,7 +198,17 @@ export function PunchCard({ api }: { api: ApiClient }) {
 
   useEffect(() => { void load(); }, [load]);
 
-  if (days === undefined) return null;
+  if (days === undefined) {
+    return (
+      <section className="dash__band dash__punch-band" aria-label="Attendance">
+        <div className="dash__band-head">
+          <h2 className="dash__h">Attendance</h2>
+        </div>
+        <div className="skeleton" style={{ height: 64, borderRadius: 'var(--radius-card)' }} />
+        <div className="skeleton" style={{ height: 160 }} />
+      </section>
+    );
+  }
 
   const iso = new Date().toISOString().slice(0, 10);
   const today = days.find((d) => d.work_date === iso) ?? null;
@@ -213,7 +223,10 @@ export function PunchCard({ api }: { api: ApiClient }) {
   }
 
   return (
-    <>
+    <section className="dash__band dash__punch-band" aria-label="Attendance">
+      <div className="dash__band-head">
+        <h2 className="dash__h">Attendance</h2>
+      </div>
       <div className="dash__punch">
         <div>
           <p className="dash__punch-status">
@@ -223,7 +236,7 @@ export function PunchCard({ api }: { api: ApiClient }) {
                 ? `Punched in at ${formatTime(today.punch_in_at)}`
                 : `Punched out at ${formatTime(today.punch_out_at!)}`}
           </p>
-          {error && <p className="dash__punch-error">{error}</p>}
+          {error && <p className="dash__punch-error" role="alert">{error}</p>}
         </div>
         <span className="dash__punch-btn">
           <Button variant="primary" disabled={busy || (today !== null && !open)} onClick={() => void punch()}>
@@ -240,10 +253,10 @@ export function PunchCard({ api }: { api: ApiClient }) {
           />
         </div>
         <div>
-          <h3 className="dash__sub">Attendance history</h3>
+          <h3 className="dash__sub">Hours worked</h3>
           <HoursChart days={days} />
         </div>
       </div>
-    </>
+    </section>
   );
 }

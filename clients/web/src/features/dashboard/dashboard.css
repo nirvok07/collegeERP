@@ -276,11 +276,22 @@
 }
 
 /* ---- Punch card (SA-ATT-1) ----------------------------------------------- */
+/* A card in the dashboard's own language (.dash__band): same surface, radius
+   and shadow as "Your college"/"This week", so it reads as one more section
+   of the page rather than a loose banner. Sits above DashboardBody, so it
+   carries its own bottom margin equal to the grid's inter-section gap. */
+.dash__punch-band {
+  margin-bottom: var(--nd-gap-group);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
 .dash__punch {
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-base);
   padding: var(--space-base);
   background: var(--primary); color: var(--on-primary);
-  border-radius: var(--radius-card); margin-bottom: var(--space-base);
+  border-radius: var(--radius-card);
 }
 .dash__punch-status { margin: 0; font: var(--text-label); font-weight: 700; }
 .dash__punch-error { margin: var(--space-xs) 0 0; color: #fff; font: var(--text-caption); }
@@ -291,7 +302,6 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: var(--space-xl);
-  margin-bottom: var(--space-base);
 }
 
 @media (max-width: 640px) {
@@ -310,7 +320,7 @@
 
 .dash__donut-legend {
   display: grid;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -318,12 +328,18 @@
   color: var(--text-secondary);
 }
 
+.dash__donut-legend li {
+  display: flex;
+  align-items: center;
+}
+
 .dash__donut-dot {
   display: inline-block;
+  flex: none;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  margin-right: var(--space-xs);
+  margin-right: var(--space-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {
