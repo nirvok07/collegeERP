@@ -857,8 +857,15 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   Hours-chart bars (`.dash__chart--month`, scoped so the plain week-ahead chart is untouched) now use a
   vertical gradient (`--viz-seq-4` → `--primary`) with a soft glow (box-shadow on `--primary`'s RGB, same
   technique `--chrome-gradient` already uses); today's/hovered bar glow brighter. No new colors, no
-  structural change. ✅ tsc clean, 203/203 tests. Committed `18311f2`. 🔍 NEEDS VALIDATION on the phone
-  and in a browser.
+  structural change. ✅ tsc clean, 203/203 tests. Committed `18311f2`. Owner feedback 2026-09-24 (round 14, web-only): "waisa hi kar do" pushed toward an
+  exact match of the dark-background reference — flagged the conflict (AD-67 "light only," the
+  light/dark toggle was removed app-wide, no dark CSS exists anywhere in the web client) via
+  AskUserQuestion; owner confirmed: stay light, push the glow further instead. Bars now use a 3-stop
+  gradient (`--viz-seq-5` → `--viz-seq-4` → `--primary`, brightest at the tip) with a bright tip
+  highlight and a stronger two-layer glow shadow; today's/hovered bar glows further still. Still every
+  value an existing token or documented token-RGB (the `--chrome-gradient` technique) — no new colours,
+  AD-67 intact. ✅ tsc clean, 203/203 tests. Committed `4e2ed87`. 🔍 NEEDS VALIDATION on the phone and in
+  a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
