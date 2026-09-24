@@ -776,7 +776,14 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   permission) and asked whether a teacher can mark their own students' attendance — that's a distinct,
   already-built capability (M6, `AttendanceScreen`/`Routes.attendance`, opened from a class session),
   not part of SA-ATT-1; no gap found. ✅ web tsc clean, 203/203 tests; ✅ Flutter analyze clean,
-  dashboard_test.dart 17/17. Committed `109eada`. 🔍 NEEDS VALIDATION on the phone.
+  dashboard_test.dart 17/17. Committed `109eada`. Owner feedback 2026-09-24 (round 2): confirmed
+  punch-out already has no time restriction anywhere (self-scoped, no permission, server allows it any
+  time the day is still open) — no change needed. Dashboard punch button made compact on both clients.
+  Punch record now has a visual form: an hours-worked bar chart, oldest-to-newest over the last 7
+  recorded days, reusing the existing chart pattern (`.dash__chart` on web, `core/widgets/charts.dart`
+  `BarChart` on mobile) — no new charting dependency. Web: Profile's attendance history; mobile: the
+  full "My attendance" screen. ✅ web tsc clean, 203/203; ✅ Flutter analyze clean, dashboard_test.dart
+  17/17, staff_attendance_test.dart 2/2. Committed `0ffe3c4`. 🔍 NEEDS VALIDATION on the phone.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
