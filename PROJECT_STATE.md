@@ -814,8 +814,13 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   thickens it, dims the rest, swaps the centre readout to that segment, and opens a small tooltip
   (name, value, %, "of N days in <Month>") anchored to the arc's midpoint on the ring, computed from the
   same cumulative-angle math already drawing the arcs. Every value an existing token; reduced-motion
-  respected. ✅ tsc clean, 203/203 tests. Committed `a4cb823`. 🔍 NEEDS VALIDATION on the phone and in a
-  browser.
+  respected. ✅ tsc clean, 203/203 tests. Committed `a4cb823`. Owner feedback 2026-09-24 (round 7): donut moved below the hours chart instead of
+  beside it (`.dash__punch-detail` one column now, chart first); mobile app forced to 12-hour time
+  everywhere (`app.dart` MaterialApp `builder` wraps the tree in
+  `MediaQuery(...copyWith(alwaysUse24HourFormat: false))`, covering `TimeOfDay.format`/`showTimePicker`
+  app-wide, not just the hand-rolled `_time()` helpers already used for punch times). ✅ web tsc clean,
+  203/203; ✅ Flutter analyze clean, full suite 327/327. Committed `fe5d393`. 🔍 NEEDS VALIDATION on the
+  phone and in a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
