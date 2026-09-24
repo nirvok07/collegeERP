@@ -83,6 +83,21 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
     ? `${linePath} L ${points[points.length - 1].x} ${CHART_H} L ${points[0].x} ${CHART_H} Z`
     : '';
 
+  // Bars behind the curve, same scale as the line — bar height and curve
+  // height agree at every day, the two views of the same number.
+  const barWidth = CHART_W / daysInMonth;
+  const barGap = Math.min(2, barWidth * 0.25);
+  const bins = bars.map((b, i) => ({
+    iso: b.iso,
+    x: i * barWidth + barGap / 2,
+    width: Math.max(1, barWidth - barGap),
+    top: points[i].y,
+  }));
+
+  // The month's best day gets a direct value label, like a headline figure,
+  // so the busiest day reads at a glance without hovering.
+  const peakIndex = max > 0 ? bars.reduce((best, b, i) => (b.hours > bars[best].hours ? i : best), 0) : -1;
+
   const [grown, setGrown] = useState(false);
   useEffect(() => {
     setGrown(false);
@@ -114,7 +129,18 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
               <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.22" />
               <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
             </linearGradient>
+            <linearGradient id="dash-bar-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--viz-seq-4)" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="var(--viz-seq-1)" stopOpacity="0.35" />
+            </linearGradient>
           </defs>
+          {bins.map((bin) => bin.top >= CHART_H ? null : (
+            <rect
+              key={bin.iso} x={bin.x} y={bin.top} width={bin.width} height={CHART_H - bin.top}
+              rx={1} fill="url(#dash-bar-fill)"
+              className={`dash__linechart-bar${hovered === bin.iso ? ' dash__linechart-bar--hover' : ''}`}
+            />
+          ))}
           <path d={areaPath} fill="url(#dash-line-fill)" className="dash__linechart-area" />
           <path
             d={linePath} fill="none" stroke="url(#dash-line-stroke)" strokeWidth={3}
@@ -127,13 +153,33 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
               className="dash__linechart-guide" vectorEffect="non-scaling-stroke"
             />
           )}
-          {hoveredPoint && (
-            <circle cx={hoveredPoint.x} cy={hoveredPoint.y} r={5} className="dash__linechart-dot" />
-          )}
-          {todayPoint && !hoveredPoint && (
-            <circle cx={todayPoint.x} cy={todayPoint.y} r={4} className="dash__linechart-dot dash__linechart-dot--today" />
-          )}
         </svg>
+        {/* Dots and the peak label are HTML, not SVG shapes: the SVG above
+            stretches non-uniformly (preserveAspectRatio="none", so the curve
+            always spans the full card width) which would turn circles into
+            ellipses and squash text — percentage-positioned HTML avoids
+            that distortion entirely. */}
+        {hoveredPoint && (
+          <span
+            className="dash__linechart-dot"
+            style={{ left: `${(hoveredPoint.x / CHART_W) * 100}%`, top: `${(hoveredPoint.y / CHART_H) * 100}%` }}
+          />
+        )}
+        {todayPoint && !hoveredPoint && (
+          <span
+            className="dash__linechart-dot dash__linechart-dot--today"
+            style={{ left: `${(todayPoint.x / CHART_W) * 100}%`, top: `${(todayPoint.y / CHART_H) * 100}%` }}
+          />
+        )}
+        {peakIndex >= 0 && (
+          <span
+            className="dash__linechart-peak"
+            style={{ left: `${(points[peakIndex].x / CHART_W) * 100}%`, top: `${(points[peakIndex].y / CHART_H) * 100}%` }}
+          >
+            <span className="dash__linechart-peak-dot" />
+            <span className="dash__linechart-peak-label">{bars[peakIndex].hours.toFixed(1)}h</span>
+          </span>
+        )}
         <div className="dash__linechart-zones">
           {bars.map((b) => (
             <div

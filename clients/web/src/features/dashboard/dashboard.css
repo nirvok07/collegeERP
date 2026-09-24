@@ -187,6 +187,7 @@
 .dash__linechart-plot {
   position: relative;
   height: 88px;
+  overflow: visible;
 }
 
 .dash__linechart-svg {
@@ -213,21 +214,74 @@
   transition: opacity var(--state);
 }
 
+.dash__linechart-bar {
+  transition: opacity var(--state);
+}
+
+.dash__linechart-bar--hover {
+  opacity: 0.85;
+}
+
 .dash__linechart-guide {
   stroke: var(--outline-strong);
   stroke-width: 1;
   stroke-dasharray: 2 2;
 }
 
+/* Dots and the peak label are plain HTML (percentage-positioned over the
+   plot), not SVG shapes — the SVG's non-uniform stretch would turn a
+   circle into an ellipse and squash text. */
 .dash__linechart-dot {
-  fill: var(--surface);
-  stroke: var(--primary);
-  stroke-width: 2.5;
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2.5px solid var(--primary);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .dash__linechart-dot--today {
-  fill: var(--primary);
-  stroke: var(--surface);
+  background: var(--primary);
+  border-color: var(--surface);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.dash__linechart-peak {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dash__linechart-peak-dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--warning);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.25);
+}
+
+.dash__linechart-peak-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  background: var(--surface);
+  border-radius: var(--radius-input);
+  box-shadow: var(--nd-card-shadow);
 }
 
 .dash__linechart-zones {
