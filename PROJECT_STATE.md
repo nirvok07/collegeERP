@@ -788,7 +788,19 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   (status, button, hours chart, recent history); Profile dropped its attendance section and the
   `/v1/me/staff-attendance` read entirely. Mobile already had this split right (dashboard punch card +
   a separate "My attendance" screen, nothing on Account/Profile), so only web changed. ✅ tsc clean,
-  203/203 tests. Committed `4175a21`. 🔍 NEEDS VALIDATION on the phone and in a browser.
+  203/203 tests. Committed `4175a21`. Owner feedback 2026-09-24 (round 4): "animated graph k through...
+  smoothly", plus a "smart donut chart" for the month — days present, absent, on holiday, remaining.
+  Web `PunchCard`: hours-worked bars now grow in (CSS `height` transition, not a snap); new `MonthDonut`
+  — hand-drawn SVG ring (animated `stroke-dasharray` per arc, no charting library), classifying every
+  day of the current month using the existing self-scoped `GET /v1/calendar` (CAL-1/CAL-2) for
+  holidays, no new endpoint. Mobile: `staff_attendance/domain/month_counts.dart` (shared classification:
+  present = a punch exists; absent = a past working day with none, incl. today until punched in;
+  holiday = academic calendar; remaining = future) + `presentation/month_donut.dart` drawing it with
+  the existing `RingChart` (`core/widgets/charts.dart`, already animated) and a count legend, wired into
+  the full "My attendance" screen (dashboard's punch card stays the compact link to it, unchanged).
+  ✅ web tsc clean, 203/203; ✅ Flutter analyze clean, full suite 327/327 (staff_attendance_test.dart
+  updated with a fake CalendarRepository). Committed `5b464bb`. 🔍 NEEDS VALIDATION on the phone and in
+  a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
