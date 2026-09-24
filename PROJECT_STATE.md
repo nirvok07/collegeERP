@@ -809,8 +809,13 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   now one `.dash__band` ("Attendance") with "This month"/"Hours worked" as h3 subheads (same pattern as
   TeacherPanel), a real loading skeleton instead of rendering nothing, 8px donut-legend spacing, and
   `role="alert"` on the punch error — no new colors, every value an existing token. ✅ web tsc clean,
-  203/203; ✅ Flutter analyze clean, full suite 327/327. Committed `31313b9`, `704ebcc`. 🔍 NEEDS
-  VALIDATION on the phone and in a browser.
+  203/203; ✅ Flutter analyze clean, full suite 327/327. Committed `31313b9`, `704ebcc`. Owner feedback 2026-09-24 (round 6, web-only): polish the donut's
+  interactivity without changing its data or layout — hovering an arc (or its linked legend row) now
+  thickens it, dims the rest, swaps the centre readout to that segment, and opens a small tooltip
+  (name, value, %, "of N days in <Month>") anchored to the arc's midpoint on the ring, computed from the
+  same cumulative-angle math already drawing the arcs. Every value an existing token; reduced-motion
+  respected. ✅ tsc clean, 203/203 tests. Committed `a4cb823`. 🔍 NEEDS VALIDATION on the phone and in a
+  browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
