@@ -840,8 +840,13 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   existing hover/today dot circles were actually rendering as ellipses (and any text would squash) —
   moved every dot and the new peak label out of the SVG into percentage-positioned HTML (same technique
   the tooltip already used), leaving only paths/rects (curve, area, bars) in SVG since those have no
-  circular/text symmetry to break. ✅ tsc clean, 203/203 tests. Committed `9d737e2`. 🔍 NEEDS VALIDATION
-  on the phone and in a browser.
+  circular/text symmetry to break. ✅ tsc clean, 203/203 tests. Committed `9d737e2`. Owner feedback 2026-09-24 (round 11, web-only): "donut chart jaisa screenshot diya
+  tha waisa hi chahiye" — the earlier subtle gloss wasn't enough; needed the actual extruded-3D-puck
+  shape from the reference. Each segment now has a small rounded gap from its neighbours and is drawn
+  twice (a darkened `brightness(0.72)`-filtered "side" copy 3.5px lower, behind a true-colour "top"
+  copy), thicker ring (20px), still every existing token — no new colors, light theme kept per the
+  earlier decision. Data/hover/tooltip/legend unchanged. ✅ tsc clean, 203/203 tests. Committed
+  `0d8d6cf`. 🔍 NEEDS VALIDATION on the phone and in a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
