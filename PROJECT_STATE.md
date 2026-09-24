@@ -832,7 +832,16 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   top-left gloss and per-arc drop-shadow for a lightly sculpted ring; data/layout/tooltip unchanged. No
   new colors — reused tokens throughout (including `--primary`'s RGB the same way `--chrome-gradient`
   already does). Removed now-dead `--month` bar-chart CSS. ✅ tsc clean, 203/203 tests. Committed
-  `0c20002`. 🔍 NEEDS VALIDATION on the phone and in a browser.
+  `0c20002`. Owner feedback 2026-09-24 (round 10, web-only): shared a bar+line combo reference with
+  value labels at standout points, asked for "is type ka bar chart". Added translucent bars behind the
+  curve (same per-day scale as the line) and a direct amber-marked label on the month's best day
+  ("8.5h"), so the standout figure reads without hovering. Found and fixed a real bug while doing this:
+  the SVG's `preserveAspectRatio="none"` non-uniformly stretches everything drawn inside it, so the
+  existing hover/today dot circles were actually rendering as ellipses (and any text would squash) —
+  moved every dot and the new peak label out of the SVG into percentage-positioned HTML (same technique
+  the tooltip already used), leaving only paths/rects (curve, area, bars) in SVG since those have no
+  circular/text symmetry to break. ✅ tsc clean, 203/203 tests. Committed `9d737e2`. 🔍 NEEDS VALIDATION
+  on the phone and in a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
