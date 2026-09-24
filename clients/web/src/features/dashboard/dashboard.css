@@ -311,12 +311,61 @@
 /* ---- Monthly attendance donut -------------------------------------------- */
 .dash__donut { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
 
-.dash__donut-arc {
-  transition: stroke-dasharray 900ms cubic-bezier(0.16, 1, 0.3, 1);
+.dash__donut-chart {
+  position: relative;
+  width: 112px;
+  height: 112px;
 }
 
-.dash__donut-num { font: var(--text-title); font-weight: 700; fill: var(--text-primary); }
+.dash__donut-chart svg { display: block; }
+
+.dash__donut-arc {
+  cursor: pointer;
+  transition:
+    stroke-dasharray 900ms cubic-bezier(0.16, 1, 0.3, 1),
+    stroke-width 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 200ms ease;
+}
+
+.dash__donut-arc--dim { opacity: 0.35; }
+.dash__donut-arc--active { filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.18)); }
+
+.dash__donut-num { font: var(--text-title); font-weight: 700; fill: var(--text-primary); transition: opacity 150ms ease; }
 .dash__donut-label { font: var(--text-caption); fill: var(--text-tertiary); }
+
+/* A small card anchored to the hovered arc's midpoint, floating just
+   outside the ring — the "detailed tooltip" (name, value, %, month total). */
+.dash__donut-tip {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-sm) var(--space-md);
+  min-width: 128px;
+  background: var(--surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--nd-card-shadow-hover);
+  pointer-events: none;
+  animation: dash-donut-tip-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash__donut-tip-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-bottom: 2px;
+}
+
+.dash__donut-tip-name { font: var(--text-caption); font-weight: 700; color: var(--text-primary); }
+.dash__donut-tip-value { font: var(--text-caption); color: var(--text-secondary); }
+.dash__donut-tip-meta { font-size: 11px; color: var(--text-tertiary); }
+
+@keyframes dash-donut-tip-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
 
 .dash__donut-legend {
   display: grid;
@@ -331,7 +380,12 @@
 .dash__donut-legend li {
   display: flex;
   align-items: center;
+  cursor: pointer;
+  border-radius: var(--radius-input);
+  transition: opacity 200ms ease;
 }
+
+.dash__donut-legend-row--dim { opacity: 0.5; }
 
 .dash__donut-dot {
   display: inline-block;
@@ -340,6 +394,10 @@
   height: 8px;
   border-radius: 50%;
   margin-right: var(--space-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash__donut-tip { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

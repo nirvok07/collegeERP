@@ -112,12 +112,16 @@ function monthCounts(days: StaffAttendanceDay[], holidays: string[], now: Date):
  * A "smart" donut: this month at a glance — present, absent, holiday and
  * days still to come — drawn as one ring, no charting library, matching
  * the mobile app's `RingChart` (`core/widgets/charts.dart`). Draws itself
- * in on mount by animating each arc's `stroke-dasharray` from 0.
+ * in on mount by animating each arc's `stroke-dasharray` from 0. Hovering
+ * an arc (or its legend row — they're linked) thickens that arc, dims the
+ * rest, swaps the centre readout to that segment, and opens a small
+ * tooltip anchored on the ring at the arc's midpoint.
  */
 function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: string }) {
   const { present, absent, holiday, remaining } = counts;
   const total = present + absent + holiday + remaining;
   const [grown, setGrown] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
   useEffect(() => {
     setGrown(false);
     const frame = requestAnimationFrame(() => setGrown(true));
@@ -135,35 +139,76 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
   let cumulative = 0;
   const arcs = segments.map((s) => {
     const dash = total > 0 ? (s.value / total) * circumference : 0;
-    const arc = { ...s, dash, offset: -cumulative };
+    const fraction = total > 0 ? s.value / total : 0;
+    const midAngleDeg = ((cumulative + dash / 2) / circumference) * 360 - 90;
+    const midAngleRad = (midAngleDeg * Math.PI) / 180;
+    const arc = {
+      ...s,
+      dash,
+      offset: -cumulative,
+      percent: Math.round(fraction * 100),
+      anchor: {
+        xPct: ((cx + (r + strokeWidth / 2 + 6) * Math.cos(midAngleRad)) / 120) * 100,
+        yPct: ((cy + (r + strokeWidth / 2 + 6) * Math.sin(midAngleRad)) / 120) * 100,
+      },
+    };
     cumulative += dash;
     return arc;
   });
 
+  const active = arcs.find((a) => a.key === hovered) ?? null;
+  const centerValue = active?.value ?? present;
+  const centerLabel = active?.label.toLowerCase() ?? 'present';
+
   return (
     <div className="dash__donut">
-      <svg
-        viewBox="0 0 120 120" width="112" height="112"
-        role="img"
-        aria-label={`${monthLabel}: ${present} present, ${absent} absent, ${holiday} holiday, ${remaining} days left, of ${total} days`}
-      >
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--outline)" strokeWidth={strokeWidth} />
-        {arcs.map((a) => a.value === 0 ? null : (
-          <circle
-            key={a.key}
-            className="dash__donut-arc"
-            cx={cx} cy={cy} r={r} fill="none" stroke={a.color} strokeWidth={strokeWidth}
-            strokeDasharray={grown ? `${a.dash} ${circumference - a.dash}` : `0 ${circumference}`}
-            strokeDashoffset={a.offset}
-            transform={`rotate(-90 ${cx} ${cy})`}
-          />
-        ))}
-        <text x={cx} y={cy - 3} textAnchor="middle" className="dash__donut-num">{present}</text>
-        <text x={cx} y={cy + 15} textAnchor="middle" className="dash__donut-label">present</text>
-      </svg>
+      <div className="dash__donut-chart">
+        <svg
+          viewBox="0 0 120 120" width="112" height="112"
+          role="img"
+          aria-label={`${monthLabel}: ${present} present, ${absent} absent, ${holiday} holiday, ${remaining} days left, of ${total} days`}
+        >
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--outline)" strokeWidth={strokeWidth} />
+          {arcs.map((a) => a.value === 0 ? null : (
+            <circle
+              key={a.key}
+              className={`dash__donut-arc${hovered && hovered !== a.key ? ' dash__donut-arc--dim' : ''}${
+                hovered === a.key ? ' dash__donut-arc--active' : ''
+              }`}
+              cx={cx} cy={cy} r={r} fill="none" stroke={a.color}
+              strokeWidth={hovered === a.key ? strokeWidth + 3 : strokeWidth}
+              strokeDasharray={grown ? `${a.dash} ${circumference - a.dash}` : `0 ${circumference}`}
+              strokeDashoffset={a.offset}
+              strokeLinecap="butt"
+              transform={`rotate(-90 ${cx} ${cy})`}
+              onMouseEnter={() => setHovered(a.key)}
+              onMouseLeave={() => setHovered(null)}
+            />
+          ))}
+          <text x={cx} y={cy - 3} textAnchor="middle" className="dash__donut-num">{centerValue}</text>
+          <text x={cx} y={cy + 15} textAnchor="middle" className="dash__donut-label">{centerLabel}</text>
+        </svg>
+        {active && active.value > 0 && (
+          <div
+            className="dash__donut-tip"
+            style={{ left: `${active.anchor.xPct}%`, top: `${active.anchor.yPct}%` }}
+            role="status"
+          >
+            <span className="dash__donut-tip-dot" style={{ background: active.color }} />
+            <span className="dash__donut-tip-name">{active.label}</span>
+            <span className="dash__donut-tip-value">{active.value} {active.value === 1 ? 'day' : 'days'} · {active.percent}%</span>
+            <span className="dash__donut-tip-meta">of {total} days in {monthLabel}</span>
+          </div>
+        )}
+      </div>
       <ul className="dash__donut-legend">
         {segments.map((s) => (
-          <li key={s.key}>
+          <li
+            key={s.key}
+            className={hovered && hovered !== s.key ? 'dash__donut-legend-row--dim' : undefined}
+            onMouseEnter={() => setHovered(s.key)}
+            onMouseLeave={() => setHovered(null)}
+          >
             <span className="dash__donut-dot" style={{ background: s.color }} />
             {s.label}: {s.value}
           </li>
