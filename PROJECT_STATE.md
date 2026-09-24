@@ -898,7 +898,10 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   attendance rate (present ÷ days reached so far) instead of a raw present count, plus a status chip
   below the legend (On track/Watch this/Needs attention at 90%/75%, existing `StatusChip` component).
   Screenshot-verified with the same Playwright setup. ✅ tsc clean, 203/203 tests. Committed `c8f5d17`.
-  🔍 NEEDS VALIDATION on the phone and against the real signed-in app in a browser (every preview so far
+  Owner feedback 2026-09-24 (round 17): "donut chart ko center me kar do aur indicators uske side me kar
+  do" — `.dash__donut` is a centered row now (ring, then legend+status) instead of a left-leaning
+  column; falls back to a centered column under 420px. Screenshot-verified. ✅ tsc clean, 203/203 tests.
+  Committed `b0193af`. 🔍 NEEDS VALIDATION on the phone and against the real signed-in app in a browser (every preview so far
   used sample data, not live app state — the dev DB currently has 0 persons/institutions).
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
