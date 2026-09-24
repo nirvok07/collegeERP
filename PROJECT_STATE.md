@@ -799,8 +799,18 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   the existing `RingChart` (`core/widgets/charts.dart`, already animated) and a count legend, wired into
   the full "My attendance" screen (dashboard's punch card stays the compact link to it, unchanged).
   ✅ web tsc clean, 203/203; ✅ Flutter analyze clean, full suite 327/327 (staff_attendance_test.dart
-  updated with a fake CalendarRepository). Committed `5b464bb`. 🔍 NEEDS VALIDATION on the phone and in
-  a browser.
+  updated with a fake CalendarRepository). Committed `5b464bb`. Owner feedback 2026-09-24 (round 5):
+  "aise time mat dikhao" (the raw "2026-09-10: 9:20 – 18:28" list) — the chart should be the whole
+  record, covering the whole month, not the last 7 days. Web `HoursChart`/mobile `_HoursChart` redrawn
+  one bar per day of the current month (labels thin to every 5th day + day 1 + today, today
+  highlighted); exact times moved to the web bar's hover title/accessible name; mobile's "Recent days"
+  raw list removed outright. Then a UI/UX pass (ui-ux-pro-max skill): the punch/attendance block was
+  three loose pieces in the page flow, unlike the dashboard's own card language (`.dash__band`); it is
+  now one `.dash__band` ("Attendance") with "This month"/"Hours worked" as h3 subheads (same pattern as
+  TeacherPanel), a real loading skeleton instead of rendering nothing, 8px donut-legend spacing, and
+  `role="alert"` on the punch error — no new colors, every value an existing token. ✅ web tsc clean,
+  203/203; ✅ Flutter analyze clean, full suite 327/327. Committed `31313b9`, `704ebcc`. 🔍 NEEDS
+  VALIDATION on the phone and in a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
