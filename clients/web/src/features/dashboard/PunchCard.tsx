@@ -291,15 +291,15 @@ export function PunchCard({ api }: { api: ApiClient }) {
       </div>
       <div className="dash__punch-detail">
         <div>
+          <h3 className="dash__sub">Hours worked</h3>
+          <HoursChart days={days} />
+        </div>
+        <div>
           <h3 className="dash__sub">This month</h3>
           <MonthDonut
             counts={monthCounts(days, holidays.map((h) => h.on_date), new Date())}
             monthLabel={new Date().toLocaleDateString([], { month: 'long', year: 'numeric' })}
           />
-        </div>
-        <div>
-          <h3 className="dash__sub">Hours worked</h3>
-          <HoursChart days={days} />
         </div>
       </div>
     </section>

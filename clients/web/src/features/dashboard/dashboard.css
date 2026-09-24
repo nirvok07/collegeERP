@@ -298,14 +298,16 @@
 /* Compact: the punch button sits inside a small card, not a page action. */
 .dash__punch-btn .btn { min-height: 32px; padding: 0 var(--space-md); font: var(--text-caption); }
 
+/* Owner: the donut sits below the hours chart, not beside it — one column,
+   the chart first, the donut underneath. */
 .dash__punch-detail {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-xl);
 }
 
-@media (max-width: 640px) {
-  .dash__punch-detail { grid-template-columns: 1fr; }
+.dash__punch-detail .dash__donut {
+  align-items: flex-start;
 }
 
 /* ---- Monthly attendance donut -------------------------------------------- */

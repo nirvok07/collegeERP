@@ -226,18 +226,25 @@ class _CollegeAppState extends State<CollegeApp> {
       themeMode: ThemeMode.light,
       // Above every route, because without tabs most screens are pushed and
       // the notice must stay visible wherever the person is.
-      builder: (context, child) => _lockWhenSignedIn(Builder(builder: (context) {
-        final message = _phase == _Phase.signedIn ? _degradedMessage : null;
-        if (message == null) return child!;
-        return Column(
-          children: [
-            _DegradedBanner(message: message),
-            Expanded(
-              child: MediaQuery.removePadding(context: context, removeTop: true, child: child!),
-            ),
-          ],
-        );
-      })),
+      builder: (context, child) => MediaQuery(
+        // Owner: the app shows time in 12-hour format only, regardless of
+        // the device's own 24-hour setting — covers every TimeOfDay.format
+        // and showTimePicker in the app, not just the hand-rolled `_time()`
+        // helpers already used for punch/attendance times.
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+        child: _lockWhenSignedIn(Builder(builder: (context) {
+          final message = _phase == _Phase.signedIn ? _degradedMessage : null;
+          if (message == null) return child!;
+          return Column(
+            children: [
+              _DegradedBanner(message: message),
+              Expanded(
+                child: MediaQuery.removePadding(context: context, removeTop: true, child: child!),
+              ),
+            ],
+          );
+        })),
+      ),
       home: switch (_phase) {
         _Phase.restoring => _RestoringScreen(offlineMessage: _degradedMessage),
         // The college code comes first; everything after wears the college.
