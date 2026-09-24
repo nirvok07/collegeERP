@@ -783,7 +783,12 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   recorded days, reusing the existing chart pattern (`.dash__chart` on web, `core/widgets/charts.dart`
   `BarChart` on mobile) — no new charting dependency. Web: Profile's attendance history; mobile: the
   full "My attendance" screen. ✅ web tsc clean, 203/203; ✅ Flutter analyze clean, dashboard_test.dart
-  17/17, staff_attendance_test.dart 2/2. Committed `0ffe3c4`. 🔍 NEEDS VALIDATION on the phone.
+  17/17, staff_attendance_test.dart 2/2. Committed `0ffe3c4`. Owner feedback 2026-09-24 (round 3): "sari
+  details profile se hata k dashboard pe" — web's `PunchCard` now owns the whole attendance record
+  (status, button, hours chart, recent history); Profile dropped its attendance section and the
+  `/v1/me/staff-attendance` read entirely. Mobile already had this split right (dashboard punch card +
+  a separate "My attendance" screen, nothing on Account/Profile), so only web changed. ✅ tsc clean,
+  203/203 tests. Committed `4175a21`. 🔍 NEEDS VALIDATION on the phone and in a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
