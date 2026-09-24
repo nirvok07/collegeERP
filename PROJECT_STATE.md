@@ -20,6 +20,12 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Approvals capability (P1): ❌ not specified
 - Mobile dashboard + light theme (MUX-1, AD-67): ✅ code, ✅ tests, ✅ APK builds; 🔍 visual check on the phone
 - Dev database on Supabase (ENV-2, AD-68): ✅ rebuilt 2026-09-14 (all 24 migrations, tracked); `server/.env` points at Supabase; Owner `nirvokofficial@gmail.com` created there
+- Web visual QA (2026-09-24): ✅ Playwright + Chromium installed as a `clients/web` dev dependency —
+  this dev machine has no browser otherwise, so every prior web CSS/chart change had been unverified.
+  No standing test uses it yet (ad hoc: a static HTML preview page + a one-off Playwright script,
+  screenshotted, read as an image); worth turning into a real visual-check script if more chart/UI work
+  follows. The dev DB currently has 0 persons/institutions, so a real signed-in screenshot still needs
+  seeding first.
 - Dev server starts by itself (ENV-3, 2026-09-15): ✅ `scripts/dev-up.sh` (idempotent: starts `npm run dev` detached if `/health` is silent, then `adb reverse` when a phone is on USB; log `server/dev-server.log`), `scripts/dev-down.sh`; VS Code runs it on folder open and as `preLaunchTask` of both app launches (`.vscode/`). Owner asked for Supabase-as-backend instead; not done: it would move all server logic into Edge Functions (AD-68 / docs/11-decisions keep the Node API); production hosting stays for go-live. Tested: start / rerun / stop on a spare port. 🔍 NEEDS VALIDATION: auto-run on VS Code open (needs one-time "Allow automatic tasks") and adb reverse with a phone attached.
 - College branding + college-code-first app (BR-1, AD-70): ✅ server, ✅ web, ✅ Flutter, ✅ tests, ✅ APK builds; 🔍 on the phone
 - Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
@@ -864,8 +870,21 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   gradient (`--viz-seq-5` → `--viz-seq-4` → `--primary`, brightest at the tip) with a bright tip
   highlight and a stronger two-layer glow shadow; today's/hovered bar glows further still. Still every
   value an existing token or documented token-RGB (the `--chrome-gradient` technique) — no new colours,
-  AD-67 intact. ✅ tsc clean, 203/203 tests. Committed `4e2ed87`. 🔍 NEEDS VALIDATION on the phone and in
-  a browser.
+  AD-67 intact. ✅ tsc clean, 203/203 tests. Committed `4e2ed87`. Owner feedback 2026-09-24 (round 15, web-only): "chart stylish nahi lag raha,
+  indicators sahi se nahi lage" — every prior round of chart CSS had been written blind, no browser
+  available in this sandbox. Installed Playwright + Chromium as a clients/web dev dependency (owner
+  approved) and rendered the actual card for the first time (a static preview: real base.css/
+  components.css/dashboard.css loaded directly against sample month data, screenshotted with
+  Playwright — not the full signed-in app, since the dev DB currently has 0 persons/institutions to
+  sign in as). Found and fixed a real bug: the hour axis and the bar plot were two independently-sized
+  boxes that only approximately matched height, so "0h" landed nowhere near the bars' baseline.
+  Restructured into one CSS grid with axis+plot sharing identical padding-top/height math (pixel-
+  aligned), added dashed gridlines at the three ticks, moved date labels to their own row under the
+  plot only (previously double-counted, contributing to the misalignment), gave empty days a 3px stub
+  instead of literally nothing (matching the mobile app's own BarChart convention), and widened the
+  tooltip's reserved headroom 52px→64px after seeing it graze the tallest bars. Screenshot-verified
+  before and after. ✅ tsc clean, 203/203 tests. Committed `226a579`. 🔍 NEEDS VALIDATION on the phone
+  and against the real signed-in app in a browser (the preview used sample data, not live app state).
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
