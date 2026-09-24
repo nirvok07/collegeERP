@@ -112,6 +112,16 @@ class _StudentHomeView extends StatelessWidget {
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => Navigator.of(context).pushNamed(Routes.myFees),
                     ),
+                    const SizedBox(height: AppSpacing.sm),
+                    // The classes of this student's own section.
+                    AppListTile(
+                      margin: EdgeInsets.zero,
+                      leading: const Icon(Icons.event_rounded, color: AppColors.info),
+                      title: const Text('My timetable'),
+                      subtitle: const Text('Your section\'s classes'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.of(context).pushNamed(Routes.myTimetable),
+                    ),
                     const SizedBox(height: AppSpacing.lg),
                     Text('By course', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: AppSpacing.sm),

@@ -1,6 +1,7 @@
 import 'package:college_erp/core/error/result.dart';
 import 'package:college_erp/core/session/authority.dart';
 import 'package:college_erp/core/session/college_brand.dart';
+import 'package:college_erp/features/delivery/domain/class_session.dart';
 import 'package:college_erp/features/student/data/my_attendance.dart';
 import 'package:college_erp/features/student/presentation/student_home_screen.dart';
 import 'package:flutter/material.dart';
@@ -56,4 +57,10 @@ class _FakeSelf implements StudentSelfRepository {
 
   @override
   Future<DateTime?> myFeesSavedAt() async => null;
+
+  @override
+  Future<Result<List<ClassSession>>> myTimetable() async => const Ok([]);
+
+  @override
+  Future<DateTime?> myTimetableSavedAt() async => null;
 }

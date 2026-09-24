@@ -1,4 +1,5 @@
 import 'package:college_erp/core/error/result.dart';
+import 'package:college_erp/features/delivery/domain/class_session.dart';
 import 'package:college_erp/features/fees/domain/fees.dart';
 import 'package:college_erp/features/student/data/my_attendance.dart';
 import 'package:college_erp/features/student/presentation/my_fees_screen.dart';
@@ -30,6 +31,11 @@ class _FakeSelf implements StudentSelfRepository {
   Future<Result<MyFees>> myFees() async => Ok(fees);
   @override
   Future<DateTime?> myFeesSavedAt() async => null;
+
+  @override
+  Future<Result<List<ClassSession>>> myTimetable() => throw UnimplementedError();
+  @override
+  Future<DateTime?> myTimetableSavedAt() => throw UnimplementedError();
 }
 
 /// FEE-6: a student's own fees. What matters: dues are called out, and

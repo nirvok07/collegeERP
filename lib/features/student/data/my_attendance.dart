@@ -5,6 +5,7 @@ import '../../../core/error/result.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/saved_reads/saved_reads.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../delivery/domain/class_session.dart';
 import '../../fees/domain/fees.dart';
 
 /// ST-1: one course's attendance, or the total, from submitted registers.
@@ -106,6 +107,13 @@ abstract interface class StudentSelfRepository {
   /// CR-1b: when [myFees] was last saved.
   Future<DateTime?> myFeesSavedAt();
 
+  /// The classes of the student's own section. Empty, not an error, when not
+  /// yet placed in one.
+  Future<Result<List<ClassSession>>> myTimetable();
+
+  /// CR-1b: when [myTimetable] was last saved.
+  Future<DateTime?> myTimetableSavedAt();
+
   /// FEE-7: starts paying [amountPaise] of the student's own dues online.
   /// Returns where to open it; the app never handles card/UPI details itself.
   Future<Result<OnlinePaymentStarted>> payOnline(int amountPaise);
@@ -129,6 +137,15 @@ class StudentSelfApi implements StudentSelfRepository {
 
   @override
   Future<DateTime?> myFeesSavedAt() => _client.savedAt('/v1/me/fees');
+
+  @override
+  Future<Result<List<ClassSession>>> myTimetable() => _client.get(
+        '/v1/me/timetable',
+        (data) => (data as List).map((j) => ClassSession.fromJson(j as Map)).toList(),
+      );
+
+  @override
+  Future<DateTime?> myTimetableSavedAt() => _client.savedAt('/v1/me/timetable');
 
   @override
   Future<Result<OnlinePaymentStarted>> payOnline(int amountPaise) => _client.post(

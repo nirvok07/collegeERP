@@ -13,6 +13,7 @@ import '../features/fees/presentation/fee_requests_screen.dart';
 import '../features/fees/presentation/fee_reports_screen.dart';
 import '../features/fees/presentation/fee_student_search_screen.dart';
 import '../features/student/presentation/my_fees_screen.dart';
+import '../features/student/presentation/my_timetable_screen.dart';
 import '../features/fees/presentation/student_fee_screen.dart';
 import '../features/sections/presentation/sections_screen.dart';
 import '../features/timetable/presentation/timetable_screen.dart';
@@ -59,6 +60,9 @@ abstract final class Routes {
   static const feeStudentSearch = '/fees/students/search';
   static const studentFees = '/fees/students/detail';
   static const myFees = '/me/fees';
+
+  /// A student's own timetable: the classes of their section.
+  static const myTimetable = '/me/timetable';
   static const sections = '/sections';
   static const timetable = '/timetable';
   static const students = '/students';
@@ -225,6 +229,8 @@ abstract final class AppRouter {
         return _page(settings, AcademicCalendarScreen(canManage: settings.arguments == true));
       case Routes.myFees:
         return _page(settings, const MyFeesScreen());
+      case Routes.myTimetable:
+        return _page(settings, const MyTimetableScreen());
       case Routes.settings:
         return _page(settings, const SettingsScreen());
       case Routes.appointTeacher:
