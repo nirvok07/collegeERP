@@ -287,7 +287,12 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
     return () => cancelAnimationFrame(frame);
   }, [present, absent, holiday, remaining]);
 
-  const cx = 60, cy = 60, r = 46, strokeWidth = 16;
+  // A chunky, separated-wedge "slab" look (owner reference: an extruded 3D
+  // donut) built from flat shapes, no 3D library: each visible segment gets
+  // a small rounded gap from its neighbours, and is drawn twice — a darker
+  // "side" copy a few px lower first, then the true-colour "top" copy on
+  // top of it — so the ring reads as a set of separate, raised pucks.
+  const cx = 60, cy = 60, r = 44, strokeWidth = 20;
   const circumference = 2 * Math.PI * r;
   const segments = [
     { key: 'present', value: present, color: 'var(--success)', label: 'Present' },
@@ -295,16 +300,19 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
     { key: 'holiday', value: holiday, color: 'var(--info)', label: 'Holiday' },
     { key: 'remaining', value: remaining, color: 'var(--outline-strong)', label: 'Days left' },
   ];
+  const visibleCount = segments.filter((s) => s.value > 0).length;
+  const gap = visibleCount > 1 ? circumference * 0.02 : 0;
   let cumulative = 0;
   const arcs = segments.map((s) => {
     const dash = total > 0 ? (s.value / total) * circumference : 0;
     const fraction = total > 0 ? s.value / total : 0;
     const midAngleDeg = ((cumulative + dash / 2) / circumference) * 360 - 90;
     const midAngleRad = (midAngleDeg * Math.PI) / 180;
+    const gapped = dash > 0 ? Math.max(0, dash - gap) : 0;
     const arc = {
       ...s,
-      dash,
-      offset: -cumulative,
+      dash: gapped,
+      offset: -(cumulative + gap / 2),
       percent: Math.round(fraction * 100),
       anchor: {
         xPct: ((cx + (r + strokeWidth / 2 + 6) * Math.cos(midAngleRad)) / 120) * 100,
@@ -335,6 +343,22 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
             </radialGradient>
           </defs>
           <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--outline)" strokeWidth={strokeWidth} />
+          {/* The "side" of each puck: same shape, a few px lower and darkened
+              (a CSS filter on the same token colour, not a new one), so the
+              top layer above it reads as sitting proud of the ring. */}
+          <g transform="translate(0, 3.5)" aria-hidden="true">
+            {arcs.map((a) => a.value === 0 ? null : (
+              <circle
+                key={a.key}
+                className="dash__donut-arc-side"
+                cx={cx} cy={cy} r={r} fill="none" stroke={a.color} strokeWidth={strokeWidth}
+                strokeDasharray={grown ? `${a.dash} ${circumference - a.dash}` : `0 ${circumference}`}
+                strokeDashoffset={a.offset}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${cx} ${cy})`}
+              />
+            ))}
+          </g>
           {arcs.map((a) => a.value === 0 ? null : (
             <circle
               key={a.key}
@@ -345,7 +369,7 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
               strokeWidth={hovered === a.key ? strokeWidth + 3 : strokeWidth}
               strokeDasharray={grown ? `${a.dash} ${circumference - a.dash}` : `0 ${circumference}`}
               strokeDashoffset={a.offset}
-              strokeLinecap="butt"
+              strokeLinecap="round"
               transform={`rotate(-90 ${cx} ${cy})`}
               onMouseEnter={() => setHovered(a.key)}
               onMouseLeave={() => setHovered(null)}

@@ -489,6 +489,14 @@
 .dash__donut-arc--dim { opacity: 0.35; }
 .dash__donut-arc--active { filter: drop-shadow(0 2px 3px rgb(15 23 42 / 0.22)); }
 
+/* The extruded "side" face: the same segment colour, darkened by a filter
+   (not a new colour) and offset a few px down by its parent <g>, sitting
+   behind the top face above it — the pair reads as one raised puck. */
+.dash__donut-arc-side {
+  filter: brightness(0.72) saturate(1.05);
+  transition: stroke-dasharray 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .dash__donut-num { font: var(--text-title); font-weight: 700; fill: var(--text-primary); transition: opacity 150ms ease; }
 .dash__donut-label { font: var(--text-caption); fill: var(--text-tertiary); }
 
@@ -560,7 +568,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dash__bar, .dash__donut-arc { transition: none; }
+  .dash__bar, .dash__donut-arc, .dash__donut-arc-side { transition: none; }
   .dash__linechart-svg { transition: none; opacity: 1; transform: none; }
 }
 
