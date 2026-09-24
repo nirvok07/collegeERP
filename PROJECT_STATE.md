@@ -846,7 +846,13 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   twice (a darkened `brightness(0.72)`-filtered "side" copy 3.5px lower, behind a true-colour "top"
   copy), thicker ring (20px), still every existing token — no new colors, light theme kept per the
   earlier decision. Data/hover/tooltip/legend unchanged. ✅ tsc clean, 203/203 tests. Committed
-  `0d8d6cf`. 🔍 NEEDS VALIDATION on the phone and in a browser.
+  `0d8d6cf`. Owner feedback 2026-09-24 (round 12, web-only): reverted both. "Hours worked chart me se
+  wo line jo rope jaisi hai wo hata do, side me hours marker hongey aur neeche date" — HoursChart is
+  back to a plain bar chart (the `--month` variant CSS restored), plus a 3-tick hour axis (0/half/max)
+  down the left; hover tooltip unchanged. "Donut chart 2D me hi karo par accha se" — reverted the
+  extruded-puck treatment (no gap, no darkened side layer, back to touching butt-cap segments), kept
+  the gloss highlight and per-arc shadow so it stays polished-looking, just flat. ✅ tsc clean, 203/203
+  tests. Committed `d419503`. 🔍 NEEDS VALIDATION on the phone and in a browser.
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
