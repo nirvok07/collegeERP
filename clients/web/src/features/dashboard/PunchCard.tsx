@@ -70,6 +70,11 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
           <span>0h</span>
         </div>
         <div className="dash__hourschart-plot">
+          {/* Gridlines at the same three ticks as the axis, so the numbers
+              on the left actually line up with something in the bars. */}
+          <div className="dash__hourschart-grid" aria-hidden="true">
+            <span /><span /><span />
+          </div>
           <div className="dash__chart dash__chart--month">
             {bars.map((b) => (
               <div
@@ -90,8 +95,13 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
                     : `${b.iso}: no punch`
                 }
               >
-                <div className="dash__bar" style={{ height: grown ? `${(b.hours / axisMax) * 100}%` : 0 }} />
-                <span className="dash__bar-day">{b.day === 1 || b.day % 5 === 0 || b.isToday ? b.day : ''}</span>
+                {/* A day with nothing keeps a small stub (mirrors the mobile
+                    app's BarChart) so it reads as "no hours", not a gap in
+                    the chart. */}
+                <div
+                  className={`dash__bar${b.hours === 0 ? ' dash__bar--empty' : ''}`}
+                  style={{ height: grown ? (b.hours === 0 ? 3 : `${(b.hours / axisMax) * 100}%`) : 0 }}
+                />
               </div>
             ))}
           </div>
@@ -116,6 +126,13 @@ function HoursChart({ days }: { days: StaffAttendanceDay[] }) {
               )}
             </div>
           )}
+        </div>
+        <div className="dash__hourschart-dates">
+          {bars.map((b) => (
+            <span key={b.iso} className={b.isToday ? 'dash__hourschart-dates--today' : undefined}>
+              {b.day === 1 || b.day % 5 === 0 || b.isToday ? b.day : ''}
+            </span>
+          ))}
         </div>
       </div>
     </div>

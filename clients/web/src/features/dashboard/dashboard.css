@@ -180,8 +180,7 @@
 }
 
 /* ---- Hours-worked chart: a plain bar chart with an hour axis ------------ */
-/* A month has ~30 bars in the same width a week had 7: gap and bar shrink,
-   labels thin out to every 5th day (drawn only where HoursChart emits one). */
+/* A month has ~30 bars in the same width a week had 7: gap and bar shrink. */
 .dash__chart--month {
   gap: 3px;
 }
@@ -204,10 +203,13 @@
   background: #fff;
   opacity: 0.55;
 }
-.dash__chart--month .dash__bar-day {
-  font-size: 10px;
-  min-height: 12px;
+/* A day with nothing: a small flat stub, not an invisible gap (mirrors the
+   mobile app's own BarChart — "an empty day keeps a stub"). */
+.dash__bar--empty {
+  background: var(--outline-strong) !important;
+  box-shadow: none !important;
 }
+.dash__bar--empty::before { display: none; }
 .dash__bar-wrap--today .dash__bar {
   background: linear-gradient(180deg, #fff, var(--info) 35%, var(--primary));
   box-shadow: 0 0 14px rgb(79 70 229 / 0.6), 0 0 4px rgb(96 165 250 / 0.7);
@@ -219,30 +221,71 @@
   opacity: 0.45;
 }
 
-/* The hour axis (left) and the bars/labels (right). */
+/* The hour axis (left), the plot (grid + bars), and the date row underneath
+   the plot only — a 2-column grid, so "0h" always sits exactly level with
+   the bars' baseline and "Nh" with their ceiling, instead of guessing at
+   matching heights across two separately-flowing boxes. */
 .dash__hourschart {
-  display: flex;
-  gap: var(--space-sm);
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-sm);
 }
 
+/* Axis and plot both reserve the same 64px above (room for the tooltip,
+   clear of even the tallest bar) before their own 88px of "real" height
+   (matching .dash__chart's own fixed height) — so a tick and the bar row
+   it names sit at the same y, instead of two boxes that merely happen to
+   be roughly the same size. */
 .dash__hourschart-axis {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
-  flex: none;
   flex-direction: column;
   justify-content: space-between;
-  width: 24px;
-  height: 88px;
-  padding-bottom: 16px;
+  height: 152px;
+  padding-top: 64px;
   font-size: 10px;
   color: var(--text-tertiary);
   text-align: right;
 }
 
 .dash__hourschart-plot {
+  grid-column: 2;
+  grid-row: 1;
   position: relative;
-  flex: 1;
   min-width: 0;
-  padding-top: 52px;
+  padding-top: 64px;
+}
+
+.dash__hourschart-grid {
+  position: absolute;
+  inset: 64px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.dash__hourschart-grid span {
+  display: block;
+  border-top: 1px dashed var(--outline);
+}
+
+.dash__hourschart-dates {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  margin-top: var(--space-xs);
+}
+.dash__hourschart-dates span {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+.dash__hourschart-dates--today {
+  color: var(--primary);
+  font-weight: 700;
 }
 
 /* The hours-chart tooltip: date, precise hours, punch in-out — everything
