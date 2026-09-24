@@ -160,7 +160,7 @@
   max-width: 28px;
   background: var(--viz-seq-3);
   border-radius: var(--radius-input) var(--radius-input) 0 0;
-  transition: background var(--state);
+  transition: background var(--state), height 600ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dash__bar-day {
@@ -269,6 +269,49 @@
 .dash__punch-error { margin: var(--space-xs) 0 0; color: #fff; font: var(--text-caption); }
 /* Compact: the punch button sits inside a small card, not a page action. */
 .dash__punch-btn .btn { min-height: 32px; padding: 0 var(--space-md); font: var(--text-caption); }
+
+.dash__punch-detail {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-xl);
+  margin-bottom: var(--space-base);
+}
+
+@media (max-width: 640px) {
+  .dash__punch-detail { grid-template-columns: 1fr; }
+}
+
+/* ---- Monthly attendance donut -------------------------------------------- */
+.dash__donut { display: flex; flex-direction: column; align-items: center; gap: var(--space-sm); }
+
+.dash__donut-arc {
+  transition: stroke-dasharray 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dash__donut-num { font: var(--text-title); font-weight: 700; fill: var(--text-primary); }
+.dash__donut-label { font: var(--text-caption); fill: var(--text-tertiary); }
+
+.dash__donut-legend {
+  display: grid;
+  gap: var(--space-xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font: var(--text-caption);
+  color: var(--text-secondary);
+}
+
+.dash__donut-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: var(--space-xs);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash__bar, .dash__donut-arc { transition: none; }
+}
 
 /* ---- Skeleton (in-place, nothing shifts) -------------------------------- */
 

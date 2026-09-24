@@ -7,7 +7,9 @@ import '../../../core/network/api_client.dart';
 import '../../../core/widgets/app_list_tile.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../calendar/data/calendar_api.dart';
 import '../data/staff_attendance_api.dart';
+import 'month_donut.dart';
 import 'staff_attendance_cubit.dart';
 
 /// SA-ATT-1: a staff member's own attendance, punched in and out — distinct
@@ -16,9 +18,12 @@ import 'staff_attendance_cubit.dart';
 /// while it is open, then today reads back as a plain record like any other
 /// day in the list below.
 class StaffAttendanceScreen extends StatelessWidget {
-  const StaffAttendanceScreen({super.key, this.repository});
+  const StaffAttendanceScreen({super.key, this.repository, this.calendarRepository});
 
   final StaffAttendanceRepository? repository;
+
+  /// Tests supply their own; the app uses the locator.
+  final CalendarRepository? calendarRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -26,14 +31,15 @@ class StaffAttendanceScreen extends StatelessWidget {
       create: (_) => StaffAttendanceCubit(repository ?? StaffAttendanceApi(locator<ApiClient>()))..load(),
       child: Scaffold(
         appBar: AppBar(title: const Text('My attendance')),
-        body: const _Body(),
+        body: _Body(calendarRepository: calendarRepository),
       ),
     );
   }
 }
 
 class _Body extends StatelessWidget {
-  const _Body();
+  const _Body({this.calendarRepository});
+  final CalendarRepository? calendarRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +79,10 @@ class _Body extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.base),
                 children: [
                   _TodayCard(today: today, acting: acting),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('This month', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: AppSpacing.sm),
+                  MonthDonut(history: history, calendarRepository: calendarRepository),
                   const SizedBox(height: AppSpacing.lg),
                   if (history.isNotEmpty) ...[
                     Text('Hours worked', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),

@@ -1,9 +1,30 @@
 import 'package:college_erp/core/error/failure.dart';
 import 'package:college_erp/core/error/result.dart';
+import 'package:college_erp/features/calendar/data/calendar_api.dart';
 import 'package:college_erp/features/staff_attendance/data/staff_attendance_api.dart';
 import 'package:college_erp/features/staff_attendance/presentation/staff_attendance_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class _FakeCalendar implements CalendarRepository {
+  @override
+  Future<Result<AcademicCalendar>> read() async => Ok(AcademicCalendar(holidays: const []));
+
+  @override
+  Future<DateTime?> readSavedAt() async => null;
+
+  @override
+  Future<Result<void>> addHoliday({required String from, String? to, required String label}) async => const Ok(null);
+
+  @override
+  Future<Result<void>> removeHoliday(String id) async => const Ok(null);
+
+  @override
+  Future<Result<void>> saveEvent(EventDraft draft, {String? id}) async => const Ok(null);
+
+  @override
+  Future<Result<void>> removeEvent(String id) async => const Ok(null);
+}
 
 class _FakeRepository implements StaffAttendanceRepository {
   List<StaffAttendanceDay> days = const [];
@@ -42,7 +63,7 @@ class _FakeRepository implements StaffAttendanceRepository {
 void main() {
   testWidgets('punches in, then out, and today reflects it', (tester) async {
     final repo = _FakeRepository();
-    await tester.pumpWidget(MaterialApp(home: StaffAttendanceScreen(repository: repo)));
+    await tester.pumpWidget(MaterialApp(home: StaffAttendanceScreen(repository: repo, calendarRepository: _FakeCalendar())));
     await tester.pumpAndSettle();
 
     expect(find.text('Not punched in yet'), findsOneWidget);
@@ -63,7 +84,7 @@ void main() {
 
   testWidgets('a refused punch shows the server\'s reason without losing the screen', (tester) async {
     final repo = _FakeRepository()..refuse = true;
-    await tester.pumpWidget(MaterialApp(home: StaffAttendanceScreen(repository: repo)));
+    await tester.pumpWidget(MaterialApp(home: StaffAttendanceScreen(repository: repo, calendarRepository: _FakeCalendar())));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Punch in'));
