@@ -7,7 +7,7 @@ Pointers, not content. Read the linked file for the decision itself.
 | Topic | Source of truth |
 |---|---|
 | Decisions (AD-1…AD-93) | `docs/blueprint/adr.md` |
-| Requirements register (R1…R64) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| Requirements register (R1…R80) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | **Module & capability index (start here)** | `docs/blueprint/modules/README.md` |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
 | Platform capabilities P1–P9 | `docs/blueprint/capabilities/p*.md` |

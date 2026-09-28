@@ -329,7 +329,9 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 - [x] `DOC` Gitignore `android/build/`; no generated Android build files are tracked
 - [x] `DOC` Resolve `clients/web/explore.mjs` — deleted as an obsolete ad-hoc capture script;
       `clients/web/scripts/visual-check.mjs` is the committed replacement
-- [ ] `DOC` Clear root `requirements.md` (it is an inbox, kept empty)
+- [x] `DOC` Clear root `requirements.md` after absorbing its four items as R77–R80 in
+      `docs/requirements.md`; document-storage, notification, dashboard-parity and auth-parity
+      implementation/owner gates remain explicit there
 - [ ] `DOC` Verify `docs/` has one obvious entry point and no competing trackers
 
 ---

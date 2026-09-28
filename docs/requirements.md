@@ -135,6 +135,18 @@ than from a feature list.
 | R75 | Turning App lock off in Settings should not ask for a fingerprint again until it is turned back on | Active, built 2026-09-22: `AppLockPreference.settled` — the phone was being asked off an optimistic default before the saved choice had loaded | `lib/core/security/app_lock_preference.dart` |
 | R76 | Appoint-a-teacher opening a full page every time; department (and similar reference) data should come from one offline-managed place | Active, already built (REF-1): both onboarding forms open on saved departments/programs, and only refresh explicitly | `lib/features/onboarding/presentation/onboarding_cubits.dart` |
 
+## Newly absorbed inbox items — 2026-09-29
+
+These items came from the root inbox. They are recorded without silently deciding the
+privacy, retention, extraction, or parity details that still need design or owner approval.
+
+| ID | Requirement | Status | Reflected in |
+|---|---|---|---|
+| R77 | Students and staff must be able to provide scanned identity and education documents (for example Aadhaar, class-12 degree/marksheet and supporting images), while retaining the structured details needed by the relevant workflow | Active requirement; document storage is not yet implemented, and consent, retention, verification and OCR/extraction rules remain open | [P3 Documents](blueprint/capabilities/p3-documents.md), [Admissions](blueprint/02-domains.md) §2, [People and HR](blueprint/02-domains.md) §6, AD-89 |
+| R78 | The product needs one planned notification capability supporting push and in-app notifications, rather than separate domain-specific implementations | Active requirement; planned as CAP-2 and blocked on the explicit backend push-delivery validation item | [P2 Notifications](blueprint/capabilities/p2-notifications.md), [Communication](blueprint/modules/communication.md), AD-87 |
+| R79 | The web dashboards for College Admin and Teacher must be arranged as a deliberate, advanced back-office experience and remain coherent with the mobile dashboard model | Active requirement; web parity/polish slice remains open | [Master Plan](MASTER-PLAN.md) §5.5, [Reporting](blueprint/capabilities/p5-reporting.md), AD-79 |
+| R80 | Web and mobile authentication must present one coherent product contract; the current web password surface versus mobile OTP/password flows needs an explicit parity audit and owner-approved resolution | Active requirement; parity audit is open, not an authorization to remove the existing web flow | [Identity and Access](blueprint/modules/m1-identity-and-access.md), AD-75, AD-79, R57, R65 |
+
 ## Assumptions awaiting confirmation
 
 These were chosen so work could proceed. Each can be overruled, and the cost of doing so is
