@@ -56,6 +56,18 @@ audit/security; edge cases; cross-module dependencies; UX review; architecture r
 decisions; ADR update; and final completeness audit. Use `✅ COMPLETE`, `🟡 IN PROGRESS`,
 `🔴 BLOCKED` or `⚠️ NEEDS REVIEW`; unresolved work keeps a module at `NEEDS REVIEW`.
 
+The canonical 24-section contract index is:
+
+1. Module overview; 2. actors; 3. responsibilities; 4. user journeys; 5. workflows;
+6. state machines; 7. business rules; 8. data model; 9. source of truth; 10. permissions;
+11. UI information architecture; 12. screen specifications; 13. UX interactions;
+14. responsive behavior; 15. accessibility; 16. notifications; 17. reports and analytics;
+18. audit and security; 19. edge cases; 20. cross-module dependencies; 21. UX review;
+22. architecture review; 23. open decisions; 24. architecture decision-log updates.
+
+This index folds the required output order, not the detailed methodology or quality questions in
+`prompt2.md`; those remain live until each section is verified against this contract.
+
 Before approval, verify the workflows, exception paths, transitions, rules, permissions, reversals,
 corrections, audit requirements, edge cases and cross-module effects. The UX gate asks whether the
 common task is fast, navigation and information density are clear, large datasets remain usable,

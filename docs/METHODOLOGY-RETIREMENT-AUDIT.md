@@ -38,12 +38,13 @@ source can be deleted.
 | 12. Edge cases | `docs/MASTER-CHECKLIST.md` §§7, 14 and module test evidence |
 | 13. MVP and roadmap | `docs/MASTER-CHECKLIST.md` §20 and `docs/MASTER-PLAN.md` |
 
-The 24 `prompt2.md` module sections map to the module contract in
-`ARCHITECTURE_INDEX.md` §Module Execution Protocol, module blueprints and the per-module
+The 24 `prompt2.md` module sections map to the explicit contract index in
+`ARCHITECTURE_INDEX.md` §Module Execution Protocol, then to module blueprints and per-module
 checklists. Sections 1–22 cover module purpose through architecture review; section 23 maps to
 the open-decision registers (`docs/MASTER-CHECKLIST.md` §3 and `docs/blueprint/adr.md`); section
-24 maps to the ADR index and implementation checkpoint. The master checklist still records only
-1 of 24 modules as fully processed, so this crosswalk does not retire the source.
+24 maps to the ADR index and implementation checkpoint. The index now folds the required output
+order, but not the detailed methodology or quality questions. The master checklist still records
+only 1 of 24 modules as fully processed, so this crosswalk does not retire the source.
 
 Retirement requires all of the following before deletion:
 
