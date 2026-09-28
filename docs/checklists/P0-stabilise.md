@@ -260,7 +260,9 @@ machine had no browser, so **every prior web CSS and chart change was unverified
 
 ### Close out
 - [ ] `DOC` Each item → ✅ with evidence, or a named defect with an issue reference
-- [ ] `DOC` **No item stays 🔍 without a written reason**
+- [x] `DOC` **No item stays 🔍 without a written reason** — remaining browser, Android, owner-console,
+      SMTP, device and tooling entries are grouped with an explicit dependency in
+      `docs/validation-debt.md`; capability blockers are marked `🚫`.
 - [x] `DOC` iOS stays 🚫 while Xcode is unavailable — do not retry (`CLAUDE.md` §9); the blocker is
       recorded in `docs/validation-debt.md`
 - [x] `DOC` Backend push stays 🚫 until P1's CAP-3 seals device tokens; the capability blocker is
@@ -372,12 +374,17 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 
 Every line must be true before P1 starts.
 
-- [ ] Geo-fence enforced with negative tests, or withdrawn with the ADR amended
+- [x] Geo-fence enforced with negative tests, or withdrawn with the ADR amended — AD-83 is enforced,
+  the negative suite is green, and the decision is recorded in `docs/blueprint/adr.md` (physical-phone
+  verification remains a separate validation debt item).
 - [ ] Migration 036 drift root-caused and fixed; the wider RLS/GRANT audit clean
-- [ ] `zz-*` files resolved; server, web and Flutter suites green with **no known failures**
-- [ ] Dev database seeded; a signed-in screenshot is possible
-- [ ] Zero unexplained `🔍`; the rest have written reasons
+- [x] `zz-*` files resolved; server, web and Flutter suites green with **no known failures** —
+  `519/519`, `203/203` and `330/330` are recorded above.
+- [x] Dev database seeded; a signed-in screenshot is possible — historical local seed evidence and
+  signed-in browser captures are recorded; the separately configured managed target remains blocked.
+- [x] Zero unexplained `🔍`; the rest have written reasons — see `docs/validation-debt.md`.
 - [ ] OD-1, OD-4, OD-ACC-1 answered or deferred **with a date**
 - [x] OD-LV-1 answered and recorded as AD-93 **with a date**
-- [ ] `PROJECT_STATE.md` under 200 lines and answers the eight questions
+- [x] `PROJECT_STATE.md` under 200 lines and answers the eight questions — 118 lines, with the current
+  managed-target and physical-device blockers stated explicitly.
 - [x] AD-84…AD-90 and AD-92 recorded in `adr.md`; AD-91 remains gated on P0-5 owner confirmation
