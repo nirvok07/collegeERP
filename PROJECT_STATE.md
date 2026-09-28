@@ -74,6 +74,25 @@ Verified in that audit, needing action:
   notifications, scheduled jobs and document storage, which are ❌ → capabilities sequenced first.
 - Proposed AD-84…AD-92, to be written into `adr.md` (P0-9). AD-91 (OD-1 default) needs the owner.
 
+### BLUEPRINT COMPLETED (2026-09-28)
+
+Every module and capability now has its own document, cross-linked from
+`docs/blueprint/modules/README.md` (start there). Tickable build plan:
+`docs/EXECUTION-CHECKLIST.md`, phases P0–P7 with exit gates.
+
+New: M4 admissions, M8 coursework, M10 exams, M12 scholarships, M13 HR, M14 leave,
+M15 payroll, M16 library, M17 hostel, M18 transport, M19 materials, M20 communication,
+M21 cases, M22 events, M23 placements, M24 alumni, staff attendance, institutional
+accounts; capabilities P1–P8 plus **P9 Scheduled Work** (new, AD-88 — every unbuilt
+domain's automation needs it and the original P1–P8 list had no entry).
+
+Two further open decisions raised while writing them:
+- 🚫 **OD-ACC-1** — no general ledger exists and none is assigned a module number.
+  M15 payroll and M19 payables have nowhere to post. Must be answered before either.
+  Recommended: export to Tally + a thin budget/commitment ledger.
+- 🟡 **OD-LV-1 sharpened** — "teachers and students apply" is two features. Staff leave
+  draws a balance (M14); student excused absence is an attendance record (M7).
+
 ### CURRENT SLICE
 Owner feedback, 2026-09-14 (`feedbackchanges.md`):
 - FB-1 ✅ `151ec7c` People does not list the signed-in person. Flutter test.
