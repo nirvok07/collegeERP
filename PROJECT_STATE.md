@@ -88,7 +88,9 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
   `docs/checklists/P0-stabilise.md`.
 - ✅ Browser happy-path sign-in and top-level captures recorded for admin, teacher, student and platform.
 - ✅ Local forced loading capture: authenticated teacher shell with a visible skeleton, 2 sections.
-- 🔍 Empty/error captures: not claimed; managed API target remains unavailable for seeded auth.
+- ✅ Local forced-error capture for a seeded admin (11 sections) and a student no-access empty
+  state are verified; 🔍 collection-backed empty screens remain open and the managed API target
+  remains unavailable for seeded auth.
 - 🔍 Physical GPS, permissions, offline replay, flavor side-by-side install and all mobile visual debt:
   phone required.
 - 🚫 iOS and backend push: explicit capability/tooling blockers, not silently deferred.
