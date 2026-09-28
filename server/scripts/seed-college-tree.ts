@@ -402,6 +402,27 @@ for (const [key, name, email, department, wanted] of TEACHERS) {
     return { person_id: invited.person_id, email };
   })).person_id;
 }
+const morePeople = await call<{ person_id: string; email: string | null }[]>('GET', '/people?type=staff&limit=500');
+const facultyRole = roleFor('faculty');
+for (let i = 1; i <= 31; i++) {
+  const department = DEPARTMENTS[(i - 1) % DEPARTMENTS.length]![1];
+  const email = `faculty${i}@iitd.example`;
+  if (morePeople.some((p) => p.email?.toLowerCase() === email)) continue;
+  await call('POST', '/people', {
+    full_name: `Seed Faculty ${i}`, email, person_type: 'staff',
+    role: { role_key: facultyRole.key, scope_type: 'department', scope_ref_id: must(dept[department], department).id },
+  });
+}
+for (const [roleKey, name, email] of [
+  ['accountant', 'Seed Accountant', 'accountant@iitd.example'],
+  ['cashier', 'Seed Cashier', 'cashier@iitd.example'],
+] as const) {
+  if (!roles.some((r) => r.key === roleKey) || morePeople.some((p) => p.email?.toLowerCase() === email)) continue;
+  await call('POST', '/people', {
+    full_name: name, email, person_type: 'staff',
+    role: { role_key: roleKey, scope_type: 'institution', scope_ref_id: null },
+  });
+}
 
 /* ----------------------------------------------------------------- 8. students */
 
@@ -418,6 +439,25 @@ for (const [number, name] of STUDENTS) {
       enrolment_number: number,
       section: null,
     }));
+}
+const mtechStudents = await call<StudentRow[]>('GET', `/students?program_id=${program['mtech-cse'].id}&limit=500`);
+const extraBtech: StudentRow[] = [];
+for (let i = 11; i <= 360; i++) {
+  const number = `2026CS${String(i).padStart(5, '0')}`;
+  const existing = students.find((s) => s.enrolment_number === number);
+  const made = existing ?? await call<StudentRow>('POST', '/students', {
+    full_name: `Seed Student ${i}`, email: `${number.toLowerCase()}@iitd.example`,
+    enrolment_number: number, program_id: btech.id, admitted_on: ADMITTED_ON,
+  });
+  extraBtech.push(made);
+}
+for (let i = 1; i <= 40; i++) {
+  const number = `2026MT${String(i).padStart(5, '0')}`;
+  if (mtechStudents.some((s) => s.enrolment_number === number)) continue;
+  await call('POST', '/students', {
+    full_name: `Seed MTech Student ${i}`, email: `${number.toLowerCase()}@iitd.example`,
+    enrolment_number: number, program_id: program['mtech-cse'].id, admitted_on: ADMITTED_ON,
+  });
 }
 
 /* ------------------------------------------------------------------ 9. sections */
@@ -448,6 +488,24 @@ for (const label of ['A', 'B'] as const) {
   if (status === 'open') {
     await call('POST', `/sections/${made.id}/status`, { status: 'active' });
     console.log(`  + section ${label} started teaching`);
+  }
+}
+
+const extraSections = await call<(Id & { label: string; status: string })[]>(
+  'GET', `/sections?term_id=${semesterOne.id}&program_id=${btech.id}`,
+);
+const extraLabels = ['C', 'D', 'E', 'F', 'G', 'H'] as const;
+for (const label of extraLabels) {
+  const existing = extraSections.find((s) => s.label === label);
+  const made = existing ?? await call<Id & { status: string }>('POST', '/sections', {
+    program_id: btech.id, term_id: semesterOne.id, term_number: 1, label, capacity: 60,
+  });
+  if (made.status === 'planned') await call('POST', `/sections/${made.id}/status`, { status: 'open' });
+  if (made.status === 'planned' || made.status === 'open') await call('POST', `/sections/${made.id}/status`, { status: 'active' });
+  const assigned = extraBtech.filter((_, index) => index % extraLabels.length === extraLabels.indexOf(label));
+  for (const studentRow of assigned) {
+    if (studentRow.section?.id === made.id) continue;
+    await call('POST', `/sections/${made.id}/members`, { student_id: studentRow.id, from: ADMITTED_ON });
   }
 }
 

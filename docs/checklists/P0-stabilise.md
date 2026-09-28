@@ -171,6 +171,11 @@ remain in `server/tests`.
 The dev database has 0 persons and 0 institutions, so no signed-in screenshot is possible and no
 visual check can run.
 
+Implementation note (2026-09-28): the seed builder now contains deterministic expansion for the
+target population, fee ledger, calendar and assessment examples. The population and duplicate-run
+items remain unchecked until the owner credential is supplied and the script is run twice against
+the dev database.
+
 - [x] `S` `scripts/seed-dev.ts`, idempotent and re-runnable (canonical entry point for the existing
       resumable college-tree seed)
 - [ ] `S` One institution with branding (AD-70: code, logo, colour)
