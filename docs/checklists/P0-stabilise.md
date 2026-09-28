@@ -1,0 +1,320 @@
+# P0 — Stabilise
+
+**Nothing new is built until this phase closes.** Owner decision, 2026-09-28.
+
+Rationale: `docs/MASTER-PLAN.md` §2. A 70,000-line system with a known-red suite, live schema
+drift, an unenforced security control and 42 unvalidated features should not grow a ninth domain.
+
+---
+
+## P0-0 — Enforce or withdraw the AD-83 geo-fence 🔴
+
+Full analysis: `docs/blueprint/modules/staff-attendance.md` §2–§6.
+
+The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and never checked.
+`self-attendance.ts punchIn()` takes `(deps, actor)` and nothing else; both clients post `{}`.
+
+### Decide
+- [ ] `DOC` Choose **(a) enforce** or **(b) amend AD-83 to drop the fence**. Recommended: (a)
+- [ ] `DOC` Write the decision into `docs/blueprint/adr.md` — amend AD-83 either way, so the ADR
+      and the code agree afterwards
+- [ ] `DOC` If (b): also amend `029_campus_fence.sql`'s header comment, which currently promises
+      enforcement, and delete the fence columns in a new migration rather than leaving dead schema
+
+### Reproduce (do this before fixing — confirm the defect, do not assume it)
+- [ ] `TEST` Punch in from outside every configured fence, on Flutter; confirm 2xx
+- [ ] `TEST` Punch in from web `PunchCard`; confirm 2xx
+- [ ] `TEST` Punch in at a campus with **no** fence configured; confirm 2xx (029's header says this
+      must be refused)
+
+### Server, if (a)
+- [ ] `MIG` New migration: add `fence_verified boolean NOT NULL DEFAULT false`,
+      `accuracy_m int NULL`, `source text NOT NULL DEFAULT 'app'` to `staff_attendance`
+- [ ] `MIG` CHECK `source IN ('app','web','biometric')`
+- [ ] `MIG` GRANTs declared; add the three columns to `migration-invariants.test.ts` expectations
+- [ ] `API` `POST /v1/me/staff-attendance/punch-in` accepts `{ latitude, longitude, accuracy_m }`;
+      zod schema, all three required
+- [ ] `API` Same for `punch-out` — a punch-out from home is the same problem as a punch-in
+- [ ] `REPO` Extend `StaffAttendanceRepository.punchIn` port in
+      `server/src/modules/attendance/application/ports.ts` to carry `fenceVerified`, `accuracyM`, `source`
+- [ ] `REPO` Add a campus-fence reader: resolve the person's campus, return
+      `{ latitude, longitude, radiusM } | null`
+- [ ] `SVC` In `self-attendance.ts`, resolve the campus **from the person's assignment, never from
+      client input**
+- [ ] `SVC` Refuse with `FENCE_MISSING` when the campus has no fence
+- [ ] `SVC` Haversine distance check: `distance <= radiusM + min(accuracyM, 50)`. The accuracy
+      allowance is bounded — unbounded lets a client claim 10 km accuracy
+- [ ] `SVC` Refuse with `OUTSIDE_FENCE`, message naming the campus and the distance in metres
+- [ ] `SVC` **Discard the coordinates.** Store only `fence_verified` and `accuracy_m` (AD-83:
+      "coordinates checked then discarded"). No latitude or longitude column, ever
+- [ ] `SVC` Preserve the existing correct behaviour: one open punch per person per day;
+      `workDateOf()` in the college timezone; `deps.clock.now()` is authoritative over client time
+
+### Flutter
+- [ ] `APP` Request location permission with a clear rationale string
+- [ ] `APP` Acquire a fix with a timeout; show progress — a silent 10-second wait reads as a hang
+- [ ] `APP` Send real `latitude`, `longitude`, `accuracy_m`
+- [ ] `APP` Permission denied → **refuse the punch** with an explanation. Never fall back to a
+      coordinate-free punch
+- [ ] `APP` Location unavailable or timed out → refuse, offer retry, suggest a correction request
+- [ ] `APP` Render `OUTSIDE_FENCE` and `FENCE_MISSING` as distinct, actionable messages
+
+### Web
+- [ ] `WEB` Withdraw the punch action from `clients/web/src/features/dashboard/PunchCard.tsx`
+- [ ] `WEB` Keep the read-only "today" display and the holiday read
+- [ ] `WEB` Explain in the UI where to punch, rather than removing the card silently
+- [ ] `DOC` Record the parity exception in `MODULE_REGISTRY.md`: *punch is phone-only because a
+      geo-fence is a physical-presence check and a desktop cannot satisfy it*
+
+### Tests — the negative cases are the point
+- [ ] `TEST` Punch outside the radius → refused
+- [ ] `TEST` Punch at a fenceless campus → refused
+- [ ] `TEST` Punch exactly at the radius boundary → accepted
+- [ ] `TEST` Punch at `radius + 1m` with `accuracy_m = 0` → refused
+- [ ] `TEST` Absurd accuracy (`accuracy_m = 10000`) → allowance capped at 50 m, still refused
+- [ ] `TEST` Request missing coordinates → 400, not a silent pass
+- [ ] `TEST` Punch inside the radius → accepted, and **no coordinate is persisted** (assert the
+      columns do not exist / are absent from the row)
+- [ ] `TEST` Client-supplied campus id is ignored; the person's own campus is used
+- [ ] `TEST` Unauthorised actor cannot punch for another person
+- [ ] `TEST` Flutter widget test: permission denied renders a refusal, sends no request
+
+### Generalise the lesson
+- [ ] `S` `DOC` **Sweep every AD-approved invariant for the same failure mode** — schema present,
+      check absent. Start with: AD-34 curriculum freeze, AD-17 delegation limits, AD-27 archive
+      refusal, AD-60 suspended-tenant refusal, AD-65 seat limits, M11 gapless receipt numbers
+- [ ] `DOC` Record findings in `docs/MASTER-CHECKLIST.md` drift register
+- [ ] `TEST` For each confirmed gap, add the negative test before fixing
+
+### Close
+- [ ] `VAL` Verified on a physical phone inside and outside a real fence
+- [ ] `DOC` `PROJECT_STATE.md` and `MODULE_REGISTRY.md` updated; committed
+
+---
+
+## P0-1 — Schema drift, migration 036
+
+`036_syllabus.sql` is recorded as applied; the `syllabus` table has no RLS or GRANTs on the dev
+database. 11 tests in `syllabus.test.ts` and 2 migration-invariants checks fail.
+
+### Investigate before changing anything
+- [ ] `TEST` Run `syllabus.test.ts`; capture all 11 failures verbatim
+- [ ] `TEST` Run `migration-invariants.test.ts`; capture the 2 failures
+- [ ] `S` Query `pg_class.relrowsecurity` and `relforcerowsecurity` for `syllabus`
+- [ ] `S` Query `information_schema.role_table_grants` for `syllabus` and `erp_app`
+- [ ] `S` Query the migrations ledger row for `036`: applied_at, checksum if recorded
+- [ ] `S` Diff observed state against `036_syllabus.sql` line by line
+- [ ] `S` **Determine the cause.** Candidates: a partial transaction, manual intervention, or the
+      Supabase rebuild path skipping statements. `npm run migrate` reports "up to date", so this is
+      a database-state investigation, not a migration edit
+
+### The wider question
+- [ ] `S` 🔴 **If the rebuild path can skip clauses, every table is suspect.** Write a one-off audit
+      query comparing, for all tenant tables: RLS enabled, RLS forced, and `erp_app` grants against
+      what the migrations declare
+- [ ] `DOC` Record the result. If other tables are affected, that is a bigger incident than 036
+
+### Fix
+- [ ] `S` Repair the database state (apply the missing RLS and GRANTs)
+- [ ] `S` Do **not** edit `036_syllabus.sql` unless the migration itself is wrong
+- [ ] `MIG` If the migration is wrong, write a corrective migration; never rewrite applied history
+- [ ] `TEST` Add `syllabus` to `EXPECTED_PRIVILEGES` in `migration-invariants.test.ts` — the same
+      gap `fee_online_intents` had on 2026-09-23
+- [ ] `TEST` `syllabus.test.ts` 11/11 green
+- [ ] `TEST` `migration-invariants.test.ts` green
+- [ ] `DOC` Root cause written into `docs/MASTER-CHECKLIST.md` drift register
+
+---
+
+## P0-2 — Test suite hygiene (AD-92)
+
+**Correction to the earlier audit:** there are **10** `zz-*` debug test files, not 2 — out of 46
+total server test files. Nearly a quarter of the suite is debug scaffolding.
+
+```
+zz-err.test.ts  zz-err2  zz-err3  zz-err4  zz-err5  zz-err6  zz-err7
+zz-parse.test.ts  zz-rootcause.test.ts  zz-syldebug.test.ts
+```
+
+- [ ] `TEST` Run each of the 10 and record: passes, fails, or errors
+- [ ] `TEST` For each: does it assert anything about production behaviour?
+- [ ] `TEST` Promote any that do — rename into the suite properly, with a real name
+- [ ] `TEST` **Delete the rest.** Debug scaffolding left in a suite is noise that hides signal
+- [ ] `TEST` `zz-err6` and `zz-syldebug` resolved specifically (the two documented as red)
+- [ ] `S` CI fails the build on any red test (AD-92)
+- [ ] `S` CI fails on a **skipped** test too, unless annotated with a reason
+- [ ] `TEST` Full server suite green, stated as `N/N`
+- [ ] `TEST` Full Flutter suite green
+- [ ] `TEST` Full web suite green
+- [ ] `TEST` Investigate the flaky outbox timing test `a write waits behind an earlier one`
+      (failed once, passed on rerun, 2026-09-22). A known-flaky test is a known-red test with
+      better luck
+
+---
+
+## P0-3 — Seed a usable dev database
+
+The dev database has 0 persons and 0 institutions, so no signed-in screenshot is possible and no
+visual check can run.
+
+- [ ] `S` `scripts/seed-dev.ts`, idempotent and re-runnable
+- [ ] `S` One institution with branding (AD-70: code, logo, colour)
+- [ ] `S` Two campuses, one with a configured geo-fence (needed by P0-0), one without
+- [ ] `S` Four departments; programs with curriculum versions, one published one draft
+- [ ] `S` Current academic year and term, plus a prior year for rollover testing
+- [ ] `S` Calendar: holidays, a multi-day break, timed and all-day events
+- [ ] `S` ~40 staff across roles: college admin, HoDs, faculty, accountant, cashier
+- [ ] `S` ~400 students across programs, sections and years
+- [ ] `S` Enrolments, course offerings, instructor assignments
+- [ ] `S` A timetable with rooms; four weeks of generated class sessions
+- [ ] `S` Attendance records including corrections and a cancelled class
+- [ ] `S` Internal assessment plans and marks, some verified, some not
+- [ ] `S` Fee structures, invoices in mixed states: paid, part-paid, overdue, waived
+- [ ] `S` Payments including one reversed, so the collection report has a negative line
+- [ ] `S` A known password or OTP path for each test persona, documented
+- [ ] `DOC` `docs/runbook/` page: how to seed, reset and which personas exist
+- [ ] `TEST` Seed runs twice with no error and no duplicates
+
+---
+
+## P0-4 — Burn down validation debt
+
+42 `🔍 NEEDS VALIDATION` markers. `PROJECT_STATE.md` itself records that until 2026-09-24 the dev
+machine had no browser, so **every prior web CSS and chart change was unverified**.
+
+### Inventory
+- [ ] `DOC` Extract all 42 items into `docs/validation-debt.md`: item, slice, surface, how to
+      verify, owner, status
+- [ ] `DOC` Group by surface so one device pass and one browser pass can clear many at once
+
+### Web
+- [ ] `W` Standing visual-check script using the Playwright + Chromium dev dependency already
+      installed; committed, not ad hoc
+- [ ] `W` Script signs in against the seeded database (needs P0-3) for each persona
+- [ ] `W` Capture every screen: dashboard, people, organisation, academic, curriculum, sections,
+      offerings, timetable, attendance, marks, students, rooms, profile, platform screens
+- [ ] `W` Capture each screen's loading, empty and error states where reachable
+- [ ] `W` Review captures; file a defect per visual problem
+- [ ] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
+
+### Android
+- [ ] `F` One device pass over every `🔍` mobile item
+- [ ] `F` **Record pass/fail per item, never in aggregate** (`CLAUDE.md` §10)
+- [ ] `F` Cover specifically: biometric app lock on cold open (BIO-1), sign-out from every entry
+      point (FB-3), six-box OTP field with keyboard and autofill (FB-4), dashboards for admin,
+      teacher and student (FB-5, MUX-1), calendar (CAL-1, CAL-2), settings (SET-1), onboarding
+      (ONB-1, ONB-2), fee screens including the online payment link and PDF share sheet (FEE-7, G1),
+      fee reports (G2), student timetable, punch in/out (after P0-0), ND container language on
+      every screen
+- [ ] `F` Offline outbox under real network loss: airplane mode, queue, restore, replay
+- [ ] `F` Both flavours (`college`, `admin`) install and run side by side
+
+### Close out
+- [ ] `DOC` Each item → ✅ with evidence, or a named defect with an issue reference
+- [ ] `DOC` **No item stays 🔍 without a written reason**
+- [ ] `DOC` iOS stays 🚫 while Xcode is unavailable — do not retry (`CLAUDE.md` §9)
+- [ ] `DOC` Backend push stays 🚫 until P1's CAP-3 seals device tokens
+
+---
+
+## P0-5 — Resolve OD-1 🔴 (blocks M10)
+
+- [ ] `DOC` Put AD-91 to the owner: *support both — mirror external results read-only (AD-8), build
+      the autonomous engine behind a capability flag (AD-23)*
+- [ ] `DOC` State the cost honestly: the mirror is small and ships soon; the engine is large and is
+      deferred until a tenant needs it
+- [ ] `DOC` State what stays blocked if deferred: M10 entirely, integration item 15.2, phase 20, and
+      **the student marks self-view** blocked since 2026-09-24
+- [ ] `DOC` On agreement: write AD-91 into `adr.md`; update `ARCHITECTURE_INDEX.md`; unblock P3
+- [ ] `DOC` If deferred: record the deferral **with a date**; M10 stays 🚫; do not build speculatively
+
+---
+
+## P0-6 — Resolve OD-4
+
+- [ ] `DOC` Decide: collect money, or only record it. Recommended: record first, collect second
+- [ ] `DOC` Note FEE-7's dummy gateway already implements the collect path structurally — the swap
+      touches only the checkout page and two provider routes
+- [ ] `DOC` If collecting: scope settlement, refunds, chargebacks and the compliance surface as
+      their own slice, not as an afterthought to FEE-7
+
+---
+
+## P0-7 — Open OD-ACC-1 🔴 (blocks M15 and M19)
+
+Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
+
+- [ ] `DOC` Put OD-ACC-1 to the owner: **the ERP has no general ledger and none is assigned a module
+      number.** M15 payroll and M19 payables have nowhere to post
+- [ ] `DOC` Present the three options: (a) export to Tally, (b) full general ledger, (c) thin
+      budget and commitment ledger. Recommended: (a) + (c)
+- [ ] `DOC` State the dependency: **must be answered before M15 or M19 begins**
+- [ ] `DOC` Record the answer as an ADR and add OD-ACC-1 to `docs/MASTER-CHECKLIST.md` §3
+
+---
+
+## P0-8 — Resolve OD-LV-1
+
+- [ ] `DOC` Confirm the split: staff leave is M14 (draws a balance, affects pay); student excused
+      absence is M7 (an attendance category, affects exam eligibility)
+- [ ] `DOC` Record as an ADR; update `MODULE_REGISTRY.md`'s LV-1 row (already updated to reflect it)
+
+---
+
+## P0-9 — Compact the tracker
+
+`PROJECT_STATE.md` is 107KB. `CLAUDE.md` §4 asks for a compact TRACER.
+
+- [ ] `DOC` Move slice history into `docs/IMPLEMENTATION-CHECKPOINT.md`, preserving commit hashes
+- [ ] `DOC` Rebuild `PROJECT_STATE.md` to the §4 shape: SYSTEM STATUS, CURRENT SLICE, CURRENT
+      OBJECTIVE, ALREADY BUILT, TO BUILD, NOT IN THIS SLICE, DEPENDENCIES, VALIDATION, OPEN
+      DECISIONS, BLOCKERS, NEXT
+- [ ] `DOC` **Target under 200 lines**
+- [ ] `DOC` Verify it answers all eight `CLAUDE.md` §29 questions without opening another file
+- [ ] `DOC` Exactly one `NEXT` slice (`CLAUDE.md` §25)
+
+---
+
+## P0-10 — Consolidate documentation
+
+- [ ] `DOC` Fold `NEW-SESSION-CONTEXT.md`, `INTERRUPT-RECOVERY.md`, `MODULE-CONTROLLER.md` into
+      `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`; delete
+- [ ] `DOC` Fold `docs/plan-inbox-2026-09-16.md` and `docs/plan-fee-a-to-z-2026-09-22.md` into
+      `docs/requirements.md`; delete
+- [ ] `DOC` Delete `flutter_01.log`, `prompt1.md`, `prompt2.md`, `DESIGN_TOKENS_ADDITIONS.dart`
+- [ ] `DOC` Gitignore `android/build/`
+- [ ] `DOC` Resolve `clients/web/explore.mjs` — commit deliberately or delete
+- [ ] `DOC` Clear root `requirements.md` (it is an inbox, kept empty)
+- [ ] `DOC` Verify `docs/` has one obvious entry point and no competing trackers
+
+---
+
+## P0-11 — Record the new ADRs
+
+- [ ] `DOC` AD-84 parity is a definition of done
+- [ ] `DOC` AD-85 the API contract is generated, not written twice
+- [ ] `DOC` AD-86 OD-FEE-5 resolves to yes — fees reach the web console
+- [ ] `DOC` AD-87 notification delivery is a platform capability; tokens sealed, not hashed
+- [ ] `DOC` AD-88 scheduled work is a platform capability (**P9**)
+- [ ] `DOC` AD-89 document storage is a platform capability
+- [ ] `DOC` AD-90 reports are a declared contract
+- [ ] `DOC` AD-91 examinations support both modes — **gated on P0-5**
+- [ ] `DOC` AD-92 a known-failing test is a blocker
+- [ ] `DOC` AD-83 amended per P0-0's decision
+- [ ] `DOC` Update `ARCHITECTURE_INDEX.md`'s ADR table with all of them
+- [ ] `DOC` Mark OD-FEE-5 resolved in `docs/MASTER-CHECKLIST.md` §3
+
+---
+
+## 🚧 P0 EXIT GATE
+
+Every line must be true before P1 starts.
+
+- [ ] Geo-fence enforced with negative tests, or withdrawn with the ADR amended
+- [ ] Migration 036 drift root-caused and fixed; the wider RLS/GRANT audit clean
+- [ ] `zz-*` files resolved; server, web and Flutter suites green with **no known failures**
+- [ ] Dev database seeded; a signed-in screenshot is possible
+- [ ] Zero unexplained `🔍`; the rest have written reasons
+- [ ] OD-1, OD-4, OD-ACC-1, OD-LV-1 answered or deferred **with a date**
+- [ ] `PROJECT_STATE.md` under 200 lines and answers the eight questions
+- [ ] AD-84…AD-92 recorded in `adr.md`
