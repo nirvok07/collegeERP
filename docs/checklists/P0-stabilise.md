@@ -186,8 +186,10 @@ the service and seed also guard against duplicate timetable occurrences.
 - [ ] `S` Four departments; programs with curriculum versions, one published one draft
 - [x] `S` Current academic year and term, plus a prior year for rollover testing
 - [x] `S` Calendar: holidays, a multi-day break, timed and all-day events
-- [ ] `S` ~40 staff across roles: college admin, HoDs, faculty, accountant, cashier
-- [ ] `S` ~400 students across programs, sections and years
+- [x] `S` ~40 staff across roles: college admin, HoDs, faculty, accountant, cashier (41 staff
+      returned by the seeded API)
+- [x] `S` ~400 students across programs, sections and years (403 students returned by the seeded
+      API)
 - [x] `S` Enrolments, course offerings, instructor assignments
 - [x] `S` A timetable with rooms; four weeks of generated class sessions
 - [x] `S` Attendance records including corrections and a cancelled class

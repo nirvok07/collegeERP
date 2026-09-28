@@ -49,8 +49,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ `.github/workflows/quality.yml` now provisions PostgreSQL, applies migrations, and runs the
   server typecheck/tests; its TAP guard rejects unannotated skips. Web typecheck/tests are also
   blocking CI checks, while the visual check remains a non-blocking artifact.
-- 🔍 Seed code has deterministic population targets, but the expanded ~40 staff/~400 student fixture
-  and one institution branding still need explicit checklist verification.
+- ✅ The seeded API now returns 41 staff and 403 students across the fixture's programs/sections;
+  one institution branding and the four-department curriculum-version shape still need verification.
 - ✅ Seed code creates a fine, requests and approves a full waiver, and records the resulting waived
   invoice state; the local run completed this path.
 - ✅ Seed code marks/submits one attendance register, applies a correction, and cancels another
