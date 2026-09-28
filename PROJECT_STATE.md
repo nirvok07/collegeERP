@@ -46,7 +46,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ Seed code now verifies one scored/absent assessment and leaves a second assessment unmarked;
   assessment correction fixtures remain open.
 - ✅ P0-4 standing web visual-check script is committed at `clients/web/scripts/visual-check.mjs`;
-  signed-in capture prerequisites now exist locally; the browser capture remains an external check.
+  signed-in admin OTP login and dashboard/People captures passed against the seeded local API;
+  full per-persona/per-screen review remains an explicit validation item.
 - ✅ `.github/workflows/quality.yml` now provisions PostgreSQL, applies migrations, and runs the
   server typecheck/tests; its TAP guard rejects unannotated skips. Web typecheck/tests are also
   blocking CI checks, while the visual check remains a non-blocking artifact.

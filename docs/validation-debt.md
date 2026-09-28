@@ -18,7 +18,7 @@ required before it can be marked complete.
 | Android | CAP-3 / Drift 6 | Real backend push delivery after sealed-token implementation | 🚫 backend capability not built |
 | Android | OTP-1/2/3/4/7 | Both app OTP sign-in, session renewal, and real email delivery where applicable | 🔍 phone; SMTP delivery separately |
 | Browser | WEB-1 / WID-1 | Live-server college sign-in and session handover in Chrome | 🔍 live server required |
-| Browser | ND-S7 and prior web UI slices | Run the committed Playwright visual check for signed-in dashboard/module screenshots and review defects | 🔍 seeded DB ready; live run currently times out before `.shell__nav` appears |
+| Browser | ND-S7 and prior web UI slices | Run the committed Playwright visual check for signed-in dashboard/module screenshots and review defects | 🔍 admin sign-in and dashboard/People capture passed; full per-persona/per-screen review remains |
 | Browser | Web saved reads / charts / visual slices | Loading, empty, error, success and chart states in a live browser | 🔍 seeded DB + live browser required |
 | Tooling | ENV-3 | VS Code automatic task approval and `adb reverse` with a USB phone | 🔍 one-time owner/device action |
 | Platform | iOS | Any iOS validation | 🚫 Xcode unavailable |
