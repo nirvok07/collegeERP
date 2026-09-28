@@ -19,7 +19,8 @@ Pointers, not content. Read the linked file for the decision itself.
 | Drift and blocker register | `docs/MASTER-CHECKLIST.md` (Drift 1–6, OD-*) |
 | Long-form slice history | `docs/IMPLEMENTATION-CHECKPOINT.md` |
 | Audit, coverage gaps, rationale | `docs/MASTER-PLAN.md` (2026-09-28) |
-| **What to build next (tickable)** | `docs/EXECUTION-CHECKLIST.md` |
+| **What to build next (map and gates)** | `docs/EXECUTION-CHECKLIST.md` |
+| **Task-level build plan, per phase** | `docs/checklists/P0…P7` (1,281 tasks) |
 
 ## Stack (locked)
 

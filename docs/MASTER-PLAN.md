@@ -85,8 +85,8 @@ Web 14,355 lines across 88 files. Flutter 33,732 lines across 189 files with 51 
 - **Schema drift is live and unfixed.** `036_syllabus.sql` is recorded as applied, but the
   `syllabus` table has no RLS or GRANTs on the dev database. 11 tests in `syllabus.test.ts` and
   2 migration-invariants checks fail. `npm run migrate` reports "up to date", so the migration
-  ledger and the database disagree. Two further tests (`zz-err6`, `zz-syldebug`) are carried as
-  known failures. **A red suite that is known-red stops being a signal.**
+  ledger and the database disagree. Ten `zz-*` debug test files sit in the suite (of 46
+  server test files), two of them — `zz-err6`, `zz-syldebug` — as known failures. **A red suite that is known-red stops being a signal.**
 - **Delivery has become reactive.** Recent slices are named FB-1…FB-5, feedbackchanges #1–#4,
   owner requests. Valuable, but the blueprint's own phase order in `MASTER-CHECKLIST.md` has not
   driven a slice in some time.
@@ -143,8 +143,9 @@ Very little, which is unusual and worth saying. Two candidates:
 - `flutter_01.log`, `prompt1.md`, `prompt2.md`, `DESIGN_TOKENS_ADDITIONS.dart` (a root-level
   loose Dart file that is not part of `lib/`), `android/build/` and `clients/web/explore.mjs`
   (both untracked build/scratch artefacts).
-- The two known-failing debug tests `zz-err6` and `zz-syldebug` — either fix them or delete them.
-  A permanently red test is worse than no test.
+- The ten `zz-*` debug test files — nearly a quarter of the 46 server test files. Promote the ones
+  that assert production behaviour, delete the rest. A permanently red test is worse than no test,
+  and debug scaffolding left in a suite is noise that hides signal.
 - After consolidation: `NEW-SESSION-CONTEXT.md`, `INTERRUPT-RECOVERY.md`, `MODULE-CONTROLLER.md`,
   and the dated `plan-*.md` files once their content is folded into the register.
 
@@ -669,8 +670,8 @@ Each item names its **surfaces**: `S` server, `W` web, `F` Flutter, `D` docs, `�
 - [ ] Full server suite green
 
 **P0-2 Known-red tests** `S`
-- [ ] `zz-err6` — fix or delete, with the reason recorded
-- [ ] `zz-syldebug` — fix or delete, with the reason recorded
+- [ ] All ten `zz-*` files triaged: promote what asserts production behaviour, delete the rest
+- [ ] `zz-err6` and `zz-syldebug` resolved specifically (the two documented as red)
 - [ ] CI fails the build on any red test from here (AD-92)
 
 **P0-3 Seed a usable dev database** `S` `D`
