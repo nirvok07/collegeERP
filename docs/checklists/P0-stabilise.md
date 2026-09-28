@@ -342,12 +342,12 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
       protocol in `ARCHITECTURE_INDEX.md`; delete the duplicate protocol files
 - [x] `DOC` Fold the standalone module controller into `ARCHITECTURE_INDEX.md`; delete it after
       its live references and Module Contract/Boundary Audit rules were verified there
-      only after its active methodology and references have a verified replacement
 - [x] `DOC` Fold the dated inbox and fee planning queues into `docs/requirements.md`; delete the
       superseded plan files. Open gates and implementation status remain explicit in R73 and R77–R80.
 - [x] `DOC` Retire the ignored generated `flutter_01.log`; it had no live references
 - [ ] `DOC` Retire `prompt1.md` and `prompt2.md` only after their live references and methodology
-      role are folded safely
+      role are folded safely — still open because these 1,163 lines remain the unique system-level
+      (`prompt1.md`) and deep-module (`prompt2.md`) methodology sources; no replacement is claimed
 - [x] `DOC` Fold the light-mode design-token reference into `lib/core/design/tokens.dart` and
       delete `DESIGN_TOKENS_ADDITIONS.dart`; dark-mode additions remain explicitly deferred
 - [x] `DOC` Gitignore `android/build/`; no generated Android build files are tracked

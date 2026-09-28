@@ -710,7 +710,9 @@ Each item names its **surfaces**: `S` server, `W` web, `F` Flutter, `D` docs, `â
   files were deleted and their open gates remain in R73 and R77â€“R80
 - [x] Retire the ignored generated `flutter_01.log`; it had no live references
 - [ ] Retire `prompt1.md` and `prompt2.md` only after their live references and methodology role are
-  folded safely; the duplicate design-token file was already folded and deleted
+  folded safely; these 1,163 lines remain the unique system-level and deep-module methodology
+  sources, so no replacement is claimed yet. The duplicate design-token file was already folded and
+  deleted
 - [ ] Gitignore `android/build/`; `clients/web/explore.mjs` was deliberately deleted; remaining
   `android/build/` ignore work is open
 - [ ] Add this file to `ARCHITECTURE_INDEX.md`
