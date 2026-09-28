@@ -16,6 +16,7 @@ Pointers, not content. Read the linked file for the decision itself.
 | Mobile platform, Firebase, device evidence | `docs/12-mobile-platform-config.md` |
 | Drift and blocker register | `docs/MASTER-CHECKLIST.md` (Drift 1–6, OD-*) |
 | Long-form slice history | `docs/IMPLEMENTATION-CHECKPOINT.md` |
+| Audit, coverage gaps, forward execution plan | `docs/MASTER-PLAN.md` (2026-09-28) |
 
 ## Stack (locked)
 
