@@ -236,6 +236,43 @@ describe('application role privileges', () => {
     }
   });
 
+  it('staff attendance records retain only the fence decision and bounded accuracy', async () => {
+    const { rows: columns } = await migratorPool.query<{
+      column_name: string;
+      is_nullable: string;
+      column_default: string | null;
+    }>(
+      `SELECT column_name, is_nullable, column_default
+         FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'staff_attendance'
+          AND column_name IN ('fence_verified', 'accuracy_m', 'source')
+        ORDER BY column_name`,
+    );
+    assert.deepEqual(columns, [
+      { column_name: 'accuracy_m', is_nullable: 'YES', column_default: null },
+      { column_name: 'fence_verified', is_nullable: 'NO', column_default: 'false' },
+      { column_name: 'source', is_nullable: 'NO', column_default: "'app'::text" },
+    ]);
+
+    const { rows: constraints } = await migratorPool.query<{ conname: string }>(
+      `SELECT conname
+         FROM pg_constraint
+        WHERE conrelid = 'public.staff_attendance'::regclass
+          AND conname IN (
+            'staff_attendance_source_check',
+            'staff_attendance_accuracy_check',
+            'staff_attendance_fence_verified_requires_app'
+          )
+        ORDER BY conname`,
+    );
+    assert.deepEqual(constraints.map((row) => row.conname), [
+      'staff_attendance_accuracy_check',
+      'staff_attendance_fence_verified_requires_app',
+      'staff_attendance_source_check',
+    ]);
+  });
+
   it('holds DELETE only where nothing historical can be lost', async () => {
     const { rows } = await migratorPool.query(
       `SELECT table_name FROM information_schema.role_table_grants

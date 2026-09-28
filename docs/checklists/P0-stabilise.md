@@ -30,8 +30,9 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 ### Server, if (a)
 - [x] `MIG` New migration: add `fence_verified boolean NOT NULL DEFAULT false`,
       `accuracy_m int NULL`, `source text NOT NULL DEFAULT 'app'` to `staff_attendance`
-- [ ] `MIG` CHECK `source IN ('app','web','biometric')`
-- [ ] `MIG` GRANTs declared; add the three columns to `migration-invariants.test.ts` expectations
+- [x] `MIG` CHECK `source IN ('app','web','biometric')`
+- [x] `MIG` GRANTs remain declared; the three columns and their constraints are asserted by
+      `migration-invariants.test.ts`
 - [x] `API` `POST /v1/me/staff-attendance/punch-in` accepts `{ latitude, longitude, accuracy_m }`;
       zod schema, all three required
 - [x] `API` Same for `punch-out` — a punch-out from home is the same problem as a punch-in
@@ -61,8 +62,8 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 
 ### Web
 - [x] `WEB` Withdraw the punch action from `clients/web/src/features/dashboard/PunchCard.tsx`
-- [ ] `WEB` Keep the read-only "today" display and the holiday read
-- [ ] `WEB` Explain in the UI where to punch, rather than removing the card silently
+- [x] `WEB` Keep the read-only "today" display and the holiday read
+- [x] `WEB` Explain in the UI where to punch, rather than removing the card silently
 - [x] `DOC` Record the parity exception in `MODULE_REGISTRY.md`: *punch is phone-only because a
       geo-fence is a physical-presence check and a desktop cannot satisfy it*
 
