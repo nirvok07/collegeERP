@@ -296,6 +296,13 @@ const years = await call<(Id & { name: string; ends_on: string })[]>('GET', '/ac
 const yearRow = years.find((y) => y.name === YEAR.name);
 const year = await ensure(`academic year ${YEAR.name}`, yearRow,
   () => call('POST', '/academic-years', { ...YEAR, make_current: true }));
+await ensure(
+  'prior academic year 2025-26',
+  years.find((y) => y.name === '2025-26'),
+  () => call('POST', '/academic-years', {
+    name: '2025-26', starts_on: '2025-07-01', ends_on: '2026-06-30', make_current: false,
+  }),
+);
 const terms = await call<(Id & { sequence: number; name: string })[]>('GET', `/terms?academic_year_id=${year.id}`);
 const term: Record<string, Id> = {};
 for (const [sequence, name, starts_on, ends_on] of TERMS) {
@@ -447,10 +454,31 @@ for (const label of ['A', 'B'] as const) {
 /* -------------------------------------------------------------- 10. holidays */
 
 step('10. Non-teaching days (before classes are generated, so they are skipped)');
-const days = await call<{ on_date: string }[]>('GET', `/non-teaching-days?from=${YEAR.starts_on}&to=${YEAR.ends_on}`);
+const days = await call<{ on_date: string; label: string }[]>('GET', `/non-teaching-days?from=${YEAR.starts_on}&to=${YEAR.ends_on}`);
 for (const [on_date, label] of HOLIDAYS) {
   await ensure(`${on_date} ${label}`, days.find((d) => d.on_date.startsWith(on_date)) ? true : undefined,
     () => call('POST', '/non-teaching-days', { on_date, label }));
+}
+await ensure(
+  'October multi-day break',
+  days.some((d) => d.on_date.startsWith('2026-10-26') && d.label === 'Mid-semester break') ? true : undefined,
+  () => call('POST', '/non-teaching-days', {
+    on_date: '2026-10-26', to_date: '2026-10-30', label: 'Mid-semester break',
+  }),
+);
+const calendar = await call<{ events?: { title: string; on_date: string }[] }>(
+  'GET', `/calendar?from=${YEAR.starts_on}&to=${YEAR.ends_on}`,
+);
+const events = calendar.events ?? [];
+for (const event of [
+  { title: 'Freshers orientation', on_date: '2026-07-25', note: 'Main auditorium' },
+  { title: 'Annual sports day', on_date: '2026-11-14', starts_at: '09:00', ends_at: '16:00' },
+]) {
+  await ensure(
+    `calendar event ${event.title}`,
+    events.find((e) => e.title === event.title && e.on_date.startsWith(event.on_date)),
+    () => call('POST', '/calendar/events', event),
+  );
 }
 
 /* ------------------------------------ 11. courses taught, teachers, timetable */
