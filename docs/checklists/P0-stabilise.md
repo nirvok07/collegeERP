@@ -164,9 +164,9 @@ remain in `server/tests`.
 - [x] `TEST` Full server suite green: `519/519` passed, 0 failed, 0 cancelled, 0 skipped
 - [x] `TEST` Full Flutter suite green: `330/330` passed
 - [x] `TEST` Full web suite green: 18 files, `203/203` passed
-- [ ] `TEST` Investigate the flaky outbox timing test `a write waits behind an earlier one`
-      (failed once, passed on rerun, 2026-09-22). A known-flaky test is a known-red test with
-      better luck
+- [x] `TEST` Investigate the flaky outbox timing test `a write waits behind an earlier one`:
+      full Flutter suite plus five consecutive isolated runs passed on 2026-09-28; the existing
+      single-flight/queued-write implementation needs no change
 
 ---
 

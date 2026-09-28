@@ -23,6 +23,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
   tests updated with injected location fix.
 - ✅ Full Flutter suite passes `330/330`; real-phone GPS, permissions, offline behavior and flavor
   installation remain physical-device validation items.
+- ✅ The previously flaky outbox ordering test passed five consecutive isolated runs; no code
+  change was required.
 - 🔍 NEEDS VALIDATION: physical phone inside/outside a real fence; this is an explicit external
   verification blocker, not claimed complete.
 
