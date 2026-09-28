@@ -176,8 +176,8 @@ visual check can run.
 - [ ] `S` One institution with branding (AD-70: code, logo, colour)
 - [x] `S` Two campuses, one with a configured geo-fence (needed by P0-0), one without
 - [ ] `S` Four departments; programs with curriculum versions, one published one draft
-- [ ] `S` Current academic year and term, plus a prior year for rollover testing
-- [ ] `S` Calendar: holidays, a multi-day break, timed and all-day events
+- [x] `S` Current academic year and term, plus a prior year for rollover testing
+- [x] `S` Calendar: holidays, a multi-day break, timed and all-day events
 - [ ] `S` ~40 staff across roles: college admin, HoDs, faculty, accountant, cashier
 - [ ] `S` ~400 students across programs, sections and years
 - [ ] `S` Enrolments, course offerings, instructor assignments
