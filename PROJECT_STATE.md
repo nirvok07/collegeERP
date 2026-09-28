@@ -10,8 +10,8 @@ Updated 2026-09-29. Current slice: P0 stabilisation close-out.
 - Database: historical local `college_erp_dev` seed evidence is recorded; the currently running API
   resolves to the configured managed development database, which has only `iit-delhi` and zero
   accounts. The device-test seed retry is blocked by that environment's `erp_migrator` RLS grant;
-  a read-only local comparison also found seeded accounts visible to `erp_migrator` but none visible
-  directly to `erp_app`, so the local target is not fresh-auth evidence either.
+  the local `college_erp_dev` target has 43 tenant-scoped device-test accounts and supports fresh
+  signed-in verification.
 - Platform: ✅ tenant lifecycle and platform administration foundations; ⚠️ push delivery and
   impersonation remain unbuilt or externally blocked.
 - Examinations/results: 🚫 OD-1 / AD-91 owner decision.
@@ -36,10 +36,11 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
   seat limits and gapless receipts; no implemented schema/check gap was found.
 - P0-1 migration 036 audit: syllabus RLS, FORCE RLS, tenant policy and expected grants are compliant;
   no corrective migration is needed. P0-2 debug-test hygiene is complete.
-- Historical seeded local API evidence: 41 staff, 403 students, 5 departments, 4 programs, 1
+- Seeded local API evidence: 41 staff, 403 students, 5 departments, 4 programs, 1
   published and 3 draft curriculum versions, branding, timetable, attendance corrections/cancellation,
-  assessment and fee waiver fixtures. Seed reruns reported `0 created, 129 already there`; the
-  current target still requires the approved seed/bootstrap path before fresh auth evidence.
+  assessment and fee waiver fixtures. Seed reruns reported `0 created, 129 already there`; fresh
+  device-test authentication is verified locally, while the managed target still requires the
+  approved seed/bootstrap path.
 - Browser top-level captures: College Admin 11 sections; teacher 3 permission-filtered sections;
   student 2 permission-filtered sections; platform Owner 3 platform sections. Historical duplicate
   cancelled Calculus fixture rows are recorded as a named data defect.
@@ -52,8 +53,9 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 
 ## TO BUILD
 
-- P0-4: loading-state capture now passes locally for a seeded teacher (2 permission-filtered sections);
-  empty/error captures remain open, and the managed API target still cannot authenticate the seed.
+- P0-4: loading-state capture passes locally for a seeded teacher (2 sections), and forced error-state
+  capture passes for a seeded admin (11 sections); empty remains open, and the managed API target
+  still cannot authenticate the seed.
 - P0-3/P0-4: restore the approved seeded API target or bootstrap grant, then rerun device-test seed
   and authenticated browser state capture.
 - P0-4: complete the physical Android pass, including GPS fence behavior, offline behavior and both
@@ -102,9 +104,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 ## BLOCKERS
 
 - Physical Android device and owner/device validation access.
-- Browser forced-state harness: local loading works after auth/input/CORS fixes; managed API OTP/account
-  state and the current local app-role account visibility remain blocked, and empty/error captures are
-  still open.
+- Browser forced-state harness: local loading and forced error states work after auth/input/CORS fixes;
+  empty remains open, and managed API OTP/account state is still blocked.
 - Current configured API target has no device-test accounts; the corrected seed reached an `erp_migrator`
   RLS refusal. No remote RLS repair was attempted.
 - Xcode unavailable; CAP-3 backend push capability not built.

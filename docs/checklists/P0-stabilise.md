@@ -179,9 +179,9 @@ remain in `server/tests`.
 
 ## P0-3 — Seed a usable dev database
 
-Historical local development evidence includes a seeded `device-test` college and signed-in API
-verification; the current configured targets are not fresh signed-in evidence. Live browser capture
-remains an explicit validation item.
+The local `device-test` college now supports fresh signed-in API and browser verification when the
+API runs against `college_erp_dev`; the separately configured managed target is not fresh signed-in
+evidence. Live browser capture remains an explicit validation item for each state.
 
 Validation note (2026-09-29): the configured running API currently points at a managed development
 database containing only `iit-delhi` with zero user accounts. The ignored credential file existed
@@ -190,10 +190,9 @@ the file. The retry reached `platform_accounts` but the configured `erp_migrator
 by RLS, so no RLS weakening or remote repair was attempted. Restore the approved bootstrap/local
 database path before claiming a new browser sign-in or state capture.
 
-The same date's read-only local comparison found 0 `user_accounts` visible to the `erp_app` role but
-the seeded rows visible to `erp_migrator` (43 in `device-test`); this direct role-visibility mismatch
-also prevents using the current local target as fresh authentication evidence. No grant or RLS change
-was made.
+An unscoped read-only query correctly found 0 `user_accounts` for `erp_app` under tenant RLS, while a
+tenant-scoped query found all 43 `device-test` accounts and the seeded teacher. No grant or RLS change
+was made; the local API's tenant context is working.
 
 Implementation note (2026-09-29): the canonical seed was run through the API with a known local
 admin credential. Two consecutive repeat runs completed without errors and created no new rows;
@@ -248,11 +247,10 @@ state tracer now reports grouped current blockers; the item-level register remai
       (dashboard, people, organisation, curriculum/academic, college, teaching/sections/offerings,
       students, timetable/rooms, attendance, assessment/marks, profile) and a platform Owner
       captured 3 platform sections; platform capture used the supported password + authenticator flow
-- [ ] `W` Capture each screen's loading, empty and error states where reachable. Loading is now
-      verified locally: the corrected probe captured a real skeleton for a seeded teacher's 2
-      permission-filtered sections on 2026-09-29. Empty and error captures remain open; the managed
-      API and current local app-role target are blocked by the seeded-account/role-visibility issue
-      recorded above.
+- [ ] `W` Capture each screen's loading, empty and error states where reachable. Loading is verified
+      locally for a seeded teacher's 2 sections, and forced error is verified for a seeded admin's 11
+      sections on 2026-09-29 with visible error/retry UI. Empty remains open; the managed API target
+      still lacks the seeded account/bootstrap path recorded above.
 - [x] `W` Review captures; file a defect per visual problem (historical duplicate cancelled class
       rows are recorded in `docs/validation-debt.md`)
 - [x] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable

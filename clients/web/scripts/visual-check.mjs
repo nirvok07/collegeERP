@@ -23,7 +23,10 @@ page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
 page.on('console', (message) => {
   // A signed-out browser always probes refresh before the OTP flow. Chromium
   // reports that expected 401 as a resource error; it is not a visual failure.
-  if (message.type() === 'error' && !message.text().includes('status of 401 (Unauthorized)')) {
+  const expectedAuthProbe = message.text().includes('status of 401 (Unauthorized)');
+  const expectedForcedState = visualState === 'error'
+    && message.text().includes('status of 503 (Service Unavailable)');
+  if (message.type() === 'error' && !expectedAuthProbe && !expectedForcedState) {
     failures.push(`console: ${message.text()}`);
   }
 });
@@ -78,17 +81,21 @@ try {
       await page.getByLabel('Email').fill(credentials.email);
       await page.getByLabel('Password').fill(credentials.password);
       await page.getByRole('button', { name: 'Continue' }).click();
-      await page.getByLabel('Code').pressSequentially(credentials.secondFactor);
+      await page.getByLabel('Code').fill(credentials.secondFactor);
     } else {
       await page.getByLabel('College code').fill(credentials.college);
       await page.getByLabel('Email or mobile').fill(credentials.identifier);
       await page.getByRole('button', { name: 'Send code' }).click();
-      await page.getByLabel('Code').pressSequentially(credentials.code);
+      // The field has one real input under six visual boxes. `fill` is more
+      // deterministic than key-by-key input in headless Chromium and still
+      // exercises the component's normal change/onComplete path.
+      await page.getByLabel('Code').fill(credentials.code);
     }
     // OtpField submits automatically when the sixth digit is entered. Do not
     // race the transition, but retain a fallback for browser autofill paths
     // that update the input without firing the component's completion callback.
     const signIn = page.getByRole('button', { name: 'Sign in' });
+    await page.waitForTimeout(100);
     if (await signIn.isVisible().catch(() => false) && await signIn.isEnabled().catch(() => false)) {
       await signIn.click();
     }

@@ -37,8 +37,8 @@ P0 STABILISATION CHECKPOINT — 2026-09-28/29
   d80576d  Preserve the open prompt-methodology retirement blocker with its evidence.
   c1b3cd4  Complete M1–M24 registry identifier coverage, including the M11 row.
   f94da2c  Clarify that seed and signed-in API evidence is historical until the approved target is restored.
-  Current open validation: empty/error browser states, physical Android checks, and fresh seeded
-  authentication; the managed target and direct local app-role account visibility remain blocked.
+  Current open validation: empty browser states, physical Android checks, and managed-target fresh
+  authentication; local device-test signed-in loading and forced-error captures are verified.
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked
