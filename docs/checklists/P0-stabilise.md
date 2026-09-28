@@ -254,8 +254,10 @@ machine had no browser, so **every prior web CSS and chart change was unverified
 ### Close out
 - [ ] `DOC` Each item → ✅ with evidence, or a named defect with an issue reference
 - [ ] `DOC` **No item stays 🔍 without a written reason**
-- [ ] `DOC` iOS stays 🚫 while Xcode is unavailable — do not retry (`CLAUDE.md` §9)
-- [ ] `DOC` Backend push stays 🚫 until P1's CAP-3 seals device tokens
+- [x] `DOC` iOS stays 🚫 while Xcode is unavailable — do not retry (`CLAUDE.md` §9); the blocker is
+      recorded in `docs/validation-debt.md`
+- [x] `DOC` Backend push stays 🚫 until P1's CAP-3 seals device tokens; the capability blocker is
+      recorded in `docs/validation-debt.md`
 
 ---
 
