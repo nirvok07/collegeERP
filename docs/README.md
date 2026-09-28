@@ -80,6 +80,9 @@ copies: each owns one question, and a slice is not complete until its state is r
 | What should be built next? | [`EXECUTION-CHECKLIST.md`](EXECUTION-CHECKLIST.md) | Build map, phase gates and sequencing |
 | What tasks close the current phase? | [`checklists/`](checklists/README.md) | Tickable P0–P7 task detail; P0 is the active phase |
 | Is the architecture process or a drift/owner decision incomplete? | [`MASTER-CHECKLIST.md`](MASTER-CHECKLIST.md) | Architecture-process verification and drift register |
+| What must the owner answer before gated domains begin? | [`OWNER-DECISION-BRIEF.md`](OWNER-DECISION-BRIEF.md) | Prepared questions and recommendations for OD-1, OD-4 and OD-ACC-1; not answers |
+| What browser, device and tooling evidence is still missing? | [`validation-debt.md`](validation-debt.md) | Item-level validation debt, evidence requirements and named blockers |
+| Can the methodology prompts be retired safely? | [`METHODOLOGY-RETIREMENT-AUDIT.md`](METHODOLOGY-RETIREMENT-AUDIT.md) | Crosswalk, folded gates and remaining retirement prerequisites |
 | Why is the sequence or capability shaped this way? | [`MASTER-PLAN.md`](MASTER-PLAN.md) | Rationale, capability order and longer-range plan |
 | What was already implemented and committed? | [`IMPLEMENTATION-CHECKPOINT.md`](IMPLEMENTATION-CHECKPOINT.md) | Append-only long-form history |
 | What is the status of the new-design capability? | [`new-design/CHECKLIST.md`](new-design/CHECKLIST.md) | Capability-local evidence, reported upward to the current-state tracer |
