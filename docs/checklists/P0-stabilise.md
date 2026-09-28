@@ -70,11 +70,11 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 ### Tests — the negative cases are the point
 - [x] `TEST` Punch outside the radius → refused
 - [x] `TEST` Punch at a fenceless campus → refused
-- [ ] `TEST` Punch exactly at the radius boundary → accepted
-- [ ] `TEST` Punch at `radius + 1m` with `accuracy_m = 0` → refused
-- [ ] `TEST` Absurd accuracy (`accuracy_m = 10000`) → allowance capped at 50 m, still refused
+- [x] `TEST` Punch exactly at the radius boundary → accepted
+- [x] `TEST` Punch at `radius + 1m` with `accuracy_m = 0` → refused
+- [x] `TEST` Absurd accuracy (`accuracy_m = 10000`) → allowance capped at 50 m, still refused
 - [x] `TEST` Request missing coordinates → 422, not a silent pass
-- [ ] `TEST` Punch inside the radius → accepted, and **no coordinate is persisted** (assert the
+- [x] `TEST` Punch inside the radius → accepted, and **no coordinate is persisted** (assert the
       columns do not exist / are absent from the row)
 - [ ] `TEST` Client-supplied campus id is ignored; the person's own campus is used
 - [ ] `TEST` Unauthorised actor cannot punch for another person

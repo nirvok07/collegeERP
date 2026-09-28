@@ -832,6 +832,40 @@ describe('staff self-attendance (SA-ATT-1)', () => {
       latitude: 28.5456, longitude: 77.1926, accuracy_m: 5,
     });
     assert.equal(inside.statusCode, 201);
+    assert.equal(inside.json().data.fence_verified, true);
+    assert.equal(inside.json().data.accuracy_m, 5);
+    assert.equal('latitude' in inside.json().data, false, 'coordinates are not persisted');
+    assert.equal('longitude' in inside.json().data, false, 'coordinates are not persisted');
+  });
+
+  it('accepts the radius boundary and caps the reported accuracy allowance', async () => {
+    // One degree of latitude is approximately 111.32 km. These offsets keep
+    // the cases deterministic while exercising the Haversine calculation.
+    const pointAtNorth = (metres: number, accuracy_m: number) => ({
+      latitude: 28.5456 + metres / 111_320,
+      longitude: 77.1926,
+      accuracy_m,
+    });
+
+    const boundary = await oneClass('attend-fence-boundary');
+    const accepted = await post(
+      '/v1/me/staff-attendance/punch-in', boundary.teacher.token, pointAtNorth(200, 0),
+    );
+    assert.equal(accepted.statusCode, 201);
+
+    const justOutside = await oneClass('attend-fence-plus-one');
+    const refused = await post(
+      '/v1/me/staff-attendance/punch-in', justOutside.teacher.token, pointAtNorth(201, 0),
+    );
+    assert.equal(refused.statusCode, 403);
+    assert.equal(refused.json().error.code, 'OUTSIDE_FENCE');
+
+    const absurdAccuracy = await oneClass('attend-fence-accuracy-cap');
+    const stillRefused = await post(
+      '/v1/me/staff-attendance/punch-in', absurdAccuracy.teacher.token, pointAtNorth(260, 10_000),
+    );
+    assert.equal(stillRefused.statusCode, 403);
+    assert.equal(stillRefused.json().error.code, 'OUTSIDE_FENCE');
   });
 
   it('refuses a punch at a campus with no configured fence', async () => {
