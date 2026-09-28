@@ -109,6 +109,21 @@ terms/statuses, conflicting ownership or state machines, unnecessary/circular de
 accidental coupling and ADR contradictions as architecture drift rather than silently normalising
 them.
 
+### System architecture close-out review
+
+Before an architecture baseline is approved, run an independent review rather than defending the
+design already produced. Check for missing or unnecessary modules, incorrect boundaries, duplicate
+responsibilities, hidden dependencies, security and permission gaps, workflow and data-integrity
+failures, UX and reporting gaps, scalability risks, audit omissions, edge cases, and both
+over-engineering and under-engineering. Record each finding, its impact, the correction or accepted
+exception, and the evidence that closes it.
+
+Maintain the decision log throughout the work. Every decision records the choice, reason,
+alternatives considered and impact; every material uncertainty is recorded as an open decision.
+Progressive delivery starts with assumptions, architecture questions, actor map, domain map and
+module architecture, then pauses for approval before deep module specification. This is a quality
+gate, not permission to silently assume unresolved requirements.
+
 ## Stack (locked)
 
 Server `server/`: Node 24, Fastify 5, `pg` without ORM, zod, node:test. Web `clients/web/`: React 19,

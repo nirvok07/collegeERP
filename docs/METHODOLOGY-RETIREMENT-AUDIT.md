@@ -43,8 +43,9 @@ The 24 `prompt2.md` module sections map to the explicit contract index in
 checklists. Sections 1–22 cover module purpose through architecture review; section 23 maps to
 the open-decision registers (`docs/MASTER-CHECKLIST.md` §3 and `docs/blueprint/adr.md`); section
 24 maps to the ADR index and implementation checkpoint. The index now folds the required output
-order, but not the detailed methodology or quality questions. The master checklist still records
-only 1 of 24 modules as fully processed, so this crosswalk does not retire the source.
+order and the system-level close-out/decision-log gate, but not the detailed methodology or all
+quality questions. The master checklist still records only 1 of 24 modules as fully processed, so
+this crosswalk does not retire the source.
 
 Retirement requires all of the following before deletion:
 
