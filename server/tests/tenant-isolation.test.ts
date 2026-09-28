@@ -163,8 +163,10 @@ describe('tenant isolation under row level security', () => {
       //
       // idempotency_keys: a cache of request outcomes. A server error releases a
       // key, outcomes expire after a day, and nothing references a row.
+      // syllabus: a replacement document supersedes the old binary and its row
+      // has no dependent historical record.
       assert.deepEqual(
-        rows.map((r) => r.table_name), ['curriculum_entries', 'idempotency_keys', 'non_teaching_days'],
+        rows.map((r) => r.table_name), ['curriculum_entries', 'idempotency_keys', 'non_teaching_days', 'syllabus'],
       );
     } finally {
       await pool.end();

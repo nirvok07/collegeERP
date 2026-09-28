@@ -161,7 +161,7 @@ remain in `server/tests`.
       the underlying syllabus suite remains the authoritative test.
 - [x] `S` CI fails the build on any red test (AD-92)
 - [x] `S` CI fails on a **skipped** test too, unless annotated with a reason
-- [ ] `TEST` Full server suite green, stated as `N/N`
+- [x] `TEST` Full server suite green: `519/519` passed, 0 failed, 0 cancelled, 0 skipped
 - [ ] `TEST` Full Flutter suite green
 - [ ] `TEST` Full web suite green
 - [ ] `TEST` Investigate the flaky outbox timing test `a write waits behind an earlier one`
