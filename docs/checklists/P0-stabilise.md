@@ -209,7 +209,7 @@ machine had no browser, so **every prior web CSS and chart change was unverified
 - [x] `DOC` Group by surface so one device pass and one browser pass can clear many at once
 
 ### Web
-- [ ] `W` Standing visual-check script using the Playwright + Chromium dev dependency already
+- [x] `W` Standing visual-check script using the Playwright + Chromium dev dependency already
       installed; committed, not ad hoc
 - [ ] `W` Script signs in against the seeded database (needs P0-3) for each persona
 - [ ] `W` Capture every screen: dashboard, people, organisation, academic, curriculum, sections,

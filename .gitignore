@@ -53,3 +53,4 @@ server/dist/
 server/.env
 clients/web/node_modules/
 clients/web/dist/
+clients/web/artifacts/
