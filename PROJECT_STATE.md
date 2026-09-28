@@ -34,6 +34,9 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ P0-3 now has canonical `server/scripts/seed-dev.ts` and runbook entry; the baseline seed is
   idempotent and configures the main-campus fence. Full population/fee/assessment fixture coverage
   remains open and is not claimed complete.
+- ✅ Seed code now includes prior-year/calendar fixtures and a two-instalment tuition ledger with
+  part-paid, paid, overdue, and reversed examples; waived invoices and larger populations remain
+  open. Execution still awaits the owner seed credential file.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 

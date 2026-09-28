@@ -547,7 +547,57 @@ for (const label of ['A', 'B'] as const) {
   }
 }
 
-/* --------------------------------------------------------- 12. student access */
+/* --------------------------------------------------------------- 12. fees */
+
+step('12. Fee ledger (paid, part-paid, overdue and reversed examples)');
+type FeeHead = Id & { code: string };
+const feeHeads = await call<FeeHead[]>('GET', '/fees/heads');
+const tuition = await ensure(
+  'tuition fee head', feeHeads.find((h) => h.code === 'tuition'),
+  () => call<FeeHead>('POST', '/fees/heads', { name: 'Tuition fee', code: 'tuition' }),
+);
+type FeeStructure = Id & { program_id: string; academic_year_id: string; status: string };
+const structures = await call<FeeStructure[]>('GET', `/fees/structures?program_id=${btech.id}`);
+let feeStructure = structures.find((s) => s.academic_year_id === year.id);
+if (!feeStructure) {
+  feeStructure = await call<FeeStructure>('POST', '/fees/structures', {
+    program_id: btech.id, academic_year_id: year.id,
+  });
+  tally.created++;
+  console.log('  + tuition fee structure');
+}
+const feeDetail = await call<{
+  id: string; status: string; instalments: { id: string; seq: number; lines: { fee_head_id: string }[] }[];
+}>('GET', `/fees/structures/${feeStructure.id}`);
+for (const [seq, dueDate] of [[1, '2026-07-01'], [2, '2026-11-01']] as const) {
+  let instalment = feeDetail.instalments.find((i) => i.seq === seq);
+  if (!instalment) {
+    instalment = await call('POST', `/fees/structures/${feeStructure.id}/instalments`, {
+      seq, due_date: dueDate, late_fee_paise: 5000,
+    });
+  }
+  if (!instalment) throw new Error(`Could not create fee instalment ${seq}`);
+  if (feeDetail.status === 'draft' && !((instalment.lines ?? []).some((l) => l.fee_head_id === tuition.id))) {
+    await call('POST', `/fees/instalments/${instalment.id}/lines`, {
+      fee_head_id: tuition.id, amount_paise: 500000,
+    });
+  }
+}
+if (feeDetail.status === 'draft') await call('POST', `/fees/structures/${feeStructure.id}/publish`, {});
+await call('POST', `/fees/structures/${feeStructure.id}/invoices`, {});
+const feeStudents = STUDENTS.slice(0, 3).map(([number]) => must(student[number], number).id);
+for (const [index, studentId] of feeStudents.entries()) {
+  const payments = await call<{ id: string; kind: string }[]>('GET', `/fees/students/${studentId}/payments`);
+  if (payments.length > 0) continue;
+  const payment = await call<{ payment: { id: string } }>('POST', '/fees/payments', {
+    student_id: studentId, method: index === 1 ? 'upi' : 'cash',
+    amount_paise: index === 0 ? 100000 : 500000,
+    ...(index === 1 ? { reference: 'SEED-UPI-001' } : {}),
+  });
+  if (index === 2) await call('POST', `/fees/payments/${payment.payment.id}/cancel`, { reason: 'Seeded reversal example' });
+}
+
+/* --------------------------------------------------------- 13. student access */
 
 step('12. Student app access (one student, so you can try the student app)');
 const first = STUDENTS[0][0];

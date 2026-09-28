@@ -185,7 +185,7 @@ visual check can run.
 - [ ] `S` Attendance records including corrections and a cancelled class
 - [ ] `S` Internal assessment plans and marks, some verified, some not
 - [ ] `S` Fee structures, invoices in mixed states: paid, part-paid, overdue, waived
-- [ ] `S` Payments including one reversed, so the collection report has a negative line
+- [x] `S` Payments including one reversed, so the collection report has a negative line
 - [ ] `S` A known password or OTP path for each test persona, documented
 - [x] `DOC` `docs/runbook/` page: how to seed, reset and which personas exist (baseline scope and
       remaining P0-3 gaps are explicit in `docs/runbook/seed-dev.md`)

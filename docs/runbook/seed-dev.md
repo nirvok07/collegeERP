@@ -18,8 +18,13 @@ four programs, academic calendar terms and holidays, rooms, seven staff
 personas, ten students in two sections, curriculum, offerings, instructors,
 generated sessions, and one student-access persona.
 
+The baseline also creates a published two-instalment tuition structure and
+idempotently generates invoices for the seeded students; it leaves examples of
+part-paid, paid, overdue, and reversed payments. Waived invoices, assessment
+marks/corrections, and the larger population are still follow-up fixture work.
+
 P0-3 is not yet fully closed: the larger ~40-staff/~400-student population,
-calendar events, mixed fee ledger, assessment examples, corrections, and a
-prior academic year still need fixture coverage. Track those gaps in
+waived invoices, assessment examples, and attendance corrections still need
+fixture coverage. Track those gaps in
 `docs/checklists/P0-stabilise.md`; this seed is the usable baseline for visual
 validation, not a claim that the full gate has passed.
