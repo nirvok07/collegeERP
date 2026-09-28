@@ -74,6 +74,8 @@ const EXPECTED_PRIVILEGES: Record<string, string> = {
   // The one table with DELETE: a draft is edited by removing entries, and the
   // trigger confines deletion to drafts.
   curriculum_entries: 'DELETE+INSERT+SELECT+UPDATE',
+  // M12: replaceable syllabus content; deletion is gated by syllabus.upload.
+  syllabus: 'DELETE+INSERT+SELECT+UPDATE',
 
   // Academic calendar and teaching groups. No DELETE: a section is cancelled,
   // never removed, because attendance and results reference it by identity.
@@ -280,7 +282,7 @@ describe('application role privileges', () => {
         ORDER BY table_name`, [APP_ROLE],
     );
     assert.deepEqual(
-      rows.map((r) => r.table_name), ['curriculum_entries', 'idempotency_keys', 'non_teaching_days'],
+      rows.map((r) => r.table_name), ['curriculum_entries', 'idempotency_keys', 'non_teaching_days', 'syllabus'],
       'every other table soft-deletes, so tombstones propagate and audit resolves',
     );
   });

@@ -14,7 +14,7 @@ function toRecord(r: any): SyllabusRecord {
     academicYearName: r.academic_year_name,
     fileName: r.file_name,
     contentType: r.content_type,
-    byteSize: r.byte_size,
+    byteSize: Number(r.byte_size),
     uploadedBy: r.uploaded_by,
     uploadedByName: r.uploaded_by_name,
     uploadedAt: r.uploaded_at,
@@ -26,7 +26,7 @@ function toFileRow(r: any): SyllabusFileRow {
     id: r.id,
     fileName: r.file_name,
     contentType: r.content_type,
-    byteSize: r.byte_size,
+    byteSize: Number(r.byte_size),
     mediaReference: r.media_reference,
   };
 }
@@ -39,7 +39,7 @@ const SELECT_ROWS = `
   SELECT sy.id, sy.course_id, sy.academic_year_id, sy.file_name, sy.content_type,
          sy.byte_size, sy.media_reference, sy.uploaded_by, sy.uploaded_at,
          c.code AS course_code, c.title AS course_title,
-         ay.name AS academic_year_name, p.name AS uploaded_by_name
+         ay.name AS academic_year_name, p.full_name AS uploaded_by_name
     FROM syllabus sy
     JOIN courses c        ON c.id = sy.course_id
     JOIN academic_years ay ON ay.id = sy.academic_year_id
@@ -101,6 +101,7 @@ export class PgSyllabusRepository implements SyllabusRepository {
          (id, tenant_id, course_id, academic_year_id, media_reference, file_name, content_type, byte_size, uploaded_by)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
        ON CONFLICT (tenant_id, course_id, academic_year_id) DO UPDATE SET
+         id              = EXCLUDED.id,
          media_reference = EXCLUDED.media_reference,
          file_name       = EXCLUDED.file_name,
          content_type    = EXCLUDED.content_type,
@@ -133,8 +134,8 @@ export class PgSyllabusRepository implements SyllabusRepository {
   ): Promise<SyllabusFileRow | null> {
     const { where, params } = scopeWhere(scope, personId);
     const { rows } = await clientOf(tx).query(
-      `${SELECT_ROWS} WHERE sy.id = $${params.length + 2} AND ${where}`,
-      [id, tenantId, ...params],
+      `${SELECT_ROWS} WHERE ${where} AND sy.id = $${params.length + 2}`,
+      [tenantId, ...params, id],
     );
     return rows[0] ? toFileRow(rows[0]) : null;
   }

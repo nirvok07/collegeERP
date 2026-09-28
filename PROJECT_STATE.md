@@ -17,8 +17,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ Read-only dev-DB audit: syllabus and all 55 public tables checked; permissions is the expected
   non-tenant reference-table exception.
 - ✅ Web typecheck and 203 tests pass.
-- 🔍 Server syllabus and migration-invariant tests remain unverified because the local PostgreSQL
-  test database is unavailable; direct live-state checks pass.
+- ✅ Server syllabus 8/8 and migration-invariant 9/9 tests pass against the local PostgreSQL test
+  database; the full server suite remains to be rerun.
 - ✅ Flutter location permission/timeout/mock refusal and coordinate payload implemented; widget
   tests updated with injected location fix.
 - 🔍 NEEDS VALIDATION: physical phone inside/outside a real fence; this is an explicit external
@@ -27,8 +27,7 @@ because the migration ledger has no checksum or execution log; no corrective mig
 ## BLOCKERS
 
 - 🚫 Physical-device GPS verification requires an attached phone.
-- 🚫 Full server suite and migration-invariant verification require the unavailable local
-  PostgreSQL test database; the live privilege audit passed.
+- 🔍 Full server suite still needs a clean N/N rerun; the local PostgreSQL service is now available.
 - ✅ P0-4 validation debt is inventoried in `docs/validation-debt.md`, grouped by Android, browser,
   server, tooling, and explicit external blockers.
 - ✅ P0-3 now has canonical `server/scripts/seed-dev.ts` and runbook entry; the baseline seed is

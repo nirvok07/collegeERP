@@ -107,41 +107,33 @@ export async function registerSyllabusRoutes(app: FastifyInstance, c: Container)
    * belong to the tenant fails the FK.
    */
   app.post('/syllabus/upload', async (req, reply) => {
-    try {
-      if (!(await gate(req, reply, 'syllabus.upload'))) return;
-      const body = req.body as Buffer | undefined;
-      const parts = body ? parseMultipart(body, req.headers['content-type'] as string | undefined) : [];
-      console.log('DEBUG parts', parts.map(p => ({ name: p.name, filename: p.filename, contentType: p.contentType, valueLen: p.value.length })));
-      const field = (n: string) => parts.find((p) => p.name === n && !p.filename)?.value.toString('utf8').trim();
+    if (!(await gate(req, reply, 'syllabus.upload'))) return;
+    const body = req.body as Buffer | undefined;
+    const parts = body ? parseMultipart(body, req.headers['content-type'] as string | undefined) : [];
+    const field = (n: string) => parts.find((p) => p.name === n && !p.filename)?.value.toString('utf8').trim();
 
-      const courseId = field('course_id');
-      const academicYearId = field('academic_year_id');
-      const file = parts.find((p) => p.filename);
-      if (!courseId || !academicYearId || !file) {
-        return sendFailure(reply, fail('VALIDATION_FAILED', 'Choose a course, an academic year and a PDF file.'));
-      }
-      if (file.contentType && file.contentType !== 'application/pdf') {
-        return sendFailure(reply, fail('VALIDATION_FAILED', 'The syllabus must be a PDF.'));
-      }
-      if (file.value.length === 0) return sendFailure(reply, fail('VALIDATION_FAILED', 'The file is empty.'));
-      if (file.value.length > MAX_FILE_BYTES) return sendFailure(reply, fail('VALIDATION_FAILED', 'The file is larger than 10 MB.'));
-
-      const actor = actorOf(req);
-      console.log('DEBUG actor', actor);
-      const result = await uploadSyllabus(c.syllabus, actor, {
-        courseId,
-        academicYearId,
-        bytes: file.value,
-        fileName: file.filename!,
-        contentType: file.contentType ?? 'application/pdf',
-        byteSize: file.value.length,
-      });
-      if (!result.ok) return sendFailure(reply, result.error);
-      return sendOk(reply, serialise(result.value), 201);
-    } catch (e) {
-      console.log('UPLOAD ERROR', (e as Error).message, (e as Error).stack);
-      throw e;
+    const courseId = field('course_id');
+    const academicYearId = field('academic_year_id');
+    const file = parts.find((p) => p.filename);
+    if (!courseId || !academicYearId || !file) {
+      return sendFailure(reply, fail('VALIDATION_FAILED', 'Choose a course, an academic year and a PDF file.'));
     }
+    if (file.contentType && file.contentType !== 'application/pdf') {
+      return sendFailure(reply, fail('VALIDATION_FAILED', 'The syllabus must be a PDF.'));
+    }
+    if (file.value.length === 0) return sendFailure(reply, fail('VALIDATION_FAILED', 'The file is empty.'));
+    if (file.value.length > MAX_FILE_BYTES) return sendFailure(reply, fail('VALIDATION_FAILED', 'The file is larger than 10 MB.'));
+
+    const result = await uploadSyllabus(c.syllabus, actorOf(req), {
+      courseId,
+      academicYearId,
+      bytes: file.value,
+      fileName: file.filename!,
+      contentType: file.contentType ?? 'application/pdf',
+      byteSize: file.value.length,
+    });
+    if (!result.ok) return sendFailure(reply, result.error);
+    return sendOk(reply, serialise(result.value), 201);
   });
 
   /* -------------------------------------------------------------- list */

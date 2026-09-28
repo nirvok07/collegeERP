@@ -10,8 +10,9 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type { LightMyRequestResponse } from 'fastify';
+import { createPool } from '../src/infrastructure/db/pool.ts';
 import {
-  buildTestApp, provisionCollege, resetData, seedPlatformAccount,
+  buildTestApp, MIGRATOR_URL, provisionCollege, resetData, seedPlatformAccount,
   setupDatabase, signInPlatform, type TestApp,
 } from './helpers.ts';
 
@@ -843,10 +844,26 @@ describe('staff self-attendance (SA-ATT-1)', () => {
       campus_id: 'client-supplied-campus-is-ignored',
     });
     assert.equal(inside.statusCode, 201);
-    assert.equal(inside.json().data.fence_verified, true);
-    assert.equal(inside.json().data.accuracy_m, 5);
-    assert.equal('latitude' in inside.json().data, false, 'coordinates are not persisted');
-    assert.equal('longitude' in inside.json().data, false, 'coordinates are not persisted');
+    assert.equal('latitude' in inside.json().data, false, 'coordinates are not returned');
+    assert.equal('longitude' in inside.json().data, false, 'coordinates are not returned');
+    const pool = createPool(MIGRATOR_URL);
+    try {
+      const stored = await pool.query<{
+        fence_verified: boolean;
+        accuracy_m: number;
+        payload: Record<string, unknown>;
+      }>(
+        `SELECT fence_verified, accuracy_m, to_jsonb(staff_attendance) AS payload
+           FROM staff_attendance
+          WHERE id = $1`, [inside.json().data.id],
+      );
+      assert.equal(stored.rows[0]?.fence_verified, true);
+      assert.equal(stored.rows[0]?.accuracy_m, 5);
+      assert.equal('latitude' in (stored.rows[0]?.payload ?? {}), false, 'latitude is not persisted');
+      assert.equal('longitude' in (stored.rows[0]?.payload ?? {}), false, 'longitude is not persisted');
+    } finally {
+      await pool.end();
+    }
   });
 
   it('accepts the radius boundary and caps the reported accuracy allowance', async () => {
