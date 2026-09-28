@@ -41,6 +41,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
   assessment verification/corrections and attendance correction fixtures remain open.
 - ✅ Seed code now expands deterministically to approximately 40 staff and 400 students across
   programs/sections; execution and duplicate-run proof remain blocked on the owner seed credential.
+- ✅ Seed code now creates a fine, requests and approves a full waiver, and records the resulting
+  waived invoice state; actual execution remains pending the owner seed credential.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 

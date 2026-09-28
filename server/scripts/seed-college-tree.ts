@@ -656,6 +656,26 @@ for (const [index, studentId] of feeStudents.entries()) {
   });
   if (index === 2) await call('POST', `/fees/payments/${payment.payment.id}/cancel`, { reason: 'Seeded reversal example' });
 }
+const waiverStudent = feeStudents[0];
+if (waiverStudent) {
+  const waiverInvoices = await call<{ id: string; kind: string }[]>('GET', `/fees/students/${waiverStudent}/invoices`);
+  let fine = waiverInvoices.find((i) => i.kind === 'fine');
+  if (!fine) {
+    fine = await call<{ id: string; kind: string }>('POST', `/fees/students/${waiverStudent}/fines`, {
+      amount_paise: 25000, reason: 'Library book not returned (seed example)',
+    });
+  }
+  const requests = await call<{ id: string; kind: string; invoice_id: string; status: string }[]>(
+    'GET', `/fees/requests?student_id=${waiverStudent}`,
+  );
+  let waiver = requests.find((r) => r.kind === 'waiver' && r.invoice_id === fine!.id);
+  if (!waiver) {
+    waiver = await call<{ id: string; kind: string; invoice_id: string; status: string }>('POST', '/fees/waivers', {
+      invoice_id: fine.id, reason: 'Seeded hardship waiver example',
+    });
+  }
+  if (waiver.status === 'pending') await call('POST', `/fees/requests/${waiver.id}/approve`, { reason: 'Seed fixture approved' });
+}
 
 /* ---------------------------------------------------------- 13. assessment */
 

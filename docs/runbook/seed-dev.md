@@ -20,7 +20,7 @@ offerings, instructors, generated sessions, and one student-access persona.
 
 The baseline also creates a published two-instalment tuition structure and
 idempotently generates invoices for the seeded students; it leaves examples of
-part-paid, paid, overdue, and reversed payments. It also plans one assessment
+part-paid, paid, overdue, reversed payments, and an approved fine waiver. It also plans one assessment
 and seeds scored/absent marks; verification/corrections, waived invoices, and
 the larger population are still follow-up fixture work.
 
