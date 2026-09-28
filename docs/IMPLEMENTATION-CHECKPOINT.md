@@ -1,14 +1,30 @@
 # Implementation Checkpoint
 
 ```
-UPDATED   2026-09-13
+UPDATED   2026-09-29
 Slices    S1 backend foundation — COMPLETE
           S2 Super Admin console — COMPLETE
 Stack     Node 24 / Fastify / PostgreSQL 16 (pg, no ORM)
           React 19 / Vite / TypeScript, no component framework, in clients/web/
           Flutter for Android and iOS at the repository root; no Flutter Web
-Tests     396 backend + 189 web + 135 Flutter = 720 passing
-State     Current compact state: PROJECT_STATE.md. This file is slice history.
+Tests     Current verified totals: 519 server + 203 web + 330 Flutter; historical totals below
+State     Current state: PROJECT_STATE.md. This file is slice history.
+
+P0 STABILISATION CHECKPOINT — 2026-09-28/29
+  7925f06  Enforce the AD-83 staff-attendance geo-fence; coordinates are checked then discarded,
+           desktop punching is withdrawn, and physical-phone GPS verification remains external.
+  f3cfe90  Record the P0-0 invariant-enforcement sweep (93 focused tests).
+  6af1254  Reconcile project state with idempotent seed evidence.
+  626f5cc  Stabilise the seeded browser visual capture (admin, teacher and student flows).
+  188efe0  Close verified checklist residue and preserve explicit blockers.
+  3c716db  Record browser persona validation (admin 11, teacher 3, student 2 sections).
+  e8ea7c8  Reconcile geo-fence checklist status and preserve the physical-device blocker.
+  b5f8099  Add platform-auth mode to the standing visual-check script.
+  9527766  Record platform and top-level browser screen coverage (3 platform sections).
+  23ef8d3  Record the forced browser-state validation blocker.
+  d4aa224  Record AD-84…AD-90 and AD-92; resolve OD-FEE-5.
+  85d540a  Record AD-93, separating staff leave from student excused absence.
+  Current open validation: forced loading/empty/error browser states and physical Android checks.
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked
