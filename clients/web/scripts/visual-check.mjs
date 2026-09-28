@@ -26,7 +26,14 @@ await mkdir(outputDir, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 1 });
 const failures = [];
+const authFailures = [];
 page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
+page.on('response', (response) => {
+  const url = response.url();
+  if (response.status() >= 400 && /\/v1\/auth\/(otp|platform\/)/.test(url)) {
+    authFailures.push(`${response.status()} ${new URL(url).pathname}`);
+  }
+});
 page.on('console', (message) => {
   // A signed-out browser always probes refresh before the OTP flow. Chromium
   // reports that expected 401 as a resource error; it is not a visual failure.
@@ -129,8 +136,9 @@ try {
       const shellCount = await page.locator('.shell__nav').count();
       const tabCount = await page.locator('.shell__tab').count();
       const signInCount = await page.getByRole('button', { name: 'Sign in' }).count();
+      const authDetail = authFailures.length > 0 ? `, auth=${authFailures.join(',')}` : '';
       throw new Error(
-        `Signed-in shell did not render (nav=${shellCount}, tabs=${tabCount}, signIn=${signInCount}): ${error.message}`,
+        `Signed-in shell did not render (nav=${shellCount}, tabs=${tabCount}, signIn=${signInCount}${authDetail}): ${error.message}`,
       );
     }
     // Permissions load immediately after the shell mounts. Wait until the
