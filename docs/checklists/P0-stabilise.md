@@ -11,15 +11,15 @@ drift, an unenforced security control and 42 unvalidated features should not gro
 
 Full analysis: `docs/blueprint/modules/staff-attendance.md` §2–§6.
 
-The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and never checked.
-`self-attendance.ts punchIn()` takes `(deps, actor)` and nothing else; both clients post `{}`.
+The fence is migrated (`029_campus_fence.sql`), configurable, displayed, and now enforced by the
+server for phone punches. Desktop punching is withdrawn because a desktop cannot establish physical
+presence; physical-phone verification remains external.
 
 ### Decide
 - [x] `DOC` Choose **(a) enforce** or **(b) amend AD-83 to drop the fence**. Enforce (a).
 - [x] `DOC` Write the decision into `docs/blueprint/adr.md` — amend AD-83 either way, so the ADR
       and the code agree afterwards
-- [ ] `DOC` If (b): also amend `029_campus_fence.sql`'s header comment, which currently promises
-      enforcement, and delete the fence columns in a new migration rather than leaving dead schema
+- [x] `DOC` If (b): N/A — enforcement (a) was chosen; migration 029 remains the live fence schema
 
 ### Reproduce (do this before fixing — confirm the defect, do not assume it)
 - [ ] `TEST` Punch in from outside every configured fence, on Flutter; confirm 2xx
@@ -92,7 +92,8 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 
 ### Close
 - [ ] `VAL` Verified on a physical phone inside and outside a real fence
-- [ ] `DOC` `PROJECT_STATE.md` and `MODULE_REGISTRY.md` updated; committed
+- [x] `DOC` `PROJECT_STATE.md` and `MODULE_REGISTRY.md` updated; committed (physical-phone check
+      remains an explicit external blocker)
 
 ---
 

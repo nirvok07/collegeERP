@@ -1,10 +1,11 @@
 # Project State
 
-Updated 2026-09-29. Current slice: P0-3 usable development seed.
+Updated 2026-09-29. Current slice: P0-4 browser persona validation; P0-0 physical-device check remains.
 
 ## CURRENT OBJECTIVE
 
-P0-0 is committed (`7925f06`). P0-1 live audit found migration 036's syllabus table compliant;
+P0-0 is implemented and committed (`7925f06`); its physical-phone GPS verification remains external.
+P0-1 live audit found migration 036's syllabus table compliant;
 P0-2 removed all ten debug-only `zz-*` server tests after classifying them:
 seven logged and asserted `true`, two were probes, and one tested a private duplicate parser.
 P0-1 found migration 036's syllabus table compliant:
@@ -65,8 +66,12 @@ because the migration ledger has no checksum or execution log; no corrective mig
   found. AD-17 delegation remains unimplemented with P1 approvals and is recorded as future scope.
 - ✅ P0-1's remaining corrective-migration item is N/A: migration 036 and the wider RLS/GRANT audit
   are compliant, so applied migration history remains unchanged.
+- ✅ P0-0 server-enforced geo-fence behavior and its negative/positive test matrix are recorded in
+  `docs/checklists/P0-stabilise.md`; desktop punching is withdrawn and the phone-only parity
+  exception is recorded in `MODULE_REGISTRY.md` and AD-83.
 - ✅ Browser captures were reviewed and the historical duplicate-cancelled-class fixture defect was
-  recorded; teacher/student personas and loading/empty/error-state coverage remain open.
+  recorded; teacher/student persona captures passed, while loading/empty/error-state coverage and
+  the full screen inventory remain open.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
@@ -130,12 +135,14 @@ extending `docs/blueprint/` rather than replacing it. Owner decisions taken in t
 full parity on both surfaces (AD-81 reaffirmed → AD-84/AD-86), stabilise before any new domain.
 
 Verified in that audit, needing action:
-- 🚫 **AD-83 geo-fence is not enforced.** Migration 029 stores the campus fence and the admin UI
-  configures it, but `self-attendance.ts punchIn()` takes no coordinates and checks nothing; both
-  clients post an empty body. Any staff member can punch in from anywhere. → P0-0, highest priority.
+- ✅ **AD-83 geo-fence is enforced.** Migration 029 stores the campus fence and the admin UI
+  configures it; the server checks phone coordinates for both punch directions, discards them after
+  checking, and refuses missing/outside/fenceless punches. Physical-phone GPS verification remains
+  an explicit P0-0 external blocker.
 - ⚠️ Web has **no fee code at all** (mobile: 2,766 lines); calendar management is mobile-only.
   OD-FEE-5 resolved to yes by AD-86. → PAR-1, PAR-2.
-- ⚠️ Web `PunchCard.tsx` (415 lines) punches without coordinates — decide gate or withdraw (P0-0).
+- ✅ Web `PunchCard.tsx` retains read-only attendance status/history and explains that punching is
+  phone-only; it no longer attempts a coordinate-free punch.
 - D3 Admissions, D7 People/HR, D8 Campus Services, D9 Engagement: ❌ unbuilt. All four depend on
   notifications, scheduled jobs and document storage, which are ❌ → capabilities sequenced first.
 - Proposed AD-84…AD-92, to be written into `adr.md` (P0-9). AD-91 (OD-1 default) needs the owner.
