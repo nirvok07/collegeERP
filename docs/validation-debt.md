@@ -10,8 +10,8 @@ the evidence required before it can be marked complete.
 | Surface | Slice(s) | Evidence required | Status |
 |---|---|---|---|
 | Server | P0-1 / P0-2 | Run `syllabus.test.ts`, `migration-invariants.test.ts`, and the full server suite against the local test DB | ✅ `519/519` server tests passed on 2026-09-28 |
-| Android | AD-83 / P0-0 | Real GPS fix inside and outside a configured campus fence; verify missing/outside messages | 🔍 phone required |
-| Android | BIO-1, FB-3/4/5, MUX-1 | Cold-open lock, every sign-out route, OTP keyboard/autofill, admin/teacher/student dashboards | 🔍 phone required |
+| Android | AD-83 / P0-0 | Real GPS fix inside and outside a configured campus fence; verify missing/outside messages | 🔍 phone required; current environment's ADB daemon cannot start (`Operation not permitted`) |
+| Android | BIO-1, FB-3/4/5, MUX-1 | Cold-open lock, every sign-out route, OTP keyboard/autofill, admin/teacher/student dashboards | 🔍 phone required; current environment's ADB daemon cannot start |
 | Android | BR-1, ADM, ONB-1/2, UX-2, SET-1 | Branding, admin modules, onboarding, profile/settings flows on a real phone | 🔍 phone required |
 | Android | CAL-1/2, ST-1 | Calendar events and student timetable on a signed-in phone | 🔍 phone required |
 | Android | PW-1, FEE-7, G1/G2 | Reset code, dummy online payment link, OS PDF print/share sheet, fee reports | 🔍 phone required |

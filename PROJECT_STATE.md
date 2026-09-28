@@ -106,7 +106,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 
 ## BLOCKERS
 
-- Physical Android device and owner/device validation access.
+- Physical Android device and owner/device validation access; the current environment also cannot
+  start the ADB daemon (`Operation not permitted`) or write Flutter's engine cache.
 - Browser forced-state harness: local loading, forced error, and student no-access empty states work
   after auth/input/CORS fixes; collection-backed empty screens remain open. The latest local retry
   was rate-limited by the fixed-OTP challenge bucket, and managed API OTP/account state is still blocked.
