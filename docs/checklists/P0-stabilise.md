@@ -40,16 +40,18 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
       `server/src/modules/attendance/application/ports.ts` to carry `fenceVerified`, `accuracyM`, `source`
 - [x] `REPO` Add a campus-fence reader: resolve the person's campus, return
       `{ latitude, longitude, radiusM } | null`
-- [ ] `SVC` In `self-attendance.ts`, resolve the campus **from the person's assignment, never from
-      client input**
+- [x] `SVC` In `self-attendance.ts`, resolve the campus **from the person's assignment, never from
+      client input** (`findCampusFence` joins the actor's active role assignment to its department/
+      section campus)
 - [x] `SVC` Refuse with `FENCE_MISSING` when the campus has no fence
 - [x] `SVC` Haversine distance check: `distance <= radiusM + min(accuracyM, 50)`. The accuracy
       allowance is bounded — unbounded lets a client claim 10 km accuracy
 - [x] `SVC` Refuse with `OUTSIDE_FENCE`, message naming the campus and the distance in metres
 - [x] `SVC` **Discard the coordinates.** Store only `fence_verified` and `accuracy_m` (AD-83:
       "coordinates checked then discarded"). No latitude or longitude column, ever
-- [ ] `SVC` Preserve the existing correct behaviour: one open punch per person per day;
+- [x] `SVC` Preserve the existing correct behaviour: one open punch per person per day;
       `workDateOf()` in the college timezone; `deps.clock.now()` is authoritative over client time
+      (same-day conflict coverage remains in `attendance.test.ts`)
 
 ### Flutter
 - [x] `APP` Request location permission with a clear rationale string
