@@ -7,8 +7,9 @@ Updated 2026-09-29. Current slice: P0 stabilisation close-out.
 - Server: ✅ typecheck; ✅ 519/519 tests, 0 failures/cancellations/skips on the local test DB.
 - Web: ✅ typecheck; ✅ 203/203 tests; ✅ Playwright/Chromium visual script and top-level captures.
 - Flutter: ✅ analyze and ✅ 330/330 tests; APK builds pass.
-- Database: ✅ local `college_erp_dev` is seeded and usable; Supabase remains the configured remote
-  environment in `server/.env`, while browser verification here intentionally uses the isolated local API.
+- Database: historical local `college_erp_dev` seed evidence is recorded; the currently running API
+  resolves to the configured managed development database, which has only `iit-delhi` and zero
+  accounts. The device-test seed retry is blocked by that environment's `erp_migrator` RLS grant.
 - Platform: ✅ tenant lifecycle and platform administration foundations; ⚠️ push delivery and
   impersonation remain unbuilt or externally blocked.
 - Examinations/results: 🚫 OD-1 / AD-91 owner decision.
@@ -49,6 +50,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 
 - P0-4: capture reachable loading, empty and error states in a live browser; the standing script has
   forced-state modes, but its current headless run exits before authenticated shell creation.
+- P0-3/P0-4: restore the approved seeded API target or bootstrap grant, then rerun device-test seed
+  and authenticated browser state capture.
 - P0-4: complete the physical Android pass, including GPS fence behavior, offline behavior and both
   `college` and `admin` flavors.
 - P0-5/P0-7: obtain owner decisions for OD-1, OD-4 and OD-ACC-1 before dependent domains begin.
@@ -96,12 +99,15 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 - Physical Android device and owner/device validation access.
 - Browser forced-state harness: admin OTP is currently rate-limited and forced probes exit before shell
   authentication; happy-path captures remain valid and state coverage is not claimed.
+- Current configured API target has no device-test accounts; the corrected seed reached an `erp_migrator`
+  RLS refusal. No remote RLS repair was attempted.
 - Xcode unavailable; CAP-3 backend push capability not built.
 
 ## NEXT
 
-Retry P0-4 browser state capture with a healthy seeded OTP bucket and a working authenticated headless
-run; then record each reachable state or a named defect before moving to the physical Android pass.
+Restore the approved local/managed seed path, rerun device-test seed, then retry P0-4 browser state
+capture with a healthy OTP bucket and authenticated headless run; record each reachable state or a
+named defect before moving to the physical Android pass.
 
 ## SOURCES
 

@@ -8,7 +8,7 @@
  * (git-ignored, owner-only). Nothing secret is printed.
  */
 import { randomBytes, randomUUID } from 'node:crypto';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { loadConfig } from '../src/config/config.ts';
 import { createPool } from '../src/infrastructure/db/pool.ts';
@@ -20,10 +20,13 @@ if (config.NODE_ENV === 'production') throw new Error('Refusing to seed test dat
 const API = process.env.SEED_API ?? 'http://localhost:3000';
 const OUT = fileURLToPath(new URL('../.device-test.local.json', import.meta.url));
 const CODE = 'device-test';
-if (existsSync(OUT)) {
-  console.log('Already seeded. Credentials: server/.device-test.local.json');
-  process.exit(0);
-}
+const saved = existsSync(OUT)
+  ? JSON.parse(readFileSync(OUT, 'utf8')) as {
+      platform: { email: string; password: string };
+      admin: { email: string; password: string };
+      teacher: { email: string; password: string };
+    }
+  : undefined;
 
 // The password policy needs a letter and a number; hex alone might lack a letter.
 const secret = () => `Dt${randomBytes(12).toString('hex')}7`;
@@ -43,9 +46,9 @@ async function call(method: string, path: string, body?: unknown, token?: string
   return json.data;
 }
 
-const platform = { email: `owner+${CODE}@nirvok.dev`, password: secret() };
-const admin = { email: `admin@${CODE}.dev`, password: secret() };
-const teacher = { email: `teacher@${CODE}.dev`, password: secret() };
+const platform = saved?.platform ?? { email: `owner+${CODE}@nirvok.dev`, password: secret() };
+const admin = saved?.admin ?? { email: `admin@${CODE}.dev`, password: secret() };
+const teacher = saved?.teacher ?? { email: `teacher@${CODE}.dev`, password: secret() };
 
 // Resumable: a run that stopped part-way leaves this script's own test owner
 // and college behind. Only those rows are touched, and only here.

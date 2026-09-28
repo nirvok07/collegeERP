@@ -180,6 +180,13 @@ remain in `server/tests`.
 The local development database now has a seeded `device-test` college and supports signed-in API
 verification. Live browser capture remains an explicit validation item.
 
+Validation note (2026-09-29): the configured running API currently points at a managed development
+database containing only `iit-delhi` with zero user accounts. The ignored credential file existed
+but was stale; `scripts/seed-device-test.ts` now validates/rebuilds the database instead of trusting
+the file. The retry reached `platform_accounts` but the configured `erp_migrator` role was refused
+by RLS, so no RLS weakening or remote repair was attempted. Restore the approved bootstrap/local
+database path before claiming a new browser sign-in or state capture.
+
 Implementation note (2026-09-29): the canonical seed was run through the API with a known local
 admin credential. Two consecutive repeat runs completed without errors and created no new rows;
 the service and seed also guard against duplicate timetable occurrences.
