@@ -139,8 +139,8 @@ Very little, which is unusual and worth saying. Two candidates:
 
 ### 1.6 Remove
 
-- `flutter_01.log`, `prompt1.md`, `prompt2.md` (the methodology/log cleanup remains open),
-  `android/build/` and `clients/web/explore.mjs`
+- `prompt1.md`, `prompt2.md` (the methodology cleanup remains open), `android/build/` and
+  `clients/web/explore.mjs`
   (both untracked build/scratch artefacts).
 - The ten `zz-*` debug test files — nearly a quarter of the 46 server test files. Promote the ones
   that assert production behaviour, delete the rest. A permanently red test is worse than no test,
@@ -706,8 +706,9 @@ Each item names its **surfaces**: `S` server, `W` web, `F` Flutter, `D` docs, `�
 - [ ] Fold `MODULE-CONTROLLER.md` into `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`, then delete
 - [x] Fold the dated inbox and fee planning queues into `docs/requirements.md`; the superseded plan
   files were deleted and their open gates remain in R73 and R77–R80
-- [ ] Retire `flutter_01.log`, `prompt1.md` and `prompt2.md` only after their live references and
-  methodology role are folded safely; the duplicate design-token file was already folded and deleted
+- [x] Retire the ignored generated `flutter_01.log`; it had no live references
+- [ ] Retire `prompt1.md` and `prompt2.md` only after their live references and methodology role are
+  folded safely; the duplicate design-token file was already folded and deleted
 - [ ] Gitignore `android/build/`; `clients/web/explore.mjs` was deliberately deleted; remaining
   `android/build/` ignore work is open
 - [ ] Add this file to `ARCHITECTURE_INDEX.md`
