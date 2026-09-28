@@ -41,6 +41,23 @@ P0 STABILISATION CHECKPOINT — 2026-09-28/29
   managed-target fresh authentication; local device-test loading, forced-error and student no-access
   empty captures are verified.
 
+P0 FOLLOW-UP — DOCUMENTATION, PROBE HARDENING AND BLOCKER RECONCILIATION — 2026-09-29
+  267b167 / d88bc99  Add the bounded empty-state probe and verify local forced-error browser states.
+  31ca481 / 7cb2779 / b80983a  Reconcile the web-console decision, owner preparation and migration-gate wording.
+  9945354 / d6aaf13 / f94da2c  Refresh the master tracer, checkpoint history and historical seed evidence.
+  47922ce / b2d51ea  Document visual probe modes and reconcile project-state browser evidence.
+  f9809f6 / 4c3e765  Harden probe envelopes and expand bounded collection endpoints.
+  e3f7624 / 055d627 / 403422c / cc7c985 / 8ec86ae  Add shell diagnostics and stabilize controlled OTP input.
+  f6adf2c / adb0d6e  Report auth failures directly and record the local fixed-OTP blocker.
+  a841b86  Record the ADB/Flutter-cache tooling blocker for physical Android validation.
+  ee5b76e / 3d656a8 / 3e236f2 / eadd5c9  Audit methodology retirement, map destinations, and fold
+           the module contract and architecture close-out gates into the canonical index.
+  014bc7f / 7489d43  Refresh tracer line counts and add named validation-debt defect references.
+  219d5b4 / cb05940  Prepare the owner decision brief and link the new P0 trackers from the docs entry point.
+  Current open validation remains collection-backed empty browser states, fixed-OTP challenge-bucket
+  access for further local retries, managed-target seed/bootstrap access, physical Android evidence,
+  and the three owner decisions. None of these external blockers is marked complete.
+
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked
   capability. Every teacher field write can now be sent twice safely: an
