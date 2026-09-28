@@ -272,8 +272,8 @@ state tracer now reports grouped current blockers; the item-level register remai
 ### Close out
 - [ ] `DOC` Each item → ✅ with evidence, or a named defect with an issue reference
 - [x] `DOC` **No item stays 🔍 without a written reason** — remaining browser, Android, owner-console,
-      SMTP, device and tooling entries are grouped with an explicit dependency in
-      `docs/validation-debt.md`; capability blockers are marked `🚫`.
+      SMTP, device and tooling entries are grouped with an explicit dependency and repository-local
+      defect/blocker IDs in `docs/validation-debt.md`; capability blockers are marked `🚫`.
 - [x] `DOC` iOS stays 🚫 while Xcode is unavailable — do not retry (`CLAUDE.md` §9); the blocker is
       recorded in `docs/validation-debt.md`
 - [x] `DOC` Backend push stays 🚫 until P1's CAP-3 seals device tokens; the capability blocker is
