@@ -692,7 +692,7 @@ if (firstOffering) {
   }
   if (!components.some((c) => c.id !== component!.id && c.status === 'draft')) {
     await call('POST', `/offerings/${firstOffering}/assessments`, {
-      name: 'Final examination (unmarked)', kind: 'exam', max_marks: 100, weight: 60,
+      name: 'Final examination (unmarked)', kind: 'other', max_marks: 100, weight: 60,
     });
   }
   const sheet = await call<{ component: Component; students: { student_id: string; status: string | null }[] }>(
