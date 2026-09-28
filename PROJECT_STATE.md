@@ -73,7 +73,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ Browser captures were reviewed and the historical duplicate-cancelled-class fixture defect was
   recorded; College Admin top-level (11), teacher (3 permission-filtered), student (2
   permission-filtered), and platform (3) captures passed. Loading/empty/error-state coverage
-  remains open.
+  remains open: the committed forced-state probes currently exit before the authenticated shell in
+  the headless runner, so no state capture is claimed.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 

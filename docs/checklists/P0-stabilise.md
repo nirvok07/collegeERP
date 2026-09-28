@@ -231,7 +231,10 @@ machine had no browser, so **every prior web CSS and chart change was unverified
       (dashboard, people, organisation, curriculum/academic, college, teaching/sections/offerings,
       students, timetable/rooms, attendance, assessment/marks, profile) and a platform Owner
       captured 3 platform sections; platform capture used the supported password + authenticator flow
-- [ ] `W` Capture each screen's loading, empty and error states where reachable
+- [ ] `W` Capture each screen's loading, empty and error states where reachable (the committed
+      state-probe mode and web tests cover the UI paths, but the current headless runner exits
+      before the authenticated shell during forced-state runs; no state capture is claimed until
+      that browser-harness issue is resolved)
 - [x] `W` Review captures; file a defect per visual problem (historical duplicate cancelled class
       rows are recorded in `docs/validation-debt.md`)
 - [x] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
