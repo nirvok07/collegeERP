@@ -6,7 +6,7 @@ Status model per CLAUDE.md §3: ✅ DONE · 🟡 IN PROGRESS · ⚠️ PARTIAL �
 ## Slices
 | Slice | State | Evidence |
 |---|---|---|
-| ND-S1 Tokens | ✅ | `AppGeometry` added to `lib/core/design/tokens.dart` 2026-09-21 |
+| ND-S1 Tokens | ✅ | `AppGeometry`, `AppDataColors` and `AppFeeColors` are canonical in `lib/core/design/tokens.dart`; duplicate reference removed in `d3aecde` |
 | ND-S2 Core containers | ✅ | AppCard, AppCardGroup, AppRowCard implemented 2026-09-21 |
 | ND-S3 Composite containers | ❌ | — |
 | ND-S4 `AppSheet` | ✅ code / 🔍 phone | `AppSheet` + `showAppSheet` (sheet <600dp, dialog ≥600dp); `showSubmitDialog` and 3 form dialogs moved; confirmations unchanged; sheet screenshot reviewed; 313 tests pass |

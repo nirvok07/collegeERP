@@ -68,6 +68,26 @@ Moved here from the repository root (2026-09-21) so only the trackers named in `
 (`PROJECT_STATE.md`, `ARCHITECTURE_INDEX.md`, `MODULE_REGISTRY.md`, `requirements.md` inbox)
 stay at the root.
 
+## Tracker hierarchy
+
+This README is the entry point for documents. The trackers below are intentionally not competing
+copies: each owns one question, and a slice is not complete until its state is reflected in
+`PROJECT_STATE.md` and its phase checklist.
+
+| Question | Owner | Scope |
+|---|---|---|
+| What is true now, and what is the one next action? | [`PROJECT_STATE.md`](../PROJECT_STATE.md) | Compact current-state tracer and blockers |
+| What should be built next? | [`EXECUTION-CHECKLIST.md`](EXECUTION-CHECKLIST.md) | Build map, phase gates and sequencing |
+| What tasks close the current phase? | [`checklists/`](checklists/README.md) | Tickable P0–P7 task detail; P0 is the active phase |
+| Is the architecture process or a drift/owner decision incomplete? | [`MASTER-CHECKLIST.md`](MASTER-CHECKLIST.md) | Architecture-process verification and drift register |
+| Why is the sequence or capability shaped this way? | [`MASTER-PLAN.md`](MASTER-PLAN.md) | Rationale, capability order and longer-range plan |
+| What was already implemented and committed? | [`IMPLEMENTATION-CHECKPOINT.md`](IMPLEMENTATION-CHECKPOINT.md) | Append-only long-form history |
+| What is the status of the new-design capability? | [`new-design/CHECKLIST.md`](new-design/CHECKLIST.md) | Capability-local evidence, reported upward to the current-state tracer |
+
+Methodology and recovery documents are protocols, not status trackers: `prompt1.md`, `prompt2.md`,
+`MODULE-CONTROLLER.md`, `NEW-SESSION-CONTEXT.md` and `INTERRUPT-RECOVERY.md` remain authoritative
+until their planned consolidation is completed.
+
 | File | What it is |
 |---|---|
 | [MASTER-CHECKLIST.md](MASTER-CHECKLIST.md) | Planning checklist above the methodology prompts; drift and blocker register (Drift 1–6, OD-*) |

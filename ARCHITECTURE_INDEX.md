@@ -6,6 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
+| **Documentation entry point and tracker ownership** | `docs/README.md` |
 | Decisions (AD-1…AD-93) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R80) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | **Module & capability index (start here)** | `docs/blueprint/modules/README.md` |

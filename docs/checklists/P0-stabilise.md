@@ -335,7 +335,9 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 - [x] `DOC` Clear root `requirements.md` after absorbing its four items as R77–R80 in
       `docs/requirements.md`; document-storage, notification, dashboard-parity and auth-parity
       implementation/owner gates remain explicit there
-- [ ] `DOC` Verify `docs/` has one obvious entry point and no competing trackers
+- [x] `DOC` Verify `docs/README.md` is the single entry point and explicitly assigns each tracker
+      one question; phase, architecture, history and capability-local checklists are distinct
+      scopes, not competing status copies
 
 ---
 
