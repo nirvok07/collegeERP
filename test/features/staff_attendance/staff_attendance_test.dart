@@ -42,10 +42,11 @@ class _FakeRepository implements StaffAttendanceRepository {
   @override
   Future<Result<StaffAttendanceDay>> punchIn(LocationFix location) async {
     punchInCalls++;
-    if (refuse)
+    if (refuse) {
       return Err(const Failure(
           code: FailureCode.conflict,
           message: 'Already punched out for today.'));
+    }
     final day = StaffAttendanceDay(
       id: 'd1',
       workDate: _today(),
@@ -57,9 +58,10 @@ class _FakeRepository implements StaffAttendanceRepository {
 
   @override
   Future<Result<StaffAttendanceDay>> punchOut(LocationFix location) async {
-    if (refuse)
+    if (refuse) {
       return Err(const Failure(
           code: FailureCode.conflict, message: 'Punch in first.'));
+    }
     final open = days.first;
     final closed = StaffAttendanceDay(
       id: open.id,

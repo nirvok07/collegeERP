@@ -75,7 +75,9 @@ class StaffAttendanceCubit extends Cubit<StaffAttendanceState> {
 
   Future<void> punchIn() async {
     final current = state;
-    if (current is! StaffAttendanceReady || current.acting) return;
+    if (current is! StaffAttendanceReady || current.acting) {
+      return;
+    }
     emit(current.copyWith(acting: true));
     final result = await _punch((location) => _repository.punchIn(location));
     switch (result) {
@@ -91,7 +93,9 @@ class StaffAttendanceCubit extends Cubit<StaffAttendanceState> {
     final current = state;
     if (current is! StaffAttendanceReady ||
         current.acting ||
-        current.today == null) return;
+        current.today == null) {
+      return;
+    }
     emit(current.copyWith(acting: true));
     final result = await _punch((location) => _repository.punchOut(location));
     switch (result) {
@@ -115,7 +119,7 @@ class StaffAttendanceCubit extends Cubit<StaffAttendanceState> {
             code: FailureCode.validationFailed,
             message: 'Mock location cannot be used for attendance.'));
       }
-      return send(location);
+      return await send(location);
     } on LocationUnavailable catch (e) {
       return Err(
           Failure(code: FailureCode.validationFailed, message: e.message));
