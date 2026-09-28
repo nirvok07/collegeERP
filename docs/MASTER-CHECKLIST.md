@@ -1,11 +1,11 @@
 # Master ERP Planning Checklist
 
 ```
-STATUS  2026-09-12
-Phase:    P18 module execution (1/24)
-Blocked:  OD-1, OD-4
-Gate:     NOT READY - 2 critical blockers (was 5)
-Next:     S3 M1 write surface (invite, assign role, revoke)
+STATUS  2026-09-29
+Phase:    P0 stabilisation close-out; P18 module execution remains 1/24
+Blocked:  OD-1, OD-4, OD-ACC-1; fresh seed/bootstrap, browser and Android evidence
+Gate:     NOT READY - the P0 exit gate remains open
+Next:     Restore the approved seed/bootstrap path, then finish P0-4 state capture and device evidence
 Drift:    3 open (see section 7)
 ```
 
@@ -232,10 +232,10 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 
 | # | Item | Why | Depends | Output | Validation | Status |
 |---|---|---|---|---|---|---|
-| 17.1 | Backend platform decided | Currently an assumption. Everything from authorization to sync depends on it | OD-1, OD-3, OD-4, 16.1 | Backend ADR | Decided, not assumed | 🔴 **blocking, A1 still an assumption** |
+| 17.1 | Backend platform decided | Everything from authorization to sync depends on it | 16.1 | AD-66, AD-68 and `ARCHITECTURE_INDEX.md` | Node API over PostgreSQL is decided and implemented | ✅ |
 | 17.2 | API contract conventions | The contract is the seam between every client and every module | 17.1 | `docs/05-api-contract.md` | Envelope, errors, pagination, versioning, idempotency | ✅ drafted, backend-agnostic |
 | 17.3 | Sync protocol for offline clients | The highest-risk code in the product | 17.2, AD-9 | `docs/03-offline-first.md` | Push, pull, cursors, conflicts, tombstones | ✅ specified |
-| 17.4 | Client architecture | Already decided for mobile. Web console architecture is undecided | OD-3 | `docs/02-architecture.md` | Layers, DI, routing, error model | ✅ mobile · 🔴 web |
+| 17.4 | Client architecture | Both client surfaces must share the authority and API model | AD-24, AD-54 | `docs/02-architecture.md` and `ARCHITECTURE_INDEX.md` | Flutter mobile plus React web console are decided and implemented | ✅ |
 | 17.5 | Database strategy and tenancy isolation | Shared versus isolated is effectively irreversible after launch | 0.8, 17.1 | AD-22 | Shared with row-level security, partitioned, documented escape hatch | ✅ |
 | 17.6 | Event infrastructure | AD-10 requires events. Nothing yet says how they are delivered | 5.5, 17.1 | Event transport ADR | Guarantees, ordering, retries, dead letters | ⬜ |
 | 17.7 | Environments and release pipeline | Shipping to a live college needs staging that mirrors production | 17.1 | CI and environments | Dev, staging, production, with migration gates | 🟡 CI planned in Phase 0 of the roadmap |
@@ -330,11 +330,10 @@ P1 Discovery ──▶ P2 Actors ──▶ P3 Domains ──▶ P4 Modules ─�
   redrawn.
 - P18 cannot start on a module whose dependencies in P5 and P6 are unresolved. This is why M1
   was first.
-- P17 cannot complete while OD-1, OD-3, OD-4 or the two new open decisions stand.
+- P17 cannot complete while OD-1, OD-4, OD-ACC-1 or other critical open decisions stand.
 - P19 can only run after P18 completes. It is a sweep over finished work, not a running check.
 - ~~P16 is the weakest phase and blocks P17.~~ **Resolved 2026-09-12.** P16 is complete and P17
-  is now blocked only by OD-3, which decides the web client, and by OD-1 and OD-4 through the
-  modules they shape.
+  is now blocked by OD-1, OD-4 and OD-ACC-1 through the modules and integrations they shape.
 
 **Safe to defer.** P13 automation beyond the per-module level. P15 integrations other than the
 import pipeline. P12 statutory reports until P1.6 completes. Deferring these does not invalidate
@@ -432,7 +431,7 @@ else is finished. An architecture that is ninety percent complete in the wrong d
 worth less than one that is sixty percent complete and correct.
 
 ### Critical blockers — any one prevents approval
-1. Any open decision in §3 marked critical still unanswered — currently OD-1, OD-3, OD-4
+1. Any open decision in §3 marked critical still unanswered — currently OD-1, OD-4 and OD-ACC-1
 2. An entity with two claimed owners, or a fact with two sources of truth
 3. A cycle in the module dependency graph
 4. A module without a Module Contract that passed Boundary Audit
