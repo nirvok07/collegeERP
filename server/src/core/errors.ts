@@ -17,6 +17,8 @@ export type FailureCode =
   | 'ACCOUNT_NOT_ACTIVE'
   | 'TENANT_SUSPENDED'
   | 'SEAT_LIMIT_REACHED'
+  | 'FENCE_MISSING'
+  | 'OUTSIDE_FENCE'
   | 'RATE_LIMITED'
   | 'UNKNOWN';
 
@@ -46,6 +48,8 @@ export const httpStatusFor = (code: FailureCode): number =>
     ACCOUNT_NOT_ACTIVE: 403,
     TENANT_SUSPENDED: 403,
     SEAT_LIMIT_REACHED: 409,
+    FENCE_MISSING: 403,
+    OUTSIDE_FENCE: 403,
     RATE_LIMITED: 429,
     UNKNOWN: 500,
   })[code];

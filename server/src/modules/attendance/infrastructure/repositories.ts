@@ -197,6 +197,22 @@ export class PgMarkRepository implements MarkRepository {
 }
 
 export class PgStaffAttendanceRepository implements StaffAttendanceRepository {
+  async findCampusFence(tx: Tx, personId: string) {
+    const { rows } = await clientOf(tx).query(
+      `SELECT c.name AS campus_name, c.fence_latitude, c.fence_longitude, c.fence_radius_m
+         FROM role_assignments ra
+         LEFT JOIN departments direct_d ON direct_d.id = ra.scope_ref_id AND ra.scope_type = 'department'
+         LEFT JOIN sections sec ON sec.id = ra.scope_ref_id AND ra.scope_type = 'section'
+         LEFT JOIN programs prog ON prog.id = sec.program_id
+         JOIN departments d ON d.id = COALESCE(direct_d.id, prog.department_id)
+         JOIN campuses c ON c.id = d.campus_id
+        WHERE ra.person_id = $1 AND ra.status = 'active'
+          AND c.fence_latitude IS NOT NULL
+        ORDER BY ra.granted_at DESC LIMIT 1`, [personId],
+    );
+    const r = rows[0];
+    return r ? { campusName: r.campus_name, latitude: Number(r.fence_latitude), longitude: Number(r.fence_longitude), radiusM: r.fence_radius_m } : null;
+  }
   async findByDate(tx: Tx, personId: string, workDate: string): Promise<StaffAttendanceRecord | null> {
     const { rows } = await clientOf(tx).query(
       `SELECT id, work_date, punch_in_at, punch_out_at FROM staff_attendance
@@ -208,12 +224,13 @@ export class PgStaffAttendanceRepository implements StaffAttendanceRepository {
 
   async punchIn(tx: Tx, input: {
     id: string; tenantId: string; personId: string; workDate: string; at: Date;
+    fenceVerified: boolean; accuracyM: number; source: 'app' | 'web' | 'biometric';
   }): Promise<StaffAttendanceRecord> {
     const { rows } = await clientOf(tx).query(
-      `INSERT INTO staff_attendance (id, tenant_id, person_id, work_date, punch_in_at)
-       VALUES ($1,$2,$3,$4,$5)
+      `INSERT INTO staff_attendance (id, tenant_id, person_id, work_date, punch_in_at, fence_verified, accuracy_m, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
        RETURNING id, work_date, punch_in_at, punch_out_at`,
-      [input.id, input.tenantId, input.personId, input.workDate, input.at],
+      [input.id, input.tenantId, input.personId, input.workDate, input.at, input.fenceVerified, input.accuracyM, input.source],
     );
     return toStaffAttendance(rows[0]);
   }

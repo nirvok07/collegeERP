@@ -17,6 +17,7 @@ import 'package:college_erp/features/teaching/domain/teaching_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:college_erp/core/widgets/app_card.dart';
+import 'package:college_erp/core/platform/current_location.dart';
 
 /// The punch card is self-scoped and only ever shows "Not punched in yet" in
 /// these tests; a fake with no history is enough not to hit the network.
@@ -24,11 +25,13 @@ class _FakeStaffAttendance implements StaffAttendanceRepository {
   @override
   Future<Result<List<StaffAttendanceDay>>> history() async => const Ok([]);
   @override
-  Future<Result<StaffAttendanceDay>> punchIn() async =>
-      Err(const Failure(code: FailureCode.unknown, message: 'not used in this test'));
+  Future<Result<StaffAttendanceDay>> punchIn(LocationFix location) async =>
+      Err(const Failure(
+          code: FailureCode.unknown, message: 'not used in this test'));
   @override
-  Future<Result<StaffAttendanceDay>> punchOut() async =>
-      Err(const Failure(code: FailureCode.unknown, message: 'not used in this test'));
+  Future<Result<StaffAttendanceDay>> punchOut(LocationFix location) async =>
+      Err(const Failure(
+          code: FailureCode.unknown, message: 'not used in this test'));
 }
 
 /// The dashboard only shapes the teacher's own sessions and teaching. These
@@ -41,46 +44,48 @@ ClassSession session({
   String end = '10:00',
   String status = 'scheduled',
   String title = 'Operating Systems',
-}) => ClassSession(
-  id: id,
-  offeringId: 'o1',
-  date: date,
-  startsAt: start,
-  endsAt: end,
-  status: status,
-  courseCode: 'CS301',
-  courseTitle: title,
-  component: 'lecture',
-  sectionLabel: 'A',
-  programName: 'B.Tech CSE',
-  termName: 'Semester 1',
-  roomCode: 'LH-204',
-  roomName: null,
-  teacherName: null,
-  iAmTeaching: true,
-  iAmStandingIn: false,
-  cancelledReason: null,
-  movedFromDate: null,
-  allowedActions: const ['complete'],
-);
+}) =>
+    ClassSession(
+      id: id,
+      offeringId: 'o1',
+      date: date,
+      startsAt: start,
+      endsAt: end,
+      status: status,
+      courseCode: 'CS301',
+      courseTitle: title,
+      component: 'lecture',
+      sectionLabel: 'A',
+      programName: 'B.Tech CSE',
+      termName: 'Semester 1',
+      roomCode: 'LH-204',
+      roomName: null,
+      teacherName: null,
+      iAmTeaching: true,
+      iAmStandingIn: false,
+      cancelledReason: null,
+      movedFromDate: null,
+      allowedActions: const ['complete'],
+    );
 
-TeachingOffering offering({String id = 'o1', String status = 'active'}) => TeachingOffering(
-  id: id,
-  component: 'lecture',
-  status: status,
-  courseCode: 'CS301',
-  courseTitle: 'Operating Systems',
-  sectionId: 'sec1',
-  sectionLabel: 'A',
-  sectionStatus: 'active',
-  termNumber: 5,
-  programName: 'B.Tech CSE',
-  departmentName: 'Computer Science',
-  termName: 'Semester 1',
-  academicYearName: '2026-27',
-  myRole: 'lead',
-  instructors: const [],
-);
+TeachingOffering offering({String id = 'o1', String status = 'active'}) =>
+    TeachingOffering(
+      id: id,
+      component: 'lecture',
+      status: status,
+      courseCode: 'CS301',
+      courseTitle: 'Operating Systems',
+      sectionId: 'sec1',
+      sectionLabel: 'A',
+      sectionStatus: 'active',
+      termNumber: 5,
+      programName: 'B.Tech CSE',
+      departmentName: 'Computer Science',
+      termName: 'Semester 1',
+      academicYearName: '2026-27',
+      myRole: 'lead',
+      instructors: const [],
+    );
 
 class _FakeDelivery implements DeliveryRepository {
   _FakeDelivery(this.result);
@@ -90,7 +95,8 @@ class _FakeDelivery implements DeliveryRepository {
   var calls = 0;
 
   @override
-  Future<Result<List<ClassSession>>> mySessions({required String from, required String to}) async {
+  Future<Result<List<ClassSession>>> mySessions(
+      {required String from, required String to}) async {
     calls++;
     this.from = from;
     this.to = to;
@@ -98,10 +104,13 @@ class _FakeDelivery implements DeliveryRepository {
   }
 
   @override
-  Future<DateTime?> mySessionsSavedAt({required String from, required String to}) async => null;
+  Future<DateTime?> mySessionsSavedAt(
+          {required String from, required String to}) async =>
+      null;
 
   @override
-  Future<Result<void>> markTaught(String sessionId, {required String idempotencyKey}) async =>
+  Future<Result<void>> markTaught(String sessionId,
+          {required String idempotencyKey}) async =>
       const Ok(null);
 }
 
@@ -124,7 +133,9 @@ const today = '2026-09-13';
 
 void main() {
   group('buildDashboard', () {
-    test('the teaching record counts past classes and today\'s taught, not what is still to come', () {
+    test(
+        'the teaching record counts past classes and today\'s taught, not what is still to come',
+        () {
       final summary = buildDashboard(
         sessions: [
           session(id: 'a', date: '2026-09-10', status: 'completed'),
@@ -148,7 +159,8 @@ void main() {
     });
 
     test('nothing due reads as no share, never as 0%', () {
-      final summary = buildDashboard(sessions: const [], offerings: const [], today: today, now: '09:00');
+      final summary = buildDashboard(
+          sessions: const [], offerings: const [], today: today, now: '09:00');
       expect(summary.pulse.taughtShare, isNull);
       expect(summary.focus, isNull);
     });
@@ -171,11 +183,17 @@ void main() {
       expect(summary.following.map((s) => s.id), ['next', 'then']);
     });
 
-    test('between classes the next one leads; cancelled classes and seconds in times are handled', () {
+    test(
+        'between classes the next one leads; cancelled classes and seconds in times are handled',
+        () {
       final summary = buildDashboard(
         sessions: [
           session(id: 'done', start: '09:00:00', end: '10:00:00'),
-          session(id: 'off', start: '10:30:00', end: '11:00:00', status: 'cancelled'),
+          session(
+              id: 'off',
+              start: '10:30:00',
+              end: '11:00:00',
+              status: 'cancelled'),
           session(id: 'next', start: '11:00:00', end: '12:00:00'),
         ],
         offerings: const [],
@@ -198,7 +216,9 @@ void main() {
       expect(summary.focus, isNull);
     });
 
-    test('the week counts classes per day from today, leaving out cancelled ones', () {
+    test(
+        'the week counts classes per day from today, leaving out cancelled ones',
+        () {
       final summary = buildDashboard(
         sessions: [
           session(id: 'a', date: today),
@@ -213,13 +233,21 @@ void main() {
       );
 
       expect(summary.week.map((d) => d.date).toList(), [
-        '2026-09-13', '2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-19',
+        '2026-09-13',
+        '2026-09-14',
+        '2026-09-15',
+        '2026-09-16',
+        '2026-09-17',
+        '2026-09-18',
+        '2026-09-19',
       ]);
-      expect(summary.week.map((d) => d.classes).toList(), [1, 2, 0, 0, 0, 0, 0]);
+      expect(
+          summary.week.map((d) => d.classes).toList(), [1, 2, 0, 0, 0, 0, 0]);
       expect(summary.weekTotal, 3);
     });
 
-    test('finished and cancelled teaching is not listed as a current course', () {
+    test('finished and cancelled teaching is not listed as a current course',
+        () {
       final summary = buildDashboard(
         sessions: const [],
         offerings: [
@@ -234,7 +262,8 @@ void main() {
       expect(summary.courses.map((c) => c.id), ['live', 'planned']);
     });
 
-    test('weekday and clock helpers read calendar values without a timezone', () {
+    test('weekday and clock helpers read calendar values without a timezone',
+        () {
       expect(weekdayShort('2026-09-13'), 'Sun');
       expect(weekdayShort('2026-09-14'), 'Mon');
       expect(clockNow(DateTime(2026, 9, 13, 7, 5)), '07:05');
@@ -242,9 +271,12 @@ void main() {
   });
 
   group('DashboardCubit', () {
-    test('asks for four weeks back and a week ahead, and nothing it has no authority for', () async {
+    test(
+        'asks for four weeks back and a week ahead, and nothing it has no authority for',
+        () async {
       final delivery = _FakeDelivery(const Ok([]));
-      final cubit = DashboardCubit(delivery: delivery, today: today, clock: () => '08:00');
+      final cubit = DashboardCubit(
+          delivery: delivery, today: today, clock: () => '08:00');
 
       await cubit.load();
 
@@ -255,7 +287,8 @@ void main() {
       await cubit.close();
     });
 
-    test('with no authority for either surface it asks the server nothing', () async {
+    test('with no authority for either surface it asks the server nothing',
+        () async {
       final cubit = DashboardCubit(today: today, clock: () => '08:00');
       await cubit.load();
       expect(cubit.state.status, LoadStatus.success);
@@ -263,10 +296,16 @@ void main() {
       await cubit.close();
     });
 
-    test('a failed first read is a failure; a failed refresh keeps what was shown', () async {
+    test(
+        'a failed first read is a failure; a failed refresh keeps what was shown',
+        () async {
       final delivery = _FakeDelivery(const Err(Failure.network));
       final teaching = _FakeTeaching(Ok([offering()]));
-      final cubit = DashboardCubit(delivery: delivery, teaching: teaching, today: today, clock: () => '08:00');
+      final cubit = DashboardCubit(
+          delivery: delivery,
+          teaching: teaching,
+          today: today,
+          clock: () => '08:00');
 
       await cubit.load();
       expect(cubit.state.status, LoadStatus.failure);
@@ -286,7 +325,8 @@ void main() {
   });
 
   group('DashboardScreen', () {
-    Future<void> pump(WidgetTester tester, Authority authority, DashboardCubit cubit) async {
+    Future<void> pump(
+        WidgetTester tester, Authority authority, DashboardCubit cubit) async {
       tester.view.physicalSize = const Size(1080, 4200);
       tester.view.devicePixelRatio = 2.6;
       addTearDown(tester.view.reset);
@@ -295,7 +335,8 @@ void main() {
           home: DashboardScreen(
             authority: authority,
             createCubit: () => cubit,
-            college: const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
+            college:
+                const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
             staffAttendanceRepository: _FakeStaffAttendance(),
           ),
         ),
@@ -303,13 +344,23 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('a teacher sees the day, the charts and their own shortcuts only', (tester) async {
+    testWidgets(
+        'a teacher sees the day, the charts and their own shortcuts only',
+        (tester) async {
       final cubit = DashboardCubit(
         delivery: _FakeDelivery(
           Ok([
             session(id: 'miss', date: '2026-09-11'),
-            session(id: 'now', start: '09:00', end: '10:00', title: 'Operating Systems'),
-            session(id: 'next', start: '11:00', end: '12:00', title: 'Compiler Design'),
+            session(
+                id: 'now',
+                start: '09:00',
+                end: '10:00',
+                title: 'Operating Systems'),
+            session(
+                id: 'next',
+                start: '11:00',
+                end: '12:00',
+                title: 'Compiler Design'),
           ]),
         ),
         teaching: _FakeTeaching(Ok([offering()])),
@@ -319,13 +370,17 @@ void main() {
 
       await pump(
         tester,
-        const Authority(permissions: {'session.read', 'offering.read'}, hasAccess: true),
+        const Authority(
+            permissions: {'session.read', 'offering.read'}, hasAccess: true),
         cubit,
       );
 
-      expect(find.text('Sunrise College'), findsOneWidget, reason: 'the college, in the header');
-      expect(find.textContaining('Good '), findsNothing, reason: 'no greeting on the dashboard');
-      expect(find.byTooltip('Settings'), findsOneWidget, reason: 'SET-1: settings, with the profile inside');
+      expect(find.text('Sunrise College'), findsOneWidget,
+          reason: 'the college, in the header');
+      expect(find.textContaining('Good '), findsNothing,
+          reason: 'no greeting on the dashboard');
+      expect(find.byTooltip('Settings'), findsOneWidget,
+          reason: 'SET-1: settings, with the profile inside');
       expect(find.text('1 class is waiting to be marked'), findsOneWidget);
       expect(find.text('Now'), findsOneWidget);
       expect(find.text('Compiler Design'), findsOneWidget);
@@ -336,7 +391,8 @@ void main() {
       expect(find.text('Manage your college'), findsNothing);
       expect(find.text('Schedule'), findsOneWidget);
       expect(find.text('Courses'), findsOneWidget);
-      expect(find.text('1 to mark'), findsOneWidget, reason: 'the tile says what is waiting');
+      expect(find.text('1 to mark'), findsOneWidget,
+          reason: 'the tile says what is waiting');
       // Profile lives only in Settings now, not as its own tile.
       expect(find.text('Profile'), findsNothing);
       // No person.read: the people and organisation surfaces are absent.
@@ -346,9 +402,13 @@ void main() {
       expect(find.byType(NavigationBar), findsNothing);
     });
 
-    testWidgets('without schedule authority the day and its charts are absent', (tester) async {
+    testWidgets('without schedule authority the day and its charts are absent',
+        (tester) async {
       final cubit = DashboardCubit(today: today, clock: () => '09:30');
-      await pump(tester, const Authority(permissions: {'person.read'}, hasAccess: true), cubit);
+      await pump(
+          tester,
+          const Authority(permissions: {'person.read'}, hasAccess: true),
+          cubit);
 
       expect(find.text('People'), findsOneWidget);
       expect(find.text('Organisation'), findsOneWidget);
@@ -357,7 +417,8 @@ void main() {
       expect(find.text('Schedule'), findsNothing);
     });
 
-    testWidgets("a College Admin gets the college's dashboard, not a teacher's", (tester) async {
+    testWidgets("a College Admin gets the college's dashboard, not a teacher's",
+        (tester) async {
       final cubit = DashboardCubit(
         delivery: _FakeDelivery(const Ok([])),
         teaching: _FakeTeaching(const Ok([])),
@@ -369,8 +430,14 @@ void main() {
         tester,
         const Authority(
           permissions: {
-            'institution.read', 'institution.manage', 'person.read', 'account.manage', 'role.assign',
-            'student.manage', 'session.read', 'offering.read',
+            'institution.read',
+            'institution.manage',
+            'person.read',
+            'account.manage',
+            'role.assign',
+            'student.manage',
+            'session.read',
+            'offering.read',
           },
           hasAccess: true,
         ),
@@ -378,37 +445,60 @@ void main() {
       );
 
       expect(find.text('Your college'), findsOneWidget);
-      expect(find.text('340'), findsOneWidget, reason: 'students, in the header');
+      expect(find.text('340'), findsOneWidget,
+          reason: 'students, in the header');
       expect(find.text('2 people have not signed in yet'), findsOneWidget);
       expect(find.text('Manage your college'), findsOneWidget);
       expect(find.text('Appoint a teacher'), findsOneWidget);
       expect(find.text('Onboard a student'), findsOneWidget);
       expect(find.text('12 staff'), findsOneWidget);
-      expect(find.text('Teaching record'), findsNothing, reason: 'no teaching record for an admin who does not teach');
+      expect(find.text('Teaching record'), findsNothing,
+          reason: 'no teaching record for an admin who does not teach');
       expect(find.text("Today's classes"), findsNothing);
     });
 
-    testWidgets('M11: an Accountant and a Cashier see only their own fee tiles', (tester) async {
+    testWidgets('M11: an Accountant and a Cashier see only their own fee tiles',
+        (tester) async {
       final accountant = DashboardCubit(
-        delivery: _FakeDelivery(const Ok([])), teaching: _FakeTeaching(const Ok([])), today: today, clock: () => '09:30',
+        delivery: _FakeDelivery(const Ok([])),
+        teaching: _FakeTeaching(const Ok([])),
+        today: today,
+        clock: () => '09:30',
       );
-      await pump(tester, const Authority(permissions: {'fee.read', 'fee.manage'}, hasAccess: true), accountant);
+      await pump(
+          tester,
+          const Authority(
+              permissions: {'fee.read', 'fee.manage'}, hasAccess: true),
+          accountant);
       expect(find.text('Fee heads'), findsOneWidget);
       expect(find.text('Fee structures'), findsOneWidget);
-      expect(find.text('Concessions & waivers'), findsOneWidget, reason: 'fee.manage requests them, even without fee.approve');
-      expect(find.text('Student fees'), findsOneWidget, reason: 'fee.manage also raises fines');
+      expect(find.text('Concessions & waivers'), findsOneWidget,
+          reason: 'fee.manage requests them, even without fee.approve');
+      expect(find.text('Student fees'), findsOneWidget,
+          reason: 'fee.manage also raises fines');
 
       final cashier = DashboardCubit(
-        delivery: _FakeDelivery(const Ok([])), teaching: _FakeTeaching(const Ok([])), today: today, clock: () => '09:30',
+        delivery: _FakeDelivery(const Ok([])),
+        teaching: _FakeTeaching(const Ok([])),
+        today: today,
+        clock: () => '09:30',
       );
-      await pump(tester, const Authority(permissions: {'fee.read', 'fee.collect'}, hasAccess: true), cashier);
-      expect(find.text('Fee heads'), findsNothing, reason: 'a Cashier does not compose fee structures');
-      expect(find.text('Concessions & waivers'), findsNothing, reason: 'nor decide or request them');
-      expect(find.text('Student fees'), findsOneWidget, reason: 'fee.collect is what a Cashier is for');
+      await pump(
+          tester,
+          const Authority(
+              permissions: {'fee.read', 'fee.collect'}, hasAccess: true),
+          cashier);
+      expect(find.text('Fee heads'), findsNothing,
+          reason: 'a Cashier does not compose fee structures');
+      expect(find.text('Concessions & waivers'), findsNothing,
+          reason: 'nor decide or request them');
+      expect(find.text('Student fees'), findsOneWidget,
+          reason: 'fee.collect is what a Cashier is for');
     });
 
     // UX-3: the first read's placeholder is the dashboard's own shape.
-    Future<void> pumpLoading(WidgetTester tester, Authority authority, DashboardCubit cubit) async {
+    Future<void> pumpLoading(
+        WidgetTester tester, Authority authority, DashboardCubit cubit) async {
       tester.view.physicalSize = const Size(1080, 2340);
       tester.view.devicePixelRatio = 2.6;
       addTearDown(tester.view.reset);
@@ -417,7 +507,8 @@ void main() {
           home: DashboardScreen(
             authority: authority,
             createCubit: () => cubit,
-            college: const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
+            college:
+                const CollegeBrand(code: 'sunrise', name: 'Sunrise College'),
             staffAttendanceRepository: _FakeStaffAttendance(),
           ),
         ),
@@ -426,23 +517,35 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
 
-    testWidgets('while an admin dashboard loads, its real header and tile grid are drawn in place', (tester) async {
+    testWidgets(
+        'while an admin dashboard loads, its real header and tile grid are drawn in place',
+        (tester) async {
       final overview = _PendingOverview();
-      final cubit = DashboardCubit(overview: overview, today: today, clock: () => '09:30');
+      final cubit = DashboardCubit(
+          overview: overview, today: today, clock: () => '09:30');
       await pumpLoading(
         tester,
-        const Authority(permissions: {'institution.read', 'institution.manage', 'person.read'}, hasAccess: true),
+        const Authority(permissions: {
+          'institution.read',
+          'institution.manage',
+          'person.read'
+        }, hasAccess: true),
         cubit,
       );
 
       expect(cubit.state.status, LoadStatus.loading);
       expect(tester.takeException(), isNull);
-      expect(find.text('Sunrise College'), findsOneWidget, reason: 'the college is known before the numbers');
-      expect(find.byType(SliverAppBar), findsOneWidget, reason: 'the college header, not a list of rows');
-      expect(find.byType(GridView), findsNothing, reason: 'ND-S5: the admin home is cards, not a tile grid');
-      expect(find.byType(AppCard), findsWidgets, reason: 'the summary, the tile pair and the rows, drawn in place');
+      expect(find.text('Sunrise College'), findsOneWidget,
+          reason: 'the college is known before the numbers');
+      expect(find.byType(SliverAppBar), findsOneWidget,
+          reason: 'the college header, not a list of rows');
+      expect(find.byType(GridView), findsNothing,
+          reason: 'ND-S5: the admin home is cards, not a tile grid');
+      expect(find.byType(AppCard), findsWidgets,
+          reason: 'the summary, the tile pair and the rows, drawn in place');
       expect(find.byType(SkeletonBox), findsWidgets);
-      expect(find.text('Your college'), findsNothing, reason: 'no numbers until they arrive');
+      expect(find.text('Your college'), findsNothing,
+          reason: 'no numbers until they arrive');
 
       overview.complete();
       await tester.pumpAndSettle();
@@ -450,7 +553,9 @@ void main() {
       expect(find.byType(SkeletonBox), findsNothing);
     });
 
-    testWidgets("while a teacher's dashboard loads, the day and the week are drawn in place", (tester) async {
+    testWidgets(
+        "while a teacher's dashboard loads, the day and the week are drawn in place",
+        (tester) async {
       final delivery = _PendingDelivery();
       final cubit = DashboardCubit(
         delivery: delivery,
@@ -458,13 +563,20 @@ void main() {
         today: today,
         clock: () => '09:30',
       );
-      await pumpLoading(tester, const Authority(permissions: {'session.read', 'offering.read'}, hasAccess: true), cubit);
+      await pumpLoading(
+          tester,
+          const Authority(
+              permissions: {'session.read', 'offering.read'}, hasAccess: true),
+          cubit);
 
       expect(tester.takeException(), isNull);
       expect(find.text('Sunrise College'), findsOneWidget);
       expect(find.byType(SliverAppBar), findsOneWidget);
-      expect(find.byType(GridView), findsNothing, reason: 'ND-S6: rows, not a tile grid');
-      expect(find.byType(AppCard), findsWidgets, reason: "FB-5: a teacher's modules are drawn in place, as the admin's");
+      expect(find.byType(GridView), findsNothing,
+          reason: 'ND-S6: rows, not a tile grid');
+      expect(find.byType(AppCard), findsWidgets,
+          reason:
+              "FB-5: a teacher's modules are drawn in place, as the admin's");
       expect(find.byType(SkeletonBox), findsWidgets);
 
       delivery.complete();
@@ -480,8 +592,15 @@ class _PendingOverview implements OverviewRepository {
   final _done = Completer<Result<CollegeOverview>>();
 
   void complete() => _done.complete(const Ok(CollegeOverview(
-    staff: 12, students: 340, departments: 4, programs: 3, sections: 6, offerings: 18, rooms: 9, pendingInvitations: 0,
-  )));
+        staff: 12,
+        students: 340,
+        departments: 4,
+        programs: 3,
+        sections: 6,
+        offerings: 18,
+        rooms: 9,
+        pendingInvitations: 0,
+      )));
 
   @override
   Future<Result<CollegeOverview>> load() => _done.future;
@@ -495,7 +614,8 @@ class _PendingDelivery extends _FakeDelivery {
   void complete() => _done.complete();
 
   @override
-  Future<Result<List<ClassSession>>> mySessions({required String from, required String to}) async {
+  Future<Result<List<ClassSession>>> mySessions(
+      {required String from, required String to}) async {
     await _done.future;
     return result;
   }
@@ -504,6 +624,13 @@ class _PendingDelivery extends _FakeDelivery {
 class _FakeOverview implements OverviewRepository {
   @override
   Future<Result<CollegeOverview>> load() async => const Ok(CollegeOverview(
-    staff: 12, students: 340, departments: 4, programs: 3, sections: 6, offerings: 18, rooms: 9, pendingInvitations: 2,
-  ));
+        staff: 12,
+        students: 340,
+        departments: 4,
+        programs: 3,
+        sections: 6,
+        offerings: 18,
+        rooms: 9,
+        pendingInvitations: 2,
+      ));
 }

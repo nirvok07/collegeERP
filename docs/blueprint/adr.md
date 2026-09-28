@@ -1853,3 +1853,11 @@ honest.
 request is the way out. Timezone: the college day and the late time are read in Asia/Kolkata until
 a college has its own timezone (assumption, recorded). Leave management (applied leave, types,
 approval) is a separate decision.
+**AD-83 implementation decision — enforced, 2026-09-28**
+
+The owner-directed stabilisation audit confirmed that the original campus fence was stored and
+configurable but not enforced. AD-83 remains in force: the phone must send latitude, longitude,
+and accuracy for both punch directions; the server resolves the person's assigned campus, applies
+the Haversine check with a maximum 50 m accuracy allowance, refuses a missing or failed fence, and
+discards coordinates after checking. Desktop punching is withdrawn and recorded as a parity
+exception because a desktop cannot reliably establish physical presence at the campus.

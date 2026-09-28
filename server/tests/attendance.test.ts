@@ -63,6 +63,7 @@ async function attendanceSetup(code = 'attend-college') {
   })) as LightMyRequestResponse).json().data.access_token as string;
 
   const campus = (await get('/v1/campuses', token)).json().data[0].id;
+  await patch(`/v1/campuses/${campus}/fence`, token, { latitude: 28.5456, longitude: 77.1926, radius_m: 200 });
   const department = (await post('/v1/departments', token, {
     campus_id: campus, name: 'Computer Science', code: 'cse',
   })).json().data.id;
@@ -778,12 +779,12 @@ describe('staff self-attendance (SA-ATT-1)', () => {
     const c = await oneClass('attend-punch');
     const teacher = c.teacher.token;
 
-    const in1 = await post('/v1/me/staff-attendance/punch-in', teacher);
+    const in1 = await post('/v1/me/staff-attendance/punch-in', teacher, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
     assert.equal(in1.statusCode, 201);
     assert.ok(in1.json().data.punch_in_at);
     assert.equal(in1.json().data.punch_out_at, null);
 
-    const out1 = await post('/v1/me/staff-attendance/punch-out', teacher);
+    const out1 = await post('/v1/me/staff-attendance/punch-out', teacher, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
     assert.equal(out1.statusCode, 200);
     assert.ok(out1.json().data.punch_out_at);
 
@@ -797,24 +798,51 @@ describe('staff self-attendance (SA-ATT-1)', () => {
     const c = await oneClass('attend-punch-2');
     const teacher = c.teacher.token;
 
-    const early = await post('/v1/me/staff-attendance/punch-out', teacher);
+    const early = await post('/v1/me/staff-attendance/punch-out', teacher, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
     assert.equal(early.statusCode, 409);
 
-    await post('/v1/me/staff-attendance/punch-in', teacher);
-    const again = await post('/v1/me/staff-attendance/punch-in', teacher);
+    await post('/v1/me/staff-attendance/punch-in', teacher, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
+    const again = await post('/v1/me/staff-attendance/punch-in', teacher, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
     assert.equal(again.statusCode, 409);
 
-    await post('/v1/me/staff-attendance/punch-out', teacher);
-    const late = await post('/v1/me/staff-attendance/punch-out', teacher);
+    await post('/v1/me/staff-attendance/punch-out', teacher, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
+    const late = await post('/v1/me/staff-attendance/punch-out', teacher, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
     assert.equal(late.statusCode, 409);
   });
 
   it('keeps one teacher\'s punches invisible to another', async () => {
     const c = await oneClass('attend-punch-3');
-    await post('/v1/me/staff-attendance/punch-in', c.teacher.token);
+    await post('/v1/me/staff-attendance/punch-in', c.teacher.token, { latitude: 28.5456, longitude: 77.1926, accuracy_m: 5 });
 
     const other = await c.staff('Rohit Dey', 'rohit@attend-punch-3.edu', c.section);
     const otherHistory = await get('/v1/me/staff-attendance', other.token);
     assert.equal(otherHistory.json().data.length, 0, 'a new person has nothing punched, ever their own');
+  });
+
+  it('refuses missing and outside-fence locations, and accepts only the assigned campus fence', async () => {
+    const c = await oneClass('attend-fence');
+    const missing = await post('/v1/me/staff-attendance/punch-in', c.teacher.token);
+    assert.equal(missing.statusCode, 422);
+    const outside = await post('/v1/me/staff-attendance/punch-in', c.teacher.token, {
+      latitude: 28.5556, longitude: 77.1926, accuracy_m: 0,
+    });
+    assert.equal(outside.statusCode, 403);
+    assert.equal(outside.json().error.code, 'OUTSIDE_FENCE');
+    const inside = await post('/v1/me/staff-attendance/punch-in', c.teacher.token, {
+      latitude: 28.5456, longitude: 77.1926, accuracy_m: 5,
+    });
+    assert.equal(inside.statusCode, 201);
+  });
+
+  it('refuses a punch at a campus with no configured fence', async () => {
+    const c = await oneClass('attend-no-fence');
+    assert.equal((await harness.app.inject({
+      method: 'DELETE', url: `/v1/campuses/${c.campus}/fence`, headers: as(c.token),
+    })).statusCode, 200);
+    const result = await post('/v1/me/staff-attendance/punch-in', c.teacher.token, {
+      latitude: 28.5456, longitude: 77.1926, accuracy_m: 1,
+    });
+    assert.equal(result.statusCode, 403);
+    assert.equal(result.json().error.code, 'FENCE_MISSING');
   });
 });

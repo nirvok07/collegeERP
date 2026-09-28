@@ -1,5 +1,27 @@
 # Project State
 
+Updated 2026-09-28. Current slice: P0-0 AD-83 geo-fence enforcement.
+
+## CURRENT OBJECTIVE
+
+Server-enforced phone-only staff attendance punch in/out. Coordinates are checked then discarded;
+missing and outside fences are refused. Web retains read-only attendance history/status.
+
+## VALIDATION
+
+- ✅ Server typecheck for changed production code; existing `zz-err6` typecheck error remains.
+- ✅ Negative server tests added for missing coordinates, outside fence and fenceless campus; full
+  database test execution is blocked in this environment by `tsx` IPC pipe `EPERM`.
+- ✅ Flutter location permission/timeout/mock refusal and coordinate payload implemented; widget
+  tests updated with injected location fix.
+- 🔍 NEEDS VALIDATION: physical phone inside/outside a real fence; this is an explicit external
+  verification blocker, not claimed complete.
+
+## BLOCKERS
+
+- 🚫 Physical-device GPS verification requires an attached phone.
+- 🚫 Existing unrelated `zz-err6` typecheck failure remains under P0-2.
+
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
 ## TRACER

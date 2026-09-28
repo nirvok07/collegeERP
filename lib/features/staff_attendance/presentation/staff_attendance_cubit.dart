@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/error/failure.dart';
 import '../../../core/error/result.dart';
+import '../../../core/platform/current_location.dart';
 import '../data/staff_attendance_api.dart';
 
 sealed class StaffAttendanceState {
@@ -17,7 +19,11 @@ class StaffAttendanceFailed extends StaffAttendanceState {
 }
 
 class StaffAttendanceReady extends StaffAttendanceState {
-  const StaffAttendanceReady({required this.today, required this.history, this.acting = false, this.error});
+  const StaffAttendanceReady(
+      {required this.today,
+      required this.history,
+      this.acting = false,
+      this.error});
   final StaffAttendanceDay? today;
   final List<StaffAttendanceDay> history;
   final bool acting;
@@ -26,7 +32,10 @@ class StaffAttendanceReady extends StaffAttendanceState {
   final String? error;
 
   StaffAttendanceReady copyWith({
-    StaffAttendanceDay? today, List<StaffAttendanceDay>? history, bool? acting, String? error,
+    StaffAttendanceDay? today,
+    List<StaffAttendanceDay>? history,
+    bool? acting,
+    String? error,
   }) =>
       StaffAttendanceReady(
         today: today ?? this.today,
@@ -37,8 +46,11 @@ class StaffAttendanceReady extends StaffAttendanceState {
 }
 
 class StaffAttendanceCubit extends Cubit<StaffAttendanceState> {
-  StaffAttendanceCubit(this._repository) : super(const StaffAttendanceLoading());
+  StaffAttendanceCubit(this._repository, {Locate? locate})
+      : _locate = locate ?? currentLocation,
+        super(const StaffAttendanceLoading());
   final StaffAttendanceRepository _repository;
+  final Locate _locate;
 
   Future<void> load() async {
     emit(const StaffAttendanceLoading());
@@ -53,7 +65,8 @@ class StaffAttendanceCubit extends Cubit<StaffAttendanceState> {
 
   StaffAttendanceDay? _todayOf(List<StaffAttendanceDay> history) {
     final now = DateTime.now();
-    final iso = '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final iso =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     for (final day in history) {
       if (day.workDate == iso) return day;
     }
@@ -64,10 +77,11 @@ class StaffAttendanceCubit extends Cubit<StaffAttendanceState> {
     final current = state;
     if (current is! StaffAttendanceReady || current.acting) return;
     emit(current.copyWith(acting: true));
-    final result = await _repository.punchIn();
+    final result = await _punch((location) => _repository.punchIn(location));
     switch (result) {
       case Ok(:final value):
-        emit(StaffAttendanceReady(today: value, history: [value, ...current.history]));
+        emit(StaffAttendanceReady(
+            today: value, history: [value, ...current.history]));
       case Err(:final failure):
         emit(current.copyWith(acting: false, error: failure.message));
     }
@@ -75,15 +89,36 @@ class StaffAttendanceCubit extends Cubit<StaffAttendanceState> {
 
   Future<void> punchOut() async {
     final current = state;
-    if (current is! StaffAttendanceReady || current.acting || current.today == null) return;
+    if (current is! StaffAttendanceReady ||
+        current.acting ||
+        current.today == null) return;
     emit(current.copyWith(acting: true));
-    final result = await _repository.punchOut();
+    final result = await _punch((location) => _repository.punchOut(location));
     switch (result) {
       case Ok(:final value):
-        final history = [value, ...current.history.where((d) => d.id != value.id)];
+        final history = [
+          value,
+          ...current.history.where((d) => d.id != value.id)
+        ];
         emit(StaffAttendanceReady(today: value, history: history));
       case Err(:final failure):
         emit(current.copyWith(acting: false, error: failure.message));
+    }
+  }
+
+  Future<Result<StaffAttendanceDay>> _punch(
+      Future<Result<StaffAttendanceDay>> Function(LocationFix) send) async {
+    try {
+      final location = await _locate();
+      if (location.isMocked) {
+        return const Err(Failure(
+            code: FailureCode.validationFailed,
+            message: 'Mock location cannot be used for attendance.'));
+      }
+      return send(location);
+    } on LocationUnavailable catch (e) {
+      return Err(
+          Failure(code: FailureCode.validationFailed, message: e.message));
     }
   }
 }

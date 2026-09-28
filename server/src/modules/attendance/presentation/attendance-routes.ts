@@ -29,6 +29,7 @@ const correctBody = z.object({
   state: z.enum(STATES),
   reason: z.string().min(1).max(500),
 });
+const punchBody = z.object({ latitude: z.number().min(-90).max(90), longitude: z.number().min(-180).max(180), accuracy_m: z.number().finite().min(0).max(10000) });
 
 export async function registerAttendanceRoutes(app: FastifyInstance, c: Container) {
   const actorOf = (req: { actor?: { sub: string; tenantId: string | null } }): AttendanceActor => ({
@@ -227,7 +228,9 @@ export async function registerAttendanceRoutes(app: FastifyInstance, c: Containe
     if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
       return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
     }
-    const result = await punchIn(c.selfAttendance, { tenantId: req.actor.tenantId, personId: req.actor.sub });
+    const parsed = punchBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Location is required to punch attendance.'));
+    const result = await punchIn(c.selfAttendance, { tenantId: req.actor.tenantId, personId: req.actor.sub }, { latitude: parsed.data.latitude, longitude: parsed.data.longitude, accuracyM: parsed.data.accuracy_m });
     if (!result.ok) return sendFailure(reply, result.error);
     return sendOk(reply, serialiseStaffAttendance(result.value), 201);
   });
@@ -236,7 +239,9 @@ export async function registerAttendanceRoutes(app: FastifyInstance, c: Containe
     if (!req.actor || req.actor.actorType !== 'person' || !req.actor.tenantId) {
       return sendFailure(reply, fail('UNAUTHENTICATED', 'Sign in to continue.'));
     }
-    const result = await punchOut(c.selfAttendance, { tenantId: req.actor.tenantId, personId: req.actor.sub });
+    const parsed = punchBody.safeParse(req.body);
+    if (!parsed.success) return sendFailure(reply, fail('VALIDATION_FAILED', 'Location is required to punch attendance.'));
+    const result = await punchOut(c.selfAttendance, { tenantId: req.actor.tenantId, personId: req.actor.sub }, { latitude: parsed.data.latitude, longitude: parsed.data.longitude, accuracyM: parsed.data.accuracy_m });
     if (!result.ok) return sendFailure(reply, result.error);
     return sendOk(reply, serialiseStaffAttendance(result.value));
   });

@@ -1,5 +1,6 @@
 import '../../../core/error/result.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/platform/current_location.dart';
 
 /// SA-ATT-1: a staff member's own attendance, punched in and out.
 /// Self-scoped — the same shape as `/me/sessions`: no permission beyond being
@@ -7,8 +8,8 @@ import '../../../core/network/api_client.dart';
 abstract interface class StaffAttendanceRepository {
   /// The last ~90 days, most recent first.
   Future<Result<List<StaffAttendanceDay>>> history();
-  Future<Result<StaffAttendanceDay>> punchIn();
-  Future<Result<StaffAttendanceDay>> punchOut();
+  Future<Result<StaffAttendanceDay>> punchIn(LocationFix location);
+  Future<Result<StaffAttendanceDay>> punchOut(LocationFix location);
 }
 
 class StaffAttendanceApi implements StaffAttendanceRepository {
@@ -17,22 +18,41 @@ class StaffAttendanceApi implements StaffAttendanceRepository {
 
   @override
   Future<Result<List<StaffAttendanceDay>>> history() => _client.get(
-    '/v1/me/staff-attendance',
-    (data) => (data as List).map((j) => StaffAttendanceDay.fromJson(j as Map)).toList(),
-  );
+        '/v1/me/staff-attendance',
+        (data) => (data as List)
+            .map((j) => StaffAttendanceDay.fromJson(j as Map))
+            .toList(),
+      );
 
   @override
-  Future<Result<StaffAttendanceDay>> punchIn() =>
-      _client.post('/v1/me/staff-attendance/punch-in', const {}, (data) => StaffAttendanceDay.fromJson(data as Map));
+  Future<Result<StaffAttendanceDay>> punchIn(LocationFix location) =>
+      _client.post(
+          '/v1/me/staff-attendance/punch-in',
+          {
+            'latitude': location.latitude,
+            'longitude': location.longitude,
+            'accuracy_m': location.accuracyM
+          },
+          (data) => StaffAttendanceDay.fromJson(data as Map));
 
   @override
-  Future<Result<StaffAttendanceDay>> punchOut() =>
-      _client.post('/v1/me/staff-attendance/punch-out', const {}, (data) => StaffAttendanceDay.fromJson(data as Map));
+  Future<Result<StaffAttendanceDay>> punchOut(LocationFix location) =>
+      _client.post(
+          '/v1/me/staff-attendance/punch-out',
+          {
+            'latitude': location.latitude,
+            'longitude': location.longitude,
+            'accuracy_m': location.accuracyM
+          },
+          (data) => StaffAttendanceDay.fromJson(data as Map));
 }
 
 class StaffAttendanceDay {
   const StaffAttendanceDay({
-    required this.id, required this.workDate, required this.punchInAt, this.punchOutAt,
+    required this.id,
+    required this.workDate,
+    required this.punchInAt,
+    this.punchOutAt,
   });
 
   final String id;
@@ -47,9 +67,11 @@ class StaffAttendanceDay {
   Duration get worked => (punchOutAt ?? DateTime.now()).difference(punchInAt);
 
   static StaffAttendanceDay fromJson(Map json) => StaffAttendanceDay(
-    id: json['id'] as String,
-    workDate: '${json['work_date']}',
-    punchInAt: DateTime.parse(json['punch_in_at'] as String).toLocal(),
-    punchOutAt: json['punch_out_at'] == null ? null : DateTime.parse(json['punch_out_at'] as String).toLocal(),
-  );
+        id: json['id'] as String,
+        workDate: '${json['work_date']}',
+        punchInAt: DateTime.parse(json['punch_in_at'] as String).toLocal(),
+        punchOutAt: json['punch_out_at'] == null
+            ? null
+            : DateTime.parse(json['punch_out_at'] as String).toLocal(),
+      );
 }

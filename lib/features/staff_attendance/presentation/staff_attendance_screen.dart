@@ -6,6 +6,7 @@ import '../../../core/di/locator.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/screen_state.dart';
+import '../../../core/platform/current_location.dart';
 import '../../calendar/data/calendar_api.dart';
 import '../data/staff_attendance_api.dart';
 import 'month_donut.dart';
@@ -17,17 +18,22 @@ import 'staff_attendance_cubit.dart';
 /// while it is open; the month's donut and the hours chart are the record —
 /// owner feedback: no separate list of raw punch times underneath them.
 class StaffAttendanceScreen extends StatelessWidget {
-  const StaffAttendanceScreen({super.key, this.repository, this.calendarRepository});
+  const StaffAttendanceScreen(
+      {super.key, this.repository, this.calendarRepository, this.locate});
 
   final StaffAttendanceRepository? repository;
 
   /// Tests supply their own; the app uses the locator.
   final CalendarRepository? calendarRepository;
+  final Locate? locate;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => StaffAttendanceCubit(repository ?? StaffAttendanceApi(locator<ApiClient>()))..load(),
+      create: (_) => StaffAttendanceCubit(
+          repository ?? StaffAttendanceApi(locator<ApiClient>()),
+          locate: locate)
+        ..load(),
       child: Scaffold(
         appBar: AppBar(title: const Text('My attendance')),
         body: _Body(calendarRepository: calendarRepository),
@@ -47,12 +53,14 @@ class _Body extends StatelessWidget {
       listener: (context, state) {
         final message = (state as StaffAttendanceReady).error;
         if (message != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message)));
         }
       },
       builder: (context, state) {
         return switch (state) {
-          StaffAttendanceLoading() => const SkeletonList(rows: 4, leading: SkeletonLeading.icon),
+          StaffAttendanceLoading() =>
+            const SkeletonList(rows: 4, leading: SkeletonLeading.icon),
           StaffAttendanceFailed(:final message) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.xl),
@@ -64,14 +72,16 @@ class _Body extends StatelessWidget {
                     Text(message, textAlign: TextAlign.center),
                     const SizedBox(height: AppSpacing.lg),
                     OutlinedButton(
-                      onPressed: () => context.read<StaffAttendanceCubit>().load(),
+                      onPressed: () =>
+                          context.read<StaffAttendanceCubit>().load(),
                       child: const Text('Try again'),
                     ),
                   ],
                 ),
               ),
             ),
-          StaffAttendanceReady(:final today, :final history, :final acting) => RefreshIndicator(
+          StaffAttendanceReady(:final today, :final history, :final acting) =>
+            RefreshIndicator(
               onRefresh: () => context.read<StaffAttendanceCubit>().load(),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -79,11 +89,20 @@ class _Body extends StatelessWidget {
                 children: [
                   _TodayCard(today: today, acting: acting),
                   const SizedBox(height: AppSpacing.lg),
-                  Text('This month', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  Text('This month',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: AppSpacing.sm),
-                  MonthDonut(history: history, calendarRepository: calendarRepository),
+                  MonthDonut(
+                      history: history, calendarRepository: calendarRepository),
                   const SizedBox(height: AppSpacing.lg),
-                  Text('Hours worked', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  Text('Hours worked',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: AppSpacing.sm),
                   _HoursChart(history: history),
                 ],
@@ -107,11 +126,15 @@ class _TodayCard extends StatelessWidget {
     final open = today != null && today!.isOpen;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.base),
-      decoration: BoxDecoration(color: AppColors.navy, borderRadius: BorderRadius.circular(AppRadius.panel)),
+      decoration: BoxDecoration(
+          color: AppColors.navy,
+          borderRadius: BorderRadius.circular(AppRadius.panel)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Today', style: theme.textTheme.titleMedium?.copyWith(color: Colors.white70)),
+          Text('Today',
+              style:
+                  theme.textTheme.titleMedium?.copyWith(color: Colors.white70)),
           const SizedBox(height: AppSpacing.xs),
           Text(
             today == null
@@ -119,7 +142,8 @@ class _TodayCard extends StatelessWidget {
                 : open
                     ? 'Punched in at ${_time(today!.punchInAt)}'
                     : 'Punched out at ${_time(today!.punchOutAt!)}',
-            style: theme.textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.base),
           SizedBox(
@@ -132,7 +156,13 @@ class _TodayCard extends StatelessWidget {
                       : context.read<StaffAttendanceCubit>().punchIn(),
               style: FilledButton.styleFrom(backgroundColor: scheme.primary),
               child: Text(
-                acting ? 'Please wait…' : (today != null && !open) ? 'Done for today' : open ? 'Punch out' : 'Punch in',
+                acting
+                    ? 'Please wait…'
+                    : (today != null && !open)
+                        ? 'Done for today'
+                        : open
+                            ? 'Punch out'
+                            : 'Punch in',
               ),
             ),
           ),
@@ -159,16 +189,23 @@ class _HoursChart extends StatelessWidget {
       semanticLabel: 'Hours worked this month, $daysInMonth days',
       bars: [
         for (var day = 1; day <= daysInMonth; day++)
-          _barFor(day: day, now: now, record: byDate[_isoOf(now.year, now.month, day)]),
+          _barFor(
+              day: day,
+              now: now,
+              record: byDate[_isoOf(now.year, now.month, day)]),
       ],
     );
   }
 
-  BarDatum _barFor({required int day, required DateTime now, required StaffAttendanceDay? record}) {
+  BarDatum _barFor(
+      {required int day,
+      required DateTime now,
+      required StaffAttendanceDay? record}) {
     final isToday = day == now.day;
     return BarDatum(
       label: day == 1 || day % 5 == 0 || isToday ? '$day' : '',
-      value: record != null && !record.isOpen ? record.worked.inMinutes ~/ 60 : 0,
+      value:
+          record != null && !record.isOpen ? record.worked.inMinutes ~/ 60 : 0,
       highlight: isToday,
     );
   }

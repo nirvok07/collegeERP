@@ -15,8 +15,8 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 `self-attendance.ts punchIn()` takes `(deps, actor)` and nothing else; both clients post `{}`.
 
 ### Decide
-- [ ] `DOC` Choose **(a) enforce** or **(b) amend AD-83 to drop the fence**. Recommended: (a)
-- [ ] `DOC` Write the decision into `docs/blueprint/adr.md` — amend AD-83 either way, so the ADR
+- [x] `DOC` Choose **(a) enforce** or **(b) amend AD-83 to drop the fence**. Enforce (a).
+- [x] `DOC` Write the decision into `docs/blueprint/adr.md` — amend AD-83 either way, so the ADR
       and the code agree afterwards
 - [ ] `DOC` If (b): also amend `029_campus_fence.sql`'s header comment, which currently promises
       enforcement, and delete the fence columns in a new migration rather than leaving dead schema
@@ -28,51 +28,51 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
       must be refused)
 
 ### Server, if (a)
-- [ ] `MIG` New migration: add `fence_verified boolean NOT NULL DEFAULT false`,
+- [x] `MIG` New migration: add `fence_verified boolean NOT NULL DEFAULT false`,
       `accuracy_m int NULL`, `source text NOT NULL DEFAULT 'app'` to `staff_attendance`
 - [ ] `MIG` CHECK `source IN ('app','web','biometric')`
 - [ ] `MIG` GRANTs declared; add the three columns to `migration-invariants.test.ts` expectations
-- [ ] `API` `POST /v1/me/staff-attendance/punch-in` accepts `{ latitude, longitude, accuracy_m }`;
+- [x] `API` `POST /v1/me/staff-attendance/punch-in` accepts `{ latitude, longitude, accuracy_m }`;
       zod schema, all three required
-- [ ] `API` Same for `punch-out` — a punch-out from home is the same problem as a punch-in
-- [ ] `REPO` Extend `StaffAttendanceRepository.punchIn` port in
+- [x] `API` Same for `punch-out` — a punch-out from home is the same problem as a punch-in
+- [x] `REPO` Extend `StaffAttendanceRepository.punchIn` port in
       `server/src/modules/attendance/application/ports.ts` to carry `fenceVerified`, `accuracyM`, `source`
-- [ ] `REPO` Add a campus-fence reader: resolve the person's campus, return
+- [x] `REPO` Add a campus-fence reader: resolve the person's campus, return
       `{ latitude, longitude, radiusM } | null`
 - [ ] `SVC` In `self-attendance.ts`, resolve the campus **from the person's assignment, never from
       client input**
-- [ ] `SVC` Refuse with `FENCE_MISSING` when the campus has no fence
-- [ ] `SVC` Haversine distance check: `distance <= radiusM + min(accuracyM, 50)`. The accuracy
+- [x] `SVC` Refuse with `FENCE_MISSING` when the campus has no fence
+- [x] `SVC` Haversine distance check: `distance <= radiusM + min(accuracyM, 50)`. The accuracy
       allowance is bounded — unbounded lets a client claim 10 km accuracy
-- [ ] `SVC` Refuse with `OUTSIDE_FENCE`, message naming the campus and the distance in metres
-- [ ] `SVC` **Discard the coordinates.** Store only `fence_verified` and `accuracy_m` (AD-83:
+- [x] `SVC` Refuse with `OUTSIDE_FENCE`, message naming the campus and the distance in metres
+- [x] `SVC` **Discard the coordinates.** Store only `fence_verified` and `accuracy_m` (AD-83:
       "coordinates checked then discarded"). No latitude or longitude column, ever
 - [ ] `SVC` Preserve the existing correct behaviour: one open punch per person per day;
       `workDateOf()` in the college timezone; `deps.clock.now()` is authoritative over client time
 
 ### Flutter
-- [ ] `APP` Request location permission with a clear rationale string
-- [ ] `APP` Acquire a fix with a timeout; show progress — a silent 10-second wait reads as a hang
-- [ ] `APP` Send real `latitude`, `longitude`, `accuracy_m`
-- [ ] `APP` Permission denied → **refuse the punch** with an explanation. Never fall back to a
+- [x] `APP` Request location permission with a clear rationale string
+- [x] `APP` Acquire a fix with a timeout; show progress — a silent 10-second wait reads as a hang
+- [x] `APP` Send real `latitude`, `longitude`, `accuracy_m`
+- [x] `APP` Permission denied → **refuse the punch** with an explanation. Never fall back to a
       coordinate-free punch
-- [ ] `APP` Location unavailable or timed out → refuse, offer retry, suggest a correction request
-- [ ] `APP` Render `OUTSIDE_FENCE` and `FENCE_MISSING` as distinct, actionable messages
+- [x] `APP` Location unavailable or timed out → refuse, offer retry, suggest a correction request
+- [x] `APP` Render `OUTSIDE_FENCE` and `FENCE_MISSING` as distinct, actionable messages
 
 ### Web
-- [ ] `WEB` Withdraw the punch action from `clients/web/src/features/dashboard/PunchCard.tsx`
+- [x] `WEB` Withdraw the punch action from `clients/web/src/features/dashboard/PunchCard.tsx`
 - [ ] `WEB` Keep the read-only "today" display and the holiday read
 - [ ] `WEB` Explain in the UI where to punch, rather than removing the card silently
-- [ ] `DOC` Record the parity exception in `MODULE_REGISTRY.md`: *punch is phone-only because a
+- [x] `DOC` Record the parity exception in `MODULE_REGISTRY.md`: *punch is phone-only because a
       geo-fence is a physical-presence check and a desktop cannot satisfy it*
 
 ### Tests — the negative cases are the point
-- [ ] `TEST` Punch outside the radius → refused
-- [ ] `TEST` Punch at a fenceless campus → refused
+- [x] `TEST` Punch outside the radius → refused
+- [x] `TEST` Punch at a fenceless campus → refused
 - [ ] `TEST` Punch exactly at the radius boundary → accepted
 - [ ] `TEST` Punch at `radius + 1m` with `accuracy_m = 0` → refused
 - [ ] `TEST` Absurd accuracy (`accuracy_m = 10000`) → allowance capped at 50 m, still refused
-- [ ] `TEST` Request missing coordinates → 400, not a silent pass
+- [x] `TEST` Request missing coordinates → 422, not a silent pass
 - [ ] `TEST` Punch inside the radius → accepted, and **no coordinate is persisted** (assert the
       columns do not exist / are absent from the row)
 - [ ] `TEST` Client-supplied campus id is ignored; the person's own campus is used

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, StatusChip, type ChipTone } from '../../components/index.tsx';
+import { StatusChip, type ChipTone } from '../../components/index.tsx';
 import type { ApiClient } from '../../lib/api.ts';
 
 interface StaffAttendanceDay {
@@ -336,8 +336,6 @@ function MonthDonut({ counts, monthLabel }: { counts: MonthCounts; monthLabel: s
 export function PunchCard({ api }: { api: ApiClient }) {
   const [days, setDays] = useState<StaffAttendanceDay[] | undefined>(undefined);
   const [holidays, setHolidays] = useState<CalendarHoliday[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { from, to } = monthRange(new Date());
@@ -367,14 +365,6 @@ export function PunchCard({ api }: { api: ApiClient }) {
   const today = days.find((d) => d.work_date === iso) ?? null;
   const open = today !== null && today.punch_out_at === null;
 
-  async function punch() {
-    setBusy(true); setError(null);
-    const result = await api.post<StaffAttendanceDay>(`/v1/me/staff-attendance/${open ? 'punch-out' : 'punch-in'}`, {});
-    setBusy(false);
-    if (!result.ok) { setError(result.error.message); return; }
-    setDays((prev) => [result.value, ...(prev ?? []).filter((d) => d.id !== result.value.id)]);
-  }
-
   return (
     <section className="dash__band dash__punch-band" aria-label="Attendance">
       <div className="dash__band-head">
@@ -389,13 +379,8 @@ export function PunchCard({ api }: { api: ApiClient }) {
                 ? `Punched in at ${formatTime(today.punch_in_at)}`
                 : `Punched out at ${formatTime(today.punch_out_at!)}`}
           </p>
-          {error && <p className="dash__punch-error" role="alert">{error}</p>}
+          <p className="dash__punch-error">Punch in or out from the college app so your phone can verify the campus attendance area.</p>
         </div>
-        <span className="dash__punch-btn">
-          <Button variant="primary" disabled={busy || (today !== null && !open)} onClick={() => void punch()}>
-            {busy ? 'Please wait…' : today !== null && !open ? 'Done' : open ? 'Punch out' : 'Punch in'}
-          </Button>
-        </span>
       </div>
       <div className="dash__punch-detail">
         <div>

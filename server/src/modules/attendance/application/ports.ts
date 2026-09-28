@@ -102,9 +102,11 @@ export interface StaffAttendanceRecord {
 }
 
 export interface StaffAttendanceRepository {
+  findCampusFence(tx: Tx, personId: string): Promise<{ campusName: string; latitude: number; longitude: number; radiusM: number } | null>;
   findByDate(tx: Tx, personId: string, workDate: string): Promise<StaffAttendanceRecord | null>;
   punchIn(tx: Tx, input: {
     id: string; tenantId: string; personId: string; workDate: string; at: Date;
+    fenceVerified: boolean; accuracyM: number; source: 'app' | 'web' | 'biometric';
   }): Promise<StaffAttendanceRecord>;
   punchOut(tx: Tx, input: { id: string; at: Date }): Promise<void>;
   history(tx: Tx, personId: string, range: { from: string; to: string }): Promise<StaffAttendanceRecord[]>;
