@@ -28,7 +28,8 @@ try {
   if (!['happy', 'loading', 'error'].includes(visualState)) {
     throw new Error(`VISUAL_STATE must be happy, loading or error (received ${visualState})`);
   }
-  await page.goto(baseUrl, { waitUntil: 'networkidle' });
+  await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
+  await page.getByLabel(authMode === 'platform' ? 'Email' : 'College code').waitFor({ state: 'visible' });
   await page.screenshot({ path: `${outputDir}/signed-out.png`, fullPage: true });
 
   const supplied = authMode === 'platform'
@@ -43,7 +44,8 @@ try {
     console.log('Captured signed-out state; signed-in credentials were not supplied.');
   } else {
     if (authMode === 'platform') {
-      await page.goto(`${baseUrl}?platform=1`, { waitUntil: 'networkidle' });
+      await page.goto(`${baseUrl}?platform=1`, { waitUntil: 'domcontentloaded' });
+      await page.getByLabel('Email').waitFor({ state: 'visible' });
       await page.getByLabel('Email').fill(credentials.email);
       await page.getByLabel('Password').fill(credentials.password);
       await page.getByRole('button', { name: 'Continue' }).click();
