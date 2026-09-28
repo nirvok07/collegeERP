@@ -299,9 +299,9 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 
 ## P0-8 — Resolve OD-LV-1
 
-- [ ] `DOC` Confirm the split: staff leave is M14 (draws a balance, affects pay); student excused
+- [x] `DOC` Confirm the split: staff leave is M14 (draws a balance, affects pay); student excused
       absence is M7 (an attendance category, affects exam eligibility)
-- [ ] `DOC` Record as an ADR; update `MODULE_REGISTRY.md`'s LV-1 row (already updated to reflect it)
+- [x] `DOC` Record as AD-93; `MODULE_REGISTRY.md`'s LV-1 row already reflects the split
 
 ---
 
@@ -359,6 +359,7 @@ Every line must be true before P1 starts.
 - [ ] `zz-*` files resolved; server, web and Flutter suites green with **no known failures**
 - [ ] Dev database seeded; a signed-in screenshot is possible
 - [ ] Zero unexplained `🔍`; the rest have written reasons
-- [ ] OD-1, OD-4, OD-ACC-1, OD-LV-1 answered or deferred **with a date**
+- [ ] OD-1, OD-4, OD-ACC-1 answered or deferred **with a date**
+- [x] OD-LV-1 answered and recorded as AD-93 **with a date**
 - [ ] `PROJECT_STATE.md` under 200 lines and answers the eight questions
 - [x] AD-84…AD-90 and AD-92 recorded in `adr.md`; AD-91 remains gated on P0-5 owner confirmation

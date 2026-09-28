@@ -1936,3 +1936,20 @@ generic report surface per client renders the descriptor.
 
 *Decision.* A red or cancelled test is not a note to carry forward. The suite must return to green,
 or the failure must be an explicit named blocker with its cause and next verification condition.
+
+---
+
+**AD-93 — Staff leave and student excused absence are separate workflows**
+
+*Status.* OD-LV-1 resolved by the owner on 2026-09-15; implementation remains a future M14/M7
+slice.
+
+*Decision.* Staff leave belongs to M14: a teacher applies for a leave type, the administrator sets
+the yearly quota, the balance is shown, and the teacher's HoD approves it (the College Admin
+approves when there is no HoD, and may approve any staff leave). Student excused absence belongs to
+M7 as an attendance category: a student's section teacher approves it, the College Admin may
+approve any request, students have no yearly quota, and an approved student leave pre-fills their
+classes as Excused while leaving the teacher able to change the register entry.
+
+*Boundary.* M14 owns staff balances and pay-impacting leave; M7 owns the student's attendance
+record and exam-eligibility effect. Neither workflow is built speculatively before its phase.

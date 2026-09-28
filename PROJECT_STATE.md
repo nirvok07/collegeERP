@@ -167,7 +167,7 @@ Two further open decisions raised while writing them:
 - 🚫 **OD-ACC-1** — no general ledger exists and none is assigned a module number.
   M15 payroll and M19 payables have nowhere to post. Must be answered before either.
   Recommended: export to Tally + a thin budget/commitment ledger.
-- 🟡 **OD-LV-1 sharpened** — "teachers and students apply" is two features. Staff leave
+- ✅ **OD-LV-1 / AD-93 resolved** — "teachers and students apply" is two features. Staff leave
   draws a balance (M14); student excused absence is an attendance record (M7).
 
 ### BUILD PLAN (2026-09-28)
@@ -268,7 +268,7 @@ Owner requests, 2026-09-15 (in order of build):
   view; SA-A4 ❌ forgotten punch → reason + time → admin approves/rejects; SA-A5 ❌ reminders as local
   notifications (backend push blocked, Drift 6).
 - LV-1 ❌ Leave management for teachers and students (sick, short leave, half day; reason; apply →
-  approve). OD-LV-1 ✅ resolved by the owner 2026-09-15 (record as AD-84 when LV-1 starts): a
+  approve). OD-LV-1 / AD-93 ✅ resolved by the owner 2026-09-15: a
   teacher's leave is approved by their HoD (College Admin when there is none), a student's by their
   section's teacher; the College Admin can approve any; teachers have a yearly quota per type set by
   the admin (balance shown), students none; a student's approved leave pre-fills their classes as

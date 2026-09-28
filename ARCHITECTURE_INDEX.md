@@ -6,7 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-92) | `docs/blueprint/adr.md` |
+| Decisions (AD-1…AD-93) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R64) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | **Module & capability index (start here)** | `docs/blueprint/modules/README.md` |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
@@ -140,5 +140,6 @@ shows its shape.
 | AD-89 | Document storage is one centrally owned, permissioned platform capability | Adopted 2026-09-28; CAP-4 pending |
 | AD-90 | Reports are declared contracts rendered by generic client surfaces | Adopted 2026-09-28; CAP-5 pending |
 | AD-92 | Known-failing tests are blockers, not notes | Adopted 2026-09-28; active |
+| AD-93 | Staff leave is M14; student excused absence is M7 | OD-LV-1 resolved 2026-09-15; implementation deferred to the owning slices |
 
 - `docs/new-design/` — container and ratio language derived from `assets/new_design.jpeg` (extends `docs/07-design-system.md`); slices ND-S1…ND-S7
