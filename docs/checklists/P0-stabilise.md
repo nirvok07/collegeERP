@@ -163,7 +163,7 @@ remain in `server/tests`.
 - [x] `S` CI fails on a **skipped** test too, unless annotated with a reason
 - [x] `TEST` Full server suite green: `519/519` passed, 0 failed, 0 cancelled, 0 skipped
 - [x] `TEST` Full Flutter suite green: `330/330` passed
-- [ ] `TEST` Full web suite green
+- [x] `TEST` Full web suite green: 18 files, `203/203` passed
 - [ ] `TEST` Investigate the flaky outbox timing test `a write waits behind an earlier one`
       (failed once, passed on rerun, 2026-09-22). A known-flaky test is a known-red test with
       better luck
