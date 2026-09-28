@@ -98,18 +98,15 @@ try {
       await page.getByLabel('Password').fill(credentials.password);
       await page.getByRole('button', { name: 'Continue' }).click();
       const secondFactor = page.getByLabel('Code');
-      await secondFactor.fill(credentials.secondFactor.slice(0, 5));
-      await secondFactor.pressSequentially(credentials.secondFactor.slice(5));
+      await secondFactor.pressSequentially(credentials.secondFactor, { delay: 40 });
     } else {
       await page.getByLabel('College code').fill(credentials.college);
       await page.getByLabel('Email or mobile').fill(credentials.identifier);
       await page.getByRole('button', { name: 'Send code' }).click();
-      // The field has one real input under six visual boxes. `fill` is more
-      // deterministic for the first five digits; the final key event exercises
-      // the component's normal change/onComplete path.
+      // The field has one real input under six visual boxes. Type each digit so
+      // the controlled component receives the same input events as a user.
       const code = page.getByLabel('Code');
-      await code.fill(credentials.code.slice(0, 5));
-      await code.pressSequentially(credentials.code.slice(5));
+      await code.pressSequentially(credentials.code, { delay: 40 });
     }
     // OtpField submits automatically when the sixth digit is entered. Do not
     // race the transition, but retain a fallback for browser autofill paths
