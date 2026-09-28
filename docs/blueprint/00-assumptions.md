@@ -11,7 +11,7 @@ is waiting on an answer that would change it.
 | S2 | This is a **product sold to many colleges**, not a bespoke build for one. Every academic rule, fee head, grading scheme and approval chain must be configurable per tenant | Very high. A bespoke build would hard-code what is currently designed as configuration |
 | S3 | One tenant is one institution, which may hold more than one campus | Medium. Covered by OD-2 |
 | S4 | The college is the authority for internal assessment, attendance, fees and operations. The affiliating university is the authority for external examination results where one exists | High. Covered by OD-1 |
-| S5 | Staff-heavy back-office work needs a desktop-class interface. Students and teaching staff need mobile | High. Covered by OD-3 |
+| S5 | Staff-heavy back-office work needs a desktop-class interface. Students and teaching staff need mobile | High. Resolved by AD-24 and AD-54 |
 | S6 | Offline capability is required for field roles on mobile, not for back-office work | Medium. Narrows the earlier system-wide offline commitment. See AD-9 |
 | S7 | Personal data of minors may be present in some institutions, so consent and guardian access need modelling | Medium. Adds a consent register |
 | S8 | The system must be auditable to an external auditor's standard for anything touching money, marks or attendance | High if wrong in the other direction. Audit cannot be retrofitted |
@@ -47,14 +47,15 @@ one of the most expensive changes available.
 implicit campus for tenants that have one. The schema cost is one column and one filter. The
 retrofit cost is every query and every policy.
 
-**OD-3. Is there a web console?**
+**~~OD-3. Is there a web console?~~ Resolved 2026-09-12 by AD-24 and AD-54.**
 Admissions processing, fee counters, exam cell work, procurement and payroll are desktop work
 with large tables, bulk operations and keyboard-driven entry. Doing them on a phone is not
-viable. The existing documentation commits to mobile only.
+viable. The earlier mobile-only position was superseded by the approved web-console decision.
 
 *Recommended default:* a responsive web console for back-office roles, and the Flutter mobile
 app for students, faculty, parents and approvals on the move. Shared API, shared design tokens.
-This contradicts an earlier requirement and needs your explicit call.
+This is the adopted AD-24/AD-54 architecture; the remaining open decisions do not reopen the
+client-surface choice.
 
 **OD-4. Does the ERP collect money, or only record it?**
 Online collection means a payment gateway, settlement reconciliation, refunds, chargebacks,
@@ -102,6 +103,6 @@ your answers.
 | Earlier position | This brief implies | Status |
 |---|---|---|
 | Four roles: Super Admin, College Admin, Teacher, Student | Roughly thirty distinct actors, and "Admin" is not one role | Superseded, see [Actors](01-actors.md) |
-| Mobile only in release one | Back-office work needs a desktop-class console | Open, OD-3 |
+| Mobile only in release one | Back-office work needs a desktop-class console | Resolved, see AD-24 and AD-54 |
 | Offline-first as a system-wide property | Offline-first for field roles on mobile, online-first for back office | Refined, see AD-9 |
 | Release one is Core, Academics and Communication | Broadly holds, and is now stated as Phase 1 of five | Consistent |

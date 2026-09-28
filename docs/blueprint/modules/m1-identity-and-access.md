@@ -15,7 +15,7 @@ Referenced rather than repeated:
 - Platform capabilities P1 approvals, P2 notifications, P6 audit, P7 search
 
 **Assumption recorded for this module:** back-office screens are specified desktop-first with
-defined mobile behaviour, pending OD-3. If the answer is mobile-only, the administrative screens
+defined mobile behaviour, with the web console resolved by AD-24 and AD-54. The administrative screens
 here become the weakest part of the product, and I would raise that again before building.
 
 ---

@@ -477,11 +477,11 @@ The checklist is a control system. Tracking must cost minutes per week, not hour
 **One status line, updated at the end of each working session, at the top of this file:**
 
 ```
-STATUS  2026-09-12
-Phase:    P18 module execution (1/24)
-Blocked:  OD-1, OD-4, OD-9, OD-10
-Gate:     NOT READY — 5 critical blockers
-Next:     M2 Institution Setup
+STATUS  2026-09-29
+Phase:    P0 stabilisation close-out; P18 module execution remains 1/24
+Blocked:  OD-1, OD-4, OD-ACC-1; fresh seed/bootstrap, browser and Android evidence
+Gate:     NOT READY — the P0 exit gate remains open
+Next:     Restore the approved seed/bootstrap path, then finish P0-4 state capture and device evidence
 Drift:    3 open (see §7)
 ```
 
