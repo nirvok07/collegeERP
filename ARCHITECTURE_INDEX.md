@@ -38,7 +38,64 @@ checklist/tracer/checkpoint only after validation and commit.
 
 The canonical session snapshot is the `PROJECT_STATE.md` tracer plus this index. The full
 methodology and module quality gates remain in `prompt1.md`, `prompt2.md` and
-`docs/MODULE-CONTROLLER.md`; this protocol does not replace them.
+the module execution protocol below; this protocol does not replace `prompt1.md` or `prompt2.md`.
+
+## Module execution protocol
+
+`prompt2.md` is the source of truth for deep module design. Before starting a module, identify its
+owner, actors, dependencies, assumptions and relevant approved modules; load `prompt2.md`; then
+track its sections explicitly. Do not mark a section complete because it was mentioned, and do not
+silently redesign an approved boundary or decision.
+
+The module checklist covers: purpose and boundaries; actors and responsibilities; user journeys;
+workflows and happy/exception paths; state machines; business rules; data model and source of
+truth; permissions; information architecture, navigation, dashboard, screens, tables, forms,
+filters/search, bulk/contextual actions and drawers/modals; micro-interactions; loading, empty,
+error and success states; responsive behavior; accessibility; notifications; reports/analytics;
+audit/security; edge cases; cross-module dependencies; UX review; architecture review; open
+decisions; ADR update; and final completeness audit. Use `✅ COMPLETE`, `🟡 IN PROGRESS`,
+`🔴 BLOCKED` or `⚠️ NEEDS REVIEW`; unresolved work keeps a module at `NEEDS REVIEW`.
+
+Before approval, verify the workflows, exception paths, transitions, rules, permissions, reversals,
+corrections, audit requirements, edge cases and cross-module effects. The UX gate asks whether the
+common task is fast, navigation and information density are clear, large datasets remain usable,
+permissions are understandable, states are designed, and the interface works without animation.
+
+### Module Contract and Boundary Audit
+
+After the design is complete, derive the contract from the actual specification rather than asking
+for a second manual document. Record: identity, purpose, `OWNS`, `DOES NOT OWN`, source of truth,
+core entities, workflow/state ownership, inputs, outputs, consumed/provided capabilities, published
+events, dependencies, depended-on-by modules, shared services, permission/audit/notification/report
+responsibility, boundary rules, forbidden interactions and architectural invariants.
+
+Audit for duplicate entity ownership or business logic, multiple sources of truth, overlapping
+responsibilities, direct cross-module database coupling, unauthorized mutation, circular or hidden
+dependencies, workflow leakage, permission violations, and notification/reporting ownership
+conflicts. Do not silently resolve a boundary conflict: explain its impact and seek approval when it
+changes approved architecture. A module is not `APPROVED` until its contract passes this audit.
+
+### Module Registry and approved-module protection
+
+Keep `MODULE_REGISTRY.md` as the compact project-level registry. Each row records module, status,
+purpose, owns/does-not-own, source of truth, core entities, dependencies, dependents, consumes,
+provides, events, public capabilities, permission boundary, important decisions, open decisions and
+contract status. Inspect only directly relevant modules when starting new work, then check ownership,
+source-of-truth, workflow, permission and circular-dependency conflicts.
+
+An approved module is an architecture checkpoint. Do not silently change its ownership, entities,
+source of truth, workflow/state ownership, permissions, capabilities, dependencies, events or
+invariants; surface the conflict and update the ADR and registry through an explicit review.
+
+When a requested change conflicts with an approved decision, stop and report `ARCHITECTURE CHANGE
+REQUIRED` with the existing decision, new requirement, conflict, affected modules, architectural
+impact, risks and options; do not apply it without approval. Before final approval, run focused
+cross-module impact analysis over entity ownership, source of truth, workflow/state ownership,
+permissions, events, notifications, reports, audit, integrations, UI/navigation dependencies and
+data dependencies. Continuously flag duplicate concepts, permissions or workflows, inconsistent
+terms/statuses, conflicting ownership or state machines, unnecessary/circular dependencies,
+accidental coupling and ADR contradictions as architecture drift rather than silently normalising
+them.
 
 ## Stack (locked)
 

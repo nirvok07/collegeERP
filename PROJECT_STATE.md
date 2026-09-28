@@ -46,7 +46,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
   versus M7 student-excused-absence boundary. OD-FEE-5 is resolved by AD-86.
 - P0-9 compact tracking is complete. P0-10 has absorbed the dated planning queues into
   `docs/requirements.md` (R73, R77–R80), removed the duplicate design-token file into the canonical
-  Flutter token source, and added the Android build ignore; methodology-file consolidation remains open.
+  Flutter token source, added the Android build ignore, and folded the standalone module controller
+  into `ARCHITECTURE_INDEX.md`; `prompt1.md` and `prompt2.md` remain the live methodology sources.
 
 ## TO BUILD
 
@@ -57,8 +58,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 - P0-4: complete the physical Android pass, including GPS fence behavior, offline behavior and both
   `college` and `admin` flavors.
 - P0-5/P0-7: obtain owner decisions for OD-1, OD-4 and OD-ACC-1 before dependent domains begin.
-- P0-10: decide whether the still-referenced session/recovery/methodology files can be folded without
-  losing their authoritative protocol content; the prompts remain live sources for now.
+- P0-10: retire `prompt1.md` and `prompt2.md` only after their live references and methodology role
+  are safely folded; they remain authoritative for now.
 
 ## NOT IN THIS SLICE
 
