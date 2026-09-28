@@ -171,9 +171,10 @@ remain in `server/tests`.
 The dev database has 0 persons and 0 institutions, so no signed-in screenshot is possible and no
 visual check can run.
 
-- [ ] `S` `scripts/seed-dev.ts`, idempotent and re-runnable
+- [x] `S` `scripts/seed-dev.ts`, idempotent and re-runnable (canonical entry point for the existing
+      resumable college-tree seed)
 - [ ] `S` One institution with branding (AD-70: code, logo, colour)
-- [ ] `S` Two campuses, one with a configured geo-fence (needed by P0-0), one without
+- [x] `S` Two campuses, one with a configured geo-fence (needed by P0-0), one without
 - [ ] `S` Four departments; programs with curriculum versions, one published one draft
 - [ ] `S` Current academic year and term, plus a prior year for rollover testing
 - [ ] `S` Calendar: holidays, a multi-day break, timed and all-day events
@@ -186,7 +187,8 @@ visual check can run.
 - [ ] `S` Fee structures, invoices in mixed states: paid, part-paid, overdue, waived
 - [ ] `S` Payments including one reversed, so the collection report has a negative line
 - [ ] `S` A known password or OTP path for each test persona, documented
-- [ ] `DOC` `docs/runbook/` page: how to seed, reset and which personas exist
+- [x] `DOC` `docs/runbook/` page: how to seed, reset and which personas exist (baseline scope and
+      remaining P0-3 gaps are explicit in `docs/runbook/seed-dev.md`)
 - [ ] `TEST` Seed runs twice with no error and no duplicates
 
 ---

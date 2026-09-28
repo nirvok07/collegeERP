@@ -250,7 +250,7 @@ saved.student_access ??= {};
 /* ------------------------------------------------------------ 1. organisation */
 
 step('1. Organisation');
-const campuses = await call<(Id & { code: string; name: string; is_default: boolean })[]>('GET', '/campuses');
+const campuses = await call<(Id & { code: string; name: string; is_default: boolean; fence: { latitude: number; longitude: number; radius_m: number } | null })[]>('GET', '/campuses');
 // A college starts with one campus; keep it as the main campus rather than add a second.
 const main = await ensure(
   'main campus',
@@ -262,6 +262,12 @@ const sonipat = await ensure(
   campuses.find((c) => c.code === 'sonipat'),
   () => call('POST', '/campuses', { name: 'Sonipat campus', code: 'sonipat' }),
 );
+if (!main.fence || main.fence.latitude !== 28.5456 || main.fence.longitude !== 77.1926 || main.fence.radius_m !== 200) {
+  await call('PATCH', `/campuses/${main.id}/fence`, { latitude: 28.5456, longitude: 77.1926, radius_m: 200 });
+  console.log('  + main campus attendance fence');
+} else {
+  console.log('  = main campus attendance fence');
+}
 
 const departments = await call<(Id & { code: string })[]>('GET', '/departments');
 const dept: Record<string, Id> = {};

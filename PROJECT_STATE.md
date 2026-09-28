@@ -31,6 +31,9 @@ because the migration ledger has no checksum or execution log; no corrective mig
   PostgreSQL test database; the live privilege audit passed.
 - ✅ P0-4 validation debt is inventoried in `docs/validation-debt.md`, grouped by Android, browser,
   server, tooling, and explicit external blockers.
+- ✅ P0-3 now has canonical `server/scripts/seed-dev.ts` and runbook entry; the baseline seed is
+  idempotent and configures the main-campus fence. Full population/fee/assessment fixture coverage
+  remains open and is not claimed complete.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
