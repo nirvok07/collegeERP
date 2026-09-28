@@ -93,6 +93,27 @@ Two further open decisions raised while writing them:
 - 🟡 **OD-LV-1 sharpened** — "teachers and students apply" is two features. Staff leave
   draws a balance (M14); student excused absence is an attendance record (M7).
 
+### BUILD PLAN (2026-09-28)
+
+`docs/checklists/P0…P7` — **1,281 tasks across 189 slices**, task-level: migrations with their
+tables and triggers, endpoints, screens per client, jobs, and the negative test each invariant
+needs. `docs/EXECUTION-CHECKLIST.md` is the map and the gate list.
+
+| Phase | Tasks | Gate |
+|---|---|---|
+| P0 stabilise | 151 | suite green on a seeded DB, fence resolved, drift root-caused, 4 decisions answered |
+| P1 capabilities | 229 | real push on a real phone; job exactly-once; corrections on P1 |
+| P2 admissions | 131 | applicant → enrolled student with an invoice, end to end |
+| P3 examinations | 123 | a published result provably immutable; students see their own |
+| P4 people and HR | 182 | leave never leaves a class unattended; nobody releases their own pay run |
+| P5 engagement | 190 | a grievance unreadable to a College Admin who is not a party |
+| P6 campus services | 155 | library, hostel and transport charges on one student ledger |
+| P7 hardening | 120 | go-live gate |
+
+**Correction to the 2026-09-28 audit:** `server/tests` holds **ten** `zz-*` debug files, not two —
+nearly a quarter of the 46 server test files. Only `zz-err6` and `zz-syldebug` were documented as
+red; the rest were never triaged. P0-2 covers all ten.
+
 ### CURRENT SLICE
 Owner feedback, 2026-09-14 (`feedbackchanges.md`):
 - FB-1 ✅ `151ec7c` People does not list the signed-in person. Flutter test.
