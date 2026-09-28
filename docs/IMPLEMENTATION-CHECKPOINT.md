@@ -24,7 +24,21 @@ P0 STABILISATION CHECKPOINT — 2026-09-28/29
   23ef8d3  Record the forced browser-state validation blocker.
   d4aa224  Record AD-84…AD-90 and AD-92; resolve OD-FEE-5.
   85d540a  Record AD-93, separating staff leave from student excused absence.
-  Current open validation: forced loading/empty/error browser states and physical Android checks.
+  Post-checkpoint close-out:
+  6486213  Clarify the documentation tracker hierarchy and active entry points.
+  ea1e7e9  Consolidate session and interruption recovery protocols into the architecture index.
+  502235c  Retire the ignored generated Flutter log.
+  9fa5570  Make device-test seed recovery validate existing credentials and database state.
+  bc7ff7f  Stabilise browser state probes and verify local teacher loading skeleton evidence.
+  0908c89  Reconcile the evidence-backed P0 exit-gate lines.
+  00c809d  Reconcile the validation-debt inventory counts and current grouped tracer wording.
+  c6a9c19  Record local `erp_app` versus `erp_migrator` account visibility evidence.
+  12e66a9  Fold the module execution protocol into `ARCHITECTURE_INDEX.md` and remove its duplicate.
+  d80576d  Preserve the open prompt-methodology retirement blocker with its evidence.
+  c1b3cd4  Complete M1–M24 registry identifier coverage, including the M11 row.
+  f94da2c  Clarify that seed and signed-in API evidence is historical until the approved target is restored.
+  Current open validation: empty/error browser states, physical Android checks, and fresh seeded
+  authentication; the managed target and direct local app-role account visibility remain blocked.
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked
