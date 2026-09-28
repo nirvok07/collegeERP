@@ -181,9 +181,10 @@ the service and seed also guard against duplicate timetable occurrences.
 
 - [x] `S` `scripts/seed-dev.ts`, idempotent and re-runnable (canonical entry point for the existing
       resumable college-tree seed)
-- [ ] `S` One institution with branding (AD-70: code, logo, colour)
+- [x] `S` One institution with branding (AD-70: code, logo, colour; verified through the seeded API)
 - [x] `S` Two campuses, one with a configured geo-fence (needed by P0-0), one without
-- [ ] `S` Four departments; programs with curriculum versions, one published one draft
+- [x] `S` Four departments; programs with curriculum versions, one published one draft (five
+      departments, four programs, one published and three draft versions returned by the API)
 - [x] `S` Current academic year and term, plus a prior year for rollover testing
 - [x] `S` Calendar: holidays, a multi-day break, timed and all-day events
 - [x] `S` ~40 staff across roles: college admin, HoDs, faculty, accountant, cashier (41 staff

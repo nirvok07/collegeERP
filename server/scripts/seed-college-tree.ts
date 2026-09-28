@@ -258,6 +258,20 @@ saved.student_access ??= {};
 
 step('1. Organisation');
 const campuses = await call<(Id & { code: string; name: string; is_default: boolean; fence: { latitude: number; longitude: number; radius_m: number } | null })[]>('GET', '/campuses');
+const profile = await call<{ name: string; version: number; logo_url: string | null; brand_color: string | null }>(
+  'GET', '/college/profile',
+);
+if (!profile.logo_url || !profile.brand_color) {
+  await call('POST', '/college/profile', {
+    name: profile.name,
+    logo_url: profile.logo_url ?? 'https://example.com/iit-delhi-seed-logo.png',
+    brand_color: profile.brand_color ?? '#1E40AF',
+    version: profile.version,
+  });
+  console.log('  + college branding');
+} else {
+  console.log('  = college branding');
+}
 // A college starts with one campus; keep it as the main campus rather than add a second.
 const main = await ensure(
   'main campus',
@@ -367,6 +381,17 @@ if (current.status === 'draft') {
 } else {
   tally.kept++;
   console.log(`  = already ${current.status}`);
+}
+for (const [, programCode, , , years] of PROGRAMS) {
+  if (programCode === 'btech-cse') continue;
+  const target = must(program[programCode], programCode);
+  const drafts = await call<(Id & { regulation_year: number; status: string })[]>(
+    'GET', `/curriculum-versions?program_id=${target.id}`,
+  );
+  await ensure(`draft curriculum ${programCode}`, drafts.find((v) => v.regulation_year === 2027),
+    () => call('POST', '/curriculum-versions', {
+      program_id: target.id, regulation_year: 2027, title: 'Working draft 2027', total_terms: years * 2,
+    }));
 }
 
 /* -------------------------------------------------------------------- 6. rooms */

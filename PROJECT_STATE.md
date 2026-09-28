@@ -39,9 +39,10 @@ because the migration ledger has no checksum or execution log; no corrective mig
   the local `device-test` college with a known admin password and development OTP `123456`.
   Two consecutive reruns completed with `0 created, 126 already there`; the generated timetable
   produced no new duplicate sessions.
-- ✅ Seed code includes prior-year/calendar fixtures, course offerings and instructor assignments,
+- ✅ Seed code includes branding, prior-year/calendar fixtures, course offerings and instructor assignments,
   a four-week timetable, attendance/correction/cancellation examples, assessment marks, and a
-  mixed tuition ledger. Branding and expanded population verification remain open.
+  mixed tuition ledger. The seeded API reports five departments, four programs, one published
+  curriculum version, and three draft versions.
 - ✅ Seed code now verifies one scored/absent assessment and leaves a second assessment unmarked;
   assessment correction fixtures remain open.
 - ✅ P0-4 standing web visual-check script is committed at `clients/web/scripts/visual-check.mjs`;
