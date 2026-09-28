@@ -148,11 +148,15 @@ zz-err.test.ts  zz-err2  zz-err3  zz-err4  zz-err5  zz-err6  zz-err7
 zz-parse.test.ts  zz-rootcause.test.ts  zz-syldebug.test.ts
 ```
 
-- [ ] `TEST` Run each of the 10 and record: passes, fails, or errors
-- [ ] `TEST` For each: does it assert anything about production behaviour?
-- [ ] `TEST` Promote any that do — rename into the suite properly, with a real name
-- [ ] `TEST` **Delete the rest.** Debug scaffolding left in a suite is noise that hides signal
-- [ ] `TEST` `zz-err6` and `zz-syldebug` resolved specifically (the two documented as red)
+- [x] `TEST` Inventory all 10: seven `zz-err*` files only logged and asserted `true`; `zz-rootcause`
+      and `zz-syldebug` were probes; `zz-parse` tested a private duplicate parser. None asserted
+      durable production behavior.
+- [x] `TEST` For each: classified as debug-only; the real `syllabus.test.ts` owns the production
+      assertions.
+- [x] `TEST` Promote any that do — none qualified for promotion.
+- [x] `TEST` **Delete the rest.** All 10 debug files were removed.
+- [x] `TEST` `zz-err6` and `zz-syldebug` resolved specifically by removing the debug scaffolding;
+      the underlying syllabus suite remains the authoritative test.
 - [ ] `S` CI fails the build on any red test (AD-92)
 - [ ] `S` CI fails on a **skipped** test too, unless annotated with a reason
 - [ ] `TEST` Full server suite green, stated as `N/N`

@@ -1,16 +1,19 @@
 # Project State
 
-Updated 2026-09-28. Current slice: P0-1 schema-drift investigation.
+Updated 2026-09-28. Current slice: P0-2 test-suite hygiene.
 
 ## CURRENT OBJECTIVE
 
-P0-0 is committed (`7925f06`). P0-1 live audit found migration 036's syllabus table compliant:
+P0-0 is committed (`7925f06`). P0-1 live audit found migration 036's syllabus table compliant;
+P0-2 removed all ten debug-only `zz-*` server tests after classifying them:
+seven logged and asserted `true`, two were probes, and one tested a private duplicate parser.
+P0-1 found migration 036's syllabus table compliant:
 RLS is enabled/forced and all expected grants exist. The historical incident cannot be root-caused
 because the migration ledger has no checksum or execution log; no corrective migration is needed.
 
 ## VALIDATION
 
-- ✅ Server typecheck for changed production code; existing `zz-err6` typecheck error remains.
+- ✅ Server production code typecheck; the former `zz-err6` debug test is removed.
 - ✅ Read-only dev-DB audit: syllabus and all 55 public tables checked; permissions is the expected
   non-tenant reference-table exception.
 - ✅ Web typecheck and 203 tests pass.
@@ -24,7 +27,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 ## BLOCKERS
 
 - 🚫 Physical-device GPS verification requires an attached phone.
-- 🚫 Existing unrelated `zz-err6` typecheck failure remains under P0-2.
+- 🚫 Full server suite and migration-invariant verification require the unavailable local
+  PostgreSQL test database; the live privilege audit passed.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
