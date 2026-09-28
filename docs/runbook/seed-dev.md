@@ -21,8 +21,12 @@ offerings, instructors, generated sessions, and one student-access persona.
 The baseline also creates a published two-instalment tuition structure and
 idempotently generates invoices for the seeded students; it leaves examples of
 part-paid, paid, overdue, reversed payments, and an approved fine waiver. It also plans one assessment
-and seeds scored/absent marks; verification/corrections, waived invoices, and
+and seeds scored/absent marks; assessment verification, waived invoices, and
 the larger population are still follow-up fixture work.
+
+The attendance fixture marks and submits one register, applies a correction,
+and cancels another generated class when those records are available. Assessment
+verification remains intentionally open.
 
 The builder now also expands the baseline deterministically to approximately 40
 staff (including faculty, accountant and cashier personas) and 400 students

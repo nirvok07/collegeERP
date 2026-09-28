@@ -43,6 +43,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
   programs/sections; execution and duplicate-run proof remain blocked on the owner seed credential.
 - ✅ Seed code now creates a fine, requests and approves a full waiver, and records the resulting
   waived invoice state; actual execution remains pending the owner seed credential.
+- ✅ Seed code now marks/submits one attendance register, applies a correction, and cancels another
+  generated class when available; assessment verification remains open.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 

@@ -711,7 +711,41 @@ if (firstOffering) {
   }
 }
 
-/* --------------------------------------------------------- 14. student access */
+/* ------------------------------------------------------ 14. attendance */
+
+step('14. Attendance records and correction example');
+if (firstOffering) {
+  type SeedSession = Id & { status: string };
+  const sessions = await call<SeedSession[]>('GET', `/sessions?offering_id=${firstOffering}&limit=20`);
+  const live = sessions.find((s) => s.status !== 'cancelled');
+  if (live) {
+    let sheet = await call<{
+      sheet: { status: string; version: number };
+      students: { student_id: string; state: string | null; record_id: string | null }[];
+      corrections: { record_id: string }[];
+    }>('GET', `/sessions/${live.id}/attendance`);
+    if (sheet.sheet.status === 'draft' && sheet.students.length > 0) {
+      const marked = await call<{ version: number }>('PUT', `/sessions/${live.id}/attendance`, {
+        version: sheet.sheet.version,
+        marks: sheet.students.map((s, index) => ({
+          student_id: s.student_id, state: index === 1 ? 'absent' : 'present',
+        })),
+      });
+      await call('POST', `/sessions/${live.id}/attendance/submit`, { version: marked.version });
+      sheet = await call('GET', `/sessions/${live.id}/attendance`);
+    }
+    const correctable = sheet.students.find((s) => s.record_id && !sheet.corrections.some((c) => c.record_id === s.record_id));
+    if (correctable?.record_id) {
+      await call('POST', `/attendance-records/${correctable.record_id}/correct`, {
+        state: 'late', reason: 'Seeded attendance correction example',
+      });
+    }
+  }
+  const cancelable = sessions.find((s) => s.id !== live?.id && s.status === 'scheduled');
+  if (cancelable) await call('POST', `/sessions/${cancelable.id}/cancel`, { reason: 'Seeded cancelled class example' });
+}
+
+/* --------------------------------------------------------- 15. student access */
 
 step('12. Student app access (one student, so you can try the student app)');
 const first = STUDENTS[0][0];
