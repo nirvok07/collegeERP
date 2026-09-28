@@ -285,10 +285,12 @@ state tracer now reports grouped current blockers; the item-level register remai
 
 - [ ] `DOC` Put AD-91 to the owner: *support both — mirror external results read-only (AD-8), build
       the autonomous engine behind a capability flag (AD-23)*
-- [ ] `DOC` State the cost honestly: the mirror is small and ships soon; the engine is large and is
-      deferred until a tenant needs it
-- [ ] `DOC` State what stays blocked if deferred: M10 entirely, integration item 15.2, phase 20, and
-      **the student marks self-view** blocked since 2026-09-24
+- [x] `DOC` State the cost honestly: the mirror is small and ships soon; the engine is large and is
+      deferred until a tenant needs it — recorded in `docs/blueprint/00-assumptions.md` §0.2 and
+      the OD-1 entry in `docs/MASTER-CHECKLIST.md`
+- [x] `DOC` State what stays blocked if deferred: M10 entirely, integration item 15.2, phase 20, and
+      **the student marks self-view** blocked since 2026-09-24 — recorded in the OD-1 dependency
+      entries in `docs/MASTER-CHECKLIST.md` and `docs/MASTER-PLAN.md`
 - [ ] `DOC` On agreement: write AD-91 into `adr.md`; update `ARCHITECTURE_INDEX.md`; unblock P3
 - [ ] `DOC` If deferred: record the deferral **with a date**; M10 stays 🚫; do not build speculatively
 
@@ -297,8 +299,8 @@ state tracer now reports grouped current blockers; the item-level register remai
 ## P0-6 — Resolve OD-4
 
 - [ ] `DOC` Decide: collect money, or only record it. Recommended: record first, collect second
-- [ ] `DOC` Note FEE-7's dummy gateway already implements the collect path structurally — the swap
-      touches only the checkout page and two provider routes
+- [x] `DOC` Note FEE-7's dummy gateway already implements the collect path structurally — the swap
+      touches only the checkout page and two provider routes; recorded in `docs/MASTER-PLAN.md`
 - [ ] `DOC` If collecting: scope settlement, refunds, chargebacks and the compliance surface as
       their own slice, not as an afterthought to FEE-7
 
@@ -310,9 +312,11 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 
 - [ ] `DOC` Put OD-ACC-1 to the owner: **the ERP has no general ledger and none is assigned a module
       number.** M15 payroll and M19 payables have nowhere to post
-- [ ] `DOC` Present the three options: (a) export to Tally, (b) full general ledger, (c) thin
-      budget and commitment ledger. Recommended: (a) + (c)
-- [ ] `DOC` State the dependency: **must be answered before M15 or M19 begins**
+- [x] `DOC` Present the three options: (a) export to Tally, (b) full general ledger, (c) thin
+      budget and commitment ledger. Recommended: (a) + (c) — recorded in
+      `docs/blueprint/modules/institutional-accounts.md` §2–3
+- [x] `DOC` State the dependency: **must be answered before M15 or M19 begins** — recorded in
+      `docs/blueprint/modules/institutional-accounts.md` §3 and the OD-ACC-1 checklist entry
 - [ ] `DOC` Record the answer as an ADR and add OD-ACC-1 to `docs/MASTER-CHECKLIST.md` §3
 
 ---
