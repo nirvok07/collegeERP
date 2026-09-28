@@ -222,8 +222,8 @@ machine had no browser, so **every prior web CSS and chart change was unverified
 ### Web
 - [x] `W` Standing visual-check script using the Playwright + Chromium dev dependency already
       installed; committed, not ad hoc
-- [ ] `W` Script signs in against the seeded database for each persona (admin is verified; teacher
-      and student persona captures remain open)
+- [x] `W` Script signs in against the seeded database for each persona (admin: 11 navigation
+      sections; teacher: 3 permission-filtered sections; student: 2 permission-filtered sections)
 - [ ] `W` Capture every screen: dashboard, people, organisation, academic, curriculum, sections,
       offerings, timetable, attendance, marks, students, rooms, profile, platform screens
 - [ ] `W` Capture each screen's loading, empty and error states where reachable

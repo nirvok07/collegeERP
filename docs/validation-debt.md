@@ -18,7 +18,7 @@ required before it can be marked complete.
 | Android | CAP-3 / Drift 6 | Real backend push delivery after sealed-token implementation | 🚫 backend capability not built |
 | Android | OTP-1/2/3/4/7 | Both app OTP sign-in, session renewal, and real email delivery where applicable | 🔍 phone; SMTP delivery separately |
 | Browser | WEB-1 / WID-1 | Live-server college sign-in and session handover in Chrome | 🔍 live server required |
-| Browser | ND-S7 and prior web UI slices | Run the committed Playwright visual check for signed-in dashboard/module screenshots and review defects | 🔍 seeded admin sign-in and all 11 navigation captures passed; full persona/state review remains; seeded Attendance visibly contains historical duplicate cancelled classes from pre-idempotence runs |
+| Browser | ND-S7 and prior web UI slices | Run the committed Playwright visual check for signed-in dashboard/module screenshots and review defects | 🔍 seeded admin (11 sections), teacher (3 permission-filtered sections), and student (2 permission-filtered sections) sign-ins/captures passed; full screen/state review remains; seeded Attendance visibly contains historical duplicate cancelled classes from pre-idempotence runs |
 | Browser | Web saved reads / charts / visual slices | Loading, empty, error, success and chart states in a live browser | 🔍 seeded DB + live browser required |
 | Tooling | ENV-3 | VS Code automatic task approval and `adb reverse` with a USB phone | 🔍 one-time owner/device action |
 | Platform | iOS | Any iOS validation | 🚫 Xcode unavailable |
