@@ -588,6 +588,15 @@ before the enterprise brief and the blueprint written after it. Not silently res
 
 ### Also noted, not drift but gaps created by the scope change
 
+- **Schema-drift check, P0-1, 2026-09-28.** The earlier report that migration 036's `syllabus`
+  table lacked RLS and grants is not present in the current dev database. Read-only inspection
+  found `relrowsecurity = true`, `relforcerowsecurity = true`, the tenant policy, and all four
+  non-grantable `erp_app` privileges. Migration 036 is recorded as applied on 2026-09-22, but
+  `schema_migrations` has no checksum or execution log, so the historical cause cannot be proven.
+  A wider audit found all 55 public tables compliant; `permissions` is the intentional reference
+  table exception. The local test database was unavailable, so test-suite green remains an open
+  verification item rather than being inferred from the live audit.
+
 - `docs/03-offline-first.md` commits to system-wide offline. AD-9 narrowed it to field roles on
   mobile. The document has not been updated, and the register records the refinement but the
   document still reads as the old commitment.

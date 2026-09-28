@@ -1,17 +1,21 @@
 # Project State
 
-Updated 2026-09-28. Current slice: P0-0 AD-83 geo-fence enforcement.
+Updated 2026-09-28. Current slice: P0-1 schema-drift investigation.
 
 ## CURRENT OBJECTIVE
 
-Server-enforced phone-only staff attendance punch in/out. Coordinates are checked then discarded;
-missing and outside fences are refused. Web retains read-only attendance history/status.
+P0-0 is committed (`7925f06`). P0-1 live audit found migration 036's syllabus table compliant:
+RLS is enabled/forced and all expected grants exist. The historical incident cannot be root-caused
+because the migration ledger has no checksum or execution log; no corrective migration is needed.
 
 ## VALIDATION
 
 - ✅ Server typecheck for changed production code; existing `zz-err6` typecheck error remains.
-- ✅ Negative server tests added for missing coordinates, outside fence and fenceless campus; full
-  database test execution is blocked in this environment by `tsx` IPC pipe `EPERM`.
+- ✅ Read-only dev-DB audit: syllabus and all 55 public tables checked; permissions is the expected
+  non-tenant reference-table exception.
+- ✅ Web typecheck and 203 tests pass.
+- 🔍 Server syllabus and migration-invariant tests remain unverified because the local PostgreSQL
+  test database is unavailable; direct live-state checks pass.
 - ✅ Flutter location permission/timeout/mock refusal and coordinate payload implemented; widget
   tests updated with injected location fix.
 - 🔍 NEEDS VALIDATION: physical phone inside/outside a real fence; this is an explicit external

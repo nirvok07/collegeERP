@@ -98,31 +98,43 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 database. 11 tests in `syllabus.test.ts` and 2 migration-invariants checks fail.
 
 ### Investigate before changing anything
-- [ ] `TEST` Run `syllabus.test.ts`; capture all 11 failures verbatim
+- [x] `TEST` Run `syllabus.test.ts`; captured the current run: 0 passed, 9 cancelled after the
+      database setup failed to connect to local PostgreSQL (`EPERM`); the historical 11-failure
+      report is not reproducible against the current dev database.
 - [ ] `TEST` Run `migration-invariants.test.ts`; capture the 2 failures
-- [ ] `S` Query `pg_class.relrowsecurity` and `relforcerowsecurity` for `syllabus`
-- [ ] `S` Query `information_schema.role_table_grants` for `syllabus` and `erp_app`
-- [ ] `S` Query the migrations ledger row for `036`: applied_at, checksum if recorded
-- [ ] `S` Diff observed state against `036_syllabus.sql` line by line
-- [ ] `S` **Determine the cause.** Candidates: a partial transaction, manual intervention, or the
+- [x] `S` Query `pg_class.relrowsecurity` and `relforcerowsecurity` for `syllabus` — both `true`
+- [x] `S` Query `information_schema.role_table_grants` — `erp_app` has SELECT, INSERT, UPDATE,
+      DELETE, all non-grantable
+- [x] `S` Query the migrations ledger row for `036`: applied 2026-09-22 15:15:40 UTC; this
+      ledger has no checksum column
+- [x] `S` Diff observed state against `036_syllabus.sql`: table, FORCE RLS, tenant policy, and
+      grants match; no corrective migration is required
+- [x] `S` **Determine the cause.** The historical cause cannot be proven from the ledger (no
+      checksum or migration execution log); current evidence shows no live drift. The documented
+      incident is therefore stale/resolved, not a reason to rewrite migration 036.
       Supabase rebuild path skipping statements. `npm run migrate` reports "up to date", so this is
       a database-state investigation, not a migration edit
 
 ### The wider question
-- [ ] `S` 🔴 **If the rebuild path can skip clauses, every table is suspect.** Write a one-off audit
+- [x] `S` 🔴 **If the rebuild path can skip clauses, every table is suspect.** One-off audit
       query comparing, for all tenant tables: RLS enabled, RLS forced, and `erp_app` grants against
       what the migrations declare
-- [ ] `DOC` Record the result. If other tables are affected, that is a bigger incident than 036
+- [x] `DOC` Record the result: all 55 public tables were checked; every tenant table has RLS
+      enabled and forced, with expected application grants. `permissions` is the intentional
+      platform reference-table exception.
 
 ### Fix
-- [ ] `S` Repair the database state (apply the missing RLS and GRANTs)
+- [x] `S` Repair the database state (not needed; the live state already matches the migration)
 - [ ] `S` Do **not** edit `036_syllabus.sql` unless the migration itself is wrong
 - [ ] `MIG` If the migration is wrong, write a corrective migration; never rewrite applied history
-- [ ] `TEST` Add `syllabus` to `EXPECTED_PRIVILEGES` in `migration-invariants.test.ts` — the same
+- [x] `TEST` Add `syllabus` to `EXPECTED_PRIVILEGES` in `migration-invariants.test.ts` — already
+      present in the current test declaration, so no code change was needed. The same
       gap `fee_online_intents` had on 2026-09-23
-- [ ] `TEST` `syllabus.test.ts` 11/11 green
-- [ ] `TEST` `migration-invariants.test.ts` green
-- [ ] `DOC` Root cause written into `docs/MASTER-CHECKLIST.md` drift register
+- [ ] `TEST` `syllabus.test.ts` green — blocked by unavailable local PostgreSQL test database;
+      direct live-state checks pass
+- [ ] `TEST` `migration-invariants.test.ts` green — blocked by unavailable local PostgreSQL test
+      database; live privilege audit passes
+- [x] `DOC` Root cause/evidence written into `docs/MASTER-CHECKLIST.md` drift register
 
 ---
 
