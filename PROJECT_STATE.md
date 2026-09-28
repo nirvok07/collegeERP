@@ -64,6 +64,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 - P0-4: complete the physical Android pass, including GPS fence behavior, offline behavior and both
   `college` and `admin` flavors.
 - P0-5/P0-7: obtain owner decisions for OD-1, OD-4 and OD-ACC-1 before dependent domains begin.
+- Owner-facing questions and recommended defaults are consolidated in `docs/OWNER-DECISION-BRIEF.md`;
+  no response is inferred from that preparation.
 - P0-10: retire `prompt1.md` and `prompt2.md` only after their live references and methodology role
   are safely folded; they remain authoritative for now.
 

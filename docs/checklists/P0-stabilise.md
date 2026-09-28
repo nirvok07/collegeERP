@@ -285,6 +285,8 @@ state tracer now reports grouped current blockers; the item-level register remai
 
 - [ ] `DOC` Put AD-91 to the owner: *support both — mirror external results read-only (AD-8), build
       the autonomous engine behind a capability flag (AD-23)*
+- [x] `DOC` Prepare the owner-facing decision packet without treating its recommendations as an
+      answer — `docs/OWNER-DECISION-BRIEF.md`; sending and answering remain external
 - [x] `DOC` State the cost honestly: the mirror is small and ships soon; the engine is large and is
       deferred until a tenant needs it — recorded in `docs/blueprint/00-assumptions.md` §0.2 and
       the OD-1 entry in `docs/MASTER-CHECKLIST.md`
@@ -299,6 +301,8 @@ state tracer now reports grouped current blockers; the item-level register remai
 ## P0-6 — Resolve OD-4
 
 - [ ] `DOC` Decide: collect money, or only record it. Recommended: record first, collect second
+- [x] `DOC` Prepare the owner-facing OD-4 question and response options without treating them as
+      an answer — `docs/OWNER-DECISION-BRIEF.md`; owner response remains external
 - [x] `DOC` Note FEE-7's dummy gateway already implements the collect path structurally — the swap
       touches only the checkout page and two provider routes; recorded in `docs/MASTER-PLAN.md`
 - [ ] `DOC` If collecting: scope settlement, refunds, chargebacks and the compliance surface as
@@ -312,6 +316,8 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 
 - [ ] `DOC` Put OD-ACC-1 to the owner: **the ERP has no general ledger and none is assigned a module
       number.** M15 payroll and M19 payables have nowhere to post
+- [x] `DOC` Prepare the owner-facing OD-ACC-1 question and response options without treating them
+      as an answer — `docs/OWNER-DECISION-BRIEF.md`; owner response remains external
 - [x] `DOC` Present the three options: (a) export to Tally, (b) full general ledger, (c) thin
       budget and commitment ledger. Recommended: (a) + (c) — recorded in
       `docs/blueprint/modules/institutional-accounts.md` §2–3
@@ -337,7 +343,7 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 - [x] `DOC` Rebuild `PROJECT_STATE.md` to the §4 shape: SYSTEM STATUS, CURRENT SLICE, CURRENT
       OBJECTIVE, ALREADY BUILT, TO BUILD, NOT IN THIS SLICE, DEPENDENCIES, VALIDATION, OPEN
       DECISIONS, BLOCKERS, NEXT
-- [x] `DOC` **Target under 200 lines** — 131 lines at the current checkpoint
+- [x] `DOC` **Target under 200 lines** — 133 lines at the current checkpoint
 - [x] `DOC` Verify it answers all eight `CLAUDE.md` §29 questions without opening another file
 - [x] `DOC` Exactly one `NEXT` slice (`CLAUDE.md` §25)
 
@@ -405,6 +411,6 @@ Every line must be true before P1 starts.
 - [x] Zero unexplained `🔍`; the rest have written reasons — see `docs/validation-debt.md`.
 - [ ] OD-1, OD-4, OD-ACC-1 answered or deferred **with a date**
 - [x] OD-LV-1 answered and recorded as AD-93 **with a date**
-- [x] `PROJECT_STATE.md` under 200 lines and answers the eight questions — 131 lines, with the current
+- [x] `PROJECT_STATE.md` under 200 lines and answers the eight questions — 133 lines, with the current
   managed-target and physical-device blockers stated explicitly.
 - [x] AD-84…AD-90 and AD-92 recorded in `adr.md`; AD-91 remains gated on P0-5 owner confirmation
