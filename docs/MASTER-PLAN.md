@@ -705,7 +705,8 @@ Each item names its **surfaces**: `S` server, `W` web, `F` Flutter, `D` docs, `â
 - [ ] Fold `NEW-SESSION-CONTEXT.md`, `INTERRUPT-RECOVERY.md` and `MODULE-CONTROLLER.md` into `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`, then delete
 - [ ] Fold `docs/plan-inbox-*.md` and `docs/plan-fee-a-to-z-*.md` into the requirements register, then delete
 - [ ] Delete `flutter_01.log`, `prompt1.md`, `prompt2.md`, `DESIGN_TOKENS_ADDITIONS.dart`
-- [ ] Gitignore `android/build/`; remove or commit `clients/web/explore.mjs` deliberately
+- [ ] Gitignore `android/build/`; `clients/web/explore.mjs` was deliberately deleted; remaining
+  `android/build/` ignore work is open
 - [ ] Add this file to `ARCHITECTURE_INDEX.md`
 
 **P0-9 Record the new ADRs** `D`

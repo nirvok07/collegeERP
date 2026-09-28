@@ -327,7 +327,8 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
       `docs/requirements.md`; delete
 - [ ] `DOC` Delete `flutter_01.log`, `prompt1.md`, `prompt2.md`, `DESIGN_TOKENS_ADDITIONS.dart`
 - [ ] `DOC` Gitignore `android/build/`
-- [ ] `DOC` Resolve `clients/web/explore.mjs` — commit deliberately or delete
+- [x] `DOC` Resolve `clients/web/explore.mjs` — deleted as an obsolete ad-hoc capture script;
+      `clients/web/scripts/visual-check.mjs` is the committed replacement
 - [ ] `DOC` Clear root `requirements.md` (it is an inbox, kept empty)
 - [ ] `DOC` Verify `docs/` has one obvious entry point and no competing trackers
 
