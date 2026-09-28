@@ -355,6 +355,7 @@ A blocker is critical when proceeding without it produces work that must be thro
 | **OD-4** | Collect money or only record it | M11, P15.3, P14 compliance scope | Online collection brings settlement, refunds, chargebacks and a much heavier compliance surface | Record first, collect second, with the ledger designed so collection is an added channel |
 | ~~OD-9~~ | ~~Scale targets~~ | — | **Resolved 2026-09-12.** Derived in Blueprint 4 §4.1-4.3 rather than asserted | — |
 | ~~OD-10~~ | ~~Hosting and tenancy isolation~~ | — | **Resolved 2026-09-12.** AD-22, shared cluster with row-level security and partitioning | — |
+| ~~OD-FEE-5~~ | ~~Fees on web~~ | — | **Resolved 2026-09-28 by AD-86.** Fees reach the web console; production collection remains subject to OD-4 | — |
 
 **Non-blocking but should be answered soon.** OD-2 campus scope, safe default already carried.
 OD-5 legacy systems. OD-6 buyer versus operator. OD-7 attendance granularity. OD-8 configurable

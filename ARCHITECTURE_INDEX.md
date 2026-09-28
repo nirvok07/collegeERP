@@ -6,7 +6,7 @@ Pointers, not content. Read the linked file for the decision itself.
 
 | Topic | Source of truth |
 |---|---|
-| Decisions (AD-1…AD-81) | `docs/blueprint/adr.md` |
+| Decisions (AD-1…AD-92) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R64) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
 | **Module & capability index (start here)** | `docs/blueprint/modules/README.md` |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
@@ -132,5 +132,13 @@ shows its shape.
 | AD-81 | Every module on the phone too (supersedes AD-32); back-office writes online only | Active; complete: college app ADM-1…11, Super Admin app SAM-2b, SAM-3 |
 | AD-82 | Sign-in by one-time code to email or mobile, for everyone; no passwords (supersedes AD-62, AD-80, AD-69's code) | Approved 2026-09-14; OTP-1…5 to build; fixed code 123456 until go-live (risk accepted by owner) |
 | AD-83 | Staff attendance: geo-fenced punch in/out per campus, online only, coordinates checked then discarded; corrections are approved requests; reminders local | Approved 2026-09-15; SA-A1…A5 to build |
+| AD-84 | Parity is a definition of done; missing surfaces require a named exception | Adopted 2026-09-28; active |
+| AD-85 | Generate client contracts from server OpenAPI/zod schemas | Adopted 2026-09-28; capability pending |
+| AD-86 | Fees reach the web console | Adopted 2026-09-28; PAR-1 pending |
+| AD-87 | Notification delivery is one centrally owned platform capability | Adopted 2026-09-28; CAP-2 pending |
+| AD-88 | Scheduled work is one centrally owned P9 job capability | Adopted 2026-09-28; CAP-3 pending |
+| AD-89 | Document storage is one centrally owned, permissioned platform capability | Adopted 2026-09-28; CAP-4 pending |
+| AD-90 | Reports are declared contracts rendered by generic client surfaces | Adopted 2026-09-28; CAP-5 pending |
+| AD-92 | Known-failing tests are blockers, not notes | Adopted 2026-09-28; active |
 
 - `docs/new-design/` — container and ratio language derived from `assets/new_design.jpeg` (extends `docs/07-design-system.md`); slices ND-S1…ND-S7

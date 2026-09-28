@@ -1861,3 +1861,78 @@ and accuracy for both punch directions; the server resolves the person's assigne
 the Haversine check with a maximum 50 m accuracy allowance, refuses a missing or failed fence, and
 discards coordinates after checking. Desktop punching is withdrawn and recorded as a parity
 exception because a desktop cannot reliably establish physical presence at the campus.
+
+---
+
+**AD-84 — Parity is a definition of done, not an aspiration**
+
+*Status.* Adopted by the owner-directed 2026-09-28 stabilisation plan.
+
+*Decision.* A module slice is complete only when it exists on the server, web and Flutter, or when
+the missing surface is an explicit parity exception with a reason recorded in `MODULE_REGISTRY.md`.
+
+---
+
+**AD-85 — The API contract is generated, not hand-written twice**
+
+*Status.* Adopted as the engineering direction in the 2026-09-28 stabilisation plan; implementation
+is a later capability slice.
+
+*Decision.* The server publishes OpenAPI from its existing zod schemas; web TypeScript types and
+Flutter Dart models are generated from that contract.
+
+---
+
+**AD-86 — Fees reach the web console**
+
+*Status.* OD-FEE-5 resolved in favour of parity by the 2026-09-28 plan; PAR-1 remains the delivery
+slice.
+
+*Decision.* Fee structures, invoices, payments, fines and waivers have a web surface as well as the
+mobile surface. Production collection still requires the separate settlement and compliance scope
+under OD-4.
+
+---
+
+**AD-87 — Notification delivery is a platform capability**
+
+*Status.* Adopted as the platform direction in the 2026-09-28 plan; CAP-2 remains unbuilt.
+
+*Decision.* Device-token registration, recoverable sealed token storage, one outbound queue,
+tenant-scoped templates and delivery receipts are owned centrally.
+
+---
+
+**AD-88 — Scheduled work is a platform capability**
+
+*Status.* Adopted as P9 in the 2026-09-28 plan; CAP-3 remains unbuilt.
+
+*Decision.* One job runner owns tenant-scoped, idempotent and auditable scheduled work. Domain
+modules declare jobs and handlers rather than creating independent schedulers.
+
+---
+
+**AD-89 — Document storage is a platform capability**
+
+*Status.* Adopted as the platform direction in the 2026-09-28 plan; CAP-4 remains unbuilt.
+
+*Decision.* Files are tenant-scoped and permissioned, virus-scanned at ingest, and retained under a
+declared retention policy. Syllabus upload is the first client of this capability.
+
+---
+
+**AD-90 — Reports are a declared contract**
+
+*Status.* Adopted as the platform direction in the 2026-09-28 plan; CAP-5 remains unbuilt.
+
+*Decision.* A report descriptor declares columns, filters, permissions and export behavior. One
+generic report surface per client renders the descriptor.
+
+---
+
+**AD-92 — A known-failing test is a blocker**
+
+*Status.* Adopted by the 2026-09-28 stabilisation plan.
+
+*Decision.* A red or cancelled test is not a note to carry forward. The suite must return to green,
+or the failure must be an explicit named blocker with its cause and next verification condition.

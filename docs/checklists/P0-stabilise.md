@@ -335,18 +335,18 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 
 ## P0-11 — Record the new ADRs
 
-- [ ] `DOC` AD-84 parity is a definition of done
-- [ ] `DOC` AD-85 the API contract is generated, not written twice
-- [ ] `DOC` AD-86 OD-FEE-5 resolves to yes — fees reach the web console
-- [ ] `DOC` AD-87 notification delivery is a platform capability; tokens sealed, not hashed
-- [ ] `DOC` AD-88 scheduled work is a platform capability (**P9**)
-- [ ] `DOC` AD-89 document storage is a platform capability
-- [ ] `DOC` AD-90 reports are a declared contract
+- [x] `DOC` AD-84 parity is a definition of done
+- [x] `DOC` AD-85 the API contract is generated, not written twice
+- [x] `DOC` AD-86 OD-FEE-5 resolves to yes — fees reach the web console
+- [x] `DOC` AD-87 notification delivery is a platform capability; tokens sealed, not hashed
+- [x] `DOC` AD-88 scheduled work is a platform capability (**P9**)
+- [x] `DOC` AD-89 document storage is a platform capability
+- [x] `DOC` AD-90 reports are a declared contract
 - [ ] `DOC` AD-91 examinations support both modes — **gated on P0-5**
-- [ ] `DOC` AD-92 a known-failing test is a blocker
-- [ ] `DOC` AD-83 amended per P0-0's decision
-- [ ] `DOC` Update `ARCHITECTURE_INDEX.md`'s ADR table with all of them
-- [ ] `DOC` Mark OD-FEE-5 resolved in `docs/MASTER-CHECKLIST.md` §3
+- [x] `DOC` AD-92 a known-failing test is a blocker
+- [x] `DOC` AD-83 amended per P0-0's decision
+- [x] `DOC` Update `ARCHITECTURE_INDEX.md`'s ADR table with all of them
+- [x] `DOC` Mark OD-FEE-5 resolved in `docs/MASTER-CHECKLIST.md` §3
 
 ---
 
@@ -361,4 +361,4 @@ Every line must be true before P1 starts.
 - [ ] Zero unexplained `🔍`; the rest have written reasons
 - [ ] OD-1, OD-4, OD-ACC-1, OD-LV-1 answered or deferred **with a date**
 - [ ] `PROJECT_STATE.md` under 200 lines and answers the eight questions
-- [ ] AD-84…AD-92 recorded in `adr.md`
+- [x] AD-84…AD-90 and AD-92 recorded in `adr.md`; AD-91 remains gated on P0-5 owner confirmation
