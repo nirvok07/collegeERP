@@ -52,7 +52,11 @@ const stateRoute = async (route) => {
   }
   if (visualState === 'empty' && route.request().method() === 'GET'
       && emptyCollectionPaths.some((path) => new URL(url).pathname === path)) {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: [] }),
+    });
     return;
   }
   if (visualState === 'error') {
@@ -106,7 +110,7 @@ try {
     // race the transition, but retain a fallback for browser autofill paths
     // that update the input without firing the component's completion callback.
     const signIn = page.getByRole('button', { name: 'Sign in' });
-    await page.waitForTimeout(100);
+    await signIn.waitFor({ state: 'visible', timeout: 2000 }).catch(() => undefined);
     if (await signIn.isVisible().catch(() => false) && await signIn.isEnabled().catch(() => false)) {
       await signIn.click();
     }
