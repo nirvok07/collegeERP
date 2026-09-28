@@ -83,11 +83,12 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 - [x] `TEST` Flutter widget test: permission denied renders a refusal, sends no request
 
 ### Generalise the lesson
-- [ ] `S` `DOC` **Sweep every AD-approved invariant for the same failure mode** — schema present,
+- [x] `S` `DOC` **Sweep every AD-approved invariant for the same failure mode** — schema present,
       check absent. Start with: AD-34 curriculum freeze, AD-17 delegation limits, AD-27 archive
       refusal, AD-60 suspended-tenant refusal, AD-65 seat limits, M11 gapless receipt numbers
-- [ ] `DOC` Record findings in `docs/MASTER-CHECKLIST.md` drift register
-- [ ] `TEST` For each confirmed gap, add the negative test before fixing
+- [x] `DOC` Record findings in `docs/MASTER-CHECKLIST.md` drift register
+- [x] `TEST` For each confirmed gap, add the negative test before fixing (no implemented gap was
+      confirmed; AD-17 is explicitly unimplemented with P1 approvals)
 
 ### Close
 - [ ] `VAL` Verified on a physical phone inside and outside a real fence

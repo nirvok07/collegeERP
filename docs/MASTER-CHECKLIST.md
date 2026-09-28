@@ -588,6 +588,17 @@ before the enterprise brief and the blueprint written after it. Not silently res
 
 ### Also noted, not drift but gaps created by the scope change
 
+- **AD-invariant enforcement sweep, P0-0, 2026-09-29.** The implemented controls were checked
+  against both their database/application enforcement and negative-path tests: AD-34 curriculum
+  freeze (`curriculum.test.ts`), AD-27 archive refusal (`org-structure.test.ts` and
+  `curriculum.test.ts`), AD-60 suspended-tenant refusal (`college-lifecycle.test.ts`), AD-65 seat
+  limits (`seats.test.ts`, including direct database writes and concurrent invitations), and M11
+  gapless receipt numbers (`fees.test.ts`). The focused set passed **93/93**, with no failures,
+  cancellations, or skips. No schema-present/check-absent gap was found in these implemented
+  controls. AD-17 delegation is not implemented because P1 approvals is not yet specified; there
+  is no production delegation surface to test, so it remains an explicit future-scope item rather
+  than a claimed invariant.
+
 - **Schema-drift check, P0-1, 2026-09-28.** The earlier report that migration 036's `syllabus`
   table lacked RLS and grants is not present in the current dev database. Read-only inspection
   found `relrowsecurity = true`, `relforcerowsecurity = true`, the tenant policy, and all four

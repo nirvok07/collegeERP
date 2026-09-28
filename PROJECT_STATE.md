@@ -58,6 +58,9 @@ because the migration ledger has no checksum or execution log; no corrective mig
   invoice state; the local run completed this path.
 - ✅ Seed code marks/submits one attendance register, applies a correction, and cancels another
   generated class when available; remaining browser/device validation is external.
+- ✅ P0-0 invariant sweep passed 93/93 focused tests across curriculum freeze, archive refusal,
+  suspended-tenant refusal, seat limits, and gapless receipts; no implemented schema/check gap was
+  found. AD-17 delegation remains unimplemented with P1 approvals and is recorded as future scope.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
