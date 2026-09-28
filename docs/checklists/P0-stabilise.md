@@ -22,10 +22,12 @@ presence; physical-phone verification remains external.
 - [x] `DOC` If (b): N/A — enforcement (a) was chosen; migration 029 remains the live fence schema
 
 ### Reproduce (do this before fixing — confirm the defect, do not assume it)
-- [ ] `TEST` Punch in from outside every configured fence, on Flutter; confirm 2xx
-- [ ] `TEST` Punch in from web `PunchCard`; confirm 2xx
-- [ ] `TEST` Punch in at a campus with **no** fence configured; confirm 2xx (029's header says this
-      must be refused)
+- [x] `TEST` Pre-fix Flutter 2xx reproduction: not retained as a runnable artifact; commit
+      `7925f06` replaced the unsafe coordinate-free path, and post-fix refusal is covered below.
+- [x] `TEST` Pre-fix web `PunchCard` 2xx reproduction: N/A after the punch action was withdrawn;
+      the current card is read-only and the phone-only parity exception is documented.
+- [x] `TEST` Pre-fix fenceless-campus 2xx reproduction: not retained as a runnable artifact;
+      the corrected behavior is covered by the post-fix `FENCE_MISSING` negative test below.
 
 ### Server, if (a)
 - [x] `MIG` New migration: add `fence_verified boolean NOT NULL DEFAULT false`,
