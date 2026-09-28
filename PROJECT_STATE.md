@@ -57,6 +57,23 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Backend push delivery: 🚫 Drift 6, tokens stored hash-only
 - New design container language (ND, `docs/new-design/`): ✅ spec, ✅ S1 tokens, ✅ S2 containers, ✅ S5 admin dashboard, ✅ S6 mobile rollout in code: light theme ground is neutral-50, every screen's `ListTile` rows are card rows (`AppListTile`), dashboard panels are `AppCard`, attendance/marks rosters are one card. ✅ analyze clean, ✅ 313 tests (twice), ✅ dashboards and rooms checked in test screenshots; 🔍 NEEDS VALIDATION on the phone for every screen; ✅ ND-S4 `AppSheet`: forms (`showSubmitDialog`, organisation, academic) are bottom sheets on a phone and a centred dialog from 600dp, sheet/dialog radius 24; confirmations stay dialogs; the 8 hand-built bottom sheets only got the radius; ✅ ND-S7 web parity: `--nd-*` tokens named like the Flutter `AppGeometry`; every card surface (dashboard, tables, cohorts, panes, terms, campuses, days, register rows) is borderless with the soft ND shadow at radius 16; module tiles are rows; the drawer is a 480 side panel with the 24 radius; sign-in card 24; web tests 202 pass, typecheck and build pass, sign-in seen in headless Chrome, the signed-in screens not (they need a session); other web screens keep their own layouts and the dashboard's information architecture is unchanged (ND-O3); the outbox timing test `a write waits behind an earlier one` failed once in a full run and passed on rerun (not from ND, flaky)
 
+### MASTER PLAN (2026-09-28)
+
+Owner-directed re-audit: `docs/MASTER-PLAN.md`. Audit + coverage map + tickable execution plan,
+extending `docs/blueprint/` rather than replacing it. Owner decisions taken in that session:
+full parity on both surfaces (AD-81 reaffirmed → AD-84/AD-86), stabilise before any new domain.
+
+Verified in that audit, needing action:
+- 🚫 **AD-83 geo-fence is not enforced.** Migration 029 stores the campus fence and the admin UI
+  configures it, but `self-attendance.ts punchIn()` takes no coordinates and checks nothing; both
+  clients post an empty body. Any staff member can punch in from anywhere. → P0-0, highest priority.
+- ⚠️ Web has **no fee code at all** (mobile: 2,766 lines); calendar management is mobile-only.
+  OD-FEE-5 resolved to yes by AD-86. → PAR-1, PAR-2.
+- ⚠️ Web `PunchCard.tsx` (415 lines) punches without coordinates — decide gate or withdraw (P0-0).
+- D3 Admissions, D7 People/HR, D8 Campus Services, D9 Engagement: ❌ unbuilt. All four depend on
+  notifications, scheduled jobs and document storage, which are ❌ → capabilities sequenced first.
+- Proposed AD-84…AD-92, to be written into `adr.md` (P0-9). AD-91 (OD-1 default) needs the owner.
+
 ### CURRENT SLICE
 Owner feedback, 2026-09-14 (`feedbackchanges.md`):
 - FB-1 ✅ `151ec7c` People does not list the signed-in person. Flutter test.
