@@ -34,12 +34,14 @@ class _FakeCalendar implements CalendarRepository {
 class _FakeRepository implements StaffAttendanceRepository {
   List<StaffAttendanceDay> days = const [];
   bool refuse = false;
+  int punchInCalls = 0;
 
   @override
   Future<Result<List<StaffAttendanceDay>>> history() async => Ok(days);
 
   @override
   Future<Result<StaffAttendanceDay>> punchIn(LocationFix location) async {
+    punchInCalls++;
     if (refuse)
       return Err(const Failure(
           code: FailureCode.conflict,
@@ -120,5 +122,24 @@ void main() {
     expect(find.text('Already punched out for today.'), findsOneWidget);
     expect(find.text('Not punched in yet'), findsOneWidget,
         reason: 'the day is unchanged since the punch was refused');
+  });
+
+  testWidgets('location denial refuses the punch without calling the repository',
+      (tester) async {
+    final repo = _FakeRepository();
+    await tester.pumpWidget(MaterialApp(
+        home: StaffAttendanceScreen(
+            repository: repo,
+            calendarRepository: _FakeCalendar(),
+            locate: () async => throw const LocationUnavailable(
+                'Allow location for this app to continue.'))));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Punch in'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Allow location for this app to continue.'), findsOneWidget);
+    expect(repo.punchInCalls, 0);
+    expect(find.text('Not punched in yet'), findsOneWidget);
   });
 }

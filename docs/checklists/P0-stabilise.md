@@ -78,7 +78,7 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
       columns do not exist / are absent from the row)
 - [ ] `TEST` Client-supplied campus id is ignored; the person's own campus is used
 - [ ] `TEST` Unauthorised actor cannot punch for another person
-- [ ] `TEST` Flutter widget test: permission denied renders a refusal, sends no request
+- [x] `TEST` Flutter widget test: permission denied renders a refusal, sends no request
 
 ### Generalise the lesson
 - [ ] `S` `DOC` **Sweep every AD-approved invariant for the same failure mode** — schema present,
