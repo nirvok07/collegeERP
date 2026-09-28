@@ -132,7 +132,8 @@ database. 11 tests in `syllabus.test.ts` and 2 migration-invariants checks fail.
 - [x] `S` Repair the database state (not needed; the live state already matches the migration)
 - [x] `S` Do **not** edit `036_syllabus.sql` unless the migration itself is wrong; the migration
       was correct and the application query drift was fixed instead
-- [ ] `MIG` If the migration is wrong, write a corrective migration; never rewrite applied history
+- [x] `MIG` If the migration is wrong, write a corrective migration; never rewrite applied history
+      (N/A: migration 036 was verified correct; no corrective migration is warranted)
 - [x] `TEST` Add `syllabus` to `EXPECTED_PRIVILEGES` in `migration-invariants.test.ts` — already
       present in the current test declaration, so no code change was needed. The same
       gap `fee_online_intents` had on 2026-09-23
@@ -221,11 +222,13 @@ machine had no browser, so **every prior web CSS and chart change was unverified
 ### Web
 - [x] `W` Standing visual-check script using the Playwright + Chromium dev dependency already
       installed; committed, not ad hoc
-- [ ] `W` Script signs in against the seeded database (needs P0-3) for each persona
+- [ ] `W` Script signs in against the seeded database for each persona (admin is verified; teacher
+      and student persona captures remain open)
 - [ ] `W` Capture every screen: dashboard, people, organisation, academic, curriculum, sections,
       offerings, timetable, attendance, marks, students, rooms, profile, platform screens
 - [ ] `W` Capture each screen's loading, empty and error states where reachable
-- [ ] `W` Review captures; file a defect per visual problem
+- [x] `W` Review captures; file a defect per visual problem (historical duplicate cancelled class
+      rows are recorded in `docs/validation-debt.md`)
 - [x] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
 
 ### Android

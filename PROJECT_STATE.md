@@ -62,6 +62,10 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ P0-0 invariant sweep passed 93/93 focused tests across curriculum freeze, archive refusal,
   suspended-tenant refusal, seat limits, and gapless receipts; no implemented schema/check gap was
   found. AD-17 delegation remains unimplemented with P1 approvals and is recorded as future scope.
+- ✅ P0-1's remaining corrective-migration item is N/A: migration 036 and the wider RLS/GRANT audit
+  are compliant, so applied migration history remains unchanged.
+- ✅ Browser captures were reviewed and the historical duplicate-cancelled-class fixture defect was
+  recorded; teacher/student personas and loading/empty/error-state coverage remain open.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
