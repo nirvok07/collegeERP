@@ -8,11 +8,33 @@ permissions:
   contents: read
 
 jobs:
-  server-typecheck:
+  server-quality:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: server
+    env:
+      DATABASE_URL: postgres://erp_app:erp_app_local@localhost:5432/college_erp_dev
+      MIGRATION_DATABASE_URL: postgres://erp_migrator:erp_migrator_local@localhost:5432/college_erp_dev
+      BOOTSTRAP_DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      JWT_SECRET: ci-only-jwt-secret-that-is-long-enough
+      COOKIE_SECRET: ci-only-cookie-secret-that-is-long-enough
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,7 +43,15 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
       - run: npm ci
+      - name: Create test databases
+        run: ./scripts/setup-db.sh
+      - name: Bootstrap database roles
+        run: npm run db:bootstrap
+      - name: Apply development migrations
+        run: npm run migrate
       - run: npm run typecheck
+      - name: Run server tests
+        run: npm test
 
   web:
     runs-on: ubuntu-latest
