@@ -143,10 +143,8 @@ database. 11 tests in `syllabus.test.ts` and 2 migration-invariants checks fail.
 **Correction to the earlier audit:** there are **10** `zz-*` debug test files, not 2 — out of 46
 total server test files. Nearly a quarter of the suite is debug scaffolding.
 
-```
-zz-err.test.ts  zz-err2  zz-err3  zz-err4  zz-err5  zz-err6  zz-err7
-zz-parse.test.ts  zz-rootcause.test.ts  zz-syldebug.test.ts
-```
+The ten files were removed in commit `eff2617` after classification below; no `zz-*` test files
+remain in `server/tests`.
 
 - [x] `TEST` Inventory all 10: seven `zz-err*` files only logged and asserted `true`; `zz-rootcause`
       and `zz-syldebug` were probes; `zz-parse` tested a private duplicate parser. None asserted
