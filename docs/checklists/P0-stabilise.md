@@ -157,7 +157,7 @@ remain in `server/tests`.
 - [x] `TEST` `zz-err6` and `zz-syldebug` resolved specifically by removing the debug scaffolding;
       the underlying syllabus suite remains the authoritative test.
 - [x] `S` CI fails the build on any red test (AD-92)
-- [ ] `S` CI fails on a **skipped** test too, unless annotated with a reason
+- [x] `S` CI fails on a **skipped** test too, unless annotated with a reason
 - [ ] `TEST` Full server suite green, stated as `N/N`
 - [ ] `TEST` Full Flutter suite green
 - [ ] `TEST` Full web suite green

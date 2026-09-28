@@ -42,8 +42,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ P0-4 standing web visual-check script is committed at `clients/web/scripts/visual-check.mjs`;
   signed-in capture remains blocked until the dev API/database and seed credentials are available.
 - ✅ `.github/workflows/quality.yml` now provisions PostgreSQL, applies migrations, and runs the
-  server typecheck/tests; web typecheck/tests are also blocking CI checks, while the visual check
-  remains a non-blocking artifact.
+  server typecheck/tests; its TAP guard rejects unannotated skips. Web typecheck/tests are also
+  blocking CI checks, while the visual check remains a non-blocking artifact.
 - ✅ Seed code now expands deterministically to approximately 40 staff and 400 students across
   programs/sections; execution and duplicate-run proof remain blocked on the owner seed credential.
 - ✅ Seed code now creates a fine, requests and approves a full waiver, and records the resulting

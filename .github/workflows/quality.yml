@@ -51,7 +51,13 @@ jobs:
         run: npm run migrate
       - run: npm run typecheck
       - name: Run server tests
-        run: npm test
+        run: |
+          set -o pipefail
+          npm run test:ci 2>&1 | tee "$RUNNER_TEMP/server-tests.tap"
+          if grep -Eq '# SKIP[[:space:]]*$' "$RUNNER_TEMP/server-tests.tap"; then
+            echo 'An unannotated skipped test was found; add a reason to the skip.'
+            exit 1
+          fi
 
   web:
     runs-on: ubuntu-latest
