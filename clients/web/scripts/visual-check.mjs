@@ -21,8 +21,36 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, de
 const failures = [];
 page.on('pageerror', (error) => failures.push(`pageerror: ${error.message}`));
 page.on('console', (message) => {
-  if (message.type() === 'error') failures.push(`console: ${message.text()}`);
+  // A signed-out browser always probes refresh before the OTP flow. Chromium
+  // reports that expected 401 as a resource error; it is not a visual failure.
+  if (message.type() === 'error' && !message.text().includes('status of 401 (Unauthorized)')) {
+    failures.push(`console: ${message.text()}`);
+  }
 });
+
+const stateRoute = async (route) => {
+  const url = route.request().url();
+  // Authentication and permission bootstrap must remain real so the probe can
+  // reach the shell before forcing module loading/error responses.
+  if (url.includes('/auth/') || url.includes('/me/permissions')) {
+    await route.continue();
+    return;
+  }
+  if (visualState === 'loading') {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await route.continue();
+    return;
+  }
+  if (visualState === 'error') {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: { code: 'VISUAL_CHECK_FAILURE', message: 'Forced visual-check failure.' } }),
+    });
+    return;
+  }
+  await route.continue();
+};
 
 try {
   if (!['happy', 'loading', 'error'].includes(visualState)) {
@@ -31,6 +59,7 @@ try {
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await page.getByLabel(authMode === 'platform' ? 'Email' : 'College code').waitFor({ state: 'visible' });
   await page.screenshot({ path: `${outputDir}/signed-out.png`, fullPage: true });
+  if (visualState !== 'happy') await page.route('**/v1/**', stateRoute);
 
   const supplied = authMode === 'platform'
     ? credentials.email && credentials.password && credentials.secondFactor
@@ -49,14 +78,20 @@ try {
       await page.getByLabel('Email').fill(credentials.email);
       await page.getByLabel('Password').fill(credentials.password);
       await page.getByRole('button', { name: 'Continue' }).click();
-      await page.getByLabel('Code').fill(credentials.secondFactor);
+      await page.getByLabel('Code').pressSequentially(credentials.secondFactor);
     } else {
       await page.getByLabel('College code').fill(credentials.college);
       await page.getByLabel('Email or mobile').fill(credentials.identifier);
       await page.getByRole('button', { name: 'Send code' }).click();
-      await page.getByLabel('Code').fill(credentials.code);
+      await page.getByLabel('Code').pressSequentially(credentials.code);
     }
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    // OtpField submits automatically when the sixth digit is entered. Do not
+    // race the transition, but retain a fallback for browser autofill paths
+    // that update the input without firing the component's completion callback.
+    const signIn = page.getByRole('button', { name: 'Sign in' });
+    if (await signIn.isVisible().catch(() => false) && await signIn.isEnabled().catch(() => false)) {
+      await signIn.click();
+    }
     await page.waitForSelector('.shell__nav', { state: 'visible', timeout: 15000 });
     // Permissions load immediately after the shell mounts. Wait until the
     // permission-filtered navigation has stopped changing, otherwise a fast
@@ -72,31 +107,6 @@ try {
       }
       return labels.length >= 2 && now - (state.__visualNavStableSince ?? now) >= 500;
     }, { timeout: 15000 });
-
-    const stateRoute = async (route) => {
-      const url = route.request().url();
-      // Keep session and permission bootstrap requests real; state probes begin
-      // only after the shell has settled and target module requests are made.
-      if (url.includes('/auth/') || url.includes('/me/permissions')) {
-        await route.continue();
-        return;
-      }
-      if (visualState === 'loading') {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        await route.continue();
-        return;
-      }
-      if (visualState === 'error') {
-        await route.fulfill({
-          status: 503,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: { code: 'VISUAL_CHECK_FAILURE', message: 'Forced visual-check failure.' } }),
-        });
-        return;
-      }
-      await route.continue();
-    };
-    if (visualState !== 'happy') await page.route('**/v1/**', stateRoute);
 
     await page.screenshot({ path: `${outputDir}/dashboard.png`, fullPage: true });
 

@@ -48,8 +48,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 
 ## TO BUILD
 
-- P0-4: capture reachable loading, empty and error states in a live browser; the standing script has
-  forced-state modes, but its current headless run exits before authenticated shell creation.
+- P0-4: loading-state capture now passes locally for a seeded teacher (2 permission-filtered sections);
+  empty/error captures remain open, and the managed API target still cannot authenticate the seed.
 - P0-3/P0-4: restore the approved seeded API target or bootstrap grant, then rerun device-test seed
   and authenticated browser state capture.
 - P0-4: complete the physical Android pass, including GPS fence behavior, offline behavior and both
@@ -80,7 +80,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 - ✅ Seeded API and idempotent rerun evidence recorded in `docs/IMPLEMENTATION-CHECKPOINT.md` and
   `docs/checklists/P0-stabilise.md`.
 - ✅ Browser happy-path sign-in and top-level captures recorded for admin, teacher, student and platform.
-- 🔍 Forced browser loading/empty/error captures: not claimed; current runner exits before shell auth.
+- ✅ Local forced loading capture: authenticated teacher shell with a visible skeleton, 2 sections.
+- 🔍 Empty/error captures: not claimed; managed API target remains unavailable for seeded auth.
 - 🔍 Physical GPS, permissions, offline replay, flavor side-by-side install and all mobile visual debt:
   phone required.
 - 🚫 iOS and backend push: explicit capability/tooling blockers, not silently deferred.
@@ -97,8 +98,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 ## BLOCKERS
 
 - Physical Android device and owner/device validation access.
-- Browser forced-state harness: admin OTP is currently rate-limited and forced probes exit before shell
-  authentication; happy-path captures remain valid and state coverage is not claimed.
+- Browser forced-state harness: local loading works after auth/input/CORS fixes; managed API OTP/account
+  state remains blocked and empty/error captures are still open.
 - Current configured API target has no device-test accounts; the corrected seed reached an `erp_migrator`
   RLS refusal. No remote RLS repair was attempted.
 - Xcode unavailable; CAP-3 backend push capability not built.
