@@ -250,8 +250,9 @@ state tracer now reports grouped current blockers; the item-level register remai
 - [ ] `W` Capture each screen's loading, empty and error states where reachable. Loading is verified
       locally for a seeded teacher's 2 sections, forced error is verified for a seeded admin's 11
       sections on 2026-09-29 with visible error/retry UI, and a student no-access empty state is
-      captured for 2 sections. Collection-backed empty screens remain open; the managed API target
-      still lacks the seeded account/bootstrap path recorded above.
+      captured for 2 sections. Collection-backed empty screens remain open; a later local retry hit
+      the fixed-OTP challenge bucket's `429` rate limit, and the managed API target still lacks the
+      seeded account/bootstrap path recorded above.
 - [x] `W` Review captures; file a defect per visual problem (historical duplicate cancelled class
       rows are recorded in `docs/validation-debt.md`)
 - [x] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
