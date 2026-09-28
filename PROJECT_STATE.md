@@ -29,6 +29,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - 🚫 Physical-device GPS verification requires an attached phone.
 - 🚫 Full server suite and migration-invariant verification require the unavailable local
   PostgreSQL test database; the live privilege audit passed.
+- ✅ P0-4 validation debt is inventoried in `docs/validation-debt.md`, grouped by Android, browser,
+  server, tooling, and explicit external blockers.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 

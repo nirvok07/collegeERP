@@ -197,9 +197,9 @@ visual check can run.
 machine had no browser, so **every prior web CSS and chart change was unverified**.
 
 ### Inventory
-- [ ] `DOC` Extract all 42 items into `docs/validation-debt.md`: item, slice, surface, how to
+- [x] `DOC` Extract all current markers into `docs/validation-debt.md`: grouped item, slice, surface, how to
       verify, owner, status
-- [ ] `DOC` Group by surface so one device pass and one browser pass can clear many at once
+- [x] `DOC` Group by surface so one device pass and one browser pass can clear many at once
 
 ### Web
 - [ ] `W` Standing visual-check script using the Playwright + Chromium dev dependency already
