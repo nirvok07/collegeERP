@@ -41,6 +41,9 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
   cancelled Calculus fixture rows are recorded as a named data defect.
 - AD-84…AD-90 and AD-92 are recorded in `docs/blueprint/adr.md`; AD-93 records the M14 staff-leave
   versus M7 student-excused-absence boundary. OD-FEE-5 is resolved by AD-86.
+- P0-9 compact tracking is complete. P0-10 has absorbed the dated planning queues into
+  `docs/requirements.md` (R73, R77–R80), removed the duplicate design-token file into the canonical
+  Flutter token source, and added the Android build ignore; methodology-file consolidation remains open.
 
 ## TO BUILD
 
@@ -49,8 +52,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 - P0-4: complete the physical Android pass, including GPS fence behavior, offline behavior and both
   `college` and `admin` flavors.
 - P0-5/P0-7: obtain owner decisions for OD-1, OD-4 and OD-ACC-1 before dependent domains begin.
-- P0-9: complete any remaining tracker-history migration and verify this file answers the eight
-  CLAUDE.md §29 questions.
+- P0-10: decide whether the still-referenced session/recovery/methodology files can be folded without
+  losing their authoritative protocol content; the prompts remain live sources for now.
 
 ## NOT IN THIS SLICE
 
