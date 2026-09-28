@@ -9,7 +9,9 @@ Updated 2026-09-29. Current slice: P0 stabilisation close-out.
 - Flutter: ✅ analyze and ✅ 330/330 tests; APK builds pass.
 - Database: historical local `college_erp_dev` seed evidence is recorded; the currently running API
   resolves to the configured managed development database, which has only `iit-delhi` and zero
-  accounts. The device-test seed retry is blocked by that environment's `erp_migrator` RLS grant.
+  accounts. The device-test seed retry is blocked by that environment's `erp_migrator` RLS grant;
+  a read-only local comparison also found seeded accounts visible to `erp_migrator` but none visible
+  directly to `erp_app`, so the local target is not fresh-auth evidence either.
 - Platform: ✅ tenant lifecycle and platform administration foundations; ⚠️ push delivery and
   impersonation remain unbuilt or externally blocked.
 - Examinations/results: 🚫 OD-1 / AD-91 owner decision.
@@ -99,7 +101,8 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 
 - Physical Android device and owner/device validation access.
 - Browser forced-state harness: local loading works after auth/input/CORS fixes; managed API OTP/account
-  state remains blocked and empty/error captures are still open.
+  state and the current local app-role account visibility remain blocked, and empty/error captures are
+  still open.
 - Current configured API target has no device-test accounts; the corrected seed reached an `erp_migrator`
   RLS refusal. No remote RLS repair was attempted.
 - Xcode unavailable; CAP-3 backend push capability not built.

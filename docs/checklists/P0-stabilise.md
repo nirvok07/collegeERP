@@ -187,6 +187,11 @@ the file. The retry reached `platform_accounts` but the configured `erp_migrator
 by RLS, so no RLS weakening or remote repair was attempted. Restore the approved bootstrap/local
 database path before claiming a new browser sign-in or state capture.
 
+The same date's read-only local comparison found 0 `user_accounts` visible to the `erp_app` role but
+the seeded rows visible to `erp_migrator` (43 in `device-test`); this direct role-visibility mismatch
+also prevents using the current local target as fresh authentication evidence. No grant or RLS change
+was made.
+
 Implementation note (2026-09-29): the canonical seed was run through the API with a known local
 admin credential. Two consecutive repeat runs completed without errors and created no new rows;
 the service and seed also guard against duplicate timetable occurrences.
@@ -242,8 +247,9 @@ state tracer now reports grouped current blockers; the item-level register remai
       captured 3 platform sections; platform capture used the supported password + authenticator flow
 - [ ] `W` Capture each screen's loading, empty and error states where reachable. Loading is now
       verified locally: the corrected probe captured a real skeleton for a seeded teacher's 2
-      permission-filtered sections on 2026-09-29. Empty and error captures remain open; managed
-      API validation is blocked by the seeded-account/OTP environment issue recorded above.
+      permission-filtered sections on 2026-09-29. Empty and error captures remain open; the managed
+      API and current local app-role target are blocked by the seeded-account/role-visibility issue
+      recorded above.
 - [x] `W` Review captures; file a defect per visual problem (historical duplicate cancelled class
       rows are recorded in `docs/validation-debt.md`)
 - [x] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
