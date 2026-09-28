@@ -54,7 +54,7 @@ class FeeReportsState {
 
 /// G2: daily collection, outstanding, defaulters, concession/waiver
 /// register — each tab reads only when it is first opened, not all four up
-/// front (`docs/plan-fee-a-to-z-2026-09-22.md` §5).
+/// front (R73, the M11 Student Finance contract).
 class FeeReportsCubit extends Cubit<FeeReportsState> {
   FeeReportsCubit(this._repository) : super(const FeeReportsState());
 

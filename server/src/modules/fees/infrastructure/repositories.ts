@@ -585,7 +585,7 @@ export class PgOnlineIntentRepository implements OnlineIntentRepository {
 
 /**
  * G2: reports read against the ledger the module already keeps — no new
- * tables, no new invariant (plan `docs/plan-fee-a-to-z-2026-09-22.md` §5).
+ * tables, no new invariant (R73, the M11 Student Finance contract).
  */
 export class PgFeeReportsRepository implements FeeReportsRepository {
   // Dates here are UTC-normalized, the same convention `todayIso` in

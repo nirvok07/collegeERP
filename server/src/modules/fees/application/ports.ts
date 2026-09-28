@@ -262,7 +262,7 @@ export interface OnlineIntentRepository {
  * One (date, cashier, method, kind) group of the daily collection report.
  * `amountPaise` is signed — negative for a reversal — so a reversal reads
  * as its own line, never netted into the payment it corrects (module doc
- * §3, plan `docs/plan-fee-a-to-z-2026-09-22.md` §5).
+ * §3, R73's absorbed fee planning queue).
  */
 export interface CollectionRow {
   date: string;

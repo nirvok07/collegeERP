@@ -11,7 +11,7 @@ import 'fee_reports_cubit.dart';
 
 /// G2: daily collection, outstanding, defaulters, concession/waiver
 /// register — four sections of one report screen (`fee.read`), no export
-/// in v1 (`docs/plan-fee-a-to-z-2026-09-22.md` §5).
+/// in v1 (R73, the M11 Student Finance contract).
 class FeeReportsScreen extends StatelessWidget {
   const FeeReportsScreen({super.key, this.repository});
 

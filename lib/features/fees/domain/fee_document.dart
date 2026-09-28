@@ -9,7 +9,7 @@ import 'fees.dart';
 /// G1: a receipt (one payment) or a statement (everything on a student's
 /// ledger), rendered on the phone. No server work — every field here is
 /// already returned by the endpoints `StudentFeeScreen` and `MyFeesScreen`
-/// already read; this only formats it (`docs/plan-fee-a-to-z-2026-09-22.md` §4).
+/// already read; this only formats it (R73, the M11 Student Finance contract).
 abstract final class FeeDocument {
   static const _indigo = PdfColor.fromInt(0xFF4F46E5);
   static const _ink = PdfColor.fromInt(0xFF1B1C2B);
