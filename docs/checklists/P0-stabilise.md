@@ -203,7 +203,7 @@ the service and seed also guard against duplicate timetable occurrences.
 - [x] `DOC` `docs/runbook/` page: how to seed, reset and which personas exist (baseline scope and
       remaining P0-3 gaps are explicit in `docs/runbook/seed-dev.md`)
 - [x] `TEST` Seed runs twice with no error and no duplicates (two consecutive reruns reported
-      `Done: 0 created, 126 already there.`; no new class sessions were created)
+      `Done: 0 created, 129 already there.`; no new class sessions were created)
 
 ---
 

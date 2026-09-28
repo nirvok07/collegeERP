@@ -37,7 +37,7 @@ because the migration ledger has no checksum or execution log; no corrective mig
   server, tooling, and explicit external blockers.
 - ✅ P0-3 now has canonical `server/scripts/seed-dev.ts` and runbook entry; it was executed against
   the local `device-test` college with a known admin password and development OTP `123456`.
-  Two consecutive reruns completed with `0 created, 126 already there`; the generated timetable
+  Two consecutive reruns completed with `0 created, 129 already there`; the generated timetable
   produced no new duplicate sessions.
 - ✅ Seed code includes branding, prior-year/calendar fixtures, course offerings and instructor assignments,
   a four-week timetable, attendance/correction/cancellation examples, assessment marks, and a
@@ -52,7 +52,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
   server typecheck/tests; its TAP guard rejects unannotated skips. Web typecheck/tests are also
   blocking CI checks, while the visual check remains a non-blocking artifact.
 - ✅ The seeded API now returns 41 staff and 403 students across the fixture's programs/sections;
-  one institution branding and the four-department curriculum-version shape still need verification.
+  branding and the curriculum-version shape are also verified (five departments, four programs,
+  one published version and three drafts).
 - ✅ Seed code creates a fine, requests and approves a full waiver, and records the resulting waived
   invoice state; the local run completed this path.
 - ✅ Seed code marks/submits one attendance register, applies a correction, and cancels another
@@ -80,10 +81,8 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Dev database on Supabase (ENV-2, AD-68): ✅ rebuilt 2026-09-14 (all 24 migrations, tracked); `server/.env` points at Supabase; Owner `nirvokofficial@gmail.com` created there
 - Web visual QA (2026-09-24): ✅ Playwright + Chromium installed as a `clients/web` dev dependency —
   this dev machine has no browser otherwise, so every prior web CSS/chart change had been unverified.
-  No standing test uses it yet (ad hoc: a static HTML preview page + a one-off Playwright script,
-  screenshotted, read as an image); worth turning into a real visual-check script if more chart/UI work
-  follows. The dev DB currently has 0 persons/institutions, so a real signed-in screenshot still needs
-  seeding first.
+  The committed visual-check script now has a seeded signed-in admin capture; full per-screen review
+  remains open. The empty-database note was historical context from 2026-09-24.
 - Dev server starts by itself (ENV-3, 2026-09-15): ✅ `scripts/dev-up.sh` (idempotent: starts `npm run dev` detached if `/health` is silent, then `adb reverse` when a phone is on USB; log `server/dev-server.log`), `scripts/dev-down.sh`; VS Code runs it on folder open and as `preLaunchTask` of both app launches (`.vscode/`). Owner asked for Supabase-as-backend instead; not done: it would move all server logic into Edge Functions (AD-68 / docs/11-decisions keep the Node API); production hosting stays for go-live. Tested: start / rerun / stop on a spare port. 🔍 NEEDS VALIDATION: auto-run on VS Code open (needs one-time "Allow automatic tasks") and adb reverse with a phone attached.
 - College branding + college-code-first app (BR-1, AD-70): ✅ server, ✅ web, ✅ Flutter, ✅ tests, ✅ APK builds; 🔍 on the phone
 - Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
@@ -1017,7 +1016,8 @@ style (`assets/*.jpeg`); bottom navigation removed; light theme only.
   do" — `.dash__donut` is a centered row now (ring, then legend+status) instead of a left-leaning
   column; falls back to a centered column under 420px. Screenshot-verified. ✅ tsc clean, 203/203 tests.
   Committed `b0193af`. 🔍 NEEDS VALIDATION on the phone and against the real signed-in app in a browser (every preview so far
-  used sample data, not live app state — the dev DB currently has 0 persons/institutions).
+  used sample data, not live app state — the dev DB was empty at that time; it now has a seeded
+  signed-in admin fixture).
 - "Your roles" said "Faculty for a department" with no department name (owner: "exact kis department
   me hai... sub cheez"). ✅ Fixed 2026-09-24 — `/v1/auth/me` resolves each assignment's `scope_ref_id`
   to a real name (department/section/program/campus, one lookup per distinct id) and returns
