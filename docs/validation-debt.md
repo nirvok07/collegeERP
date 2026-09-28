@@ -1,9 +1,11 @@
 # Validation debt register
 
-Updated 2026-09-28 during P0-4 inventory. `PROJECT_STATE.md` contains 47 `🔍` markers: 46
-product/runtime checks plus the local server-test-database blocker. The entries below group related
-markers so one browser or Android pass can clear several slices; each row still names the evidence
-required before it can be marked complete.
+Updated 2026-09-29 during P0-4 close-out. The 2026-09-28 inventory found 42 validation-debt items
+represented by 47 `🔍` marker instances: 46 product/runtime checks plus the local
+server-test-database blocker. The compact `PROJECT_STATE.md` tracer now reports grouped current
+blockers rather than repeating every historical marker. The entries below remain the authoritative
+item-level register; one browser or Android pass can clear several slices, and each row still names
+the evidence required before it can be marked complete.
 
 | Surface | Slice(s) | Evidence required | Status |
 |---|---|---|---|

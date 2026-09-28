@@ -221,8 +221,10 @@ the service and seed also guard against duplicate timetable occurrences.
 
 ## P0-4 — Burn down validation debt
 
-42 `🔍 NEEDS VALIDATION` markers. `PROJECT_STATE.md` itself records that until 2026-09-24 the dev
-machine had no browser, so **every prior web CSS and chart change was unverified**.
+The 2026-09-28 inventory identified 42 validation-debt items (47 marker instances, including the
+local server-test-database blocker). `PROJECT_STATE.md` itself recorded that until 2026-09-24 the
+dev machine had no browser, so **every prior web CSS and chart change was unverified**. The compact
+state tracer now reports grouped current blockers; the item-level register remains authoritative.
 
 ### Inventory
 - [x] `DOC` Extract all current markers into `docs/validation-debt.md`: grouped item, slice, surface, how to
