@@ -46,8 +46,9 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ Seed code now verifies one scored/absent assessment and leaves a second assessment unmarked;
   assessment correction fixtures remain open.
 - ✅ P0-4 standing web visual-check script is committed at `clients/web/scripts/visual-check.mjs`;
-  signed-in admin OTP login and dashboard/People captures passed against the seeded local API;
-  full per-persona/per-screen review remains an explicit validation item.
+  signed-in admin OTP login and all 11 seeded navigation captures passed against the local API;
+  review found historical duplicate cancelled Calculus rows from pre-idempotence seed runs, which
+  are preserved as a named fixture-data defect; full per-persona/per-screen/state review remains.
 - ✅ `.github/workflows/quality.yml` now provisions PostgreSQL, applies migrations, and runs the
   server typecheck/tests; its TAP guard rejects unannotated skips. Web typecheck/tests are also
   blocking CI checks, while the visual check remains a non-blocking artifact.

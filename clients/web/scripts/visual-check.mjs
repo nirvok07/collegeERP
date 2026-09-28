@@ -33,6 +33,20 @@ try {
     await page.getByRole('button', { name: 'Send code' }).click();
     await page.getByLabel('Code').fill(credentials.code);
     await page.waitForSelector('.shell__nav', { state: 'visible', timeout: 15000 });
+    // Permissions load immediately after the shell mounts. Wait until the
+    // permission-filtered navigation has stopped changing, otherwise a fast
+    // browser captures only the initial Dashboard/Profile pair.
+    await page.waitForFunction(() => {
+      const labels = [...document.querySelectorAll('.shell__tab')].map((tab) => tab.textContent?.trim() ?? '');
+      const key = labels.join('\u001f');
+      const now = performance.now();
+      const state = window;
+      if (state.__visualNavKey !== key) {
+        state.__visualNavKey = key;
+        state.__visualNavStableSince = now;
+      }
+      return labels.length >= 2 && now - (state.__visualNavStableSince ?? now) >= 500;
+    }, { timeout: 15000 });
     await page.screenshot({ path: `${outputDir}/dashboard.png`, fullPage: true });
 
     const tabs = page.locator('.shell__tab');
@@ -42,7 +56,7 @@ try {
       const label = (await tab.innerText()).trim();
       const safe = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `section-${index + 1}`;
       await tab.click();
-      await page.waitForTimeout(250);
+      await page.waitForTimeout(500);
       await page.screenshot({ path: `${outputDir}/${String(index + 1).padStart(2, '0')}-${safe}.png`, fullPage: true });
     }
     console.log(`Captured signed-in dashboard and ${count} navigation sections.`);
