@@ -1,6 +1,6 @@
 # Project State
 
-Updated 2026-09-28. Current slice: P0-2 test-suite hygiene.
+Updated 2026-09-28. Current slice: P0-3 usable development seed.
 
 ## CURRENT OBJECTIVE
 
