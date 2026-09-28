@@ -227,8 +227,10 @@ machine had no browser, so **every prior web CSS and chart change was unverified
       installed; committed, not ad hoc
 - [x] `W` Script signs in against the seeded database for each persona (admin: 11 navigation
       sections; teacher: 3 permission-filtered sections; student: 2 permission-filtered sections)
-- [ ] `W` Capture every screen: dashboard, people, organisation, academic, curriculum, sections,
-      offerings, timetable, attendance, marks, students, rooms, profile, platform screens
+- [x] `W` Capture every reachable top-level screen: seeded College Admin captured 11 sections
+      (dashboard, people, organisation, curriculum/academic, college, teaching/sections/offerings,
+      students, timetable/rooms, attendance, assessment/marks, profile) and a platform Owner
+      captured 3 platform sections; platform capture used the supported password + authenticator flow
 - [ ] `W` Capture each screen's loading, empty and error states where reachable
 - [x] `W` Review captures; file a defect per visual problem (historical duplicate cancelled class
       rows are recorded in `docs/validation-debt.md`)

@@ -48,9 +48,10 @@ because the migration ledger has no checksum or execution log; no corrective mig
   assessment correction fixtures remain open.
 - ✅ P0-4 standing web visual-check script is committed at `clients/web/scripts/visual-check.mjs`;
   signed-in OTP login passed for all seeded personas: admin (11 navigation captures), teacher
-  (3 permission-filtered captures), and student (2 permission-filtered captures). Review found
-  historical duplicate cancelled Calculus rows from pre-idempotence seed runs, which are preserved
-  as a named fixture-data defect; full per-screen/state review remains.
+  (3 permission-filtered captures), student (2 permission-filtered captures), and platform (3
+  platform captures). Review found historical duplicate cancelled Calculus rows from pre-idempotence
+  seed runs, which are preserved as a named fixture-data defect; loading/empty/error-state review
+  remains.
 - ✅ `.github/workflows/quality.yml` now provisions PostgreSQL, applies migrations, and runs the
   server typecheck/tests; its TAP guard rejects unannotated skips. Web typecheck/tests are also
   blocking CI checks, while the visual check remains a non-blocking artifact.
@@ -70,8 +71,9 @@ because the migration ledger has no checksum or execution log; no corrective mig
   `docs/checklists/P0-stabilise.md`; desktop punching is withdrawn and the phone-only parity
   exception is recorded in `MODULE_REGISTRY.md` and AD-83.
 - ✅ Browser captures were reviewed and the historical duplicate-cancelled-class fixture defect was
-  recorded; teacher/student persona captures passed, while loading/empty/error-state coverage and
-  the full screen inventory remain open.
+  recorded; College Admin top-level (11), teacher (3 permission-filtered), student (2
+  permission-filtered), and platform (3) captures passed. Loading/empty/error-state coverage
+  remains open.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
@@ -95,8 +97,9 @@ Updated 2026-09-13. Compact, repository-oriented. Details live in the files name
 - Dev database on Supabase (ENV-2, AD-68): ✅ rebuilt 2026-09-14 (all 24 migrations, tracked); `server/.env` points at Supabase; Owner `nirvokofficial@gmail.com` created there
 - Web visual QA (2026-09-24): ✅ Playwright + Chromium installed as a `clients/web` dev dependency —
   this dev machine has no browser otherwise, so every prior web CSS/chart change had been unverified.
-  The committed visual-check script now has a seeded signed-in admin capture; full per-screen review
-  remains open. The empty-database note was historical context from 2026-09-24.
+  The committed visual-check script now has seeded College Admin, teacher, student, and platform
+  captures for the reachable top-level sections; loading/empty/error-state review remains open. The
+  empty-database note was historical context from 2026-09-24.
 - Dev server starts by itself (ENV-3, 2026-09-15): ✅ `scripts/dev-up.sh` (idempotent: starts `npm run dev` detached if `/health` is silent, then `adb reverse` when a phone is on USB; log `server/dev-server.log`), `scripts/dev-down.sh`; VS Code runs it on folder open and as `preLaunchTask` of both app launches (`.vscode/`). Owner asked for Supabase-as-backend instead; not done: it would move all server logic into Edge Functions (AD-68 / docs/11-decisions keep the Node API); production hosting stays for go-live. Tested: start / rerun / stop on a spare port. 🔍 NEEDS VALIDATION: auto-run on VS Code open (needs one-time "Allow automatic tasks") and adb reverse with a phone attached.
 - College branding + college-code-first app (BR-1, AD-70): ✅ server, ✅ web, ✅ Flutter, ✅ tests, ✅ APK builds; 🔍 on the phone
 - Operator password for platform accounts, dev only (OPS-1, AD-71): ✅; `owner@nirvok.com` set on local
