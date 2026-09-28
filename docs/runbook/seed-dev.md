@@ -34,9 +34,10 @@ and attendance examples above are part of the same resumable fixture. These
 fixtures are implemented but not yet run in the current environment because
 the owner seed credential file is absent.
 
-The seed entry point currently signs in with the existing college-admin
-credential in `server/.seed-login.local.json`; it does not print or invent
-credentials for invited staff. After the seed has run, the generated
+The seed entry point signs in with the existing college-admin credential in
+`server/.seed-login.local.json`, or with the secret-only environment variables
+`SEED_INSTITUTION_CODE`, `SEED_IDENTIFIER` and `SEED_PASSWORD`; it does not
+print or invent credentials for invited staff. After the seed has run, the generated
 `server/.college-tree.local.json` records the teacher invitation tokens and one
 student access code needed for manual sign-in checks. OTP verification uses the
 development fixed code `123456` when enabled. Track execution, duplicate-run

@@ -422,6 +422,25 @@ describe('generating classes from the pattern', () => {
     assert.equal((await get(`/v1/sessions?offering_id=${o.id}`, s.token)).json().data.length, 5);
   });
 
+  it('does not create duplicate occurrences when two slots share a time', async () => {
+    const s = await deliverySetup();
+    const o = await s.offering('CS301', 'Operating Systems', 'os@duplicate-slot.edu');
+    const otherRoom = (await post('/v1/rooms', s.token, {
+      campus_id: s.campus, code: 'LH-205', name: 'Lecture Hall 205', capacity: 70,
+    })).json().data.id;
+    for (const roomId of [s.room, otherRoom]) {
+      await post(`/v1/offerings/${o.id}/slots`, s.token, {
+        day_of_week: 1, starts_at: '09:00', ends_at: '10:00', room_id: roomId,
+      });
+    }
+
+    const report = (await post(`/v1/offerings/${o.id}/sessions`, s.token, {
+      from: '2026-06-01', to: '2026-06-08',
+    })).json().data;
+    assert.equal(report.created, 2);
+    assert.equal((await get(`/v1/sessions?offering_id=${o.id}`, s.token)).json().data.length, 2);
+  });
+
   it('clamps the window to the term rather than refusing an obvious intent', async () => {
     const s = await deliverySetup();
     const o = await s.offering('CS301', 'Operating Systems', 'os@delivery.edu');

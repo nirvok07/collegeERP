@@ -3,7 +3,9 @@
  * (docs/runbook/09-example-iit-delhi.md) inside the college you sign in to,
  * through the public API only, as its College Administrator.
  *
- * Sign-in comes from server/.seed-login.local.json (git-ignored):
+ * Sign-in comes from server/.seed-login.local.json (git-ignored), or from the
+ * SEED_INSTITUTION_CODE, SEED_IDENTIFIER and SEED_PASSWORD environment
+ * variables when a file is inconvenient (for example in CI):
  *   { "institution_code": "...", "identifier": "admin email", "password": "..." }
  *
  * Re-runnable: every step first finds what already exists (by code, name,
@@ -227,10 +229,15 @@ function must<T>(value: T | undefined, what: string): T {
 
 /* ------------------------------------------------------------------ sign in */
 
-if (!existsSync(LOGIN)) throw new Error('Put your sign-in in server/.seed-login.local.json first.');
-const login = JSON.parse(readFileSync(LOGIN, 'utf8')) as { institution_code: string; identifier: string; password: string };
+const login = existsSync(LOGIN)
+  ? JSON.parse(readFileSync(LOGIN, 'utf8')) as { institution_code: string; identifier: string; password: string }
+  : {
+      institution_code: process.env.SEED_INSTITUTION_CODE ?? '',
+      identifier: process.env.SEED_IDENTIFIER ?? '',
+      password: process.env.SEED_PASSWORD ?? '',
+    };
 if (Object.values(login).some((v) => typeof v !== 'string' || v.startsWith('PUT-YOUR-'))) {
-  throw new Error('server/.seed-login.local.json still has a placeholder in it.');
+  throw new Error('Provide server/.seed-login.local.json or all SEED_* credential variables.');
 }
 const college = login.institution_code.trim().toLowerCase();
 token = (await call<{ access_token: string }>('POST', '/auth/login', {
@@ -434,7 +441,11 @@ for (const [number, name] of STUDENTS) {
   student[number] = await ensure(`student ${number}`, students.find((s) => s.enrolment_number === number),
     async () => ({
       ...(await call<Id>('POST', '/students', {
-        full_name: name, enrolment_number: number, program_id: btech.id, admitted_on: ADMITTED_ON,
+        full_name: name,
+        email: `${number.toLowerCase()}@iitd.example`,
+        enrolment_number: number,
+        program_id: btech.id,
+        admitted_on: ADMITTED_ON,
       })),
       enrolment_number: number,
       section: null,
@@ -613,7 +624,7 @@ step('12. Fee ledger (paid, part-paid, overdue and reversed examples)');
 type FeeHead = Id & { code: string };
 const feeHeads = await call<FeeHead[]>('GET', '/fees/heads');
 const tuition = await ensure(
-  'tuition fee head', feeHeads.find((h) => h.code === 'tuition'),
+  'tuition fee head', feeHeads.find((h) => h.code.toLowerCase() === 'tuition'),
   () => call<FeeHead>('POST', '/fees/heads', { name: 'Tuition fee', code: 'tuition' }),
 );
 type FeeStructure = Id & { program_id: string; academic_year_id: string; status: string };
@@ -674,7 +685,7 @@ if (waiverStudent) {
       invoice_id: fine.id, reason: 'Seeded hardship waiver example',
     });
   }
-  if (waiver.status === 'pending') await call('POST', `/fees/requests/${waiver.id}/approve`, { reason: 'Seed fixture approved' });
+  if (waiver.status === 'requested') await call('POST', `/fees/requests/${waiver.id}/approve`, { reason: 'Seed fixture approved' });
 }
 
 /* ---------------------------------------------------------- 13. assessment */
@@ -683,7 +694,8 @@ step('13. Assessment examples');
 const firstOffering = seededOfferings[0];
 if (firstOffering) {
   type Component = Id & { status: string; held_on: string | null; version: number };
-  const components = await call<Component[]>('GET', `/offerings/${firstOffering}/assessments`);
+  const assessmentPlan = await call<{ components: Component[] }>('GET', `/offerings/${firstOffering}/assessments`);
+  const components = assessmentPlan.components;
   let component = components[0];
   if (!component) {
     component = await call<Component>('POST', `/offerings/${firstOffering}/assessments`, {
@@ -729,7 +741,7 @@ if (firstOffering) {
 step('14. Attendance records and correction example');
 if (firstOffering) {
   type SeedSession = Id & { status: string };
-  const sessions = await call<SeedSession[]>('GET', `/sessions?offering_id=${firstOffering}&limit=20`);
+  const sessions = await call<SeedSession[]>('GET', `/sessions?offering_id=${firstOffering}&limit=1000`);
   const live = sessions.find((s) => s.status !== 'cancelled');
   if (live) {
     let sheet = await call<{
@@ -754,8 +766,15 @@ if (firstOffering) {
       });
     }
   }
+  // Keep the cancelled-class example one-time. The delivery service correctly
+  // excludes cancelled occurrences from its idempotence snapshot so a
+  // coordinator can generate a replacement; repeating this seed step would
+  // otherwise cancel one fresh replacement on every run.
+  const hasSeededCancellation = sessions.some((s) => s.status === 'cancelled');
   const cancelable = sessions.find((s) => s.id !== live?.id && s.status === 'scheduled');
-  if (cancelable) await call('POST', `/sessions/${cancelable.id}/cancel`, { reason: 'Seeded cancelled class example' });
+  if (!hasSeededCancellation && cancelable) {
+    await call('POST', `/sessions/${cancelable.id}/cancel`, { reason: 'Seeded cancelled class example' });
+  }
 }
 
 /* --------------------------------------------------------- 15. student access */

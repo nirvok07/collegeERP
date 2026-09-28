@@ -172,13 +172,12 @@ remain in `server/tests`.
 
 ## P0-3 — Seed a usable dev database
 
-The dev database has 0 persons and 0 institutions, so no signed-in screenshot is possible and no
-visual check can run.
+The local development database now has a seeded `device-test` college and supports signed-in API
+verification. Live browser capture remains an explicit validation item.
 
-Implementation note (2026-09-28): the seed builder now contains deterministic expansion for the
-target population, fee ledger, calendar and assessment examples. The population and duplicate-run
-items remain unchecked until the owner credential is supplied and the script is run twice against
-the dev database.
+Implementation note (2026-09-29): the canonical seed was run through the API with a known local
+admin credential. Two consecutive repeat runs completed without errors and created no new rows;
+the service and seed also guard against duplicate timetable occurrences.
 
 - [x] `S` `scripts/seed-dev.ts`, idempotent and re-runnable (canonical entry point for the existing
       resumable college-tree seed)
@@ -189,16 +188,19 @@ the dev database.
 - [x] `S` Calendar: holidays, a multi-day break, timed and all-day events
 - [ ] `S` ~40 staff across roles: college admin, HoDs, faculty, accountant, cashier
 - [ ] `S` ~400 students across programs, sections and years
-- [ ] `S` Enrolments, course offerings, instructor assignments
-- [ ] `S` A timetable with rooms; four weeks of generated class sessions
+- [x] `S` Enrolments, course offerings, instructor assignments
+- [x] `S` A timetable with rooms; four weeks of generated class sessions
 - [x] `S` Attendance records including corrections and a cancelled class
 - [x] `S` Internal assessment plans and marks, some verified, some not
 - [x] `S` Fee structures, invoices in mixed states: paid, part-paid, overdue, waived
 - [x] `S` Payments including one reversed, so the collection report has a negative line
-- [ ] `S` A known password or OTP path for each test persona, documented
+- [x] `S` A known password or OTP path for each test persona, documented (local admin password
+      and development OTP `123456` verified against `device-test`; generated access material
+      remains in ignored local fixture output)
 - [x] `DOC` `docs/runbook/` page: how to seed, reset and which personas exist (baseline scope and
       remaining P0-3 gaps are explicit in `docs/runbook/seed-dev.md`)
-- [ ] `TEST` Seed runs twice with no error and no duplicates
+- [x] `TEST` Seed runs twice with no error and no duplicates (two consecutive reruns reported
+      `Done: 0 created, 126 already there.`; no new class sessions were created)
 
 ---
 

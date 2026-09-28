@@ -205,11 +205,16 @@ export async function generateSessions(
       if (label !== undefined) { skippedDays.push({ date, label }); continue; }
 
       for (const slot of today) {
-        if (existing.has(`${date} ${slot.startsAt}`)) { alreadyThere++; continue; }
+        const occurrenceKey = `${date} ${slot.startsAt}`;
+        if (existing.has(occurrenceKey)) { alreadyThere++; continue; }
         occurrences.push({
           date, startsAt: slot.startsAt, endsAt: slot.endsAt,
           roomId: slot.roomId, slotId: slot.id,
         });
+        // A malformed or concurrently-created duplicate slot must not turn
+        // one weekly occurrence into two class sessions in this transaction.
+        // Keep the in-memory snapshot current as we plan the batch.
+        existing.add(occurrenceKey);
       }
     }
 

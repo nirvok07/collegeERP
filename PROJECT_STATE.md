@@ -1,6 +1,6 @@
 # Project State
 
-Updated 2026-09-28. Current slice: P0-3 usable development seed.
+Updated 2026-09-29. Current slice: P0-3 usable development seed.
 
 ## CURRENT OBJECTIVE
 
@@ -32,28 +32,29 @@ because the migration ledger has no checksum or execution log; no corrective mig
 
 - 🚫 Physical-device GPS verification requires an attached phone.
 - ✅ The local PostgreSQL verification blocker is cleared; remaining validation blockers are
-  external device, live-browser/seed, and owner-credential checks.
+  external device and live-browser checks.
 - ✅ P0-4 validation debt is inventoried in `docs/validation-debt.md`, grouped by Android, browser,
   server, tooling, and explicit external blockers.
-- ✅ P0-3 now has canonical `server/scripts/seed-dev.ts` and runbook entry; the baseline seed is
-  idempotent and configures the main-campus fence. Full population/fee/assessment fixture coverage
-  remains open and is not claimed complete.
-- ✅ Seed code now includes prior-year/calendar fixtures and a two-instalment tuition ledger with
-  part-paid, paid, overdue, and reversed examples; waived invoices and larger populations remain
-  open. Execution still awaits the owner seed credential file.
+- ✅ P0-3 now has canonical `server/scripts/seed-dev.ts` and runbook entry; it was executed against
+  the local `device-test` college with a known admin password and development OTP `123456`.
+  Two consecutive reruns completed with `0 created, 126 already there`; the generated timetable
+  produced no new duplicate sessions.
+- ✅ Seed code includes prior-year/calendar fixtures, course offerings and instructor assignments,
+  a four-week timetable, attendance/correction/cancellation examples, assessment marks, and a
+  mixed tuition ledger. Branding and expanded population verification remain open.
 - ✅ Seed code now verifies one scored/absent assessment and leaves a second assessment unmarked;
   assessment correction fixtures remain open.
 - ✅ P0-4 standing web visual-check script is committed at `clients/web/scripts/visual-check.mjs`;
-  signed-in capture remains blocked until the dev API/database and seed credentials are available.
+  signed-in capture prerequisites now exist locally; the browser capture remains an external check.
 - ✅ `.github/workflows/quality.yml` now provisions PostgreSQL, applies migrations, and runs the
   server typecheck/tests; its TAP guard rejects unannotated skips. Web typecheck/tests are also
   blocking CI checks, while the visual check remains a non-blocking artifact.
-- ✅ Seed code now expands deterministically to approximately 40 staff and 400 students across
-  programs/sections; execution and duplicate-run proof remain blocked on the owner seed credential.
-- ✅ Seed code now creates a fine, requests and approves a full waiver, and records the resulting
-  waived invoice state; actual execution remains pending the owner seed credential.
-- ✅ Seed code now marks/submits one attendance register, applies a correction, and cancels another
-  generated class when available; assessment verification remains open.
+- 🔍 Seed code has deterministic population targets, but the expanded ~40 staff/~400 student fixture
+  and one institution branding still need explicit checklist verification.
+- ✅ Seed code creates a fine, requests and approves a full waiver, and records the resulting waived
+  invoice state; the local run completed this path.
+- ✅ Seed code marks/submits one attendance register, applies a correction, and cancels another
+  generated class when available; remaining browser/device validation is external.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 
