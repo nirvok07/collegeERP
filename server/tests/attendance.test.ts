@@ -817,6 +817,16 @@ describe('staff self-attendance (SA-ATT-1)', () => {
     const other = await c.staff('Rohit Dey', 'rohit@attend-punch-3.edu', c.section);
     const otherHistory = await get('/v1/me/staff-attendance', other.token);
     assert.equal(otherHistory.json().data.length, 0, 'a new person has nothing punched, ever their own');
+
+    const attemptedProxyPunch = await post('/v1/me/staff-attendance/punch-in', other.token, {
+      person_id: c.teacher.personId,
+      latitude: 28.5456,
+      longitude: 77.1926,
+      accuracy_m: 5,
+    });
+    assert.equal(attemptedProxyPunch.statusCode, 201);
+    assert.equal((await get('/v1/me/staff-attendance', other.token)).json().data.length, 1);
+    assert.equal((await get('/v1/me/staff-attendance', c.teacher.token)).json().data.length, 1);
   });
 
   it('refuses missing and outside-fence locations, and accepts only the assigned campus fence', async () => {
@@ -830,6 +840,7 @@ describe('staff self-attendance (SA-ATT-1)', () => {
     assert.equal(outside.json().error.code, 'OUTSIDE_FENCE');
     const inside = await post('/v1/me/staff-attendance/punch-in', c.teacher.token, {
       latitude: 28.5456, longitude: 77.1926, accuracy_m: 5,
+      campus_id: 'client-supplied-campus-is-ignored',
     });
     assert.equal(inside.statusCode, 201);
     assert.equal(inside.json().data.fence_verified, true);

@@ -78,8 +78,8 @@ The fence is migrated (`029_campus_fence.sql`), configurable, displayed — and 
 - [x] `TEST` Request missing coordinates → 422, not a silent pass
 - [x] `TEST` Punch inside the radius → accepted, and **no coordinate is persisted** (assert the
       columns do not exist / are absent from the row)
-- [ ] `TEST` Client-supplied campus id is ignored; the person's own campus is used
-- [ ] `TEST` Unauthorised actor cannot punch for another person
+- [x] `TEST` Client-supplied campus id is ignored; the person's own campus is used
+- [x] `TEST` Unauthorised actor cannot punch for another person
 - [x] `TEST` Flutter widget test: permission denied renders a refusal, sends no request
 
 ### Generalise the lesson
