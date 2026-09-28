@@ -101,8 +101,10 @@ presence; physical-phone verification remains external.
 
 ## P0-1 — Schema drift, migration 036
 
-`036_syllabus.sql` is recorded as applied; the `syllabus` table has no RLS or GRANTs on the dev
-database. 11 tests in `syllabus.test.ts` and 2 migration-invariants checks fail.
+The historical incident report claimed that `036_syllabus.sql` had left `syllabus` without RLS or
+GRANTs and that 11 syllabus tests plus 2 migration-invariants checks failed. The current audit found
+RLS, FORCE RLS, tenant policy and expected grants compliant; the live incident is resolved, while
+the original cause cannot be reconstructed from the migration ledger.
 
 ### Investigate before changing anything
 - [x] `TEST` Run `syllabus.test.ts`; captured the current run: 0 passed, 9 cancelled after the
@@ -387,7 +389,9 @@ Every line must be true before P1 starts.
 - [x] Geo-fence enforced with negative tests, or withdrawn with the ADR amended — AD-83 is enforced,
   the negative suite is green, and the decision is recorded in `docs/blueprint/adr.md` (physical-phone
   verification remains a separate validation debt item).
-- [ ] Migration 036 drift root-caused and fixed; the wider RLS/GRANT audit clean
+- [ ] Migration 036 live drift resolved and the wider RLS/GRANT audit clean; the historical cause
+  remains unprovable because the ledger has no checksum or execution log, so the literal
+  root-cause gate is intentionally still open despite the compliant current state
 - [x] `zz-*` files resolved; server, web and Flutter suites green with **no known failures** —
   `519/519`, `203/203` and `330/330` are recorded above.
 - [x] Dev database seeded; a signed-in screenshot is possible — historical local seed evidence and
