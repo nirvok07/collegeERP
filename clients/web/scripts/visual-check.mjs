@@ -4,10 +4,14 @@ import { chromium } from 'playwright';
 const baseUrl = process.env.VISUAL_BASE_URL ?? 'http://localhost:5173/';
 const outputDir = process.env.VISUAL_OUTPUT_DIR ?? 'artifacts/visual-check';
 const requireSignedIn = process.env.REQUIRE_SIGNED_IN === '1';
+const authMode = process.env.VISUAL_AUTH_MODE ?? 'college';
 const credentials = {
   college: process.env.COLLEGE_CODE,
   identifier: process.env.COLLEGE_IDENTIFIER,
   code: process.env.OTP_CODE ?? '123456',
+  email: process.env.PLATFORM_EMAIL,
+  password: process.env.PLATFORM_PASSWORD,
+  secondFactor: process.env.PLATFORM_OTP_CODE,
 };
 
 await mkdir(outputDir, { recursive: true });
@@ -23,15 +27,29 @@ try {
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.screenshot({ path: `${outputDir}/signed-out.png`, fullPage: true });
 
-  const supplied = credentials.college && credentials.identifier;
+  const supplied = authMode === 'platform'
+    ? credentials.email && credentials.password && credentials.secondFactor
+    : credentials.college && credentials.identifier;
   if (!supplied) {
-    if (requireSignedIn) throw new Error('COLLEGE_CODE and COLLEGE_IDENTIFIER are required when REQUIRE_SIGNED_IN=1');
+    if (requireSignedIn) {
+      throw new Error(authMode === 'platform'
+        ? 'PLATFORM_EMAIL, PLATFORM_PASSWORD and PLATFORM_OTP_CODE are required when REQUIRE_SIGNED_IN=1'
+        : 'COLLEGE_CODE and COLLEGE_IDENTIFIER are required when REQUIRE_SIGNED_IN=1');
+    }
     console.log('Captured signed-out state; signed-in credentials were not supplied.');
   } else {
-    await page.getByLabel('College code').fill(credentials.college);
-    await page.getByLabel('Email or mobile').fill(credentials.identifier);
-    await page.getByRole('button', { name: 'Send code' }).click();
-    await page.getByLabel('Code').fill(credentials.code);
+    if (authMode === 'platform') {
+      await page.goto(`${baseUrl}?platform=1`, { waitUntil: 'networkidle' });
+      await page.getByLabel('Email').fill(credentials.email);
+      await page.getByLabel('Password').fill(credentials.password);
+      await page.getByRole('button', { name: 'Continue' }).click();
+      await page.getByLabel('Code').fill(credentials.secondFactor);
+    } else {
+      await page.getByLabel('College code').fill(credentials.college);
+      await page.getByLabel('Email or mobile').fill(credentials.identifier);
+      await page.getByRole('button', { name: 'Send code' }).click();
+      await page.getByLabel('Code').fill(credentials.code);
+    }
     await page.waitForSelector('.shell__nav', { state: 'visible', timeout: 15000 });
     // Permissions load immediately after the shell mounts. Wait until the
     // permission-filtered navigation has stopped changing, otherwise a fast
