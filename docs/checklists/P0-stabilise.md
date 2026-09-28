@@ -188,7 +188,7 @@ the dev database.
 - [ ] `S` Enrolments, course offerings, instructor assignments
 - [ ] `S` A timetable with rooms; four weeks of generated class sessions
 - [x] `S` Attendance records including corrections and a cancelled class
-- [ ] `S` Internal assessment plans and marks, some verified, some not
+- [x] `S` Internal assessment plans and marks, some verified, some not
 - [x] `S` Fee structures, invoices in mixed states: paid, part-paid, overdue, waived
 - [x] `S` Payments including one reversed, so the collection report has a negative line
 - [ ] `S` A known password or OTP path for each test persona, documented

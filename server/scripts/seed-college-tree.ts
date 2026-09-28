@@ -690,6 +690,11 @@ if (firstOffering) {
       name: 'Mid-semester test', kind: 'test', max_marks: 50, weight: 40,
     });
   }
+  if (!components.some((c) => c.id !== component!.id && c.status === 'draft')) {
+    await call('POST', `/offerings/${firstOffering}/assessments`, {
+      name: 'Final examination (unmarked)', kind: 'exam', max_marks: 100, weight: 60,
+    });
+  }
   const sheet = await call<{ component: Component; students: { student_id: string; status: string | null }[] }>(
     'GET', `/assessments/${component.id}/sheet`,
   );
@@ -698,7 +703,7 @@ if (firstOffering) {
       version: sheet.component.version, held_on: '2026-09-15',
     });
   }
-  const latest = await call<{ component: Component; students: { student_id: string; status: string | null }[] }>(
+  let latest = await call<{ component: Component; students: { student_id: string; status: string | null }[] }>(
     'GET', `/assessments/${component.id}/sheet`,
   );
   if (latest.students.length > 0 && latest.students.every((s) => s.status === null)) {
@@ -708,6 +713,14 @@ if (firstOffering) {
         ? { student_id: s.student_id, status: 'scored', score: 42 }
         : { student_id: s.student_id, status: 'absent' }),
     });
+  }
+  latest = await call('GET', `/assessments/${component.id}/sheet`);
+  if (latest.component.status === 'draft' && latest.students.length > 0 && latest.students.every((s) => s.status !== null)) {
+    await call('POST', `/assessments/${component.id}/submit`, {
+      version: latest.component.version,
+    });
+    const submitted = await call<{ component: Component }>('GET', `/assessments/${component.id}/sheet`);
+    await call('POST', `/assessments/${component.id}/verify`, { version: submitted.component.version });
   }
 }
 
