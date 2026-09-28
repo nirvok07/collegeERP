@@ -8,7 +8,9 @@ Pointers, not content. Read the linked file for the decision itself.
 |---|---|
 | Decisions (AD-1…AD-81) | `docs/blueprint/adr.md` |
 | Requirements register (R1…R64) | `docs/requirements.md` (root `requirements.md` is an inbox, kept empty) |
+| **Module & capability index (start here)** | `docs/blueprint/modules/README.md` |
 | Blueprint module designs | `docs/blueprint/modules/*.md` |
+| Platform capabilities P1–P9 | `docs/blueprint/capabilities/p*.md` |
 | Shared capabilities | `docs/blueprint/capabilities/offline-outbox.md` |
 | Platform administration readiness | `docs/blueprint/capabilities/platform-administration.md` |
 | Offline model | `docs/03-offline-first.md` |
@@ -16,7 +18,8 @@ Pointers, not content. Read the linked file for the decision itself.
 | Mobile platform, Firebase, device evidence | `docs/12-mobile-platform-config.md` |
 | Drift and blocker register | `docs/MASTER-CHECKLIST.md` (Drift 1–6, OD-*) |
 | Long-form slice history | `docs/IMPLEMENTATION-CHECKPOINT.md` |
-| Audit, coverage gaps, forward execution plan | `docs/MASTER-PLAN.md` (2026-09-28) |
+| Audit, coverage gaps, rationale | `docs/MASTER-PLAN.md` (2026-09-28) |
+| **What to build next (tickable)** | `docs/EXECUTION-CHECKLIST.md` |
 
 ## Stack (locked)
 
