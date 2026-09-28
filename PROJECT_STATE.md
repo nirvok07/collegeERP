@@ -37,6 +37,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
 - ✅ Seed code now includes prior-year/calendar fixtures and a two-instalment tuition ledger with
   part-paid, paid, overdue, and reversed examples; waived invoices and larger populations remain
   open. Execution still awaits the owner seed credential file.
+- ✅ Seed code now plans one assessment and writes scored/absent marks for the first seeded course;
+  assessment verification/corrections and attendance correction fixtures remain open.
 
 Updated 2026-09-13. Compact, repository-oriented. Details live in the files named here.
 

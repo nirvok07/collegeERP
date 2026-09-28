@@ -488,6 +488,7 @@ for (const event of [
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
 const semesterEnd = TERMS[0][3];
 const generated: string[] = [];
+const seededOfferings: string[] = [];
 
 for (const label of ['A', 'B'] as const) {
   step(`11. Section ${label}: courses taught, teachers, weekly timetable, classes`);
@@ -502,6 +503,7 @@ for (const label of ['A', 'B'] as const) {
     const offering = await ensure(what, found, () => call<Offering>('POST', '/offerings', {
       section_id: sectionId, course_id: must(course[taught.course], taught.course).id, component: taught.component,
     }));
+    seededOfferings.push(offering.id);
 
     const teaching = new Set((found?.instructors ?? []).map((i) => i.person_id));
     for (const [key, role] of taught.teachers) {
@@ -597,7 +599,41 @@ for (const [index, studentId] of feeStudents.entries()) {
   if (index === 2) await call('POST', `/fees/payments/${payment.payment.id}/cancel`, { reason: 'Seeded reversal example' });
 }
 
-/* --------------------------------------------------------- 13. student access */
+/* ---------------------------------------------------------- 13. assessment */
+
+step('13. Assessment examples');
+const firstOffering = seededOfferings[0];
+if (firstOffering) {
+  type Component = Id & { status: string; held_on: string | null; version: number };
+  const components = await call<Component[]>('GET', `/offerings/${firstOffering}/assessments`);
+  let component = components[0];
+  if (!component) {
+    component = await call<Component>('POST', `/offerings/${firstOffering}/assessments`, {
+      name: 'Mid-semester test', kind: 'test', max_marks: 50, weight: 40,
+    });
+  }
+  const sheet = await call<{ component: Component; students: { student_id: string; status: string | null }[] }>(
+    'GET', `/assessments/${component.id}/sheet`,
+  );
+  if (!sheet.component.held_on) {
+    await call('POST', `/assessments/${component.id}/held-on`, {
+      version: sheet.component.version, held_on: '2026-09-15',
+    });
+  }
+  const latest = await call<{ component: Component; students: { student_id: string; status: string | null }[] }>(
+    'GET', `/assessments/${component.id}/sheet`,
+  );
+  if (latest.students.length > 0 && latest.students.every((s) => s.status === null)) {
+    await call('PUT', `/assessments/${component.id}/marks`, {
+      version: latest.component.version,
+      marks: latest.students.map((s, index) => index === 0
+        ? { student_id: s.student_id, status: 'scored', score: 42 }
+        : { student_id: s.student_id, status: 'absent' }),
+    });
+  }
+}
+
+/* --------------------------------------------------------- 14. student access */
 
 step('12. Student app access (one student, so you can try the student app)');
 const first = STUDENTS[0][0];
