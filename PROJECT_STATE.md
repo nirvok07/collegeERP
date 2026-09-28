@@ -53,9 +53,10 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 
 ## TO BUILD
 
-- P0-4: loading-state capture passes locally for a seeded teacher (2 sections), and forced error-state
-  capture passes for a seeded admin (11 sections); empty remains open, and the managed API target
-  still cannot authenticate the seed.
+- P0-4: loading-state capture passes locally for a seeded teacher (2 sections), forced error-state
+  capture passes for a seeded admin (11 sections), and a student no-access empty state is captured;
+  collection-backed empty screens remain open, and the managed API target still cannot authenticate
+  the seed.
 - P0-3/P0-4: restore the approved seeded API target or bootstrap grant, then rerun device-test seed
   and authenticated browser state capture.
 - P0-4: complete the physical Android pass, including GPS fence behavior, offline behavior and both
@@ -104,8 +105,9 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 ## BLOCKERS
 
 - Physical Android device and owner/device validation access.
-- Browser forced-state harness: local loading and forced error states work after auth/input/CORS fixes;
-  empty remains open, and managed API OTP/account state is still blocked.
+- Browser forced-state harness: local loading, forced error, and student no-access empty states work
+  after auth/input/CORS fixes; collection-backed empty screens remain open, and managed API OTP/account
+  state is still blocked.
 - Current configured API target has no device-test accounts; the corrected seed reached an `erp_migrator`
   RLS refusal. No remote RLS repair was attempted.
 - Xcode unavailable; CAP-3 backend push capability not built.

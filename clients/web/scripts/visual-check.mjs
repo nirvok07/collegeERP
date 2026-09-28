@@ -6,6 +6,12 @@ const outputDir = process.env.VISUAL_OUTPUT_DIR ?? 'artifacts/visual-check';
 const requireSignedIn = process.env.REQUIRE_SIGNED_IN === '1';
 const authMode = process.env.VISUAL_AUTH_MODE ?? 'college';
 const visualState = process.env.VISUAL_STATE ?? 'happy';
+const emptyCollectionPaths = [
+  '/v1/people', '/v1/campuses', '/v1/departments', '/v1/programs',
+  '/v1/curriculum-versions', '/v1/academic-years', '/v1/terms', '/v1/sections',
+  '/v1/offerings', '/v1/rooms', '/v1/sessions', '/v1/attendance', '/v1/assessments',
+  '/v1/students', '/v1/me/teaching', '/v1/me/sessions', '/v1/me/staff-attendance',
+];
 const credentials = {
   college: process.env.COLLEGE_CODE,
   identifier: process.env.COLLEGE_IDENTIFIER,
@@ -44,6 +50,11 @@ const stateRoute = async (route) => {
     await route.continue();
     return;
   }
+  if (visualState === 'empty' && route.request().method() === 'GET'
+      && emptyCollectionPaths.some((path) => new URL(url).pathname === path)) {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+    return;
+  }
   if (visualState === 'error') {
     await route.fulfill({
       status: 503,
@@ -56,8 +67,8 @@ const stateRoute = async (route) => {
 };
 
 try {
-  if (!['happy', 'loading', 'error'].includes(visualState)) {
-    throw new Error(`VISUAL_STATE must be happy, loading or error (received ${visualState})`);
+  if (!['happy', 'loading', 'empty', 'error'].includes(visualState)) {
+    throw new Error(`VISUAL_STATE must be happy, loading, empty or error (received ${visualState})`);
   }
   await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
   await page.getByLabel(authMode === 'platform' ? 'Email' : 'College code').waitFor({ state: 'visible' });
