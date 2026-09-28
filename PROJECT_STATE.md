@@ -21,6 +21,8 @@ because the migration ledger has no checksum or execution log; no corrective mig
   PostgreSQL test database; syllabus is 8/8 and migration invariants are 9/9.
 - ✅ Flutter location permission/timeout/mock refusal and coordinate payload implemented; widget
   tests updated with injected location fix.
+- ✅ Full Flutter suite passes `330/330`; real-phone GPS, permissions, offline behavior and flavor
+  installation remain physical-device validation items.
 - 🔍 NEEDS VALIDATION: physical phone inside/outside a real fence; this is an explicit external
   verification blocker, not claimed complete.
 

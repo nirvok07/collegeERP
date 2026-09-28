@@ -162,7 +162,7 @@ remain in `server/tests`.
 - [x] `S` CI fails the build on any red test (AD-92)
 - [x] `S` CI fails on a **skipped** test too, unless annotated with a reason
 - [x] `TEST` Full server suite green: `519/519` passed, 0 failed, 0 cancelled, 0 skipped
-- [ ] `TEST` Full Flutter suite green
+- [x] `TEST` Full Flutter suite green: `330/330` passed
 - [ ] `TEST` Full web suite green
 - [ ] `TEST` Investigate the flaky outbox timing test `a write waits behind an earlier one`
       (failed once, passed on rerun, 2026-09-22). A known-flaky test is a known-red test with
