@@ -88,7 +88,7 @@ open decision in `docs/blueprint/00-assumptions.md`. `AD-<n>` refers to the deci
 | 4.1 | Domains converted to modules with justified boundaries | Modules are what gets built, released and owned. Wrong boundaries are the most expensive mistake available | P3 | Blueprint 3 §3.1 | Every module states why it deserves to exist separately | ✅ |
 | 4.2 | Merges and splits argued, not assumed | Splitting examinations from results gives two owners of one number | 4.1 | Blueprint 3 §3.2 | Each merge and split has a stated reason | ✅ |
 | 4.3 | Module sequencing by dependency and risk | Building features before the foundation means retrofitting, which is where projects die | 4.1 | Blueprint 3, roadmap | No module scheduled before its dependencies | ✅ |
-| 4.4 | Module Registry initialized | Cross-module reasoning needs a compact index, not a re-read of every spec | 4.1 | Registry per `ARCHITECTURE_INDEX.md#module-execution-protocol` | Every planned module has a row, even unstarted ones | ⬜ **gap: registry file does not exist yet** |
+| 4.4 | Module Registry initialized | Cross-module reasoning needs a compact index, not a re-read of every spec | 4.1 | Registry per `ARCHITECTURE_INDEX.md#module-execution-protocol` | Every planned module has a row, even unstarted ones | ✅ All M1–M24 identifiers are represented across implementation/blueprint columns; capability and institutional-account rows are also listed |
 
 ## PHASE 5 — Cross-Module Architecture
 
