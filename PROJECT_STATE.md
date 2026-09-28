@@ -36,9 +36,10 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
   seat limits and gapless receipts; no implemented schema/check gap was found.
 - P0-1 migration 036 audit: syllabus RLS, FORCE RLS, tenant policy and expected grants are compliant;
   no corrective migration is needed. P0-2 debug-test hygiene is complete.
-- Seeded local API: 41 staff, 403 students, 5 departments, 4 programs, 1 published and 3 draft
-  curriculum versions, branding, timetable, attendance corrections/cancellation, assessment and fee
-  waiver fixtures. Seed reruns report `0 created, 129 already there`.
+- Historical seeded local API evidence: 41 staff, 403 students, 5 departments, 4 programs, 1
+  published and 3 draft curriculum versions, branding, timetable, attendance corrections/cancellation,
+  assessment and fee waiver fixtures. Seed reruns reported `0 created, 129 already there`; the
+  current target still requires the approved seed/bootstrap path before fresh auth evidence.
 - Browser top-level captures: College Admin 11 sections; teacher 3 permission-filtered sections;
   student 2 permission-filtered sections; platform Owner 3 platform sections. Historical duplicate
   cancelled Calculus fixture rows are recorded as a named data defect.

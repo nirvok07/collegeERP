@@ -177,8 +177,9 @@ remain in `server/tests`.
 
 ## P0-3 — Seed a usable dev database
 
-The local development database now has a seeded `device-test` college and supports signed-in API
-verification. Live browser capture remains an explicit validation item.
+Historical local development evidence includes a seeded `device-test` college and signed-in API
+verification; the current configured targets are not fresh signed-in evidence. Live browser capture
+remains an explicit validation item.
 
 Validation note (2026-09-29): the configured running API currently points at a managed development
 database containing only `iit-delhi` with zero user accounts. The ignored credential file existed
