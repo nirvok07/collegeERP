@@ -115,7 +115,17 @@ try {
     if (await signIn.isVisible().catch(() => false) && await signIn.isEnabled().catch(() => false)) {
       await signIn.click();
     }
-    await page.waitForSelector('.shell__nav', { state: 'visible', timeout: 15000 });
+    try {
+      await page.waitForSelector('.shell__nav', { state: 'visible', timeout: 15000 });
+    } catch (error) {
+      await page.screenshot({ path: `${outputDir}/signed-in-timeout.png`, fullPage: true });
+      const shellCount = await page.locator('.shell__nav').count();
+      const tabCount = await page.locator('.shell__tab').count();
+      const signInCount = await page.getByRole('button', { name: 'Sign in' }).count();
+      throw new Error(
+        `Signed-in shell did not render (nav=${shellCount}, tabs=${tabCount}, signIn=${signInCount}): ${error.message}`,
+      );
+    }
     // Permissions load immediately after the shell mounts. Wait until the
     // permission-filtered navigation has stopped changing, otherwise a fast
     // browser captures only the initial Dashboard/Profile pair.
