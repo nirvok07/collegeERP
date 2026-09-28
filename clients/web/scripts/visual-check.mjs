@@ -5,6 +5,7 @@ const baseUrl = process.env.VISUAL_BASE_URL ?? 'http://localhost:5173/';
 const outputDir = process.env.VISUAL_OUTPUT_DIR ?? 'artifacts/visual-check';
 const requireSignedIn = process.env.REQUIRE_SIGNED_IN === '1';
 const authMode = process.env.VISUAL_AUTH_MODE ?? 'college';
+const visualState = process.env.VISUAL_STATE ?? 'happy';
 const credentials = {
   college: process.env.COLLEGE_CODE,
   identifier: process.env.COLLEGE_IDENTIFIER,
@@ -24,6 +25,9 @@ page.on('console', (message) => {
 });
 
 try {
+  if (!['happy', 'loading', 'error'].includes(visualState)) {
+    throw new Error(`VISUAL_STATE must be happy, loading or error (received ${visualState})`);
+  }
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.screenshot({ path: `${outputDir}/signed-out.png`, fullPage: true });
 
@@ -50,6 +54,7 @@ try {
       await page.getByRole('button', { name: 'Send code' }).click();
       await page.getByLabel('Code').fill(credentials.code);
     }
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.waitForSelector('.shell__nav', { state: 'visible', timeout: 15000 });
     // Permissions load immediately after the shell mounts. Wait until the
     // permission-filtered navigation has stopped changing, otherwise a fast
@@ -65,6 +70,32 @@ try {
       }
       return labels.length >= 2 && now - (state.__visualNavStableSince ?? now) >= 500;
     }, { timeout: 15000 });
+
+    const stateRoute = async (route) => {
+      const url = route.request().url();
+      // Keep session and permission bootstrap requests real; state probes begin
+      // only after the shell has settled and target module requests are made.
+      if (url.includes('/auth/') || url.includes('/me/permissions')) {
+        await route.continue();
+        return;
+      }
+      if (visualState === 'loading') {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        await route.continue();
+        return;
+      }
+      if (visualState === 'error') {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: { code: 'VISUAL_CHECK_FAILURE', message: 'Forced visual-check failure.' } }),
+        });
+        return;
+      }
+      await route.continue();
+    };
+    if (visualState !== 'happy') await page.route('**/v1/**', stateRoute);
+
     await page.screenshot({ path: `${outputDir}/dashboard.png`, fullPage: true });
 
     const tabs = page.locator('.shell__tab');
@@ -74,10 +105,12 @@ try {
       const label = (await tab.innerText()).trim();
       const safe = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `section-${index + 1}`;
       await tab.click();
-      await page.waitForTimeout(500);
-      await page.screenshot({ path: `${outputDir}/${String(index + 1).padStart(2, '0')}-${safe}.png`, fullPage: true });
+      await page.waitForTimeout(visualState === 'happy' ? 500 : 350);
+      const prefix = visualState === 'happy' ? '' : `state-${visualState}-`;
+      await page.screenshot({ path: `${outputDir}/${prefix}${String(index + 1).padStart(2, '0')}-${safe}.png`, fullPage: true });
     }
-    console.log(`Captured signed-in dashboard and ${count} navigation sections.`);
+    if (visualState !== 'happy') await page.unroute('**/v1/**', stateRoute);
+    console.log(`Captured signed-in ${visualState} dashboard and ${count} navigation sections.`);
   }
 } finally {
   await browser.close();
