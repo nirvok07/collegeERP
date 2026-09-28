@@ -84,17 +84,15 @@ copies: each owns one question, and a slice is not complete until its state is r
 | What was already implemented and committed? | [`IMPLEMENTATION-CHECKPOINT.md`](IMPLEMENTATION-CHECKPOINT.md) | Append-only long-form history |
 | What is the status of the new-design capability? | [`new-design/CHECKLIST.md`](new-design/CHECKLIST.md) | Capability-local evidence, reported upward to the current-state tracer |
 
-Methodology and recovery documents are protocols, not status trackers: `prompt1.md`, `prompt2.md`,
-`MODULE-CONTROLLER.md`, `NEW-SESSION-CONTEXT.md` and `INTERRUPT-RECOVERY.md` remain authoritative
-until their planned consolidation is completed.
+Methodology documents are protocols, not status trackers: `prompt1.md`, `prompt2.md` and
+`MODULE-CONTROLLER.md` remain authoritative. Session entry and interruption recovery are folded
+into the protocol section of [`ARCHITECTURE_INDEX.md`](../ARCHITECTURE_INDEX.md).
 
 | File | What it is |
 |---|---|
 | [MASTER-CHECKLIST.md](MASTER-CHECKLIST.md) | Planning checklist above the methodology prompts; drift and blocker register (Drift 1–6, OD-*) |
 | [MODULE-CONTROLLER.md](MODULE-CONTROLLER.md) | Module execution protocol, quality gates, Module Contract, Boundary Audit |
 | [IMPLEMENTATION-CHECKPOINT.md](IMPLEMENTATION-CHECKPOINT.md) | Long-form slice history |
-| [NEW-SESSION-CONTEXT.md](NEW-SESSION-CONTEXT.md) | Protocol for entering an existing session |
-| [INTERRUPT-RECOVERY.md](INTERRUPT-RECOVERY.md) | Protocol for resuming after an interrupted run |
 | [SERVER-RUNBOOK.md](SERVER-RUNBOOK.md) | Start/restart the dev server with a phone over USB |
 | [new-design/](new-design/README.md) | Container and ratio language from `assets/new_design.jpeg` |
 | [DESIGN_MOTION_SETUP_COMPLETE.md](DESIGN_MOTION_SETUP_COMPLETE.md), [DESIGN_ENHANCEMENTS.md](DESIGN_ENHANCEMENTS.md) | Motion and design enhancement notes |

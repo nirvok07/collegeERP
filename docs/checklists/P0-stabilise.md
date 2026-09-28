@@ -321,8 +321,10 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 
 ## P0-10 — Consolidate documentation
 
-- [ ] `DOC` Fold `NEW-SESSION-CONTEXT.md`, `INTERRUPT-RECOVERY.md`, `MODULE-CONTROLLER.md` into
-      `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`; delete
+- [x] `DOC` Fold `NEW-SESSION-CONTEXT.md` and `INTERRUPT-RECOVERY.md` into the session/recovery
+      protocol in `ARCHITECTURE_INDEX.md`; delete the duplicate protocol files
+- [ ] `DOC` Fold `MODULE-CONTROLLER.md` into `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`; delete
+      only after its active methodology and references have a verified replacement
 - [x] `DOC` Fold the dated inbox and fee planning queues into `docs/requirements.md`; delete the
       superseded plan files. Open gates and implementation status remain explicit in R73 and R77–R80.
 - [ ] `DOC` Retire `flutter_01.log`, `prompt1.md` and `prompt2.md` only after their live references

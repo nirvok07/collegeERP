@@ -23,6 +23,23 @@ Pointers, not content. Read the linked file for the decision itself.
 | **What to build next (map and gates)** | `docs/EXECUTION-CHECKLIST.md` |
 | **Task-level build plan, per phase** | `docs/checklists/P0…P7` (1,281 tasks) |
 
+## Session and interruption protocol
+
+Before starting or resuming work, establish the project, active phase/task, last committed
+checkpoint, completed work, in-progress work, blockers, pending approvals, latest decision, latest
+artifact and the next exact action. Use committed project artifacts in this order: current state,
+architecture index/decisions, checkpoint, registry/contracts, open decisions, then conversation.
+
+Load context progressively: index first, then only the relevant contract/module, then cross-module
+impact where required. Do not reread or regenerate completed work. If an interruption leaves the
+state uncertain, treat the work as incomplete until verified; never infer approval from an
+interruption. Keep partial work in progress, preserve explicit blockers, and update the relevant
+checklist/tracer/checkpoint only after validation and commit.
+
+The canonical session snapshot is the `PROJECT_STATE.md` tracer plus this index. The full
+methodology and module quality gates remain in `prompt1.md`, `prompt2.md` and
+`docs/MODULE-CONTROLLER.md`; this protocol does not replace them.
+
 ## Stack (locked)
 
 Server `server/`: Node 24, Fastify 5, `pg` without ORM, zod, node:test. Web `clients/web/`: React 19,

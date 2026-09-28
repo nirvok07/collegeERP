@@ -111,8 +111,7 @@ results (M10).
 Very little, which is unusual and worth saying. Two candidates:
 
 - **The documentation surface itself.** `docs/` holds `MASTER-CHECKLIST.md`,
-  `IMPLEMENTATION-CHECKPOINT.md`, `MODULE-CONTROLLER.md`, `NEW-SESSION-CONTEXT.md`,
-  `INTERRUPT-RECOVERY.md`, plus `docs/blueprint/`,
+  `IMPLEMENTATION-CHECKPOINT.md`, `MODULE-CONTROLLER.md`, plus `docs/blueprint/`,
   `docs/new-design/`, `docs/runbook/`, plus three root trackers. Several are session-recovery
   scaffolding that outlived its session. This is the one place the project *has* duplicated its
   memory, and it should be consolidated (§15, P0-8).
@@ -146,8 +145,8 @@ Very little, which is unusual and worth saying. Two candidates:
 - The ten `zz-*` debug test files — nearly a quarter of the 46 server test files. Promote the ones
   that assert production behaviour, delete the rest. A permanently red test is worse than no test,
   and debug scaffolding left in a suite is noise that hides signal.
-- After consolidation: `NEW-SESSION-CONTEXT.md`, `INTERRUPT-RECOVERY.md`, `MODULE-CONTROLLER.md`,
-  and the dated `plan-*.md` files once their content is folded into the register.
+- After consolidation: `MODULE-CONTROLLER.md` once its methodology and live references are safely
+  folded; the session/recovery protocols and dated plan files have already been consolidated.
 
 ### 1.7 Redesign
 
@@ -702,7 +701,9 @@ Each item names its **surfaces**: `S` server, `W` web, `F` Flutter, `D` docs, `�
 - [ ] Verify it answers all eight `CLAUDE.md` §29 questions
 
 **P0-8 Consolidate documentation** `D`
-- [ ] Fold `NEW-SESSION-CONTEXT.md`, `INTERRUPT-RECOVERY.md` and `MODULE-CONTROLLER.md` into `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`, then delete
+- [x] Fold session entry and interruption recovery into `ARCHITECTURE_INDEX.md`; delete the two
+  duplicate protocol files
+- [ ] Fold `MODULE-CONTROLLER.md` into `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`, then delete
 - [x] Fold the dated inbox and fee planning queues into `docs/requirements.md`; the superseded plan
   files were deleted and their open gates remain in R73 and R77–R80
 - [ ] Retire `flutter_01.log`, `prompt1.md` and `prompt2.md` only after their live references and
