@@ -325,7 +325,10 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
       `PROJECT_STATE.md` / `ARCHITECTURE_INDEX.md`; delete
 - [x] `DOC` Fold the dated inbox and fee planning queues into `docs/requirements.md`; delete the
       superseded plan files. Open gates and implementation status remain explicit in R73 and R77–R80.
-- [ ] `DOC` Delete `flutter_01.log`, `prompt1.md`, `prompt2.md`, `DESIGN_TOKENS_ADDITIONS.dart`
+- [ ] `DOC` Retire `flutter_01.log`, `prompt1.md` and `prompt2.md` only after their live references
+      and methodology role are folded safely
+- [x] `DOC` Fold the light-mode design-token reference into `lib/core/design/tokens.dart` and
+      delete `DESIGN_TOKENS_ADDITIONS.dart`; dark-mode additions remain explicitly deferred
 - [x] `DOC` Gitignore `android/build/`; no generated Android build files are tracked
 - [x] `DOC` Resolve `clients/web/explore.mjs` — deleted as an obsolete ad-hoc capture script;
       `clients/web/scripts/visual-check.mjs` is the committed replacement

@@ -10,7 +10,7 @@ to `docs/11-decisions.md` as a numbered ADR.
 | ND-D1 | Take **geometry and rhythm only** from `assets/new_design.jpeg`; keep the approved Inter + indigo + semantic palette. | Colour and type are an approved contract (`docs/07-design-system.md`). Changing them is a separate, larger decision with contrast and branding consequences (BR-1 college branding already rides on the current palette). |
 | ND-D2 | Separation by **tone + gap + 4% shadow**, no card borders. | Matches the reference and the existing principle "depth through hierarchy, not shadow". Borders at ERP density turn into visual noise. |
 | ND-D3 | Two gap levels (**12 intra / 20 group**) rather than one uniform gap. | The 5:3 contrast is what makes a long stack parseable; a single gap flattens grouping and forces divider lines back in. |
-| ND-D4 | `nd.*` tokens are added to the existing `tokens.dart`, not kept in `DESIGN_TOKENS_ADDITIONS.dart`. | Two token files = two sources of truth (CLAUDE.md §13). |
+| ND-D4 | `nd.*` tokens and approved light-mode data/fee palettes live in the existing `tokens.dart`, not in a separate reference file. | Two token files = two sources of truth (CLAUDE.md §13); dark-theme colours remain deferred by AD-67/ND-O4. |
 | ND-D5 | Adoption is **strangler per screen**, each screen's tests updated in the same commit. | A one-shot restyle of every screen is an uncontrolled operation and unreviewable. |
 | ND-D6 | Web mirrors the token **names**, not a shared runtime. | Flutter and web have no shared styling runtime; name parity is achievable today and greppable. |
 | ND-D7 | Sheet becomes a centred dialog on tablet and a right-side panel on desktop, same radius. | Full-width sheets on a 1440 viewport read as broken; keeping the radius keeps the identity. |

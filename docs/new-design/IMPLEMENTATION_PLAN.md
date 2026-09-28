@@ -4,12 +4,13 @@ Vertical slices. Exactly one is "next" at a time; the tracker in `PROJECT_STATE.
 live status. No slice is DONE without tests.
 
 ## ND-S1 — Tokens (foundation)
-**Build:** fold `DESIGN_TOKENS_ADDITIONS.dart` into `lib/core/design/tokens.dart` as the `nd.*`
-geometry set from `DESIGN.md` §1; mirror the names in `clients/web/src/design/`.
+**Status:** geometry and light-mode data/fee palettes are folded into `lib/core/design/tokens.dart`;
+the duplicate root reference file is retired. The `nd.*` geometry set is the `AppGeometry` section
+from `DESIGN.md` §1 and names remain mirrored in `clients/web/src/design/`.
 **Not in slice:** any screen change, any colour change.
 **Validation:** `flutter analyze` clean; a token test asserting the 5:3 gap ratio and the 48dp
 minimum; web build passes.
-**Done when:** no second token file remains.
+**Done when:** no second token file remains. Dark-theme additions stay deferred under AD-67/ND-O4.
 
 ## ND-S2 — Core containers
 **Build:** `AppCard`, `AppCardGroup`, `AppRowCard`.

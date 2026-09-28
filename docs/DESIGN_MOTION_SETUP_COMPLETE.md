@@ -20,7 +20,8 @@ All aligned with your existing design system. No breaking changes.
 
 ### Files Created
 - ✅ `docs/DESIGN_ENHANCEMENTS.md` — Full strategy (9 sections, implementation roadmap)
-- ✅ `DESIGN_TOKENS_ADDITIONS.dart` — Copy-paste token classes for Flutter
+- ✅ `lib/core/design/tokens.dart` — canonical Flutter token classes (the former reference snippet
+  was folded in and removed)
 
 ### What's New
 
@@ -194,7 +195,7 @@ sequence([
 
 ### For Design Colors
 - Read: `docs/DESIGN_ENHANCEMENTS.md`
-- Reference: `DESIGN_TOKENS_ADDITIONS.dart`
+- Reference: `lib/core/design/tokens.dart` (`AppDataColors`, `AppFeeColors`)
 
 ### For Animations
 - Read: `clients/web/src/design/MOTION_ONE_GUIDE.md`

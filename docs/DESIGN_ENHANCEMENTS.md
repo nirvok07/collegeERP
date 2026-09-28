@@ -316,7 +316,7 @@ AppDataColors.divergingNegative  // Bad: overdue, absent
 
 | File | When | What |
 |------|------|------|
-| `lib/core/design/tokens.dart` | Now | Add `AppDataColors`, `AppFeeColors`, `AppColorsDark` (§1, §2, §4) |
+| `lib/core/design/tokens.dart` | Done for light mode | `AppDataColors`, `AppFeeColors` (§1, §2); `AppColorsDark` remains deferred by AD-67/ND-O4 |
 | `lib/core/design/theme.dart` | Phase 3 | Wire dark theme, use `AppColorsDark` |
 | `pubspec.yaml` | Phase 2 | Add JetBrains Mono font (optional) |
 | `lib/features/fees/` | Phase 2 | Use `AppFeeColors` in screens |

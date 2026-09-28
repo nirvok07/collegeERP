@@ -12,9 +12,9 @@ UI widgets ── Cubit ── repository ── Dio / local store ── server
 
 ## 2. Source of truth
 - **Tokens:** `lib/core/design/tokens.dart` is the single source. The `nd.*` values of
-  `DESIGN.md` are added as a `AppGeometry`/`AppSpacing` extension there. `DESIGN_TOKENS_ADDITIONS.dart`
-  (already staged at repo root) is the staging file and must be folded into `tokens.dart`, not kept
-  as a parallel token set — two token files would be a second source of truth.
+  `DESIGN.md` are added as a `AppGeometry`/`AppSpacing` extension there, along with the approved
+  light-mode data/fee palettes. The former root reference snippet was folded in and removed — two
+  token files would be a second source of truth.
 - **Components:** `lib/core/widgets/`. One implementation per container type; screens compose.
 - **Web:** `clients/web/src/design/` mirrors the same token names so a value can be compared
   across platforms by name.

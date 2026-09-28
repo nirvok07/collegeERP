@@ -38,6 +38,38 @@ abstract final class AppColors {
   static const navyRaised = Color(0xFF2B3A4F);
 }
 
+/// Sequential and diverging palettes for charts and other data visualisations.
+abstract final class AppDataColors {
+  static const sequentialLight2 = Color(0xFFDEE9FE);
+  static const sequentialLight5 = Color(0xFF60A5FA);
+  static const sequentialLight6 = Color(0xFF3B82F6);
+  static const chartSequential = <Color>[sequentialLight2, sequentialLight5, sequentialLight6];
+
+  static const divergingPositive = Color(0xFF059669);
+  static const divergingNeutral = Color(0xFFF3F4F6);
+  static const divergingNegative = Color(0xFFDC2626);
+  static const heatmapCold = Color(0xFF0284C7);
+  static const heatmapWarm = Color(0xFFDC2626);
+}
+
+/// Semantic light-theme colours for fee status badges and reports.
+abstract final class AppFeeColors {
+  static const invoiceDue = Color(0xFFD97706);
+  static const invoicePaid = Color(0xFF059669);
+  static const invoiceOverdue = Color(0xFFDC2626);
+  static const paymentPending = Color(0xFF0284C7);
+  static const paymentSuccessful = Color(0xFF059669);
+  static const paymentFailed = Color(0xFFDC2626);
+  static const requestPending = Color(0xFFD97706);
+  static const requestApproved = Color(0xFF059669);
+  static const requestRejected = Color(0xFFDC2626);
+  static const requestWithdrawn = Color(0xFF64748B);
+  static const lateFeeApplicable = Color(0xFFD97706);
+  static const lateFeePaid = Color(0xFF059669);
+  static const fineIssued = Color(0xFFDC2626);
+  static const fineWaived = Color(0xFF059669);
+}
+
 abstract final class AppSpacing {
   static const xs = 4.0;
   static const sm = 8.0;
