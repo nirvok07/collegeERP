@@ -309,13 +309,13 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 
 `PROJECT_STATE.md` is 107KB. `CLAUDE.md` §4 asks for a compact TRACER.
 
-- [ ] `DOC` Move slice history into `docs/IMPLEMENTATION-CHECKPOINT.md`, preserving commit hashes
-- [ ] `DOC` Rebuild `PROJECT_STATE.md` to the §4 shape: SYSTEM STATUS, CURRENT SLICE, CURRENT
+- [x] `DOC` Move slice history into `docs/IMPLEMENTATION-CHECKPOINT.md`, preserving commit hashes
+- [x] `DOC` Rebuild `PROJECT_STATE.md` to the §4 shape: SYSTEM STATUS, CURRENT SLICE, CURRENT
       OBJECTIVE, ALREADY BUILT, TO BUILD, NOT IN THIS SLICE, DEPENDENCIES, VALIDATION, OPEN
       DECISIONS, BLOCKERS, NEXT
-- [ ] `DOC` **Target under 200 lines**
-- [ ] `DOC` Verify it answers all eight `CLAUDE.md` §29 questions without opening another file
-- [ ] `DOC` Exactly one `NEXT` slice (`CLAUDE.md` §25)
+- [x] `DOC` **Target under 200 lines** — 108 lines
+- [x] `DOC` Verify it answers all eight `CLAUDE.md` §29 questions without opening another file
+- [x] `DOC` Exactly one `NEXT` slice (`CLAUDE.md` §25)
 
 ---
 
