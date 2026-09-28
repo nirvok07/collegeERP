@@ -216,7 +216,7 @@ machine had no browser, so **every prior web CSS and chart change was unverified
       offerings, timetable, attendance, marks, students, rooms, profile, platform screens
 - [ ] `W` Capture each screen's loading, empty and error states where reachable
 - [ ] `W` Review captures; file a defect per visual problem
-- [ ] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
+- [x] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
 
 ### Android
 - [ ] `F` One device pass over every `🔍` mobile item
