@@ -10,7 +10,8 @@ const emptyCollectionPaths = [
   '/v1/people', '/v1/campuses', '/v1/departments', '/v1/programs',
   '/v1/curriculum-versions', '/v1/academic-years', '/v1/terms', '/v1/sections',
   '/v1/offerings', '/v1/rooms', '/v1/sessions', '/v1/attendance', '/v1/assessments',
-  '/v1/students', '/v1/me/teaching', '/v1/me/sessions', '/v1/me/staff-attendance',
+  '/v1/students', '/v1/courses', '/v1/slots', '/v1/calendar', '/v1/non-teaching-days',
+  '/v1/me/teaching', '/v1/me/sessions', '/v1/me/staff-attendance',
 ];
 const credentials = {
   college: process.env.COLLEGE_CODE,
