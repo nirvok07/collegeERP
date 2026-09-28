@@ -49,7 +49,9 @@ do not mark the project ready for P1 until the P0 exit gate is actually satisfie
 - P0-9 compact tracking is complete. P0-10 has absorbed the dated planning queues into
   `docs/requirements.md` (R73, R77–R80), removed the duplicate design-token file into the canonical
   Flutter token source, added the Android build ignore, and folded the standalone module controller
-  into `ARCHITECTURE_INDEX.md`; `prompt1.md` and `prompt2.md` remain the live methodology sources.
+  into `ARCHITECTURE_INDEX.md`; the methodology retirement audit is recorded in
+  `docs/METHODOLOGY-RETIREMENT-AUDIT.md`; `prompt1.md` and `prompt2.md` remain the live methodology
+  sources.
 
 ## TO BUILD
 
