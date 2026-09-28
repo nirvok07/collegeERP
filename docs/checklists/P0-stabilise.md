@@ -326,7 +326,7 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 - [ ] `DOC` Fold `docs/plan-inbox-2026-09-16.md` and `docs/plan-fee-a-to-z-2026-09-22.md` into
       `docs/requirements.md`; delete
 - [ ] `DOC` Delete `flutter_01.log`, `prompt1.md`, `prompt2.md`, `DESIGN_TOKENS_ADDITIONS.dart`
-- [ ] `DOC` Gitignore `android/build/`
+- [x] `DOC` Gitignore `android/build/`; no generated Android build files are tracked
 - [x] `DOC` Resolve `clients/web/explore.mjs` — deleted as an obsolete ad-hoc capture script;
       `clients/web/scripts/visual-check.mjs` is the committed replacement
 - [ ] `DOC` Clear root `requirements.md` (it is an inbox, kept empty)
