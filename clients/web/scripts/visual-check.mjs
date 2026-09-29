@@ -106,6 +106,10 @@ try {
       await page.getByRole('button', { name: 'Continue' }).click();
       const secondFactor = page.getByLabel('Code');
       await secondFactor.fill(credentials.secondFactor.slice(0, 1));
+      await page.waitForFunction(
+        (expected) => document.querySelector('input.otp__input')?.value === expected,
+        credentials.secondFactor.slice(0, 1),
+      );
       await page.waitForTimeout(100);
       await secondFactor.press('End');
       await secondFactor.pressSequentially(credentials.secondFactor.slice(1), { delay: 40 });
@@ -117,6 +121,10 @@ try {
       // the controlled component receives the same input events as a user.
       const code = page.getByLabel('Code');
       await code.fill(credentials.code.slice(0, 1));
+      await page.waitForFunction(
+        (expected) => document.querySelector('input.otp__input')?.value === expected,
+        credentials.code.slice(0, 1),
+      );
       await page.waitForTimeout(100);
       await code.press('End');
       await code.pressSequentially(credentials.code.slice(1), { delay: 40 });
