@@ -56,6 +56,8 @@ P0 FOLLOW-UP — DOCUMENTATION, PROBE HARDENING AND BLOCKER RECONCILIATION — 2
   219d5b4 / cb05940  Prepare the owner decision brief and link the new P0 trackers from the docs entry point.
   d458af3 / 961d06d  Stabilize OTP input readiness and report runtime errors; a retry reached successful
            OTP/auth bootstrap but rendered a blank shell, so no collection-empty evidence was accepted.
+  9e713b8 / a9d2ee7  Add DOM-level diagnostics and bound OTP-readiness failures so subsequent probes fail
+           with actionable input state instead of hanging under the outer runner.
   Current open validation remains collection-backed empty browser states, fixed-OTP challenge-bucket
   and post-auth shell stability for further local retries, managed-target seed/bootstrap access,
   physical Android evidence, and the three owner decisions. None of these blockers is marked complete.
