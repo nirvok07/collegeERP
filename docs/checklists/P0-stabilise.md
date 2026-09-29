@@ -250,9 +250,9 @@ state tracer now reports grouped current blockers; the item-level register remai
 - [ ] `W` Capture each screen's loading, empty and error states where reachable. Loading is verified
       locally for a seeded teacher's 2 sections, forced error is verified for a seeded admin's 11
       sections on 2026-09-29 with visible error/retry UI, and a student no-access empty state is
-      captured for 2 sections. Collection-backed empty screens remain open; a later local retry hit
-      the fixed-OTP challenge bucket's `429` rate limit, and the managed API target still lacks the
-      seeded account/bootstrap path recorded above.
+      captured for 2 sections. Collection-backed empty screens remain open; later local retries hit
+      fixed-OTP rate limiting and an unstable post-auth shell, and the managed API target still
+      lacks the seeded account/bootstrap path recorded above.
 - [x] `W` Review captures; file a defect per visual problem (historical duplicate cancelled class
       rows are recorded in `docs/validation-debt.md`)
 - [x] `W` Wire the script into CI as a non-blocking artefact first, blocking once stable
@@ -343,7 +343,7 @@ Full analysis: `docs/blueprint/modules/institutional-accounts.md`.
 - [x] `DOC` Rebuild `PROJECT_STATE.md` to the §4 shape: SYSTEM STATUS, CURRENT SLICE, CURRENT
       OBJECTIVE, ALREADY BUILT, TO BUILD, NOT IN THIS SLICE, DEPENDENCIES, VALIDATION, OPEN
       DECISIONS, BLOCKERS, NEXT
-- [x] `DOC` **Target under 200 lines** — 133 lines at the current checkpoint
+- [x] `DOC` **Target under 200 lines** — 135 lines at the current checkpoint
 - [x] `DOC` Verify it answers all eight `CLAUDE.md` §29 questions without opening another file
 - [x] `DOC` Exactly one `NEXT` slice (`CLAUDE.md` §25)
 
@@ -411,6 +411,6 @@ Every line must be true before P1 starts.
 - [x] Zero unexplained `🔍`; the rest have written reasons — see `docs/validation-debt.md`.
 - [ ] OD-1, OD-4, OD-ACC-1 answered or deferred **with a date**
 - [x] OD-LV-1 answered and recorded as AD-93 **with a date**
-- [x] `PROJECT_STATE.md` under 200 lines and answers the eight questions — 133 lines, with the current
+- [x] `PROJECT_STATE.md` under 200 lines and answers the eight questions — 135 lines, with the current
   managed-target and physical-device blockers stated explicitly.
 - [x] AD-84…AD-90 and AD-92 recorded in `adr.md`; AD-91 remains gated on P0-5 owner confirmation

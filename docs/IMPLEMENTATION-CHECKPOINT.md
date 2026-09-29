@@ -54,9 +54,11 @@ P0 FOLLOW-UP — DOCUMENTATION, PROBE HARDENING AND BLOCKER RECONCILIATION — 2
            the module contract and architecture close-out gates into the canonical index.
   014bc7f / 7489d43  Refresh tracer line counts and add named validation-debt defect references.
   219d5b4 / cb05940  Prepare the owner decision brief and link the new P0 trackers from the docs entry point.
+  d458af3 / 961d06d  Stabilize OTP input readiness and report runtime errors; a retry reached successful
+           OTP/auth bootstrap but rendered a blank shell, so no collection-empty evidence was accepted.
   Current open validation remains collection-backed empty browser states, fixed-OTP challenge-bucket
-  access for further local retries, managed-target seed/bootstrap access, physical Android evidence,
-  and the three owner decisions. None of these external blockers is marked complete.
+  and post-auth shell stability for further local retries, managed-target seed/bootstrap access,
+  physical Android evidence, and the three owner decisions. None of these blockers is marked complete.
 
 OFFLINE OUTBOX, SLICE ONE: REPLAY-SAFE FIELD WRITES — BACKEND + FLUTTER
   Chosen by the platform readiness review as the highest-value unblocked

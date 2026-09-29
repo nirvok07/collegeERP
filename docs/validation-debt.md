@@ -35,7 +35,7 @@ These identifiers are repository-local evidence references, not external issue t
 
 | ID | Finding | Disposition |
 |---|---|---|
-| `VIZ-OTP-001` | Repeated local headless visual-probe retries hit the fixed development OTP challenge bucket (`429`) before collection-empty capture could be accepted. | Keep collection-empty verification open; do not clear challenge data as part of validation. |
+| `VIZ-OTP-001` | Local headless visual-probe auth is unstable: retries have hit the fixed development OTP challenge bucket (`429`), and one successful OTP/auth bootstrap rendered a blank shell before collection-empty capture could be accepted. | Keep collection-empty verification open; do not clear challenge data as part of validation. |
 | `DATA-ATT-001` | Historical local seed contains duplicate cancelled Calculus rows from pre-idempotence runs. | Review defect recorded; do not silently rewrite historical evidence. |
 | `TOOL-ADB-001` | Current environment cannot start the ADB daemon (`Operation not permitted`), and Flutter engine-cache writes are unavailable. | Physical Android validation remains phone/tooling required. |
 | `ENV-MANAGED-SEED-001` | Configured managed API has no device-test accounts; the corrected seed reached an `erp_migrator` RLS refusal. | No remote repair attempted; approved seed/bootstrap access required. |
