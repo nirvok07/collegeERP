@@ -146,8 +146,10 @@ try {
       const signInCount = await page.getByRole('button', { name: 'Sign in' }).count();
       const authDetail = authFailures.length > 0 ? `, auth=${authFailures.join(',')}` : '';
       const runtimeDetail = failures.length > 0 ? `, runtime=${failures.join(' | ')}` : '';
+      const bodyText = (await page.locator('body').innerText()).replace(/\s+/g, ' ').trim().slice(0, 240);
+      const rootHtml = (await page.locator('#root').innerHTML()).replace(/\s+/g, ' ').slice(0, 240);
       throw new Error(
-        `Signed-in shell did not render (nav=${shellCount}, tabs=${tabCount}, signIn=${signInCount}${authDetail}${runtimeDetail}): ${error.message}`,
+        `Signed-in shell did not render (nav=${shellCount}, tabs=${tabCount}, signIn=${signInCount}${authDetail}${runtimeDetail}, body=${JSON.stringify(bodyText)}, root=${JSON.stringify(rootHtml)}): ${error.message}`,
       );
     }
     // Permissions load immediately after the shell mounts. Wait until the
