@@ -145,8 +145,9 @@ try {
       const tabCount = await page.locator('.shell__tab').count();
       const signInCount = await page.getByRole('button', { name: 'Sign in' }).count();
       const authDetail = authFailures.length > 0 ? `, auth=${authFailures.join(',')}` : '';
+      const runtimeDetail = failures.length > 0 ? `, runtime=${failures.join(' | ')}` : '';
       throw new Error(
-        `Signed-in shell did not render (nav=${shellCount}, tabs=${tabCount}, signIn=${signInCount}${authDetail}): ${error.message}`,
+        `Signed-in shell did not render (nav=${shellCount}, tabs=${tabCount}, signIn=${signInCount}${authDetail}${runtimeDetail}): ${error.message}`,
       );
     }
     // Permissions load immediately after the shell mounts. Wait until the
