@@ -109,6 +109,7 @@ try {
       await page.waitForFunction(
         (expected) => document.querySelector('input.otp__input')?.value === expected,
         credentials.secondFactor.slice(0, 1),
+        { timeout: 2000 },
       );
       await page.waitForTimeout(100);
       await secondFactor.press('End');
@@ -124,6 +125,7 @@ try {
       await page.waitForFunction(
         (expected) => document.querySelector('input.otp__input')?.value === expected,
         credentials.code.slice(0, 1),
+        { timeout: 2000 },
       );
       await page.waitForTimeout(100);
       await code.press('End');
